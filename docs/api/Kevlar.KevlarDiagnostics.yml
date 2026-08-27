@@ -5,6 +5,7 @@ items:
   id: KevlarDiagnostics
   parent: Kevlar
   children:
+  - Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher)
   - Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
   - Kevlar.KevlarDiagnostics.MeterName
   - Kevlar.KevlarDiagnostics.OnCallbackError
@@ -96,6 +97,39 @@ items:
     return:
       type: System.String
     content.vb: Public Const MeterName As String = "Kevlar"
+- uid: Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher)
+  commentId: M:Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher)
+  id: AddMetricEnricher(Kevlar.KevlarMetricEnricher)
+  parent: Kevlar.KevlarDiagnostics
+  langs:
+  - csharp
+  - vb
+  name: AddMetricEnricher(KevlarMetricEnricher)
+  nameWithType: KevlarDiagnostics.AddMetricEnricher(KevlarMetricEnricher)
+  fullName: Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Registers an application-defined enricher for every Kevlar metric measurement.
+  remarks: >-
+    Enrichers run synchronously only when an enabled instrument records or observes a
+
+    measurement. Enricher exceptions are ignored and do not prevent later enrichers from
+
+    running. Keep tag names and values bounded to avoid unbounded metric cardinality.
+  example: []
+  syntax:
+    content: public static IDisposable AddMetricEnricher(KevlarMetricEnricher enricher)
+    parameters:
+    - id: enricher
+      type: Kevlar.KevlarMetricEnricher
+      description: The enricher to register.
+    return:
+      type: System.IDisposable
+      description: A subscription that removes the enricher when disposed.
+    content.vb: Public Shared Function AddMetricEnricher(enricher As KevlarMetricEnricher) As IDisposable
+  overload: Kevlar.KevlarDiagnostics.AddMetricEnricher*
 - uid: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
   commentId: M:Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
   id: ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
@@ -450,6 +484,29 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
+- uid: Kevlar.KevlarDiagnostics.AddMetricEnricher*
+  commentId: Overload:Kevlar.KevlarDiagnostics.AddMetricEnricher
+  isExternal: true
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_AddMetricEnricher_Kevlar_KevlarMetricEnricher_
+  name: AddMetricEnricher
+  nameWithType: KevlarDiagnostics.AddMetricEnricher
+  fullName: Kevlar.KevlarDiagnostics.AddMetricEnricher
+- uid: Kevlar.KevlarMetricEnricher
+  commentId: T:Kevlar.KevlarMetricEnricher
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarMetricEnricher.html
+  name: KevlarMetricEnricher
+  nameWithType: KevlarMetricEnricher
+  fullName: Kevlar.KevlarMetricEnricher
+- uid: System.IDisposable
+  commentId: T:System.IDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable
+  name: IDisposable
+  nameWithType: IDisposable
+  fullName: System.IDisposable
 - uid: Kevlar.KevlarDiagnostics.ReportCallbackError*
   commentId: Overload:Kevlar.KevlarDiagnostics.ReportCallbackError
   isExternal: true
@@ -496,14 +553,6 @@ references:
   name: IKevlarTelemetryListener
   nameWithType: IKevlarTelemetryListener
   fullName: Kevlar.IKevlarTelemetryListener
-- uid: System.IDisposable
-  commentId: T:System.IDisposable
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.idisposable
-  name: IDisposable
-  nameWithType: IDisposable
-  fullName: System.IDisposable
 - uid: System.Action{Kevlar.CallbackErrorEvent}
   commentId: T:System.Action{Kevlar.CallbackErrorEvent}
   parent: System

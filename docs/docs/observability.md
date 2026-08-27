@@ -112,6 +112,44 @@ Built-in `kevlar.event.name` values are `execution_attempt`, `retry`, `timeout`,
 additionally emits `chaos_latency`, `chaos_fault`,
 `chaos_outcome`, and `chaos_behavior`.
 
+### Metric enrichment
+
+Register a `KevlarMetricEnricher` to append application-defined tags to every enabled instrument
+on the core `Kevlar` meter. Enrichers run synchronously in registration order. Their exceptions are
+ignored, and disposing the returned subscription removes the registration. `Context` is the active
+`KevlarContext` for execution-bound measurements; it is `null` for measurements produced outside
+an execution, including observable state collection, circuit transitions, and partition evictions.
+
+<!-- doc-test-declaration: split-before=using var metricEnrichment -->
+```csharp
+sealed class RegionMetricEnricher : KevlarMetricEnricher
+{
+    public static KevlarKey<string> RegionKey { get; } = new("deployment-region");
+
+    public override void Enrich(in KevlarMetricEnrichmentContext context)
+    {
+        if (context.Context?.Properties.TryGet(RegionKey, out string? region) == true)
+        {
+            context.Tags.Add(new("deployment.region", region));
+        }
+    }
+}
+
+using var metricEnrichment =
+    KevlarDiagnostics.AddMetricEnricher(new RegionMetricEnricher());
+
+await Shield.Empty.ExecuteWithContextAsync(
+    "eu-west",
+    static (region, properties) => properties.Set(RegionMetricEnricher.RegionKey, region),
+    static (_, _) => ValueTask.CompletedTask);
+```
+
+Treat enriched dimensions as part of the metric schema. Use a fixed vocabulary of tag names and
+bounded values such as deployment regions or workload classes. Never add request IDs, raw URLs,
+user IDs, partition keys, exception messages, or other unbounded values. Add tags rather than
+removing or replacing Kevlar's built-in tags. Enrichment applies only to the `Kevlar` meter;
+`Kevlar.Chaos` uses its separate documented schema.
+
 ### Telemetry listener and custom events
 
 `KevlarDiagnostics.Listen` provides the same events synchronously without requiring a metrics
