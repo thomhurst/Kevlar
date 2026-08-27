@@ -504,9 +504,17 @@ public class CircuitBreakerTransitionOrderingTests
             };
         });
 
-        var first = Task.Run(monitor.Isolate);
+        var first = Task.Factory.StartNew(
+            monitor.Isolate,
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
         await firstObserverEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        var second = Task.Run(monitor.Reset);
+        var second = Task.Factory.StartNew(
+            monitor.Reset,
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
         await WaitForStateAsync(monitor, CircuitState.Closed);
 
         releaseFirstObserver.TrySetResult();

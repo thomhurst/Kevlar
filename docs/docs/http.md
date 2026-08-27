@@ -23,7 +23,7 @@ services.AddHttpClient("api")
 `AddStandardShield` wires up the pipeline you'd have built anyway (outermost first):
 
 1. **30s total timeout** around everything
-2. **3 jittered retries** (exponential from 250ms, capped 30s) — honouring `Retry-After` headers and disposing superseded responses
+2. **3 jittered retries** (exponential from 250ms, capped 10s) — honouring `Retry-After` headers and disposing superseded responses
 3. **Circuit breaker** — sampling mode: opens at a 50% failure ratio over a 30s window (minimum 10 calls), breaks for 15s
 4. **10s attempt timeout** per individual try
 

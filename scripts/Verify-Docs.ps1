@@ -156,6 +156,59 @@ foreach ($relativePath in @('docs/docs/getting-started.md', 'docs/docs/intro.md'
     }
 }
 
+$targetFrameworkClaims = @(
+    @{
+        Document = 'docs/docs/getting-started.md'
+        Project = 'src/Kevlar/Kevlar.csproj'
+        ClaimPattern = [regex]'(?m)^The core targets .+$'
+    }
+    @{
+        Document = 'docs/docs/intro.md'
+        Project = 'src/Kevlar/Kevlar.csproj'
+        ClaimPattern = [regex]'(?m)^- \*\*Broad reach\.\*\* .+$'
+    }
+    @{
+        Document = 'docs/docs/grpc.md'
+        Project = 'src/Kevlar.Extensions.Grpc/Kevlar.Extensions.Grpc.csproj'
+        ClaimPattern = [regex]'(?m)^The interceptor .+ targets .+$'
+    }
+)
+$targetFrameworkPattern = [regex]'`(?<tfm>net(?:standard)?\d+\.\d+)`'
+
+foreach ($claim in $targetFrameworkClaims)
+{
+    $projectSource = Get-Content -LiteralPath (Join-Path $repositoryRoot $claim.Project) -Raw
+    $projectFrameworksMatch = [regex]::Match(
+        $projectSource,
+        '<TargetFrameworks>(?<frameworks>[^<]+)</TargetFrameworks>')
+    if (-not $projectFrameworksMatch.Success)
+    {
+        $errors.Add("$($claim.Project) must declare TargetFrameworks for documentation validation.")
+        continue
+    }
+
+    $expectedFrameworks = @($projectFrameworksMatch.Groups['frameworks'].Value -split ';')
+    $documentSource = Get-Content -LiteralPath (Join-Path $repositoryRoot $claim.Document) -Raw
+    $claimMatch = $claim.ClaimPattern.Match($documentSource)
+    if (-not $claimMatch.Success)
+    {
+        $errors.Add("$($claim.Document) must contain its package target-framework claim.")
+        continue
+    }
+
+    $documentFrameworks = @(
+        $targetFrameworkPattern.Matches($claimMatch.Value) |
+            ForEach-Object { $_.Groups['tfm'].Value } |
+            Select-Object -Unique
+    )
+    if (($documentFrameworks -join ';') -cne ($expectedFrameworks -join ';'))
+    {
+        $errors.Add(
+            "$($claim.Document) target frameworks '$($documentFrameworks -join ';')' do not match " +
+            "$($claim.Project) '$($expectedFrameworks -join ';')'.")
+    }
+}
+
 $requiredFirstFenceUsings = [ordered]@{
     'dependency-injection.md' = 'using Kevlar.Extensions.DependencyInjection;'
     'http.md' = 'using Kevlar.Extensions.Http;'
