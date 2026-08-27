@@ -883,6 +883,62 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
+    [NotInParallel]
+    public async Task Handler_Rotation_Preserves_Fixed_Shield_Routing_State()
+    {
+        var handlers = 0;
+        var transportCalls = 0;
+        var routing = new HttpEndpointRoutingOptions
+        {
+            ShieldFactory = static _ => HttpShield.WhenTransient()
+                .CircuitBreaker(
+                    consecutiveFailures: 1,
+                    breakDuration: TimeSpan.FromDays(1)),
+        };
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+        var options = new ShieldHttpHandlerOptions { Routing = routing };
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                });
+            })
+            .AddShield(HttpShield.WhenTransient().Retry(0, Backoff.None), options);
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (var first = factory.CreateClient("client"))
+        using (await first.GetAsync("https://example.test/"))
+        {
+        }
+
+        HttpClient? rotated = null;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        {
+            rotated?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            rotated = factory.CreateClient("client");
+        }
+
+        using (rotated)
+        {
+            await Assert.That(async () =>
+                    await rotated!.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Initial_Service_Configuration_Failure_Is_Propagated()
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "0"));

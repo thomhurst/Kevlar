@@ -54,11 +54,19 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         var optionsSnapshot = Snapshot(options);
+        var registration = RegisterSharedPipeline(builder);
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                optionsSnapshot,
-                CreateDecorator(services, builder.Name)));
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    optionsSnapshot));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(services, builder.Name));
+        });
     }
 
     /// <summary>
