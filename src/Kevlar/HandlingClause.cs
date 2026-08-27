@@ -21,6 +21,10 @@ public readonly struct HandlingClause
     internal OutcomeJudge Judge => _judge ?? OutcomeJudge.Default;
 
     /// <summary>Returns whether <paramref name="outcome"/> is a handled failure.</summary>
+    /// <remarks>
+    /// This context-free overload cannot report predicate failures through execution diagnostics.
+    /// Reactive strategies should use the overload that accepts <see cref="KevlarContext"/>.
+    /// </remarks>
     public bool ShouldHandle<T>(in Outcome<T> outcome) =>
         Judge.ShouldHandle(in outcome, context: null, attempt: 0, strategyIndex: -1);
 

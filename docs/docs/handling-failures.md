@@ -220,11 +220,15 @@ per-strategy override.
 
 Every predicate shape follows the same failure contract. If an exception, result, or context-aware
 predicate throws, that predicate is treated as not handled and later alternatives are still
-evaluated. The original execution outcome remains unchanged. Kevlar reports the predicate exception
-through `KevlarDiagnostics.OnCallbackError` with `CallbackErrorKind.HandlingPredicate`, the
-`kevlar.callback_errors` counter with `kevlar.callback.kind=handling_predicate`, telemetry, and
-structured logging. Predicate failures therefore stay visible without changing retry, breaker,
-hedge, or fallback behavior.
+evaluated. The original execution outcome remains unchanged. During shield execution, Kevlar
+reports the predicate exception through `KevlarDiagnostics.OnCallbackError` with
+`CallbackErrorKind.HandlingPredicate`, the `kevlar.callback_errors` counter with
+`kevlar.callback.kind=handling_predicate`, telemetry, and structured logging. Predicate failures
+therefore stay visible without changing retry, breaker, hedge, or fallback behavior.
+
+The context-free `HandlingClause.ShouldHandle(in outcome)` overload has no active execution and
+cannot emit execution diagnostics. Custom reactive strategies should pass their active
+`KevlarContext` to the context-aware overload, as shown below.
 
 ## Per-strategy overrides
 

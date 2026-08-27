@@ -6,12 +6,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- **Breaking:** exceptions from every handling predicate are treated as not handled, leaving the
-  original execution outcome unchanged. Failures are reported through
-  `CallbackErrorKind.HandlingPredicate`, `kevlar.callback_errors`, telemetry, and logging.
-
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,
