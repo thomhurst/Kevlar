@@ -22,7 +22,8 @@ internal static class KevlarTelemetry
         int strategyIndex,
         int attemptNumber,
         in Outcome<T> outcome,
-        TimeSpan delay = default)
+        TimeSpan delay = default,
+        string? suppressionReason = null)
     {
         if (!outcome.IsSuccess)
         {
@@ -35,7 +36,8 @@ internal static class KevlarTelemetry
                 attemptNumber,
                 isSuccess: false,
                 outcome.Exception,
-                delay: delay);
+                delay: delay,
+                suppressionReason: suppressionReason);
             return;
         }
 
@@ -66,6 +68,7 @@ internal static class KevlarTelemetry
             toState: null,
             retryAfter: null,
             rejectionKind: null,
+            suppressionReason,
             callbackKind: null,
             context);
 
@@ -154,6 +157,7 @@ internal static class KevlarTelemetry
         CircuitState? toState = null,
         TimeSpan? retryAfter = null,
         string? rejectionKind = null,
+        string? suppressionReason = null,
         CallbackErrorKind? callbackKind = null,
         bool localOnly = false)
     {
@@ -186,6 +190,7 @@ internal static class KevlarTelemetry
             toState,
             retryAfter,
             rejectionKind,
+            suppressionReason,
             callbackKind,
             context);
 

@@ -335,9 +335,10 @@ the original request and the returned response.
 Replay behavior depends on the request:
 
 - `NoBuffer` (default) reuses inherently re-readable content such as `ByteArrayContent`,
-  `StringContent`, and `FormUrlEncodedContent`. Positive-length content already loaded into its HTTP
-  buffer is also reusable. A fresh `JsonContent` or one-shot content such as `StreamContent` is sent
-  once; call `LoadIntoBufferAsync()` first, select `Buffer`, or provide a `RequestFactory` to replay it.
+  `StringContent`, `FormUrlEncodedContent`, and ordinary `JsonContent`. Positive-length content
+  already loaded into its HTTP buffer is also reusable. `JsonContent` declared as
+  `IAsyncEnumerable<T>` and one-shot content such as `StreamContent` are sent once; call
+  `LoadIntoBufferAsync()` first, select `Buffer`, or provide a `RequestFactory` to replay them.
 - `Buffer` serializes content once before sending, bounded by `MaximumBufferSize`, then gives each
   attempt its own `ByteArrayContent`. Oversize or partial serialization fails before attempt 1.
 - `RequestFactory` creates a complete fresh request per attempt. Use it for one-shot streams,
@@ -349,9 +350,12 @@ require `AllowUnsafeMethodReplay = true` or a `RequestFactory`; only opt in when
 actually idempotent. If method or content cannot be replayed safely, retry and hedging remain
 single-attempt: the original response is returned or the original exception is rethrown without a
 retry delay or callback. Other stages, including timeout, circuit breaker, and concurrency limiting,
-still observe that attempt. `HttpRequestReplayException` is reserved for configuration failures such
-as a null factory result or content exceeding the requested buffer limit. Timeouts and caller
-cancellation flow to every attempt and request factory.
+still observe that attempt. A multi-attempt shield reports this decision once as the
+`attempts_suppressed` telemetry event and Information log 1009, with reason `replay_disabled`,
+`unsafe_method`, or `non_replayable_content`. The `kevlar.http.replay_suppressed` counter carries the
+same bounded reason in `kevlar.suppression.reason`. `HttpRequestReplayException` is reserved for
+configuration failures such as a null factory result or content exceeding the requested buffer
+limit. Timeouts and caller cancellation flow to every attempt and request factory.
 
 ## Endpoint-aware hedging
 

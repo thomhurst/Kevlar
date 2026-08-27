@@ -75,11 +75,12 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts launched | `kevlar.shield.name` |
 | `kevlar.fallbacks` | Counter | `{fallback}` | `net8.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
 | `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`) |
+| `kevlar.http.replay_suppressed` | Counter | `{request}` | `net8.0` | HTTP requests whose configured additional attempts were disabled for replay safety | `kevlar.shield.name`, `kevlar.suppression.reason` (`replay_disabled`/`unsafe_method`/`non_replayable_content`) |
 | `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
 | `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications, observers, or superseded-result disposal | `kevlar.shield.name`, `kevlar.callback.kind` |
 | `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
-| `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
+| `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key`, optional `kevlar.suppression.reason` |
 | `kevlar.attempt.duration` | Histogram | `ms` | `net8.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
 | `kevlar.circuit_breaker.state` | ObservableGauge | `{state}` | `net10.0` | current circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.inflight` | ObservableGauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
@@ -106,7 +107,8 @@ names bounded just like shield names.
 
 Built-in `kevlar.event.name` values are `execution_attempt`, `retry`, `timeout`, `hedge`,
 `fallback`, `rejection`, `circuit_opened`, `circuit_half_opened`, `circuit_closed`, and
-`circuit_isolated`. `Kevlar.Chaos` additionally emits `chaos_latency`, `chaos_fault`,
+`circuit_isolated`; the HTTP integration also emits `attempts_suppressed`. `Kevlar.Chaos`
+additionally emits `chaos_latency`, `chaos_fault`,
 `chaos_outcome`, and `chaos_behavior`.
 
 ### Telemetry listener and custom events

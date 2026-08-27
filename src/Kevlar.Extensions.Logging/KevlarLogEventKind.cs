@@ -29,4 +29,7 @@ public enum KevlarLogEventKind
 
     /// <summary>An open or isolated circuit rejected an execution.</summary>
     CircuitRejected,
+
+    /// <summary>HTTP replay safety disabled configured additional attempts.</summary>
+    AttemptsSuppressed,
 }

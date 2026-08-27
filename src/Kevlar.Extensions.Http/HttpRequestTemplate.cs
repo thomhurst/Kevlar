@@ -169,7 +169,53 @@ internal sealed class HttpRequestTemplate
         var contentType = content.GetType();
         return contentType == typeof(ByteArrayContent)
             || contentType == typeof(StringContent)
-            || contentType == typeof(FormUrlEncodedContent);
+            || contentType == typeof(FormUrlEncodedContent)
+            || IsReplayableJsonContent(content, contentType);
+    }
+
+#if NET8_0_OR_GREATER
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2070",
+        Justification = "JsonContent's active serializer requires its public ObjectType metadata; missing metadata is treated as non-replayable.")]
+#endif
+    private static bool IsReplayableJsonContent(HttpContent content, Type contentType)
+    {
+        if (contentType.FullName != "System.Net.Http.Json.JsonContent")
+        {
+            return false;
+        }
+
+        var objectType = contentType.GetProperty("ObjectType")?.GetValue(content) as Type;
+        return objectType is not null && !IsAsyncEnumerable(objectType);
+    }
+
+#if NET8_0_OR_GREATER
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2070",
+        Justification = "The active JSON serializer preserves implemented interfaces needed to serialize the declared ObjectType.")]
+#endif
+    private static bool IsAsyncEnumerable(Type type)
+    {
+        if (type.IsGenericType
+            && type.GetGenericTypeDefinition().FullName
+                == "System.Collections.Generic.IAsyncEnumerable`1")
+        {
+            return true;
+        }
+
+        foreach (var implemented in type.GetInterfaces())
+        {
+            if (implemented.IsGenericType
+                && implemented.GetGenericTypeDefinition().FullName
+                    == "System.Collections.Generic.IAsyncEnumerable`1")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static async ValueTask<bool> IsAlreadyBufferedAsync(HttpContent content)

@@ -250,6 +250,7 @@ public class MetricsTests
             ["kevlar.hedges"] = "{hedge}",
             ["kevlar.fallbacks"] = "{fallback}",
             ["kevlar.rejections"] = "{rejection}",
+            ["kevlar.http.replay_suppressed"] = "{request}",
             ["kevlar.circuit_breaker.transitions"] = "{transition}",
             ["kevlar.partitions.evictions"] = "{partition}",
             ["kevlar.callback_errors"] = "{error}",

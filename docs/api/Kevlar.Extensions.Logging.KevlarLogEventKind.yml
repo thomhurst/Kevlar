@@ -5,6 +5,7 @@ items:
   id: KevlarLogEventKind
   parent: Kevlar.Extensions.Logging
   children:
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
@@ -207,6 +208,26 @@ items:
   example: []
   syntax:
     content: CircuitRejected = 8
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
+  id: AttemptsSuppressed
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: AttemptsSuppressed
+  nameWithType: KevlarLogEventKind.AttemptsSuppressed
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: HTTP replay safety disabled configured additional attempts.
+  example: []
+  syntax:
+    content: AttemptsSuppressed = 9
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 references:

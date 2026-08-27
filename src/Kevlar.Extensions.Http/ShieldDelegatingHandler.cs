@@ -1,3 +1,5 @@
+using Kevlar.Internal;
+
 namespace Kevlar.Extensions.Http;
 
 /// <summary>A <see cref="DelegatingHandler"/> with safe per-attempt request replay.</summary>
@@ -128,7 +130,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             requestOptions?.CancellationToken ?? default);
         var executionCancellationToken = linkedCancellation?.Token ?? cancellationToken;
         executionCancellationToken.ThrowIfCancellationRequested();
-        var canReplay = await CanReplayAsync(
+        var replay = await GetReplayDecisionAsync(
             request,
             pipeline.Options,
             requestOptions).ConfigureAwait(false);
@@ -137,14 +139,16 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             request,
             pipeline,
             requestOptions,
-            canReplay,
-            executionCancellationToken);
+            replay.CanReplay,
+            replay.SuppressionReason,
+            reportSuppression: !replay.CanReplay && !selectedShield.InvokesContinuationAtMostOnce,
+            executionCancellationToken: executionCancellationToken);
         try
         {
             var response = await selectedShield.ExecuteWithContextAsync(
                 execution,
                 static (state, properties) => state.InitializeProperties(properties),
-                static (state, context) => state.SendAttemptAsync(context.CancellationToken),
+                static (state, context) => state.SendAttemptAsync(context),
                 executionCancellationToken).ConfigureAwait(false);
             execution.Complete(response);
             return response;
@@ -156,36 +160,55 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
     }
 
-    private static async ValueTask<bool> CanReplayAsync(
+    private static async ValueTask<ReplayDecision> GetReplayDecisionAsync(
         HttpRequestMessage request,
         HttpShieldPipelineOptions options,
         KevlarRequestOptions? requestOptions)
     {
         if (requestOptions?.AllowReplay == false)
         {
-            return false;
+            return ReplayDecision.Suppressed("replay_disabled");
         }
 
         if (options.RequestFactory is not null)
         {
-            return true;
+            return ReplayDecision.Allowed;
         }
 
         if (!RequestExecution.IsReplaySafeMethod(request.Method)
             && requestOptions?.AllowReplay != true
             && !options.AllowUnsafeMethodReplay)
         {
-            return false;
+            return ReplayDecision.Suppressed("unsafe_method");
         }
 
         if (request.Content is not { } content
             || options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer
             || HttpRequestTemplate.IsInherentlyReplayable(content))
         {
-            return true;
+            return ReplayDecision.Allowed;
         }
 
-        return await HttpRequestTemplate.IsAlreadyBufferedAsync(content).ConfigureAwait(false);
+        return await HttpRequestTemplate.IsAlreadyBufferedAsync(content).ConfigureAwait(false)
+            ? ReplayDecision.Allowed
+            : ReplayDecision.Suppressed("non_replayable_content");
+    }
+
+    private readonly struct ReplayDecision
+    {
+        private ReplayDecision(bool canReplay, string? suppressionReason)
+        {
+            CanReplay = canReplay;
+            SuppressionReason = suppressionReason;
+        }
+
+        public static ReplayDecision Allowed { get; } = new(true, suppressionReason: null);
+
+        public bool CanReplay { get; }
+
+        public string? SuppressionReason { get; }
+
+        public static ReplayDecision Suppressed(string reason) => new(false, reason);
     }
 
     private static CancellationTokenSource? CreateLinkedCancellation(
@@ -263,6 +286,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly HttpRequestMessage _original;
         private readonly KevlarRequestOptions? _requestOptions;
         private readonly bool _canReplay;
+        private readonly string? _suppressionReason;
+        private readonly bool _reportSuppression;
         private readonly bool _hadInitialContent;
         private readonly CancellationToken _executionCancellationToken;
         private readonly List<HttpResponseMessage> _responses = [];
@@ -275,6 +300,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private HttpResponseMessage? _terminalResponse;
         private CancellationToken _lastAttemptToken;
         private int _attempt;
+        private int _suppressionReported;
         private bool _completed;
         private bool _hasAttemptToken;
 
@@ -284,6 +310,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             HttpShieldPipeline pipeline,
             KevlarRequestOptions? requestOptions,
             bool canReplay,
+            string? suppressionReason,
+            bool reportSuppression,
             CancellationToken executionCancellationToken)
         {
             _handler = handler;
@@ -291,6 +319,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             _original = original;
             _requestOptions = requestOptions;
             _canReplay = canReplay;
+            _suppressionReason = suppressionReason;
+            _reportSuppression = reportSuppression;
             _hadInitialContent = original.Content is not null;
             _executionCancellationToken = executionCancellationToken;
             _endpointOrder = pipeline.CreateEndpointOrder();
@@ -345,8 +375,15 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             return default;
         }
 
-        public ValueTask<HttpResponseMessage> SendAttemptAsync(CancellationToken cancellationToken)
+        public ValueTask<HttpResponseMessage> SendAttemptAsync(KevlarContext context)
         {
+            if (_reportSuppression
+                && Interlocked.Exchange(ref _suppressionReported, 1) == 0)
+            {
+                KevlarMetrics.HttpReplaySuppressed(context, _suppressionReason!);
+            }
+
+            var cancellationToken = context.CancellationToken;
             if (_canReplay)
             {
                 return SendAttemptCoreAsync(cancellationToken);

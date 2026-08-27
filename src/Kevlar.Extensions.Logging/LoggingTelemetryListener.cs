@@ -299,6 +299,20 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.StrategyIndex, telemetryEvent.CallbackKind, outcome,
                     telemetryEvent.Exception);
                 break;
+            case KevlarLogEventKind.AttemptsSuppressed:
+                _ = telemetryEvent.Context.Properties.TryGet(
+                    KevlarKeys.HttpRequestMethod,
+                    out string? suppressedRequestMethod);
+                _ = telemetryEvent.Context.Properties.TryGet(
+                    KevlarKeys.HttpRequestUri,
+                    out string? suppressedRequestUri);
+                LoggerMessages.AttemptsSuppressed(
+                    logger,
+                    telemetryEvent.ShieldName,
+                    telemetryEvent.SuppressionReason,
+                    suppressedRequestMethod,
+                    suppressedRequestUri);
+                break;
         }
     }
 
@@ -384,6 +398,18 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.CallbackKind, outcome);
                 break;
+            case KevlarLogEventKind.AttemptsSuppressed:
+                _ = telemetryEvent.Context.Properties.TryGet(
+                    KevlarKeys.HttpRequestMethod,
+                    out string? suppressedRequestMethod);
+                _ = telemetryEvent.Context.Properties.TryGet(
+                    KevlarKeys.HttpRequestUri,
+                    out string? suppressedRequestUri);
+                logger.Log(level, eventId,
+                    "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
+                    telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
+                    suppressedRequestMethod, suppressedRequestUri);
+                break;
         }
     }
 
@@ -437,6 +463,11 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 kind = KevlarLogEventKind.CallbackError;
                 eventId = new EventId(1008, "CallbackError");
                 level = LogLevel.Error;
+                return true;
+            case "attempts_suppressed":
+                kind = KevlarLogEventKind.AttemptsSuppressed;
+                eventId = new EventId(1009, "AttemptsSuppressed");
+                level = LogLevel.Information;
                 return true;
             case "rejection" when telemetryEvent.RejectionKind is "rate_limit" or "rate_limiter_adapter":
                 kind = KevlarLogEventKind.RateLimitRejected;

@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using System.Net;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
@@ -11,6 +12,55 @@ namespace Kevlar.Extensions.Logging.Tests;
 
 public class IntegrationTests
 {
+    [Test]
+    [NotInParallel]
+    public async Task NonReplayable_Request_Reports_Suppressed_Attempts()
+    {
+        var logs = new FakeLoggerProvider();
+        var telemetry = new List<(string EventName, string? Reason)>();
+        var measurements = new List<string>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "attempts_suppressed")
+            {
+                telemetry.Add((telemetryEvent.EventName, telemetryEvent.SuppressionReason));
+            }
+        }));
+        using var meter = CreateReplaySuppressionListener(measurements);
+        var transport = new SequenceHandler(
+            HttpStatusCode.ServiceUnavailable,
+            HttpStatusCode.OK);
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("upload")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("upload");
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://example.test/upload")
+        {
+            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+        };
+
+        using var response = await client.SendAsync(request);
+
+        var suppression = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1009, "AttemptsSuppressed"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(telemetry.Count).IsEqualTo(1);
+        await Assert.That(telemetry[0]).IsEqualTo(
+            ("attempts_suppressed", (string?)"non_replayable_content"));
+        await Assert.That(measurements).IsEquivalentTo(["non_replayable_content"]);
+        await Assert.That(suppression.Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(suppression.GetStructuredStateValue("SuppressionReason"))
+            .IsEqualTo("non_replayable_content");
+        await Assert.That(suppression.GetStructuredStateValue("RequestMethod")).IsEqualTo("PUT");
+        await Assert.That(suppression.GetStructuredStateValue("RequestUri"))
+            .IsEqualTo("https://example.test/upload");
+    }
+
     [Test]
     [NotInParallel]
     public async Task AddKevlarLogging_Applies_To_Named_And_Reloading_Shields()
@@ -364,9 +414,38 @@ public class IntegrationTests
     private static ValueTask<int> Fail(CancellationToken _) =>
         new(Task.FromException<int>(new TestException("failure")));
 
+    private static MeterListener CreateReplaySuppressionListener(List<string> measurements)
+    {
+        var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, activeListener) =>
+            {
+                if (instrument.Meter.Name == KevlarDiagnostics.MeterName
+                    && instrument.Name == "kevlar.http.replay_suppressed")
+                {
+                    activeListener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>((_, measurement, tags, _) =>
+        {
+            foreach (var tag in tags)
+            {
+                if (measurement == 1 && tag.Key == "kevlar.suppression.reason")
+                {
+                    measurements.Add(tag.Value?.ToString() ?? string.Empty);
+                }
+            }
+        });
+        listener.Start();
+        return listener;
+    }
+
     private sealed class SequenceHandler(params HttpStatusCode[] statuses) : HttpMessageHandler
     {
         private int _index;
+
+        public int Attempts => Volatile.Read(ref _index);
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -375,6 +454,12 @@ public class IntegrationTests
             var index = Interlocked.Increment(ref _index) - 1;
             return Task.FromResult(new HttpResponseMessage(statuses[index]));
         }
+    }
+
+    private sealed class CallbackTelemetryListener(Action<KevlarTelemetryEvent> callback)
+        : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback(telemetryEvent);
     }
 
     private sealed class TestException(string message) : Exception(message);

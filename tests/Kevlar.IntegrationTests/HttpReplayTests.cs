@@ -9,6 +9,33 @@ namespace Kevlar.IntegrationTests;
 public class HttpReplayTests
 {
     [Test]
+    public async Task Put_With_JsonContent_NoBuffer_Is_Retried()
+    {
+        var bodies = new List<string>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/json")
+        {
+            Content = JsonContent.Create(new { Value = 42 }),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(bodies.Count).IsEqualTo(2);
+        await Assert.That(bodies[1]).IsEqualTo(bodies[0]);
+    }
+
+    [Test]
     public async Task Bounded_Buffer_Replays_Content_And_Request_Metadata()
     {
         var observations = new List<(string Body, string Header, string ContentHeader, int Option)>();
