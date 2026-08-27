@@ -78,7 +78,11 @@ public sealed class Shield : IShieldLifecycle
 
     // ── Static factories ────────────────────────────────────────────────────────────────
 
-    /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Retries failed executions up to <paramref name="maxRetries"/> times with
+    /// <see cref="Backoff.Default"/>: exponential from 250 milliseconds with factor 2, equal
+    /// jitter, and a 30-second cap.
+    /// </summary>
     /// <param name="maxRetries">
     /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
     /// total attempts — the initial call plus 3 retries.
@@ -100,7 +104,10 @@ public sealed class Shield : IShieldLifecycle
     /// </remarks>
     public static Shield Retry(Action<RetryOptions> configure) => ShieldExtensions.Retry(Empty, configure);
 
-    /// <summary>Retries failed executions indefinitely with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Retries failed executions indefinitely with <see cref="Backoff.Default"/>: exponential
+    /// from 250 milliseconds with factor 2, equal jitter, and a 30-second cap.
+    /// </summary>
     public static Shield RetryForever() => ShieldExtensions.RetryForever(Empty);
 
     /// <summary>Retries failed executions indefinitely with the given backoff.</summary>

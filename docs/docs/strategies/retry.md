@@ -46,9 +46,19 @@ if (attempts != 4)
 }
 ```
 
-:::tip The default is the good one
-Bare `Shield.Retry(3)` gives exponential backoff **with equal jitter**, 250ms base, capped at 30s. Jitter prevents retry storms where every failed caller retries in lockstep; you'd have configured this anyway.
-:::
+## Defaults
+
+Bare `Retry(n)` and `RetryForever()` use `Backoff.Default`:
+
+| Setting | Default |
+|---|---|
+| Curve | Exponential |
+| Base delay | 250 ms |
+| Factor | 2 |
+| Jitter | Equal: each delay is scaled by a value in [0.5, 1.5) |
+| Maximum delay | 30 seconds |
+
+The cap also applies to `RetryForever()`. Equal jitter prevents callers from retrying in lockstep.
 
 ## Backoff
 

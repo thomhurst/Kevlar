@@ -36,9 +36,12 @@ using var response = await shield.ExecuteAsync(
     ct => client.GetAsync("https://example.com", ct));
 ```
 
-`Retry(3)` means three retries after the initial call: up to 4 total attempts. It uses exponential
-backoff with equal jitter by default. The cancellation token passed to your delegate is
-important—it is how timeouts and abandoned attempts stop the underlying work.
+`Retry(3)` means three retries after the initial call: up to 4 total attempts. Its default backoff
+is exponential from 250 ms with factor 2, equal jitter, and a 30-second cap. It retries ordinary
+exceptions such as `HttpRequestException`, but treats the `TaskCanceledException` from
+`HttpClient.Timeout` as cancellation. To retry that timeout and HTTP 5xx/429 responses, use
+`HttpShield.WhenTransient()` from `Kevlar.Extensions.Http`. The cancellation token passed to your
+delegate is important—it is how timeouts and abandoned attempts stop the underlying work.
 
 When you combine strategies, the first strategy is the outermost, just like ASP.NET middleware:
 

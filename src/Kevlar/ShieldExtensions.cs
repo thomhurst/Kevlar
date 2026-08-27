@@ -9,7 +9,11 @@ namespace Kevlar;
 /// </summary>
 public static class ShieldExtensions
 {
-    /// <summary>Appends a retry of handled exceptions, up to <paramref name="maxRetries"/> times, with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Appends a retry of handled exceptions, up to <paramref name="maxRetries"/> times, with
+    /// <see cref="Backoff.Default"/>: exponential from 250 milliseconds with factor 2, equal
+    /// jitter, and a 30-second cap.
+    /// </summary>
     /// <param name="shield">The shield to append the retry to.</param>
     /// <param name="maxRetries">
     /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
@@ -59,7 +63,10 @@ public static class ShieldExtensions
         return shield.Append(new RetryStrategy(options, judge));
     }
 
-    /// <summary>Appends a retry that never gives up, with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Appends a retry that never gives up, with <see cref="Backoff.Default"/>: exponential from
+    /// 250 milliseconds with factor 2, equal jitter, and a 30-second cap.
+    /// </summary>
     /// <param name="shield">The shield to append the retry to.</param>
     public static Shield RetryForever(this Shield shield) => shield.RetryForever(Backoff.Default);
 
