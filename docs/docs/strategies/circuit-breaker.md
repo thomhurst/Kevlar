@@ -133,17 +133,22 @@ await monitor.IsolateAsync(); // async equivalents await transition callbacks
 await monitor.ResetAsync();
 ```
 
-A monitor binds to exactly **one** breaker: assign it to `CircuitBreakerOptions.Monitor` when building the shield, and keep your reference. Binding it twice throws, as does using it before binding.
+A monitor can bind to **one or more** breakers: assign it to each
+`CircuitBreakerOptions.Monitor` you want to control, and keep your reference. `Isolate` and
+`Reset` fan out to every bound breaker. `State` reports the worst current state, ordered
+`Isolated`, `Open`, `HalfOpen`, then `Closed`. Using a monitor before binding still throws.
 
-Transitions are delivered serially in state-change order: awaited `OnStateChanged`, then
-`monitor.StateChanged`. The monitor intentionally retains an
+Each breaker raises its own events. Transitions are delivered serially per breaker in state-change
+order: awaited `OnStateChanged`, then `monitor.StateChanged`. Different breakers bound to the same
+monitor may publish concurrently. The monitor intentionally retains an
 `Action<CircuitBreakerStateChangedEvent>` event so both observers share one event shape and
 delivery model. Execution-driven transitions carry the triggering pooled context. Manual
 `Isolate`/`Reset` transitions carry a detached context with `StrategyIndex == -1`, no shield name,
 and an empty property bag. Callbacks run outside the circuit lock, so they can read `State` or call
 the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the
 transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when `OnStateChanged`
-may yield so the calling thread is not blocked. If an observer throws,
+may yield so the calling thread is not blocked; these methods await every bound breaker in binding
+order. If an observer throws,
 later observers still run and the circuit keeps its new, usable state. Observer failures are
 reported through `KevlarDiagnostics.OnCallbackError` and never replace an execution outcome or
 block a transition.

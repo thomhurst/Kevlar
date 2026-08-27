@@ -5,6 +5,41 @@ namespace Kevlar.Tests;
 public class ConcurrencyTests
 {
     [Test]
+    public async Task Monitor_Preserves_Concurrent_Bindings()
+    {
+        const int breakerCount = 32;
+        var monitor = new CircuitBreakerMonitor();
+        var shields = new Shield[breakerCount];
+
+        Parallel.For(0, breakerCount, index =>
+        {
+            shields[index] = Shield.CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.Monitor = monitor;
+            });
+        });
+
+        var transitions = 0;
+        monitor.StateChanged += _ => Interlocked.Increment(ref transitions);
+
+        monitor.Isolate();
+
+        await Assert.That(Volatile.Read(ref transitions)).IsEqualTo(breakerCount);
+        var outcomes = await Task.WhenAll(shields.Select(shield =>
+            shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1)).AsTask()));
+        await Assert.That(outcomes.Count(outcome => outcome.Exception is CircuitOpenException))
+            .IsEqualTo(breakerCount);
+
+        monitor.Reset();
+
+        await Assert.That(Volatile.Read(ref transitions)).IsEqualTo(breakerCount * 2);
+        var results = await Task.WhenAll(shields.Select(shield =>
+            shield.ExecuteAsync(_ => new ValueTask<int>(1)).AsTask()));
+        await Assert.That(results).IsEquivalentTo(Enumerable.Repeat(1, breakerCount));
+    }
+
+    [Test]
     public async Task A_Failure_Storm_Produces_Exactly_One_Open_Transition()
     {
         var transitions = new List<CircuitBreakerStateChangedEvent>();

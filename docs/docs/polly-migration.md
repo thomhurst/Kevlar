@@ -560,7 +560,9 @@ synchronous `Execute` still runs a hook that completes synchronously; only a hoo
 yields requires `ExecuteAsync`.
 
 Polly's `CircuitBreakerManualControl` and `CircuitBreakerStateProvider` are separately shareable.
-Kevlar uses one `CircuitBreakerMonitor`, attached one-to-one to a breaker strategy.
+Kevlar combines both roles in `CircuitBreakerMonitor`. One monitor can bind to multiple breaker
+strategies: manual controls fan out, `State` reports the worst bound state, and `StateChanged`
+fires for each breaker's transitions.
 
 ## Rate limiting
 
