@@ -395,14 +395,14 @@ public static class ShieldHttpClientBuilderExtensions
 
     /// <summary>
     /// Adds one shared standard pipeline that hedges against the request's authority: total timeout,
-    /// hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
+    /// hedging, optional per-authority concurrency limit, circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder) =>
         AddStandardHedgeShield(builder, static _ => { });
 
     /// <summary>
     /// Adds one shared standard pipeline with optional endpoint routing: total timeout, hedging,
-    /// per-authority concurrency limit and circuit breaker, then per-attempt timeout.
+    /// optional per-authority concurrency limit, circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(
         this IHttpClientBuilder builder,
@@ -569,7 +569,9 @@ public static class ShieldHttpClientBuilderExtensions
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgeShieldOptions options)
     {
-        if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), options.Routing.SelectionMode))
+        var configuredRouting = options.Routing;
+        if (configuredRouting is not null
+            && !Enum.IsDefined(typeof(HttpEndpointSelectionMode), configuredRouting.SelectionMode))
         {
             throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
         }
@@ -584,20 +586,20 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentOutOfRangeException(nameof(options), "MaxBufferSize must be positive.");
         }
 
-        if (options.Routing.Endpoints.Any(static endpoint => endpoint is null))
+        if (configuredRouting?.Endpoints.Any(static endpoint => endpoint is null) is true)
         {
             throw new ArgumentException("Endpoints cannot contain null.", nameof(options));
         }
 
-        var routing = new HttpEndpointRoutingOptions
+        var routing = new HttpEndpointRoutingOptions { ShieldFactory = CreateEndpointShieldFactory(options) };
+        if (configuredRouting is not null)
         {
-            SelectionMode = options.Routing.SelectionMode,
-            Seed = options.Routing.Seed,
-            ShieldFactory = CreateEndpointShieldFactory(options),
-        };
-        foreach (var endpoint in options.Routing.Endpoints)
-        {
-            routing.Endpoints.Add(endpoint);
+            routing.SelectionMode = configuredRouting.SelectionMode;
+            routing.Seed = configuredRouting.Seed;
+            foreach (var endpoint in configuredRouting.Endpoints)
+            {
+                routing.Endpoints.Add(endpoint);
+            }
         }
 
         return new ShieldHttpHandlerOptions
@@ -613,15 +615,20 @@ public static class ShieldHttpClientBuilderExtensions
     private static Func<Uri, Shield<HttpResponseMessage>> CreateEndpointShieldFactory(
         StandardHedgeShieldOptions options)
     {
-        var concurrencyLimit = Clone(options.ConcurrencyLimit);
+        var concurrencyLimit = options.ConcurrencyLimit is null
+            ? null
+            : Clone(options.ConcurrencyLimit);
         var circuitBreaker = Clone(options.CircuitBreaker);
         var attemptTimeout = Clone(options.AttemptTimeout);
 
         Shield<HttpResponseMessage> CreateEndpointShield(Uri _)
         {
-            var shield = HttpShield.WhenTransient()
-                .ConcurrencyLimit(target => Copy(concurrencyLimit, target))
-                .CircuitBreaker(target => Copy(circuitBreaker, target));
+            var shield = concurrencyLimit is null
+                ? HttpShield.WhenTransient()
+                    .CircuitBreaker(target => Copy(circuitBreaker, target))
+                : HttpShield.WhenTransient()
+                    .ConcurrencyLimit(target => Copy(concurrencyLimit, target))
+                    .CircuitBreaker(target => Copy(circuitBreaker, target));
             return IsDisabled(attemptTimeout)
                 ? shield
                 : shield.Timeout(target => Copy(attemptTimeout, target));
@@ -635,14 +642,12 @@ public static class ShieldHttpClientBuilderExtensions
     {
         if (options.TotalTimeout is null
             || options.Hedge is null
-            || options.ConcurrencyLimit is null
             || options.CircuitBreaker is null
             || options.AttemptTimeout is null
-            || options.Handler is null
-            || options.Routing is null)
+            || options.Handler is null)
         {
             throw new ArgumentException(
-                "StandardHedgeShieldOptions nested options cannot be null.",
+                "StandardHedgeShieldOptions required nested options cannot be null.",
                 nameof(options));
         }
     }

@@ -51,13 +51,13 @@ Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout.get -> Kevlar.T
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.CircuitBreaker.get -> Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage!>!
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.CircuitBreaker.set -> void
-Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConcurrencyLimit.get -> Kevlar.ConcurrencyLimitOptions!
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConcurrencyLimit.get -> Kevlar.ConcurrencyLimitOptions?
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConcurrencyLimit.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.Handler.get -> Kevlar.Extensions.Http.ShieldHttpHandlerOptions!
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.Handler.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.Hedge.get -> Kevlar.HedgeOptions<System.Net.Http.HttpResponseMessage!>!
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.Hedge.set -> void
-Kevlar.Extensions.Http.StandardHedgeShieldOptions.Routing.get -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions!
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.Routing.get -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions?
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.Routing.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.StandardHedgeShieldOptions() -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout.get -> Kevlar.TimeoutOptions!

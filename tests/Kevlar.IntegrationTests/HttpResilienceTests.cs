@@ -230,6 +230,7 @@ public class HttpResilienceTests
             .AddHttpClient("hedged-backend")
             .AddStandardHedgeShield(options =>
             {
+                options.Routing = new HttpEndpointRoutingOptions();
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri(failing.Url)));
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri(healthy.Url)));
                 options.Hedge.Delay = Timeout.InfiniteTimeSpan;
@@ -317,6 +318,7 @@ public class HttpResilienceTests
             .AddHttpClient("adaptive-hedge")
             .AddStandardHedgeShield(options =>
             {
+                options.Routing = new HttpEndpointRoutingOptions();
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri(slow.Url)));
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri(healthy.Url)));
                 options.Hedge.Delay = TimeSpan.FromMinutes(1);

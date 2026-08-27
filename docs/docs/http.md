@@ -167,7 +167,8 @@ state. `HttpClientFactory` handler rotation reuses the current snapshot and does
 service-provider callback. The application service provider owns the reload subscription.
 
 Hedging uses the same reload contract. Its keys follow the nested
-`StandardHedgeShieldOptions` shape, and `Routing:Endpoints` is required:
+`StandardHedgeShieldOptions` shape. `Routing` is optional; without it, attempts keep the request's
+authority:
 
 ```csharp
 using Kevlar.Extensions.Http;
@@ -394,9 +395,12 @@ using Microsoft.Extensions.DependencyInjection;
 services.AddHttpClient("routed")
     .AddStandardHedgeShield(options =>
     {
+        options.Routing = new HttpEndpointRoutingOptions
+        {
+            SelectionMode = HttpEndpointSelectionMode.Weighted,
+        };
         options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
         options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
-        options.Routing.SelectionMode = HttpEndpointSelectionMode.Weighted;
         options.Hedge.MaxHedgedAttempts = 1;
         options.Hedge.Delay = TimeSpan.FromMilliseconds(500);
         options.Hedge.DelayGenerator = hedge => new(hedge.Elapsed < TimeSpan.FromSeconds(1)
@@ -406,10 +410,10 @@ services.AddHttpClient("routed")
 ```
 
 `AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total).
-Each authority gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum
-10 attempts, 15s break), and 10s attempt timeout. Configure those defaults through
-`TotalTimeout.Timeout`, `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`, and
-`AttemptTimeout.Timeout`.
+Each authority gets its own 50%-over-30s circuit breaker (minimum 10 attempts, 15s break) and 10s
+attempt timeout. No concurrency limiter is installed by default. Set `ConcurrencyLimit` to a new
+`ConcurrencyLimitOptions` instance to add an authority-local limiter; configure the remaining
+defaults through `TotalTimeout.Timeout`, `Hedge`, `CircuitBreaker`, and `AttemptTimeout.Timeout`.
 
 Request replay is configured through `Handler` (`ContentReplayPolicy`, `MaxBufferSize`,
 `AllowUnsafeMethodReplay`, and `RequestFactory`); alternate endpoint authorities and ordering are
@@ -460,7 +464,7 @@ runtime changes are required; each valid reload publishes a fresh complete pipel
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **Named-client state survives handler rotation.** Service-provider `AddShield` registrations and all standard registrations build or resolve one pipeline for that named client registration. Fixed-shield overloads already share their shield instance; request-selector overloads intentionally select a shield per request. Service-provider factories run once against the application provider, and circuit breakers, concurrency limiters, and endpoint caches are not multiplied when `HttpClientFactory` rotates handlers.
 - **Configuration-backed state is replaced, not mutated.** Only a valid configuration reload publishes a fresh complete pipeline. Handler rotation reuses the current snapshot, and requests already executing retain the snapshot they captured at send start.
-- **Standard hedging state is authority-local.** `AddStandardHedgeShield` creates one limiter and breaker per request authority or configured endpoint authority and preserves those instances across handler rotation until configuration reload replaces the pipeline.
+- **Standard hedging state is authority-local.** `AddStandardHedgeShield` creates one breaker and, when configured, one limiter per request authority or configured endpoint authority and preserves those instances across handler rotation until configuration reload replaces the pipeline.
 - **Per-handler state remains explicit.** When fresh state for every handler lifetime is intentional, register `ShieldDelegatingHandler` directly with `AddHttpMessageHandler` and construct the shield inside that low-level handler factory.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 

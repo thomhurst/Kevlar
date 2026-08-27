@@ -257,7 +257,10 @@ public class HttpContractTests
             .AddHttpClient("standard-hedge-timeout", client =>
                 client.Timeout = TimeSpan.FromMilliseconds(10))
             .AddStandardHedgeShield(options =>
-                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+            {
+                options.Routing = new HttpEndpointRoutingOptions();
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+            })
             .Services
             .BuildServiceProvider();
         using var client = services.GetRequiredService<IHttpClientFactory>()
@@ -289,8 +292,7 @@ public class HttpContractTests
             .AddHttpClient("standard-hedge-descriptor")
             .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler(
                 (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
-            .AddStandardHedgeShield(options =>
-                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+            .AddStandardHedgeShield()
             .Services
             .BuildServiceProvider();
         using var client = services.GetRequiredService<IHttpClientFactory>()
@@ -306,18 +308,15 @@ public class HttpContractTests
             .IsEquivalentTo([StrategyKind.Timeout, StrategyKind.Hedge]);
         await Assert.That(endpoint.Strategies.Select(strategy => strategy.Kind))
             .IsEquivalentTo(
-                [StrategyKind.ConcurrencyLimit, StrategyKind.CircuitBreaker, StrategyKind.Timeout]);
+                [StrategyKind.CircuitBreaker, StrategyKind.Timeout]);
 
         var totalTimeout = (TimeoutStrategyDescriptor)outer.Strategies[0];
         var hedge = (HedgeStrategyDescriptor)outer.Strategies[1];
-        var concurrency = (ConcurrencyLimitStrategyDescriptor)endpoint.Strategies[0];
-        var circuitBreaker = (CircuitBreakerStrategyDescriptor)endpoint.Strategies[1];
-        var attemptTimeout = (TimeoutStrategyDescriptor)endpoint.Strategies[2];
+        var circuitBreaker = (CircuitBreakerStrategyDescriptor)endpoint.Strategies[0];
+        var attemptTimeout = (TimeoutStrategyDescriptor)endpoint.Strategies[1];
         await Assert.That(totalTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(30));
         await Assert.That(hedge.MaxHedgedAttempts).IsEqualTo(1);
         await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromSeconds(1));
-        await Assert.That(concurrency.MaxConcurrency).IsEqualTo(10);
-        await Assert.That(concurrency.QueueLimit).IsEqualTo(0);
         await Assert.That(circuitBreaker.FailureRatio).IsEqualTo(0.5);
         await Assert.That(circuitBreaker.MinimumThroughput).IsEqualTo(10);
         await Assert.That(circuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(30));
@@ -328,11 +327,9 @@ public class HttpContractTests
     [Test]
     [Arguments("TotalTimeout")]
     [Arguments("Hedge")]
-    [Arguments("ConcurrencyLimit")]
     [Arguments("CircuitBreaker")]
     [Arguments("AttemptTimeout")]
     [Arguments("Handler")]
-    [Arguments("Routing")]
     public async Task Standard_Hedge_Null_Nested_Option_Throws(string propertyName)
     {
         var builder = new ServiceCollection().AddHttpClient("standard-hedge-null-option");
@@ -347,9 +344,6 @@ public class HttpContractTests
                 case "Hedge":
                     options.Hedge = null!;
                     break;
-                case "ConcurrencyLimit":
-                    options.ConcurrencyLimit = null!;
-                    break;
                 case "CircuitBreaker":
                     options.CircuitBreaker = null!;
                     break;
@@ -358,9 +352,6 @@ public class HttpContractTests
                     break;
                 case "Handler":
                     options.Handler = null!;
-                    break;
-                case "Routing":
-                    options.Routing = null!;
                     break;
             }
         })).Throws<ArgumentException>();

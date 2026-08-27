@@ -206,19 +206,38 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.Hedge.MaxHedgedAttempts).IsEqualTo(3);
         await Assert.That(bound.Hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(250));
         await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));
-        await Assert.That(bound.ConcurrencyLimit.MaxConcurrency).IsEqualTo(4);
-        await Assert.That(bound.ConcurrencyLimit.QueueLimit).IsEqualTo(5);
+        await Assert.That(bound.ConcurrencyLimit).IsNotNull();
+        await Assert.That(bound.ConcurrencyLimit!.MaxConcurrency).IsEqualTo(4);
+        await Assert.That(bound.ConcurrencyLimit!.QueueLimit).IsEqualTo(5);
         await Assert.That(bound.CircuitBreaker.ConsecutiveFailures).IsEqualTo(2);
         await Assert.That(bound.CircuitBreaker.FailureRatio).IsNull();
         await Assert.That(bound.CircuitBreaker.MinimumThroughput).IsEqualTo(6);
         await Assert.That(bound.CircuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(8));
         await Assert.That(bound.CircuitBreaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(4));
-        await Assert.That(bound.Routing.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
-        await Assert.That(bound.Routing.Seed).IsEqualTo(9);
+        await Assert.That(bound.Routing).IsNotNull();
+        await Assert.That(bound.Routing!.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
+        await Assert.That(bound.Routing!.Seed).IsEqualTo(9);
         await Assert.That(bound.Handler.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
         await Assert.That(bound.Handler.MaxBufferSize).IsEqualTo(8192);
         await Assert.That(bound.Handler.AllowUnsafeMethodReplay).IsTrue();
-        await Assert.That(bound.Routing.Endpoints.Single().Uri.Host).IsEqualTo("one.example");
+        await Assert.That(bound.Routing!.Endpoints.Single().Uri.Host).IsEqualTo("one.example");
+    }
+
+    [Test]
+    public async Task Hedge_Section_Leaves_Optional_Stages_Null_When_Absent()
+    {
+        var configuration = BuildConfiguration(("Hedge:MaxHedgedAttempts", "0"));
+        StandardHedgeShieldOptions? bound = null;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .AddStandardHedgeShield(configuration, (_, options) => bound = options);
+        using var provider = services.BuildServiceProvider();
+
+        _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+
+        await Assert.That(bound).IsNotNull();
+        await Assert.That(bound!.ConcurrencyLimit).IsNull();
+        await Assert.That(bound.Routing).IsNull();
     }
 
     [Test]
@@ -788,7 +807,9 @@ public class HttpConfigurationReloadTests
             })
             .AddStandardHedgeShield(options =>
             {
-                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+                var routing = new HttpEndpointRoutingOptions();
+                routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+                options.Routing = routing;
                 options.CircuitBreaker.ConsecutiveFailures = 1;
                 options.CircuitBreaker.FailureRatio = null;
                 options.CircuitBreaker.BreakDuration = TimeSpan.FromDays(1);
