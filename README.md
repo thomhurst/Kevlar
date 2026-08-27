@@ -10,8 +10,7 @@
 timeouts, rate limiting, concurrency limiting, hedging and fallbacks together in a fluent API.
 
 Resilience code should explain how a call is protected, not make you decode a framework. With
-Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary sync, `Task` or
-`ValueTask` delegates.
+Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary delegates.
 
 [Documentation](https://thomhurst.github.io/Kevlar/docs/getting-started) ·
 [Strategies](https://thomhurst.github.io/Kevlar/docs/category/strategies) ·
