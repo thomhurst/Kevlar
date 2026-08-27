@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using Kevlar.Extensions.Http;
+using Kevlar.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
@@ -256,13 +257,58 @@ public class HttpContractTests
             .AddHttpClient("standard-hedge-timeout", client =>
                 client.Timeout = TimeSpan.FromMilliseconds(10))
             .AddStandardHedgeShield(options =>
-                options.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
             .Services
             .BuildServiceProvider();
         using var client = services.GetRequiredService<IHttpClientFactory>()
             .CreateClient("standard-hedge-timeout");
 
         await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
+    }
+
+    [Test]
+    public async Task Standard_Hedge_Nested_Options_Preserve_Pipeline_Descriptors()
+    {
+        var decorator = new DescriptorCapturingDecorator();
+        using var services = new ServiceCollection()
+            .AddSingleton<IShieldDecorator>(decorator)
+            .AddHttpClient("standard-hedge-descriptor")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler(
+                (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddStandardHedgeShield(options =>
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-hedge-descriptor");
+
+        using var response = await client.GetAsync("https://origin.test/");
+
+        var outer = decorator.Descriptors.Single(descriptor =>
+            descriptor.Strategies.Any(strategy => strategy.Kind == StrategyKind.Hedge));
+        var endpoint = decorator.Descriptors.Single(descriptor =>
+            descriptor.Strategies.Any(strategy => strategy.Kind == StrategyKind.CircuitBreaker));
+        await Assert.That(outer.Strategies.Select(strategy => strategy.Kind))
+            .IsEquivalentTo([StrategyKind.Timeout, StrategyKind.Hedge]);
+        await Assert.That(endpoint.Strategies.Select(strategy => strategy.Kind))
+            .IsEquivalentTo(
+                [StrategyKind.ConcurrencyLimit, StrategyKind.CircuitBreaker, StrategyKind.Timeout]);
+
+        var totalTimeout = (TimeoutStrategyDescriptor)outer.Strategies[0];
+        var hedge = (HedgeStrategyDescriptor)outer.Strategies[1];
+        var concurrency = (ConcurrencyLimitStrategyDescriptor)endpoint.Strategies[0];
+        var circuitBreaker = (CircuitBreakerStrategyDescriptor)endpoint.Strategies[1];
+        var attemptTimeout = (TimeoutStrategyDescriptor)endpoint.Strategies[2];
+        await Assert.That(totalTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(30));
+        await Assert.That(hedge.MaxHedgedAttempts).IsEqualTo(1);
+        await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromSeconds(1));
+        await Assert.That(concurrency.MaxConcurrency).IsEqualTo(10);
+        await Assert.That(concurrency.QueueLimit).IsEqualTo(0);
+        await Assert.That(circuitBreaker.FailureRatio).IsEqualTo(0.5);
+        await Assert.That(circuitBreaker.MinimumThroughput).IsEqualTo(10);
+        await Assert.That(circuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(30));
+        await Assert.That(circuitBreaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(15));
+        await Assert.That(attemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(10));
     }
 
     [Test]
@@ -1491,6 +1537,23 @@ public class HttpContractTests
         {
             get => base.Position;
             set => throw new NotSupportedException();
+        }
+    }
+
+    private sealed class DescriptorCapturingDecorator : IShieldDecorator
+    {
+        public List<ShieldDescriptor> Descriptors { get; } = new();
+
+        public Shield Decorate(Shield shield, string? name) => shield;
+
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            if (shield is Shield<HttpResponseMessage> httpShield)
+            {
+                Descriptors.Add(httpShield.GetDescriptor());
+            }
+
+            return shield;
         }
     }
 

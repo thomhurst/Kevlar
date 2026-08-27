@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `StandardHedgeShieldOptions` now groups strategy, request-handler, and endpoint
+  routing settings under `TotalTimeout`, `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`,
+  `AttemptTimeout`, `Handler`, and `Routing`; configuration binding uses the same nested paths.
+
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,

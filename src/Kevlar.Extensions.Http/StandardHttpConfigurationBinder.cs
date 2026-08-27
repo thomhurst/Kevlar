@@ -28,30 +28,15 @@ internal static class StandardHttpConfigurationBinder
     {
         var options = new StandardHedgeShieldOptions();
 
-        RejectLegacyKey(configuration, "MaxQueue", nameof(options.QueueLimit));
-        RejectLegacyKey(configuration, "MaxAttempts", nameof(options.MaxHedgedAttempts));
-        SetTimeSpan(configuration, nameof(options.TotalTimeout), value => options.TotalTimeout = value);
-        SetInt(configuration, nameof(options.MaxHedgedAttempts), value => options.MaxHedgedAttempts = value);
-        SetTimeSpan(configuration, nameof(options.HedgeDelay), value => options.HedgeDelay = value);
-        SetTimeSpan(configuration, nameof(options.AttemptTimeout), value => options.AttemptTimeout = value);
-        SetInt(configuration, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
-        SetInt(configuration, nameof(options.QueueLimit), value => options.QueueLimit = value);
-        SetNullableInt(configuration, nameof(options.ConsecutiveFailures), value => options.ConsecutiveFailures = value);
-        SetNullableDouble(configuration, nameof(options.FailureRatio), value => options.FailureRatio = value);
-        if (configuration[nameof(options.ConsecutiveFailures)] is not null
-            && configuration[nameof(options.FailureRatio)] is null)
-        {
-            options.FailureRatio = null;
-        }
-        SetInt(configuration, nameof(options.MinimumThroughput), value => options.MinimumThroughput = value);
-        SetTimeSpan(configuration, nameof(options.SamplingWindow), value => options.SamplingWindow = value);
-        SetTimeSpan(configuration, nameof(options.BreakDuration), value => options.BreakDuration = value);
-        SetEnum<HttpEndpointSelectionMode>(configuration, nameof(options.SelectionMode), value => options.SelectionMode = value);
-        SetInt(configuration, nameof(options.Seed), value => options.Seed = value);
-        SetEnum<HttpContentReplayPolicy>(configuration, nameof(options.ContentReplayPolicy), value => options.ContentReplayPolicy = value);
-        SetLong(configuration, nameof(options.MaximumBufferSize), value => options.MaximumBufferSize = value);
-        SetBool(configuration, nameof(options.AllowUnsafeMethodReplay), value => options.AllowUnsafeMethodReplay = value);
-        BindEndpoints(configuration.GetSection(nameof(options.Endpoints)), options.Endpoints);
+        RejectLegacyKey(configuration, "MaxQueue", "ConcurrencyLimit:QueueLimit");
+        RejectLegacyKey(configuration, "MaxAttempts", "Hedge:MaxHedgedAttempts");
+        BindTimeout(configuration, nameof(options.TotalTimeout), options.TotalTimeout);
+        BindHedge(configuration.GetSection(nameof(options.Hedge)), options.Hedge);
+        BindConcurrencyLimit(configuration.GetSection(nameof(options.ConcurrencyLimit)), options.ConcurrencyLimit);
+        BindCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
+        BindTimeout(configuration, nameof(options.AttemptTimeout), options.AttemptTimeout);
+        BindHandler(configuration.GetSection(nameof(options.Handler)), options.Handler);
+        BindRouting(configuration.GetSection(nameof(options.Routing)), options.Routing);
 
         ValidateHedge(configuration, options);
         return options;
@@ -146,6 +131,15 @@ internal static class StandardHttpConfigurationBinder
         SetTimeSpan(section, nameof(options.BreakDuration), value => options.BreakDuration = value);
     }
 
+    private static void BindHedge(
+        IConfiguration section,
+        HedgeOptions<HttpResponseMessage> options)
+    {
+        RejectLegacyKey(section, "MaxAttempts", nameof(options.MaxHedgedAttempts));
+        SetInt(section, nameof(options.MaxHedgedAttempts), value => options.MaxHedgedAttempts = value);
+        SetTimeSpan(section, nameof(options.Delay), value => options.Delay = value);
+    }
+
     private static void BindConcurrencyLimit(
         IConfiguration section,
         StandardHttpShieldOptions standard)
@@ -160,6 +154,15 @@ internal static class StandardHttpConfigurationBinder
         SetInt(section, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
         SetInt(section, nameof(options.QueueLimit), value => options.QueueLimit = value);
         standard.ConcurrencyLimit = options;
+    }
+
+    private static void BindConcurrencyLimit(
+        IConfiguration section,
+        ConcurrencyLimitOptions options)
+    {
+        RejectLegacyKey(section, "MaxQueue", nameof(options.QueueLimit));
+        SetInt(section, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
+        SetInt(section, nameof(options.QueueLimit), value => options.QueueLimit = value);
     }
 
     private static void BindHandler(
@@ -177,10 +180,17 @@ internal static class StandardHttpConfigurationBinder
         }
 
         var routing = options.Routing ?? new HttpEndpointRoutingOptions();
-        SetEnum<HttpEndpointSelectionMode>(routingSection, nameof(routing.SelectionMode), value => routing.SelectionMode = value);
-        SetInt(routingSection, nameof(routing.Seed), value => routing.Seed = value);
-        BindEndpoints(routingSection.GetSection(nameof(routing.Endpoints)), routing.Endpoints);
+        BindRouting(routingSection, routing);
         options.Routing = routing;
+    }
+
+    private static void BindRouting(
+        IConfiguration section,
+        HttpEndpointRoutingOptions options)
+    {
+        SetEnum<HttpEndpointSelectionMode>(section, nameof(options.SelectionMode), value => options.SelectionMode = value);
+        SetInt(section, nameof(options.Seed), value => options.Seed = value);
+        BindEndpoints(section.GetSection(nameof(options.Endpoints)), options.Endpoints);
     }
 
     private static void BindEndpoints(IConfiguration section, IList<HttpEndpoint> endpoints)
@@ -271,20 +281,26 @@ internal static class StandardHttpConfigurationBinder
         IConfiguration configuration,
         StandardHedgeShieldOptions options)
     {
-        Ensure(options.TotalTimeout > TimeSpan.Zero, configuration.GetSection(nameof(options.TotalTimeout)), "must be positive");
-        Ensure(options.MaxHedgedAttempts >= 0, configuration.GetSection(nameof(options.MaxHedgedAttempts)), "must not be negative");
         Ensure(
-            options.HedgeDelay >= TimeSpan.Zero || options.HedgeDelay == Timeout.InfiniteTimeSpan,
-            configuration.GetSection(nameof(options.HedgeDelay)),
+            IsValidStandardTimeout(options.TotalTimeout),
+            TimeoutSection(configuration, nameof(options.TotalTimeout)),
+            "must be positive or Timeout.InfiniteTimeSpan");
+        Ensure(options.Hedge.MaxHedgedAttempts >= 0, configuration.GetSection("Hedge:MaxHedgedAttempts"), "must not be negative");
+        Ensure(
+            options.Hedge.Delay >= TimeSpan.Zero || options.Hedge.Delay == Timeout.InfiniteTimeSpan,
+            configuration.GetSection("Hedge:Delay"),
             "must be non-negative or Timeout.InfiniteTimeSpan");
-        Ensure(options.AttemptTimeout > TimeSpan.Zero, configuration.GetSection(nameof(options.AttemptTimeout)), "must be positive");
-        Ensure(options.MaxConcurrency > 0, configuration.GetSection(nameof(options.MaxConcurrency)), "must be positive");
-        Ensure(options.QueueLimit >= 0, configuration.GetSection(nameof(options.QueueLimit)), "must not be negative");
-        ValidateCircuitBreaker(configuration, options.ConsecutiveFailures, options.FailureRatio, options.MinimumThroughput, options.SamplingWindow, options.BreakDuration);
-        Ensure(options.MaximumBufferSize > 0, configuration.GetSection(nameof(options.MaximumBufferSize)), "must be positive");
         Ensure(
-            options.Endpoints.Count > 0,
-            configuration.GetSection(nameof(options.Endpoints)),
+            IsValidStandardTimeout(options.AttemptTimeout),
+            TimeoutSection(configuration, nameof(options.AttemptTimeout)),
+            "must be positive or Timeout.InfiniteTimeSpan");
+        Ensure(options.ConcurrencyLimit.MaxConcurrency > 0, configuration.GetSection("ConcurrencyLimit:MaxConcurrency"), "must be positive");
+        Ensure(options.ConcurrencyLimit.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
+        ValidateCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
+        Ensure(options.Handler.MaximumBufferSize > 0, configuration.GetSection("Handler:MaximumBufferSize"), "must be positive");
+        Ensure(
+            options.Routing.Endpoints.Count > 0,
+            configuration.GetSection("Routing:Endpoints"),
             "must contain at least one endpoint");
     }
 
