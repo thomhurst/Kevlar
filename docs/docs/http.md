@@ -90,9 +90,9 @@ services.AddHttpClient("api")
     });
 ```
 
-The one-argument callback runs during registration and its shield is shared across handler
-rotations, matching parameterless `AddStandardShield()`. The service-provider callback runs once
-per `HttpClientFactory` handler lifetime and creates fresh strategy state for that lifetime.
+The one-argument callback runs during registration. The service-provider callback runs lazily on
+first client creation using the application service provider. Both build one shield for the named
+client registration, so breaker, limiter, and other strategy state survives handler rotation.
 
 ## Configuration and reload
 
@@ -163,8 +163,8 @@ Each request captures one immutable shield-and-handler snapshot. A valid reload 
 replacement before publishing it atomically; in-flight requests finish on their original snapshot.
 Invalid binding or validation keeps the last valid snapshot and calls `onReloadFailure` with the
 full configuration path. A successful reload starts fresh breaker, limiter, and endpoint-local
-state. `HttpClientFactory` handler rotation also creates fresh state and reruns the
-service-provider callback; disposed handlers unsubscribe from configuration changes.
+state. `HttpClientFactory` handler rotation reuses the current snapshot and does not rerun the
+service-provider callback. The application service provider owns the reload subscription.
 
 Hedging uses the same reload contract. Its keys follow the nested
 `StandardHedgeShieldOptions` shape, and `Routing:Endpoints` is required:
@@ -455,9 +455,10 @@ runtime changes are required; each valid reload publishes a fresh complete pipel
   live response, disposal completes before the next attempt starts, and the selected response
   remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
-- **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
-- **Configuration-backed state is replaced, not mutated.** Reload and handler rotation publish fresh complete pipelines. Requests already executing retain the snapshot they captured at send start.
-- **Standard hedging state is authority-local.** `AddStandardHedgeShield` creates one limiter and breaker per request authority or configured endpoint authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
+- **Named-client state survives handler rotation.** Every `AddShield` and `AddStandardShield` registration builds or resolves one pipeline for that named client registration. Service-provider factories run once against the application provider; circuit breakers, concurrency limiters, and endpoint caches are not multiplied when `HttpClientFactory` rotates handlers.
+- **Configuration-backed state is replaced, not mutated.** Only a valid configuration reload publishes a fresh complete pipeline. Handler rotation reuses the current snapshot, and requests already executing retain the snapshot they captured at send start.
+- **Standard hedging state is authority-local.** `AddStandardHedgeShield` creates one limiter and breaker per request authority or configured endpoint authority and preserves those instances across handler rotation until configuration reload replaces the pipeline.
+- **Per-handler state remains explicit.** When fresh state for every handler lifetime is intentional, register `ShieldDelegatingHandler` directly with `AddHttpMessageHandler` and construct the shield inside that low-level handler factory.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done
