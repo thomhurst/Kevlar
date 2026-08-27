@@ -1,5 +1,1 @@
 #nullable enable
-Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled.get -> bool
-Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner.get -> bool
-Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt = 12 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored = 11 -> Kevlar.Extensions.Logging.KevlarLogEventKind

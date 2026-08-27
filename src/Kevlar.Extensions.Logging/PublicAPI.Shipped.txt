@@ -44,3 +44,7 @@ Kevlar.Extensions.Logging.ShieldLoggingExtensions
 static Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kevlar.Extensions.Logging.ShieldLoggingExtensions.WithLogging(this Kevlar.Shield! shield, Microsoft.Extensions.Logging.ILogger! logger, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Kevlar.Shield!
 static Kevlar.Extensions.Logging.ShieldLoggingExtensions.WithLogging<TResult>(this Kevlar.Shield<TResult>! shield, Microsoft.Extensions.Logging.ILogger! logger, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Kevlar.Shield<TResult>!
+Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled.get -> bool
+Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner.get -> bool
+Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt = 12 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored = 11 -> Kevlar.Extensions.Logging.KevlarLogEventKind

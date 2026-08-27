@@ -12,6 +12,65 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+function Get-PackageReferenceRoots
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$AssemblyId,
+
+        [Parameter(Mandatory)]
+        [string]$TargetFramework
+    )
+
+    $assetsPath = Join-Path $RepositoryRoot "artifacts/obj/$AssemblyId/project.assets.json"
+    if (-not (Test-Path -LiteralPath $assetsPath -PathType Leaf))
+    {
+        throw "Missing restore assets '$assetsPath'. Build or pack the solution before verifying packages."
+    }
+
+    $assets = Get-Content -LiteralPath $assetsPath -Raw | ConvertFrom-Json -AsHashtable
+    $targets = $assets['targets']
+    if (-not $targets.ContainsKey($TargetFramework))
+    {
+        throw "Restore assets for '$AssemblyId' do not contain target framework '$TargetFramework'."
+    }
+
+    $packageFolders = @($assets['packageFolders'].Keys)
+    $libraries = $assets['libraries']
+    $referenceRoots = [Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::OrdinalIgnoreCase)
+    foreach ($targetLibrary in $targets[$TargetFramework].GetEnumerator())
+    {
+        $library = $targetLibrary.Value
+        if ($library['type'] -ne 'package' -or -not $library.ContainsKey('compile'))
+        {
+            continue
+        }
+
+        $libraryMetadata = $libraries[$targetLibrary.Key]
+        foreach ($compileAsset in $library['compile'].Keys)
+        {
+            if ([IO.Path]::GetExtension($compileAsset) -ne '.dll')
+            {
+                continue
+            }
+
+            foreach ($packageFolder in $packageFolders)
+            {
+                $packagePath = Join-Path $packageFolder $libraryMetadata['path']
+                $assetPath = Join-Path $packagePath $compileAsset
+                if (Test-Path -LiteralPath $assetPath -PathType Leaf)
+                {
+                    $referenceRoots.Add((Split-Path -Parent $assetPath)) | Out-Null
+                    break
+                }
+            }
+        }
+    }
+
+    return @($referenceRoots)
+}
+
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) "kevlar-public-api-$([Guid]::NewGuid().ToString('N'))"
 $resolvedTemporaryRoot = [IO.Path]::GetFullPath($temporaryRoot)
@@ -74,9 +133,6 @@ try
         throw "Could not build $toolProject."
     }
 
-    $referenceRoots = @(
-        $resolvedTemporaryRoot,
-        (Join-Path $RepositoryRoot 'artifacts/bin'))
     foreach ($assembly in $assemblies)
     {
         $baselineDirectory = Join-Path $BaselineRoot $assembly.AssemblyId
@@ -112,6 +168,11 @@ try
             $arguments.Add($baseline)
         }
 
+        $referenceRoots = @($resolvedTemporaryRoot)
+        $referenceRoots += @(Get-PackageReferenceRoots `
+            -AssemblyId $assembly.AssemblyId `
+            -TargetFramework $assembly.TargetFramework)
+        $referenceRoots += @(Join-Path $RepositoryRoot 'artifacts/bin')
         foreach ($referenceRoot in $referenceRoots)
         {
             $arguments.Add('--reference-root')
