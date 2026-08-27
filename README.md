@@ -142,7 +142,7 @@ state-sharing rules.
 `Kevlar.Extensions.Http` provides a ready-to-use `HttpClientFactory` pipeline:
 
 ```csharp
-using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
     .AddStandardShield();
