@@ -13,6 +13,40 @@ namespace Kevlar.Tests;
 public class ApiShapeTests
 {
     [Test]
+    public async Task PreFreeze_Naming_LockIns_Are_Aligned()
+    {
+        Type[] callbackEnums =
+        [
+            typeof(CallbackErrorKind),
+            typeof(CallbackKind),
+        ];
+        foreach (var callbackEnum in callbackEnums)
+        {
+            await Assert.That(Enum.GetName(callbackEnum, 0)).IsEqualTo("None");
+            await Assert.That(Enum.GetNames(callbackEnum)).Contains("CircuitStateChanged");
+        }
+
+        var contextualHandlingProperties = typeof(Shield).Assembly.ExportedTypes
+            .SelectMany(static type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            .Where(static property =>
+                property.Name.StartsWith("Handles", StringComparison.Ordinal)
+                && property.Name.EndsWith("Context", StringComparison.Ordinal))
+            .Select(static property => property.Name)
+            .Distinct()
+            .ToArray();
+        await Assert.That(contextualHandlingProperties)
+            .IsEquivalentTo(["HandlesExceptionContext", "HandlesResultContext"]);
+
+        var contextualShouldHandle = typeof(HandlingClause)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(static method => method.Name == "ShouldHandle" && method.GetParameters().Length == 4);
+        await Assert.That(contextualShouldHandle.GetParameters()[2].Name)
+            .IsEqualTo("attemptNumber");
+        await Assert.That(typeof(HttpEndpointRoutingOptions).GetProperty("Seed")!.PropertyType)
+            .IsEqualTo(typeof(int?));
+    }
+
+    [Test]
     public async Task PreFreeze_Surface_Uses_Consistent_Names()
     {
         var assemblies = new[]

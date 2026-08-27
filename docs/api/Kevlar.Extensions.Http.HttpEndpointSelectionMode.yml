@@ -56,7 +56,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Create a deterministic weighted order from <xref href="Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed" data-throw-if-not-resolved="false"></xref>.
+  summary: >-
+    Create a weighted order that is deterministic when
+
+    <xref href="Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed" data-throw-if-not-resolved="false"></xref> is set.
   example: []
   syntax:
     content: Weighted = 1

@@ -2,6 +2,9 @@ namespace Kevlar.Extensions.Http;
 
 internal sealed class HttpShieldPipelineOptions
 {
+    private const int GoldenRatio = unchecked((int)0x9E3779B9u);
+    private static int _nextUnseeded = unchecked((int)DateTime.UtcNow.Ticks);
+
     public HttpShieldPipelineOptions(ShieldHttpHandlerOptions source)
     {
         ContentReplayPolicy = source.ContentReplayPolicy;
@@ -27,7 +30,7 @@ internal sealed class HttpShieldPipelineOptions
         {
             Endpoints = source.Endpoints.ToArray();
             SelectionMode = source.SelectionMode;
-            Seed = source.Seed;
+            Seed = source.Seed ?? Interlocked.Add(ref _nextUnseeded, GoldenRatio);
             ShieldFactory = source.ShieldFactory;
         }
 

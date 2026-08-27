@@ -9,7 +9,7 @@ items:
   - Kevlar.RetryOptions.Backoff
   - Kevlar.RetryOptions.DelayGenerator
   - Kevlar.RetryOptions.HandlesException
-  - Kevlar.RetryOptions.HandlesExceptionWithContext
+  - Kevlar.RetryOptions.HandlesExceptionContext
   - Kevlar.RetryOptions.MaxDelay
   - Kevlar.RetryOptions.MaxRetries
   - Kevlar.RetryOptions.Name
@@ -127,16 +127,16 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
-- uid: Kevlar.RetryOptions.HandlesExceptionWithContext
-  commentId: P:Kevlar.RetryOptions.HandlesExceptionWithContext
-  id: HandlesExceptionWithContext
+- uid: Kevlar.RetryOptions.HandlesExceptionContext
+  commentId: P:Kevlar.RetryOptions.HandlesExceptionContext
+  id: HandlesExceptionContext
   parent: Kevlar.RetryOptions
   langs:
   - csharp
   - vb
-  name: HandlesExceptionWithContext
-  nameWithType: RetryOptions.HandlesExceptionWithContext
-  fullName: Kevlar.RetryOptions.HandlesExceptionWithContext
+  name: HandlesExceptionContext
+  nameWithType: RetryOptions.HandlesExceptionContext
+  fullName: Kevlar.RetryOptions.HandlesExceptionContext
   type: Property
   assemblies:
   - Kevlar
@@ -144,12 +144,12 @@ items:
   summary: Locally handles exceptions using execution context and attempt metadata.
   example: []
   syntax:
-    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    content: public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.HandlingEvent,System.Boolean}
-    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
-  overload: Kevlar.RetryOptions.HandlesExceptionWithContext*
+    content.vb: Public Property HandlesExceptionContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.RetryOptions.HandlesExceptionContext*
 - uid: Kevlar.RetryOptions.MaxRetries
   commentId: P:Kevlar.RetryOptions.MaxRetries
   id: MaxRetries
@@ -650,13 +650,13 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.RetryOptions.HandlesExceptionWithContext*
-  commentId: Overload:Kevlar.RetryOptions.HandlesExceptionWithContext
+- uid: Kevlar.RetryOptions.HandlesExceptionContext*
+  commentId: Overload:Kevlar.RetryOptions.HandlesExceptionContext
   isExternal: true
-  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_HandlesExceptionWithContext
-  name: HandlesExceptionWithContext
-  nameWithType: RetryOptions.HandlesExceptionWithContext
-  fullName: Kevlar.RetryOptions.HandlesExceptionWithContext
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_HandlesExceptionContext
+  name: HandlesExceptionContext
+  nameWithType: RetryOptions.HandlesExceptionContext
+  fullName: Kevlar.RetryOptions.HandlesExceptionContext
 - uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
   commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
   parent: System

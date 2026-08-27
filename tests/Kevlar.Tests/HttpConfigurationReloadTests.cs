@@ -1114,6 +1114,23 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
+    public async Task Null_Routing_Seed_Selects_A_Fresh_Initial_Order()
+    {
+        var routing = new HttpEndpointRoutingOptions
+        {
+            SelectionMode = HttpEndpointSelectionMode.Weighted,
+        };
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+        var options = new ShieldHttpHandlerOptions { Routing = routing };
+
+        var first = new HttpShieldPipeline(Shield<HttpResponseMessage>.Empty, options);
+        var second = new HttpShieldPipeline(Shield<HttpResponseMessage>.Empty, options);
+
+        await Assert.That(first.Options.Routing!.Seed)
+            .IsNotEqualTo(second.Options.Routing!.Seed);
+    }
+
+    [Test]
     public async Task Handler_Options_Validate_Before_Send()
     {
         var invalidContent = new ShieldHttpHandlerOptions

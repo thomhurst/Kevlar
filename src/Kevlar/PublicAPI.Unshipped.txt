@@ -1,6 +1,6 @@
 #nullable enable
 static Kevlar.Strategy.InvokeGenerator<TEvent, TResult>(System.Func<TEvent, System.Threading.Tasks.ValueTask<TResult>>! generator, TEvent callbackEvent, Kevlar.KevlarContext! context, string! hookName) -> System.Threading.Tasks.ValueTask<TResult>
-Kevlar.CallbackErrorKind.HandlingPredicate = 10 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.HandlingPredicate = 11 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorEvent.AttemptNumber.get -> int
 Kevlar.KevlarTelemetryEvent.IsCancelled.get -> bool
 Kevlar.KevlarTelemetryEvent.IsWinner.get -> bool

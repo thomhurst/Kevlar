@@ -3,36 +3,39 @@ namespace Kevlar;
 /// <summary>Identifies an isolated callback or cleanup failure reported by Kevlar.</summary>
 public enum CallbackErrorKind
 {
+    /// <summary>No callback kind.</summary>
+    None = 0,
+
     /// <summary>A retry notification.</summary>
-    Retry,
+    Retry = 1,
 
     /// <summary>A timeout notification.</summary>
-    Timeout,
+    Timeout = 2,
 
     /// <summary>A circuit-breaker state-change notification.</summary>
-    CircuitStateChanged,
+    CircuitStateChanged = 3,
 
     /// <summary>A circuit-breaker monitor subscriber.</summary>
-    CircuitMonitor,
+    CircuitMonitor = 4,
 
     /// <summary>A hedge notification.</summary>
-    Hedge,
+    Hedge = 5,
 
     /// <summary>A fallback notification.</summary>
-    Fallback,
+    Fallback = 6,
 
     /// <summary>A concurrency-limit rejection notification.</summary>
-    ConcurrencyLimitRejected,
+    ConcurrencyLimitRejected = 7,
 
     /// <summary>A built-in rate-limit rejection notification.</summary>
-    RateLimitRejected,
+    RateLimitRejected = 8,
 
     /// <summary>A callback owned by a custom strategy or integration.</summary>
-    Custom,
+    Custom = 9,
 
     /// <summary>Disposal of a superseded result.</summary>
-    ResultDisposal,
+    ResultDisposal = 10,
 
     /// <summary>A handling-clause or strategy handling predicate.</summary>
-    HandlingPredicate,
+    HandlingPredicate = 11,
 }

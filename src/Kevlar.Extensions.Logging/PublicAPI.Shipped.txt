@@ -18,16 +18,17 @@ Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName.get -> string!
 Kevlar.Extensions.Logging.KevlarLogEvent.SuppressionReason.get -> string?
 Kevlar.Extensions.Logging.KevlarLogEvent.ToState.get -> Kevlar.CircuitState?
 Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed = 9 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError = 7 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected = 8 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState = 2 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected = 6 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback = 4 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge = 3 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected = 5 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.Retry = 0 -> Kevlar.Extensions.Logging.KevlarLogEventKind
-Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout = 1 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed = 10 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError = 8 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected = 9 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitStateChanged = 3 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected = 7 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback = 5 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge = 4 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.None = 0 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected = 6 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Retry = 1 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout = 2 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLoggingOptions
 Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
 Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes.get -> bool

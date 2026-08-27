@@ -32,11 +32,11 @@ public readonly struct HandlingClause
     public bool ShouldHandle<T>(
         in Outcome<T> outcome,
         KevlarContext context,
-        int attempt = 0,
+        int attemptNumber = 0,
         int strategyIndex = -1)
     {
         Throw.IfNull(context, nameof(context));
-        return Judge.ShouldHandle(in outcome, context, attempt, strategyIndex);
+        return Judge.ShouldHandle(in outcome, context, attemptNumber, strategyIndex);
     }
 
     /// <summary>Whether this clause consults execution or strategy context.</summary>

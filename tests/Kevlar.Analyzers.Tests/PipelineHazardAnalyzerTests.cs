@@ -1771,7 +1771,7 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV014_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            _ = Shield.Retry(options => options.HandlesExceptionContext = item =>
             {
                 _ = AuditAsync(item);
                 return true;
@@ -1789,7 +1789,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             """
-            _ = Shield.For<int>().Retry(options => options.HandlesResultWithContext = item =>
+            _ = Shield.For<int>().Retry(options => options.HandlesResultContext = item =>
             {
                 _ = AuditAsync(item.Context);
                 return true;
@@ -3139,7 +3139,7 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV014_Flags_Handling_Event_Captured_By_Deferred_Work()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            _ = Shield.Retry(options => options.HandlesExceptionContext = item =>
             {
                 _ = Task.Run(() => Consume(item));
                 return true;
@@ -6552,7 +6552,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException);",
             "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException).Retry(1);",
-            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesExceptionWithContext = handling => handling.AttemptNumber == 0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesExceptionContext = handling => handling.AttemptNumber == 0);",
             "_ = CreateShield().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
         };
 

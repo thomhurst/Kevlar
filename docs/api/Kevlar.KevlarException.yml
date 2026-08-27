@@ -28,6 +28,7 @@ items:
   - System.Exception
   derivedClasses:
   - Kevlar.ExecutionRejectedException
+  - Kevlar.Extensions.Http.HttpRequestReplayException
   - Kevlar.KevlarConfigurationException
   - Kevlar.TimeoutExceededException
   implements:

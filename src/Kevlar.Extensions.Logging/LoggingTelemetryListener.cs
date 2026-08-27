@@ -200,7 +200,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         KevlarLogEventKind kind,
         in KevlarTelemetryEvent telemetryEvent)
     {
-        if (kind == KevlarLogEventKind.CircuitState && telemetryEvent.IsSuccess)
+        if (kind == KevlarLogEventKind.CircuitStateChanged && telemetryEvent.IsSuccess)
         {
             return "success";
         }
@@ -263,7 +263,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.StrategyIndex, telemetryEvent.Duration, outcome,
                     telemetryEvent.Exception);
                 break;
-            case KevlarLogEventKind.CircuitState:
+            case KevlarLogEventKind.CircuitStateChanged:
                 if (telemetryEvent.ToState == CircuitState.Open)
                 {
                     LoggerMessages.CircuitState(logger, telemetryEvent.ShieldName,
@@ -406,7 +406,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.Duration, outcome);
                 break;
-            case KevlarLogEventKind.CircuitState:
+            case KevlarLogEventKind.CircuitStateChanged:
                 if (telemetryEvent.ToState == CircuitState.Open)
                 {
                     logger.Log(level, eventId, telemetryEvent.Exception,
@@ -530,13 +530,13 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 return true;
             case "circuit_opened":
             case "circuit_isolated":
-                kind = KevlarLogEventKind.CircuitState;
+                kind = KevlarLogEventKind.CircuitStateChanged;
                 eventId = new EventId(1003, "CircuitState");
                 level = LogLevel.Error;
                 return true;
             case "circuit_half_opened":
             case "circuit_closed":
-                kind = KevlarLogEventKind.CircuitState;
+                kind = KevlarLogEventKind.CircuitStateChanged;
                 eventId = new EventId(1003, "CircuitState");
                 level = LogLevel.Information;
                 return true;

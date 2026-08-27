@@ -470,7 +470,7 @@ public class ExecuteOutcomeTests
             options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.HandlesException = static _ => true;
-            options.HandlesResultWithContext = handling =>
+            options.HandlesResultContext = handling =>
             {
                 handling.Context.Properties.Set(PredicateWrite, 42);
                 return false;

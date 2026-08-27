@@ -1,7 +1,7 @@
 namespace Kevlar.Extensions.Http;
 
 /// <summary>Thrown when another HTTP attempt cannot be created safely.</summary>
-public sealed class HttpRequestReplayException : InvalidOperationException
+public sealed class HttpRequestReplayException : KevlarException
 {
     /// <summary>Creates a replay error with a default message.</summary>
     public HttpRequestReplayException()

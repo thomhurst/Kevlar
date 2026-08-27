@@ -116,14 +116,17 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: The deterministic seed used by weighted ordering.
+  summary: >-
+    The optional deterministic seed used by weighted ordering. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> value
+
+    selects a random initial order.
   example: []
   syntax:
-    content: public int Seed { get; set; }
+    content: public int? Seed { get; set; }
     parameters: []
     return:
-      type: System.Int32
-    content.vb: Public Property Seed As Integer
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property Seed As Integer?
   overload: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed*
 - uid: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory
   commentId: P:Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory
@@ -539,17 +542,57 @@ references:
   name: Seed
   nameWithType: HttpEndpointRoutingOptions.Seed
   fullName: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed
-- uid: System.Int32
-  commentId: T:System.Int32
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
   parent: System
-  isExternal: true
+  definition: System.Nullable`1
   href: https://learn.microsoft.com/dotnet/api/system.int32
-  name: int
-  nameWithType: int
-  fullName: int
-  nameWithType.vb: Integer
-  fullName.vb: Integer
-  name.vb: Integer
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
 - uid: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory*
   commentId: Overload:Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory
   isExternal: true

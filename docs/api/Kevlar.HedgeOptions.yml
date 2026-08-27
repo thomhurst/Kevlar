@@ -10,7 +10,7 @@ items:
   - Kevlar.HedgeOptions.Delay
   - Kevlar.HedgeOptions.DelayGenerator
   - Kevlar.HedgeOptions.HandlesException
-  - Kevlar.HedgeOptions.HandlesExceptionWithContext
+  - Kevlar.HedgeOptions.HandlesExceptionContext
   - Kevlar.HedgeOptions.MaxHedgedAttempts
   - Kevlar.HedgeOptions.Name
   - Kevlar.HedgeOptions.OnHedge
@@ -134,16 +134,16 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
-- uid: Kevlar.HedgeOptions.HandlesExceptionWithContext
-  commentId: P:Kevlar.HedgeOptions.HandlesExceptionWithContext
-  id: HandlesExceptionWithContext
+- uid: Kevlar.HedgeOptions.HandlesExceptionContext
+  commentId: P:Kevlar.HedgeOptions.HandlesExceptionContext
+  id: HandlesExceptionContext
   parent: Kevlar.HedgeOptions
   langs:
   - csharp
   - vb
-  name: HandlesExceptionWithContext
-  nameWithType: HedgeOptions.HandlesExceptionWithContext
-  fullName: Kevlar.HedgeOptions.HandlesExceptionWithContext
+  name: HandlesExceptionContext
+  nameWithType: HedgeOptions.HandlesExceptionContext
+  fullName: Kevlar.HedgeOptions.HandlesExceptionContext
   type: Property
   assemblies:
   - Kevlar
@@ -151,12 +151,12 @@ items:
   summary: Locally handles exceptions using execution context and attempt metadata.
   example: []
   syntax:
-    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    content: public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.HandlingEvent,System.Boolean}
-    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
-  overload: Kevlar.HedgeOptions.HandlesExceptionWithContext*
+    content.vb: Public Property HandlesExceptionContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.HedgeOptions.HandlesExceptionContext*
 - uid: Kevlar.HedgeOptions.MaxHedgedAttempts
   commentId: P:Kevlar.HedgeOptions.MaxHedgedAttempts
   id: MaxHedgedAttempts
@@ -702,13 +702,13 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.HedgeOptions.HandlesExceptionWithContext*
-  commentId: Overload:Kevlar.HedgeOptions.HandlesExceptionWithContext
+- uid: Kevlar.HedgeOptions.HandlesExceptionContext*
+  commentId: Overload:Kevlar.HedgeOptions.HandlesExceptionContext
   isExternal: true
-  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_HandlesExceptionWithContext
-  name: HandlesExceptionWithContext
-  nameWithType: HedgeOptions.HandlesExceptionWithContext
-  fullName: Kevlar.HedgeOptions.HandlesExceptionWithContext
+  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_HandlesExceptionContext
+  name: HandlesExceptionContext
+  nameWithType: HedgeOptions.HandlesExceptionContext
+  fullName: Kevlar.HedgeOptions.HandlesExceptionContext
 - uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
   commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
   parent: System

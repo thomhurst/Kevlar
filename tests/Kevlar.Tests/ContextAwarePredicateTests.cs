@@ -304,7 +304,7 @@ public class ContextAwarePredicateTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.HandlesExceptionWithContext = handling =>
+            options.HandlesExceptionContext = handling =>
                 handling.Exception is ArgumentException && handling.AttemptNumber == 0;
         });
 

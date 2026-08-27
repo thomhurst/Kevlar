@@ -8,6 +8,13 @@ namespace Kevlar.Extensions.Logging.Tests;
 public class LoggingTests
 {
     [Test]
+    public async Task Log_Event_Kind_Defaults_To_None_And_Uses_Aligned_Circuit_Name()
+    {
+        await Assert.That(Enum.GetName(default(KevlarLogEventKind))).IsEqualTo("None");
+        await Assert.That(Enum.GetNames<KevlarLogEventKind>()).Contains("CircuitStateChanged");
+    }
+
+    [Test]
     [NotInParallel]
     public async Task Retry_Logs_Attempt_Delay_And_Exception_Type()
     {

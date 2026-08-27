@@ -24,10 +24,10 @@ public sealed class CircuitBreakerOptions
     public Func<Exception, bool>? HandlesException { get; set; }
 
     /// <summary>Locally handles exceptions using execution context and strategy metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
 
     internal bool HasHandlingOverride =>
-        HandlesException is not null || HandlesExceptionWithContext is not null;
+        HandlesException is not null || HandlesExceptionContext is not null;
 
     /// <summary>Trips the circuit after this many consecutive handled failures.</summary>
     public int? ConsecutiveFailures { get; set; }

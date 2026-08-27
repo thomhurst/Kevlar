@@ -691,9 +691,9 @@ public static class ShieldHttpClientBuilderExtensions
     {
         target.Name = source.Name;
         target.HandlesException = source.HandlesException;
-        target.HandlesExceptionWithContext = source.HandlesExceptionWithContext;
+        target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
-        target.HandlesResultWithContext = source.HandlesResultWithContext;
+        target.HandlesResultContext = source.HandlesResultContext;
         target.MaxHedgedAttempts = source.MaxHedgedAttempts;
         target.Delay = source.Delay;
         target.DelayGenerator = source.DelayGenerator;
@@ -715,9 +715,9 @@ public static class ShieldHttpClientBuilderExtensions
     {
         target.Name = source.Name;
         target.HandlesException = source.HandlesException;
-        target.HandlesExceptionWithContext = source.HandlesExceptionWithContext;
+        target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
-        target.HandlesResultWithContext = source.HandlesResultWithContext;
+        target.HandlesResultContext = source.HandlesResultContext;
         target.ConsecutiveFailures = source.ConsecutiveFailures;
         target.FailureRatio = source.FailureRatio;
         target.MinimumThroughput = source.MinimumThroughput;
