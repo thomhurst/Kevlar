@@ -312,6 +312,50 @@ public class HttpContractTests
     }
 
     [Test]
+    [Arguments("TotalTimeout")]
+    [Arguments("Hedge")]
+    [Arguments("ConcurrencyLimit")]
+    [Arguments("CircuitBreaker")]
+    [Arguments("AttemptTimeout")]
+    [Arguments("Handler")]
+    [Arguments("Routing")]
+    public async Task Standard_Hedge_Null_Nested_Option_Throws(string propertyName)
+    {
+        var builder = new ServiceCollection().AddHttpClient("standard-hedge-null-option");
+
+        var exception = await Assert.That(() => builder.AddStandardHedgeShield(options =>
+        {
+            switch (propertyName)
+            {
+                case "TotalTimeout":
+                    options.TotalTimeout = null!;
+                    break;
+                case "Hedge":
+                    options.Hedge = null!;
+                    break;
+                case "ConcurrencyLimit":
+                    options.ConcurrencyLimit = null!;
+                    break;
+                case "CircuitBreaker":
+                    options.CircuitBreaker = null!;
+                    break;
+                case "AttemptTimeout":
+                    options.AttemptTimeout = null!;
+                    break;
+                case "Handler":
+                    options.Handler = null!;
+                    break;
+                case "Routing":
+                    options.Routing = null!;
+                    break;
+            }
+        })).Throws<ArgumentException>();
+
+        await Assert.That(exception!.ParamName).IsEqualTo("options");
+        await Assert.That(exception.Message).Contains("nested options cannot be null");
+    }
+
+    [Test]
     [Arguments(RetryAfterKind.Absent, 3)]
     [Arguments(RetryAfterKind.ShorterDelta, 3)]
     [Arguments(RetryAfterKind.EqualDelta, 3)]
