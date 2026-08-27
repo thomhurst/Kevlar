@@ -138,10 +138,11 @@ With `QueueLimit > 0`, up to that many executions reserve a future permit and **
 
 For an actual rejection, Kevlar records rejection metrics, awaits `OnRejected`, then surfaces
 `RateLimitExceededException`. The event includes `RetryAfter`, the configured
-permit/window/burst/queue values, the strategy index, and `KevlarContext`. Callback failures are
-reported through `KevlarDiagnostics.OnCallbackError`, and `RateLimitExceededException` remains the
-rejection outcome. Queued cancellation is cancellation, not rejection, so it does not invoke the
-hook. A hook that completes synchronously works with synchronous `Execute`; one that yields throws
+permit/window/burst/queue values, the strategy index, and `KevlarContext`. Under the shared
+[callback-failure contract](../observability.md#callback-failures), failures are reported through
+`KevlarDiagnostics.OnCallbackError`, and `RateLimitExceededException` remains the rejection outcome.
+Queued cancellation is cancellation, not rejection, so it does not invoke the hook. A hook that
+completes synchronously works with synchronous `Execute`; one that yields throws
 `NotSupportedException` there and must run through `ExecuteAsync`.
 
 Callback contexts are pooled. Do not retain `RateLimitRejectedEvent.Context` after the returned

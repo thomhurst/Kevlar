@@ -117,6 +117,8 @@ Both hooks return `ValueTask`. A hook that completes synchronously (`return defa
 costs nothing extra and works with synchronous `Execute`. A hook that yields is awaited by
 `ExecuteAsync`; reached through synchronous `Execute`, it throws `NotSupportedException` at that
 call. See [synchronous execution compatibility](../executing.md#synchronous-execution-compatibility).
+Notification-hook exceptions follow the shared [callback-failure contract](../observability.md#callback-failures):
+they are reported and never replace the protected outcome.
 
 `RetryOptions` and `RetryOptions<T>` are standalone sibling types. Both expose the same
 `MaxRetries`, `Backoff`, and `MaxDelay` settings, while their callback properties use distinct

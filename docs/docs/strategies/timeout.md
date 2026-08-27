@@ -90,9 +90,10 @@ Invalid `TimeoutOptions` values—and invalid durations returned by `TimeoutGene
 offending value.
 
 After a timeout wins, Kevlar records timeout metrics, restores the caller token, disposes timer state,
-then awaits `OnTimeout`. Callback exceptions and cancellations are reported through
-`KevlarDiagnostics.OnCallbackError`; `TimeoutExceededException` remains the outcome. Hooks may run
-concurrently when a shield is reused, so callbacks must be thread-safe and must not assume
+then awaits `OnTimeout`. Callback exceptions and cancellations follow the shared
+[callback-failure contract](../observability.md#callback-failures): they are reported through
+`KevlarDiagnostics.OnCallbackError`, and `TimeoutExceededException` remains the outcome. Hooks may
+run concurrently when a shield is reused, so callbacks must be thread-safe and must not assume
 serialization.
 
 `TimeoutGenerator` and `OnTimeout` both return `ValueTask`. A hook that completes synchronously
