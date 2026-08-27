@@ -229,6 +229,34 @@ try
 
     [IO.File]::WriteAllText(
         $fixturePath,
+        "# Changelog`n`n## [Unreleased]`n`n### Added`n`n- Hidden release note.`n`n## [1.2.3] - 2026-08-25`n`n### Fixed`n`n- Release note.`n",
+        [Text.UTF8Encoding]::new($false))
+
+    $populatedUnreleasedRejected = $false
+    try
+    {
+        & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
+            -Version '1.2.3' `
+            -ChangelogPath $fixturePath `
+            -OutputPath $outputPath
+    }
+    catch
+    {
+        if (-not $_.Exception.Message.Contains('populated Unreleased', [StringComparison]::Ordinal))
+        {
+            throw
+        }
+
+        $populatedUnreleasedRejected = $true
+    }
+
+    if (-not $populatedUnreleasedRejected)
+    {
+        throw 'Release-note extraction accepted a populated Unreleased section beside its target version.'
+    }
+
+    [IO.File]::WriteAllText(
+        $fixturePath,
         "# Changelog`n`n## Unreleased`n`n### Added`n`n- Pending release note.`n",
         [Text.UTF8Encoding]::new($false))
 
