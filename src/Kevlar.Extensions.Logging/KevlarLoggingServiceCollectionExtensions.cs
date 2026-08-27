@@ -1,7 +1,9 @@
+using Kevlar;
+using Kevlar.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Kevlar.Extensions.Logging;
+namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>Registers structured Kevlar logging for dependency-injected shields.</summary>
 public static class KevlarLoggingServiceCollectionExtensions

@@ -1,4 +1,6 @@
 using System.Globalization;
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Kevlar.Extensions.DependencyInjection;
+namespace Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable RS0026, RS0027 // Registration overload parity intentionally keeps optional arguments.
 

@@ -13,7 +13,6 @@ dotnet add package Kevlar.Extensions.Http
 ## The one-liner
 
 ```csharp
-using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
@@ -21,6 +20,10 @@ services.AddHttpClient("api")
 ```
 
 `AddStandardShield` wires up the pipeline you'd have built anyway (outermost first):
+
+HTTP registration extensions live in `Microsoft.Extensions.DependencyInjection`, which ASP.NET
+Core projects import implicitly. Import `Kevlar.Extensions.Http` only when using HTTP options or
+runtime types such as `HttpShield`.
 
 1. **30s total timeout** around everything
 2. **3 jittered retries** (exponential from 250ms, capped 10s) — honouring `Retry-After` headers and disposing superseded responses

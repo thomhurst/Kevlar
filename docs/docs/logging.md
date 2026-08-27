@@ -45,8 +45,6 @@ configuration independently with a one-second monotonic window.
 through Kevlar's integration packages:
 
 ```csharp
-using Kevlar.Extensions.Logging;
-
 services.AddKevlarLogging(options =>
 {
     options.IncludeScopes = true;
@@ -55,7 +53,8 @@ services.AddKevlarLogging(options =>
 ```
 
 Call it before or after shield registrations. It uses the `Kevlar` logger category from the
-registered `ILoggerFactory`. Explicit `WithLogging` calls remain local to that shield.
+registered `ILoggerFactory`. Explicit `WithLogging` calls remain local to that shield. Import
+`Kevlar.Extensions.Logging` for logging options and runtime types, not for `AddKevlarLogging`.
 
 ## Event IDs and levels
 

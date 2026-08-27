@@ -1,9 +1,6 @@
 using System.Diagnostics.Metrics;
 using System.Net;
 using Kevlar;
-using Kevlar.Extensions.DependencyInjection;
-using Kevlar.Extensions.Http;
-using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 
 var attempts = 0;
@@ -55,7 +52,8 @@ if (!args.Contains("--smoke", StringComparer.Ordinal))
 
 var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("downstream");
 using var response = await client.GetAsync("https://sample.invalid/orders");
-var provider = app.Services.GetRequiredKeyedService<IShieldProvider>("background-jobs");
+var provider = app.Services.GetRequiredKeyedService<Kevlar.Extensions.DependencyInjection.IShieldProvider>(
+    "background-jobs");
 
 if (response.StatusCode != HttpStatusCode.OK || attempts != 3 || provider.Current is null)
 {

@@ -5,7 +5,6 @@ items:
   id: Kevlar.Extensions.Grpc
   children:
   - Kevlar.Extensions.Grpc.GrpcShield
-  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
   - Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
   - Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
   langs:
@@ -25,13 +24,6 @@ references:
   name: GrpcShield
   nameWithType: GrpcShield
   fullName: Kevlar.Extensions.Grpc.GrpcShield
-- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
-  commentId: T:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
-  isExternal: true
-  href: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.html
-  name: ShieldGrpcClientBuilderExtensions
-  nameWithType: ShieldGrpcClientBuilderExtensions
-  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
 - uid: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
   commentId: T:Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
   isExternal: true

@@ -1,21 +1,21 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
-  commentId: T:Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
   id: KevlarLoggingServiceCollectionExtensions
-  parent: Kevlar.Extensions.Logging
+  parent: Microsoft.Extensions.DependencyInjection
   children:
-  - Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
+  - Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
   langs:
   - csharp
   - vb
   name: KevlarLoggingServiceCollectionExtensions
   nameWithType: KevlarLoggingServiceCollectionExtensions
-  fullName: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
   type: Class
   assemblies:
   - Kevlar.Extensions.Logging
-  namespace: Kevlar.Extensions.Logging
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Registers structured Kevlar logging for dependency-injected shields.
   example: []
   syntax:
@@ -31,21 +31,21 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
-  commentId: M:Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
+- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
+  commentId: M:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
   id: AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Kevlar.Extensions.Logging.KevlarLoggingOptions})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+  parent: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
   langs:
   - csharp
   - vb
   name: AddKevlarLogging(IServiceCollection, Action<KevlarLoggingOptions>?)
   nameWithType: KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(IServiceCollection, Action<KevlarLoggingOptions>?)
-  fullName: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions>?)
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Logging
-  namespace: Kevlar.Extensions.Logging
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Applies structured logging to shields created by Kevlar DI and HTTP integrations.
   example: []
   syntax:
@@ -58,46 +58,48 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IServiceCollection
     content.vb: Public Shared Function AddKevlarLogging(services As IServiceCollection, configure As Action(Of KevlarLoggingOptions) = Nothing) As IServiceCollection
-  overload: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging*
+  overload: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging*
   nameWithType.vb: KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(IServiceCollection, Action(Of KevlarLoggingOptions))
-  fullName.vb: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action(Of Kevlar.Extensions.Logging.KevlarLoggingOptions))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Action(Of Kevlar.Extensions.Logging.KevlarLoggingOptions))
   name.vb: AddKevlarLogging(IServiceCollection, Action(Of KevlarLoggingOptions))
 references:
-- uid: Kevlar.Extensions.Logging
-  commentId: N:Kevlar.Extensions.Logging
+- uid: Microsoft.Extensions.DependencyInjection
+  commentId: N:Microsoft.Extensions.DependencyInjection
   isExternal: true
-  href: Kevlar.html
-  name: Kevlar.Extensions.Logging
-  nameWithType: Kevlar.Extensions.Logging
-  fullName: Kevlar.Extensions.Logging
+  href: https://learn.microsoft.com/dotnet/api/microsoft
+  name: Microsoft.Extensions.DependencyInjection
+  nameWithType: Microsoft.Extensions.DependencyInjection
+  fullName: Microsoft.Extensions.DependencyInjection
   spec.csharp:
-  - uid: Kevlar
-    name: Kevlar
+  - uid: Microsoft
+    name: Microsoft
     isExternal: true
-    href: Kevlar.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft
   - name: .
-  - uid: Kevlar.Extensions
+  - uid: Microsoft.Extensions
     name: Extensions
     isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
   - name: .
-  - uid: Kevlar.Extensions.Logging
-    name: Logging
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
     isExternal: true
-    href: Kevlar.Extensions.Logging.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
   spec.vb:
-  - uid: Kevlar
-    name: Kevlar
+  - uid: Microsoft
+    name: Microsoft
     isExternal: true
-    href: Kevlar.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft
   - name: .
-  - uid: Kevlar.Extensions
+  - uid: Microsoft.Extensions
     name: Extensions
     isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
   - name: .
-  - uid: Kevlar.Extensions.Logging
-    name: Logging
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
     isExternal: true
-    href: Kevlar.Extensions.Logging.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
 - uid: System.Object
   commentId: T:System.Object
   parent: System
@@ -335,13 +337,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging*
-  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging
+- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging*
+  commentId: Overload:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging
   isExternal: true
-  href: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.html#Kevlar_Extensions_Logging_KevlarLoggingServiceCollectionExtensions_AddKevlarLogging_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_Action_Kevlar_Extensions_Logging_KevlarLoggingOptions__
+  href: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.html#Microsoft_Extensions_DependencyInjection_KevlarLoggingServiceCollectionExtensions_AddKevlarLogging_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_Action_Kevlar_Extensions_Logging_KevlarLoggingOptions__
   name: AddKevlarLogging
   nameWithType: KevlarLoggingServiceCollectionExtensions.AddKevlarLogging
-  fullName: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging
 - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
   commentId: T:Microsoft.Extensions.DependencyInjection.IServiceCollection
   parent: Microsoft.Extensions.DependencyInjection
@@ -385,43 +387,6 @@ references:
     isExternal: true
     href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html
   - name: )
-- uid: Microsoft.Extensions.DependencyInjection
-  commentId: N:Microsoft.Extensions.DependencyInjection
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/microsoft
-  name: Microsoft.Extensions.DependencyInjection
-  nameWithType: Microsoft.Extensions.DependencyInjection
-  fullName: Microsoft.Extensions.DependencyInjection
-  spec.csharp:
-  - uid: Microsoft
-    name: Microsoft
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft
-  - name: .
-  - uid: Microsoft.Extensions
-    name: Extensions
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
-  - name: .
-  - uid: Microsoft.Extensions.DependencyInjection
-    name: DependencyInjection
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
-  spec.vb:
-  - uid: Microsoft
-    name: Microsoft
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft
-  - name: .
-  - uid: Microsoft.Extensions
-    name: Extensions
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
-  - name: .
-  - uid: Microsoft.Extensions.DependencyInjection
-    name: DependencyInjection
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
 - uid: System.Action`1
   commentId: T:System.Action`1
   isExternal: true

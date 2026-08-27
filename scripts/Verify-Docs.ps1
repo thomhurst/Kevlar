@@ -210,8 +210,8 @@ foreach ($claim in $targetFrameworkClaims)
 }
 
 $requiredFirstFenceUsings = [ordered]@{
-    'dependency-injection.md' = 'using Kevlar.Extensions.DependencyInjection;'
-    'http.md' = 'using Kevlar.Extensions.Http;'
+    'dependency-injection.md' = 'using Microsoft.Extensions.DependencyInjection;'
+    'http.md' = 'using Microsoft.Extensions.DependencyInjection;'
     'chaos.md' = 'using Kevlar.Chaos;'
     'observability.md' = 'using Kevlar;'
 }
@@ -222,6 +222,20 @@ foreach ($entry in $requiredFirstFenceUsings.GetEnumerator())
     if ($null -eq $firstFence -or $firstFence.Body -notcontains $entry.Value)
     {
         $errors.Add("$($entry.Key)'s first C# fence must contain '$($entry.Value)'.")
+    }
+}
+
+$forbiddenRegistrationUsings = [ordered]@{
+    'dependency-injection.md' = 'using Kevlar.Extensions.DependencyInjection;'
+    'http.md' = 'using Kevlar.Extensions.Http;'
+}
+foreach ($entry in $forbiddenRegistrationUsings.GetEnumerator())
+{
+    $documentPath = Join-Path $resolvedDocsPath $entry.Key
+    $firstFence = Get-FirstCsharpFence @(Get-Content -LiteralPath $documentPath)
+    if ($null -ne $firstFence -and $firstFence.Body -contains $entry.Value)
+    {
+        $errors.Add("$($entry.Key)'s first C# fence must not contain registration-only import '$($entry.Value)'.")
     }
 }
 

@@ -72,8 +72,6 @@ Add named shields and resilient HTTP clients in `Program.cs`:
 
 ```csharp
 using Kevlar;
-using Kevlar.Extensions.DependencyInjection;
-using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 var services = new ServiceCollection();
@@ -92,7 +90,8 @@ using var serviceProvider = services.BuildServiceProvider();
 `AddShield` registers a reusable named shield. `AddStandardShield` installs a production HTTP
 pipeline with total and per-attempt timeouts, retry, and circuit breaker. Continue with
 [Dependency injection](dependency-injection.md) or [HTTP resilience](http.md) to resolve and
-customize them.
+customize them. Registration extensions live in `Microsoft.Extensions.DependencyInjection`, so
+ASP.NET Core projects get them through implicit usings without importing a Kevlar package namespace.
 
 ## How to test it
 

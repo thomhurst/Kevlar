@@ -1,6 +1,6 @@
 #nullable enable
 Kevlar.Extensions.Grpc.GrpcShield
-Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
 Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
 Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
 Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.ShieldStreamingClientInterceptor(Kevlar.Shield! shield) -> void
@@ -13,9 +13,9 @@ override Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.AsyncServerStre
 static Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.RpcException? exception) -> bool
 static Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.StatusCode statusCode) -> bool
 static Kevlar.Extensions.Grpc.GrpcShield.WhenTransient() -> Kevlar.ShieldBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
-static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

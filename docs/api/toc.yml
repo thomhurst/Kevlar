@@ -285,9 +285,6 @@ items:
   - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
     name: IShieldProvider<TResult>
     type: Interface
-  - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
-    name: KevlarServiceCollectionExtensions
-    type: Class
   - uid: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
     name: RateLimitDefinition
     type: Class
@@ -306,9 +303,6 @@ items:
   items:
   - uid: Kevlar.Extensions.Grpc.GrpcShield
     name: GrpcShield
-    type: Class
-  - uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
-    name: ShieldGrpcClientBuilderExtensions
     type: Class
   - uid: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
     name: ShieldStreamingClientInterceptor
@@ -353,9 +347,6 @@ items:
   - uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
     name: ShieldDelegatingHandler
     type: Class
-  - uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
-    name: ShieldHttpClientBuilderExtensions
-    type: Class
   - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
     name: ShieldHttpHandlerOptions
     type: Class
@@ -377,9 +368,6 @@ items:
     type: Enum
   - uid: Kevlar.Extensions.Logging.KevlarLoggingOptions
     name: KevlarLoggingOptions
-    type: Class
-  - uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
-    name: KevlarLoggingServiceCollectionExtensions
     type: Class
   - uid: Kevlar.Extensions.Logging.ShieldLoggingExtensions
     name: ShieldLoggingExtensions
@@ -502,5 +490,21 @@ items:
     type: Class
   - uid: Kevlar.Testing.TimeoutStrategyDescriptor
     name: TimeoutStrategyDescriptor
+    type: Class
+- uid: Microsoft.Extensions.DependencyInjection
+  name: Microsoft.Extensions.DependencyInjection
+  type: Namespace
+  items:
+  - uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+    name: KevlarLoggingServiceCollectionExtensions
+    type: Class
+  - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+    name: KevlarServiceCollectionExtensions
+    type: Class
+  - uid: Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
+    name: ShieldGrpcClientBuilderExtensions
+    type: Class
+  - uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+    name: ShieldHttpClientBuilderExtensions
     type: Class
 memberLayout: SamePage

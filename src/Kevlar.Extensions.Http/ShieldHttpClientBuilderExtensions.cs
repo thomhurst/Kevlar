@@ -1,8 +1,10 @@
+using Kevlar;
+using Kevlar.Extensions.Http;
+using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Kevlar.Internal;
 
-namespace Kevlar.Extensions.Http;
+namespace Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable RS0026 // Named/configured HttpClient overload parity intentionally keeps optional arguments.
 

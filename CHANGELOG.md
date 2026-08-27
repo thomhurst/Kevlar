@@ -57,6 +57,10 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 - The support policy commits target-framework removals to major releases, gives obsolete APIs at
   least one minor release before removal, provides six months of previous-major security overlap,
   and documents dependency floors, package lockstep, cadence, maintenance, and roadmap ownership.
+- **Breaking:** `IServiceCollection`, `IHttpClientBuilder`, and gRPC client registration extension
+  classes now live in `Microsoft.Extensions.DependencyInjection`. ASP.NET Core projects no longer
+  need a `Kevlar.Extensions.*` import for registration methods; option, definition, registry, and
+  runtime types remain in their existing `Kevlar.*` namespaces.
 - HTTP handler replay and routing options are snapshotted when a pipeline is registered or created.
   Later mutations no longer alter live handlers; configuration reload remains the explicit update
   path and publishes a fresh complete snapshot.

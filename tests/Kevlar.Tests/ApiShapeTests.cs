@@ -5,6 +5,7 @@ using Kevlar.Extensions.Http;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Chaos;
 using Kevlar.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace Kevlar.Tests;

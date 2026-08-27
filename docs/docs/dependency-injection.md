@@ -14,7 +14,6 @@ dotnet add package Kevlar.Extensions.DependencyInjection
 
 ```csharp
 using Kevlar;
-using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +28,10 @@ services.AddShield<HttpResponseMessage>("downstream",
 ```
 
 Because shields are immutable and thread-safe, each named shield is a singleton — which is exactly what you want: every consumer of `"github"` shares the same instance, and therefore the same circuit breaker state, rate-limit bucket and concurrency limit slots.
+
+Registration extensions live in `Microsoft.Extensions.DependencyInjection`, which ASP.NET Core
+projects import implicitly. Import `Kevlar.Extensions.DependencyInjection` only when using runtime
+types such as `IKevlarRegistry` or `IShieldProvider`.
 
 ## Consuming via the registry
 

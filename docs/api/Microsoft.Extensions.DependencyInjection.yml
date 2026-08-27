@@ -1,0 +1,48 @@
+### YamlMime:ManagedReference
+items:
+- uid: Microsoft.Extensions.DependencyInjection
+  commentId: N:Microsoft.Extensions.DependencyInjection
+  id: Microsoft.Extensions.DependencyInjection
+  children:
+  - Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  - Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  - Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: Microsoft.Extensions.DependencyInjection
+  nameWithType: Microsoft.Extensions.DependencyInjection
+  fullName: Microsoft.Extensions.DependencyInjection
+  type: Namespace
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+references:
+- uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html
+  name: KevlarServiceCollectionExtensions
+  nameWithType: KevlarServiceCollectionExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+- uid: Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions.html
+  name: ShieldGrpcClientBuilderExtensions
+  nameWithType: ShieldGrpcClientBuilderExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldGrpcClientBuilderExtensions
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.html
+  name: ShieldHttpClientBuilderExtensions
+  nameWithType: ShieldHttpClientBuilderExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.html
+  name: KevlarLoggingServiceCollectionExtensions
+  nameWithType: KevlarLoggingServiceCollectionExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions

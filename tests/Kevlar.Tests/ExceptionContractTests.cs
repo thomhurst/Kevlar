@@ -6,6 +6,7 @@ using Kevlar.Extensions.Http;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Internal;
 using Kevlar.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.Tests;
 
