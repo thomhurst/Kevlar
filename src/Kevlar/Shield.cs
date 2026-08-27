@@ -62,6 +62,11 @@ public sealed class Shield : IShieldLifecycle
 
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
+    internal OutcomeJudge FallbackJudgeOrDefault =>
+        Ambient is null || ReferenceEquals(Ambient, OutcomeJudge.Default)
+            ? OutcomeJudge.FallbackDefault
+            : Ambient;
+
     internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
 
     /// <summary>
@@ -867,7 +872,9 @@ public sealed class Shield : IShieldLifecycle
             for (var j = 0; j < i; j++)
             {
                 var outer = strategies[j];
-                if (!outer.IsFallback && ReferenceEquals(outer.ReactiveJudge, fallbackJudge))
+                if (!outer.IsFallback
+                    && outer.ReactiveJudge is { } outerJudge
+                    && OutcomeJudge.FallbackHandlesEveryOutcomeHandledBy(fallbackJudge, outerJudge))
                 {
                     throw new InvalidOperationException(
                         $"This chain places Fallback inside {outer.Describe()} with the same handling clause, " +

@@ -71,7 +71,11 @@ public partial class DocsConsistencyTests
         foreach (var exception in exceptions)
         {
             var outcome = Outcome<int>.FromException(exception);
-            var expected = OutcomeJudge.Default.ShouldHandle(in outcome) ? "Yes" : "No";
+            var expected = OutcomeJudge.Default.ShouldHandle(in outcome)
+                ? "Yes"
+                : OutcomeJudge.FallbackDefault.ShouldHandle(in outcome)
+                    ? "Fallback only"
+                    : "No";
             await Assert.That(rows[exception.GetType().Name].DefaultClause).IsEqualTo(expected);
         }
     }
@@ -229,6 +233,18 @@ public partial class DocsConsistencyTests
         await Assert.That(migrationGuide).Contains("KevlarDiagnostics.OnCallbackError");
         await Assert.That(migrationGuide).Contains("AddKevlarLogging");
         await Assert.That(migrationGuide).Contains("TelemetryRecorder");
+    }
+
+    [Test]
+    public async Task Migration_Guide_Documents_Fallback_Rejection_Handling()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationGuide = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "docs", "docs", "polly-migration.md"));
+
+        await Assert.That(migrationGuide).Contains("**Fallback handles execution rejections by default.**");
+        await Assert.That(migrationGuide).Contains("CircuitOpenException");
+        await Assert.That(migrationGuide).Contains("FallbackTo(...).Retry(3).CircuitBreaker(...)");
     }
 
     private static Dictionary<string, ExceptionDocRow> ReadExceptionRows()

@@ -11,11 +11,12 @@ fault, or reports a testing assertion failure.
 ## Reference
 
 The **default clause** column says whether a reactive strategy handles the exception when no custom
-[`When` clause](handling-failures.md) is present. The default handles ordinary errors but excludes
-`OperationCanceledException`, fail-fast execution rejections, and fatal runtime exceptions. A
-timeout remains handled because the delegate ran and produced a recoverable attempt failure. Use an
-explicit clause to include an excluded rejection or narrow the ordinary errors handled by a retry,
-breaker, hedge, or fallback.
+[`When` clause](handling-failures.md) is present. Retry, circuit breaker, and hedge handle ordinary
+errors but exclude `OperationCanceledException`, fail-fast execution rejections, and fatal runtime
+exceptions. Fallback additionally handles `ExecutionRejectedException` so it can recover an outer
+breaker or limiter without opting retry into the same rejection. A timeout remains handled because
+the delegate ran and produced a recoverable attempt failure. An explicit ambient clause or local
+handling override replaces the strategy default.
 
 | Exception | Thrown by | Properties | Base class | Catch pattern | Default clause |
 |---|---|---|---|---|---|
@@ -24,10 +25,10 @@ breaker, hedge, or fallback.
 | `ExecutionRejectedException` | Abstract base for execution rejections | `RetryAfter` estimates when execution may be attempted again; inherited `InnerException` carries a cause when known. | `KevlarException` | `catch (ExecutionRejectedException e)` | N/A |
 | `KevlarProxyException` | Internal bookkeeping for adapter-owned exception proxies | `OriginalException` is the failure exposed to handling clauses, public outcomes, and adapter callers; inherited `InnerException` preserves the same cause. | `Exception` | Catch `OriginalException`'s concrete type, such as `RpcException`. | N/A |
 | `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. | `KevlarException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
-| `CircuitOpenException` | Circuit breaker | Inherited `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `ExecutionRejectedException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
-| `RateLimitExceededException` | Rate limit | Inherited `RetryAfter` estimates when a permit may become available. | `ExecutionRejectedException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
-| `RateLimiterAdapterRejectedException` | System.Threading.RateLimiting adapter | Inherited `RetryAfter` is copied from rejected lease metadata when supplied. | `ExecutionRejectedException` | `catch (RateLimiterAdapterRejectedException e) when (e.RetryAfter is { } delay)` | No |
-| `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `RetryAfter` and `InnerException` are `null`; the rejection means both execution and queue capacity are full. | `ExecutionRejectedException` | `catch (ConcurrencyLimitExceededException)` | No |
+| `CircuitOpenException` | Circuit breaker | Inherited `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `ExecutionRejectedException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | Fallback only |
+| `RateLimitExceededException` | Rate limit | Inherited `RetryAfter` estimates when a permit may become available. | `ExecutionRejectedException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | Fallback only |
+| `RateLimiterAdapterRejectedException` | System.Threading.RateLimiting adapter | Inherited `RetryAfter` is copied from rejected lease metadata when supplied. | `ExecutionRejectedException` | `catch (RateLimiterAdapterRejectedException e) when (e.RetryAfter is { } delay)` | Fallback only |
+| `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `RetryAfter` and `InnerException` are `null`; the rejection means both execution and queue capacity are full. | `ExecutionRejectedException` | `catch (ConcurrencyLimitExceededException)` | Fallback only |
 | `HttpRequestReplayException` | HTTP request replay and endpoint routing | Inherited `InnerException` is the content failure when serialization or buffering caused the replay failure. | `InvalidOperationException` | `catch (HttpRequestReplayException e)` | Yes |
 | `ChaosInjectedException` | Chaos fault injection | Inherited `InnerException` is populated only when the configured injected fault wraps a cause. | `Exception` | `catch (ChaosInjectedException e)` | Yes |
 | `ShieldAssertionException` | Kevlar.Testing assertions and bounded waits | Inherited `InnerException` is `null`; `Message` explains the failed assertion or unmet condition. | `Exception` | `catch (ShieldAssertionException e)` | Yes |

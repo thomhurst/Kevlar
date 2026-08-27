@@ -104,10 +104,11 @@ Polly handling predicate. Retry callback counters map directly:
 |---|---|
 | `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.AttemptNumber` is zero-based (`0` before the first retry) |
 
-Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar also
-lets execution-rejection exceptions and fatal runtime exceptions propagate by default. Use an
-explicit clause when a shield intentionally recovers `CircuitOpenException`,
-`RateLimitExceededException`, or `ConcurrencyLimitExceededException`.
+Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar's
+retry, circuit-breaker, and hedging defaults also let execution-rejection exceptions and fatal
+runtime exceptions propagate. Fallback is the terminal recovery strategy, so its default additionally
+handles `CircuitOpenException`, `RateLimitExceededException`, and
+`ConcurrencyLimitExceededException`.
 
 ## Context and properties
 
@@ -684,6 +685,10 @@ accepts `RateLimiter`, `PartitionedRateLimiter<KevlarContext>`, or a custom leas
   `Wrap` and `Compose` seal clauses at composition boundaries.
 - **Fallback ordering fails fast.** Kevlar rejects a fallback placed inside a retry, hedge, or
   breaker when both share the same clause; Polly builds that ineffective order silently.
+- **Fallback handles execution rejections by default.** An outer fallback in
+  `Shield.For<T>().FallbackTo(...).Retry(3).CircuitBreaker(...)` recovers an open circuit or limiter
+  rejection. Retry, circuit breaker, and hedging still let `ExecutionRejectedException` propagate
+  unless an explicit handling clause opts in.
 - **Hook exceptions never propagate.** Polly lets a strategy-hook exception fail the execution.
   Kevlar reports hook failures without replacing the protected outcome. Observe them through
   `KevlarDiagnostics.OnCallbackError`, structured logging from `AddKevlarLogging`, or

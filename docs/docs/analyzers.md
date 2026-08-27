@@ -342,9 +342,10 @@ term available. `KEV010` is disabled by default and can be enabled through the
 
 ## KEV011: implicit default handling
 
-A retry, circuit breaker, hedge, or fallback without an explicit clause uses Kevlar's
-[default handling](handling-failures.md#the-default). That default excludes cancellation,
-fail-fast rejections, and fatal runtime failures, but it still includes programming errors such as
+A retry, circuit breaker, hedge, or fallback without an explicit clause uses its
+[default handling](handling-failures.md#the-default). Retry, circuit breaker, and hedge exclude
+cancellation, fail-fast rejections, and fatal runtime failures; fallback additionally handles
+fail-fast rejections. Every strategy default still includes programming errors such as
 `ArgumentException`, `InvalidOperationException`, and `NullReferenceException`:
 
 ```csharp

@@ -67,6 +67,11 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
+    internal OutcomeJudge FallbackJudgeOrDefault =>
+        Ambient is null || ReferenceEquals(Ambient, OutcomeJudge.Default)
+            ? OutcomeJudge.FallbackDefault
+            : Ambient;
+
     internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
 
     // ── Handling clauses ────────────────────────────────────────────────────────────────
@@ -308,7 +313,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> FallbackTo(TResult fallbackValue) =>
         Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
-            JudgeOrDefault,
+            FallbackJudgeOrDefault,
             null));
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
@@ -323,7 +328,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             options.HandlesResult,
             options.HandlesExceptionWithContext,
             options.HandlesResultWithContext,
-            JudgeOrDefault);
+            FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
             judge,
@@ -338,7 +343,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
-            JudgeOrDefault,
+            FallbackJudgeOrDefault,
             null));
     }
 
@@ -357,7 +362,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             options.HandlesResult,
             options.HandlesExceptionWithContext,
             options.HandlesResultWithContext,
-            JudgeOrDefault);
+            FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
             judge,
@@ -372,7 +377,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),
-            JudgeOrDefault,
+            FallbackJudgeOrDefault,
             null));
     }
 
@@ -394,7 +399,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             options.HandlesResult,
             options.HandlesExceptionWithContext,
             options.HandlesResultWithContext,
-            JudgeOrDefault);
+            FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),
             judge,

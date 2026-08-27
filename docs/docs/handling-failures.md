@@ -115,9 +115,10 @@ editor.
 
 ### Reset to default handling
 
-Call `WithDefaultHandling()` to clear the ambient clause. Reactive strategies chained after it return to
-Kevlar's default handling: ordinary exceptions, excluding cancellation, Kevlar's fail-fast
-rejections, and fatal runtime failures.
+Call `WithDefaultHandling()` to clear the ambient clause. Reactive strategies chained after it return
+to their defaults: retry, circuit breaker, and hedge handle ordinary exceptions while excluding
+cancellation, Kevlar's fail-fast rejections, and fatal runtime failures; fallback additionally
+handles fail-fast rejections.
 
 ```csharp
 var shield = Shield

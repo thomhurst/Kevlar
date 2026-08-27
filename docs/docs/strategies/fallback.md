@@ -154,9 +154,9 @@ var http = Shield.For<HttpResponseMessage>()
 
 If the fallback delegate itself throws, that exception becomes the pipeline's outcome — fallbacks don't get fallbacks.
 
-As with every reactive strategy, the default clause bypasses cancellation, Kevlar's fail-fast
-rejections, and fatal runtime failures. An excluded exception can be recovered explicitly when
-that is intentional:
+Fallback's default clause handles ordinary exceptions and Kevlar's fail-fast execution rejections.
+It still bypasses cancellation and fatal runtime failures. An excluded exception can be recovered
+explicitly when that is intentional:
 
 ```csharp
 var shield = Shield.For<Config>()
@@ -180,14 +180,15 @@ Fallback is usually **outermost** — the last line of defence after retries and
 
 ```csharp
 var shield = Shield.For<Quote>()
-    .When<HttpRequestException>()
-    .Or<CircuitOpenException>()      // catch the breaker's rejection too
     .FallbackTo(Quote.Unavailable)
     .Retry(3)
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
-Note the clause: to fall back when the circuit is open, the fallback's handling clause must include `CircuitOpenException`.
+The fallback recovers `CircuitOpenException` by default. Retry and circuit breaker continue to let
+execution rejections propagate, so an open circuit does not trigger unnecessary retries. An
+ambient `When` clause or local fallback handling override replaces this default instead of adding
+to it.
 
 The same outermost rule applies to hedging: an outer fallback runs once after every hedge attempt
 has produced a handled outcome. A fallback inside a hedge with the same clause is rejected because
