@@ -150,15 +150,18 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a callback that computes the injection rate for each execution.
-  remarks: When set, this callback takes precedence over <xref href="Kevlar.Chaos.ChaosOptions.InjectionRate" data-throw-if-not-resolved="false"></xref>.
+  summary: Gets or sets an awaited callback that computes the injection rate for each execution.
+  remarks: >-
+    When set, this callback takes precedence over <xref href="Kevlar.Chaos.ChaosOptions.InjectionRate" data-throw-if-not-resolved="false"></xref>. Return a completed
+
+    <xref href="System.Threading.Tasks.ValueTask%601" data-throw-if-not-resolved="false"></xref> to retain synchronous-execution compatibility.
   example: []
   syntax:
-    content: public Func<KevlarContext, double>? InjectionRateGenerator { get; set; }
+    content: public Func<KevlarContext, ValueTask<double>>? InjectionRateGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,System.Double}
-    content.vb: Public Property InjectionRateGenerator As Func(Of KevlarContext, Double)
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Double}}
+    content.vb: Public Property InjectionRateGenerator As Func(Of KevlarContext, ValueTask(Of Double))
   overload: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator*
 - uid: Kevlar.Chaos.ChaosOptions.EnabledGenerator
   commentId: P:Kevlar.Chaos.ChaosOptions.EnabledGenerator
@@ -174,14 +177,14 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a dynamic kill switch evaluated after <xref href="Kevlar.Chaos.ChaosOptions.Enabled" data-throw-if-not-resolved="false"></xref>.
+  summary: Gets or sets an awaited dynamic kill switch evaluated after <xref href="Kevlar.Chaos.ChaosOptions.Enabled" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
-    content: public Func<KevlarContext, bool>? EnabledGenerator { get; set; }
+    content: public Func<KevlarContext, ValueTask<bool>>? EnabledGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,System.Boolean}
-    content.vb: Public Property EnabledGenerator As Func(Of KevlarContext, Boolean)
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Boolean}}
+    content.vb: Public Property EnabledGenerator As Func(Of KevlarContext, ValueTask(Of Boolean))
   overload: Kevlar.Chaos.ChaosOptions.EnabledGenerator*
 - uid: Kevlar.Chaos.ChaosOptions.Predicate
   commentId: P:Kevlar.Chaos.ChaosOptions.Predicate
@@ -638,6 +641,34 @@ references:
   name: InjectionRate
   nameWithType: ChaosOptions.InjectionRate
   fullName: Kevlar.Chaos.ChaosOptions.InjectionRate
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator*
   commentId: Overload:Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
   isExternal: true
@@ -645,17 +676,17 @@ references:
   name: InjectionRateGenerator
   nameWithType: ChaosOptions.InjectionRateGenerator
   fullName: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
-- uid: System.Func{Kevlar.KevlarContext,System.Double}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.Double}
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Double}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Double}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<KevlarContext, double>
-  nameWithType: Func<KevlarContext, double>
-  fullName: System.Func<Kevlar.KevlarContext, double>
-  nameWithType.vb: Func(Of KevlarContext, Double)
-  fullName.vb: System.Func(Of Kevlar.KevlarContext, Double)
-  name.vb: Func(Of KevlarContext, Double)
+  name: Func<KevlarContext, ValueTask<double>>
+  nameWithType: Func<KevlarContext, ValueTask<double>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<double>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of Double))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of Double))
+  name.vb: Func(Of KevlarContext, ValueTask(Of Double))
   spec.csharp:
   - uid: System.Func`2
     name: Func
@@ -668,10 +699,16 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - uid: System.Double
     name: double
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -687,10 +724,18 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - uid: System.Double
     name: Double
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: )
   - name: )
 - uid: Kevlar.Chaos.ChaosOptions
   commentId: T:Kevlar.Chaos.ChaosOptions
@@ -749,6 +794,74 @@ references:
   name: EnabledGenerator
   nameWithType: ChaosOptions.EnabledGenerator
   fullName: Kevlar.Chaos.ChaosOptions.EnabledGenerator
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Boolean}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Boolean}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<KevlarContext, ValueTask<bool>>
+  nameWithType: Func<KevlarContext, ValueTask<bool>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<bool>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of Boolean))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of Boolean))
+  name.vb: Func(Of KevlarContext, ValueTask(Of Boolean))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+  - name: )
+- uid: Kevlar.Chaos.ChaosOptions.Predicate*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Predicate
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Predicate
+  name: Predicate
+  nameWithType: ChaosOptions.Predicate
+  fullName: Kevlar.Chaos.ChaosOptions.Predicate
 - uid: System.Func{Kevlar.KevlarContext,System.Boolean}
   commentId: T:System.Func{Kevlar.KevlarContext,System.Boolean}
   parent: System
@@ -796,13 +909,6 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
-- uid: Kevlar.Chaos.ChaosOptions.Predicate*
-  commentId: Overload:Kevlar.Chaos.ChaosOptions.Predicate
-  isExternal: true
-  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Predicate
-  name: Predicate
-  nameWithType: ChaosOptions.Predicate
-  fullName: Kevlar.Chaos.ChaosOptions.Predicate
 - uid: Kevlar.Chaos.ChaosScope.Operation
   commentId: P:Kevlar.Chaos.ChaosScope.Operation
   isExternal: true

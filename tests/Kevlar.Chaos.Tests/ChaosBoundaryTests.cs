@@ -15,7 +15,7 @@ public class ChaosBoundaryTests
             options.EnabledGenerator = _ =>
             {
                 calls.Add("enabled");
-                return enabled;
+                return new(enabled);
             };
             options.Predicate = _ =>
             {
@@ -25,12 +25,12 @@ public class ChaosBoundaryTests
             options.InjectionRateGenerator = _ =>
             {
                 calls.Add("rate");
-                return 1;
+                return new(1);
             };
             options.ExceptionGenerator = _ =>
             {
                 calls.Add("exception");
-                return new ChaosInjectedException();
+                return new(new ChaosInjectedException());
             };
             options.OnInjected = _ =>
             {
@@ -61,7 +61,7 @@ public class ChaosBoundaryTests
             options.ResultGenerator = _ =>
             {
                 resultGeneratorCalls++;
-                return -1;
+                return new(-1);
             };
             options.OnInjected = _ =>
             {
@@ -111,7 +111,7 @@ public class ChaosBoundaryTests
         var shield = ChaosShield.Latency(options =>
         {
             options.Enabled = true;
-            options.DelayGenerator = static _ => TimeSpan.FromDays(100);
+            options.DelayGenerator = static _ => new(TimeSpan.FromDays(100));
             options.OnInjected = _ =>
             {
                 injections++;
@@ -140,7 +140,7 @@ public class ChaosBoundaryTests
             options.DelayGenerator = _ =>
             {
                 order.Add("delay");
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
             options.OnInjected = _ =>
             {

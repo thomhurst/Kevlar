@@ -8296,7 +8296,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsKnownAsyncStrategyFactory(IMethodSymbol method, KnownTypes knownTypes) =>
         IsKevlarFluentMethod(method, knownTypes)
-        || (method.Name == "Behavior" && knownTypes.IsChaosShield(method.ContainingType));
+        || (method.Name is "Behavior" or "Fault" or "Latency" or "Outcome"
+            && knownTypes.IsChaosShield(method.ContainingType));
 
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
@@ -8323,7 +8324,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 context)
             || (TryGetConfiguredMaxHedgedAttempts(operation, out var maxHedgedAttempts)
                 && maxHedgedAttempts == 0)
-            || HasStaticallyDisabledChaosBehavior(
+            || HasStaticallyDisabledChaos(
                 anonymousFunction,
                 anonymousFunction.Symbol.Parameters[0],
                 context))
@@ -8341,16 +8342,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             out memberName);
     }
 
-    private static bool HasStaticallyDisabledChaosBehavior(
+    private static bool HasStaticallyDisabledChaos(
         IAnonymousFunctionOperation anonymousFunction,
         IParameterSymbol configuratorParameter,
         OperationAnalysisContext context)
     {
-        if (configuratorParameter.Type is not INamedTypeSymbol
-            {
-                Name: "ChaosBehaviorOptions",
-            } options
-            || options.ContainingNamespace.ToDisplayString() != "Kevlar.Chaos")
+        if (configuratorParameter.Type is not INamedTypeSymbol options
+            || !IsChaosOptions(options))
         {
             return false;
         }
@@ -8383,6 +8381,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 out var injectionRateGenerator)
             && (injectionRateGenerator is null
                 || injectionRateGenerator.ConstantValue is { HasValue: true, Value: null });
+    }
+
+    private static bool IsChaosOptions(INamedTypeSymbol type)
+    {
+        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (current.Name == "ChaosOptions"
+                && current.ContainingNamespace.ToDisplayString() == "Kevlar.Chaos")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryGetFinalChaosPropertyValue(

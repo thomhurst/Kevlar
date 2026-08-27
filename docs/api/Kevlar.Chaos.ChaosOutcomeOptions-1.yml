@@ -109,14 +109,14 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a callback that creates the result for each injected execution.
+  summary: Gets or sets an awaited callback that creates the result for each injected execution.
   example: []
   syntax:
-    content: public Func<KevlarContext, TResult>? ResultGenerator { get; set; }
+    content: public Func<KevlarContext, ValueTask<TResult>>? ResultGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,{TResult}}
-    content.vb: Public Property ResultGenerator As Func(Of KevlarContext, TResult)
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{TResult}}}
+    content.vb: Public Property ResultGenerator As Func(Of KevlarContext, ValueTask(Of TResult))
   overload: Kevlar.Chaos.ChaosOutcomeOptions`1.ResultGenerator*
   nameWithType.vb: ChaosOutcomeOptions(Of TResult).ResultGenerator
   fullName.vb: Kevlar.Chaos.ChaosOutcomeOptions(Of TResult).ResultGenerator
@@ -487,17 +487,17 @@ references:
   fullName: Kevlar.Chaos.ChaosOutcomeOptions<TResult>.ResultGenerator
   nameWithType.vb: ChaosOutcomeOptions(Of TResult).ResultGenerator
   fullName.vb: Kevlar.Chaos.ChaosOutcomeOptions(Of TResult).ResultGenerator
-- uid: System.Func{Kevlar.KevlarContext,{TResult}}
-  commentId: T:System.Func{Kevlar.KevlarContext,`0}
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{TResult}}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<KevlarContext, TResult>
-  nameWithType: Func<KevlarContext, TResult>
-  fullName: System.Func<Kevlar.KevlarContext, TResult>
-  nameWithType.vb: Func(Of KevlarContext, TResult)
-  fullName.vb: System.Func(Of Kevlar.KevlarContext, TResult)
-  name.vb: Func(Of KevlarContext, TResult)
+  name: Func<KevlarContext, ValueTask<TResult>>
+  nameWithType: Func<KevlarContext, ValueTask<TResult>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<TResult>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of TResult))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of TResult))
+  name.vb: Func(Of KevlarContext, ValueTask(Of TResult))
   spec.csharp:
   - uid: System.Func`2
     name: Func
@@ -510,7 +510,13 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - name: TResult
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -526,7 +532,15 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - name: TResult
+  - name: )
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2

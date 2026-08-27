@@ -8,7 +8,7 @@ var chaos = ChaosShield.Fault(options =>
 {
     options.Enabled = true;
     options.Operation = "sample-smoke";
-    options.EnabledGenerator = _ => Interlocked.Increment(ref decisions) == 1;
+    options.EnabledGenerator = _ => new(Interlocked.Increment(ref decisions) == 1);
     options.Exception = new ChaosInjectedException();
     options.OnInjected = _ =>
     {

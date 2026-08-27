@@ -102,14 +102,14 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a callback that creates the exception for each injected execution.
+  summary: Gets or sets an awaited callback that creates the exception for each injected execution.
   example: []
   syntax:
-    content: public Func<KevlarContext, Exception>? ExceptionGenerator { get; set; }
+    content: public Func<KevlarContext, ValueTask<Exception>>? ExceptionGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,System.Exception}
-    content.vb: Public Property ExceptionGenerator As Func(Of KevlarContext, Exception)
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Exception}}
+    content.vb: Public Property ExceptionGenerator As Func(Of KevlarContext, ValueTask(Of Exception))
   overload: Kevlar.Chaos.ChaosFaultOptions.ExceptionGenerator*
 references:
 - uid: Kevlar.Chaos
@@ -479,17 +479,17 @@ references:
   name: ExceptionGenerator
   nameWithType: ChaosFaultOptions.ExceptionGenerator
   fullName: Kevlar.Chaos.ChaosFaultOptions.ExceptionGenerator
-- uid: System.Func{Kevlar.KevlarContext,System.Exception}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.Exception}
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Exception}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.Exception}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<KevlarContext, Exception>
-  nameWithType: Func<KevlarContext, Exception>
-  fullName: System.Func<Kevlar.KevlarContext, System.Exception>
-  nameWithType.vb: Func(Of KevlarContext, Exception)
-  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Exception)
-  name.vb: Func(Of KevlarContext, Exception)
+  name: Func<KevlarContext, ValueTask<Exception>>
+  nameWithType: Func<KevlarContext, ValueTask<Exception>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<System.Exception>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of Exception))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of System.Exception))
+  name.vb: Func(Of KevlarContext, ValueTask(Of Exception))
   spec.csharp:
   - uid: System.Func`2
     name: Func
@@ -502,10 +502,16 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - uid: System.Exception
     name: Exception
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -521,10 +527,18 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - uid: System.Exception
     name: Exception
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: )
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2

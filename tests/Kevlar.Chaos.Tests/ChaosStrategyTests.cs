@@ -7,6 +7,109 @@ namespace Kevlar.Chaos.Tests;
 public class ChaosStrategyTests
 {
     [Test]
+    public async Task Async_Enabled_Generator_Is_Awaited_Before_Injecting()
+    {
+        var enabled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var injected = new TestException("injected");
+        var shield = ChaosShield.Fault(options =>
+        {
+            options.Enabled = true;
+            options.EnabledGenerator = async _ => await enabled.Task;
+            options.Exception = injected;
+        });
+
+        var execution = shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42)).AsTask();
+
+        await Assert.That(execution.IsCompleted).IsFalse();
+        enabled.SetResult(true);
+        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
+    }
+
+    [Test]
+    public async Task Async_Enabled_Generator_Is_Rejected_During_Synchronous_Execution()
+    {
+        var shield = ChaosShield.Fault(options =>
+        {
+            options.Enabled = true;
+            options.EnabledGenerator = async _ =>
+            {
+                await Task.Yield();
+                return true;
+            };
+        });
+
+        var exception = await Assert.That(() => shield.Execute(static _ => 42))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("ChaosOptions.EnabledGenerator");
+        await Assert.That(exception.Message).Contains("Use ExecuteAsync");
+    }
+
+    [Test]
+    public async Task Synchronously_Completing_Enabled_Generator_Works_During_Synchronous_Execution()
+    {
+        var injected = new TestException("injected");
+        var shield = ChaosShield.Fault(options =>
+        {
+            options.Enabled = true;
+            options.EnabledGenerator = static _ => new ValueTask<bool>(true);
+            options.Exception = injected;
+        });
+
+        var outcome = shield.ExecuteOutcome(static _ => 42);
+
+        await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
+    }
+
+    [Test]
+    public async Task Async_Rate_And_Payload_Generators_Are_Awaited()
+    {
+        var injected = new TestException("injected");
+        var fault = ChaosShield.Fault(options =>
+        {
+            options.Enabled = true;
+            options.InjectionRateGenerator = async _ =>
+            {
+                await Task.Yield();
+                return 1;
+            };
+            options.ExceptionGenerator = async _ =>
+            {
+                await Task.Yield();
+                return injected;
+            };
+        });
+        var latency = ChaosShield.Latency(options =>
+        {
+            options.Enabled = true;
+            options.DelayGenerator = async _ =>
+            {
+                await Task.Yield();
+                return TimeSpan.Zero;
+            };
+        });
+        var result = ChaosShield.Outcome<int>(options =>
+        {
+            options.Enabled = true;
+            options.ResultGenerator = async _ =>
+            {
+                await Task.Yield();
+                return 7;
+            };
+        });
+
+        var faultOutcome = await fault.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+        var latencyResult = await latency.ExecuteAsync(static _ => new ValueTask<int>(42));
+        var injectedResult = await result.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+        await Assert.That(ReferenceEquals(faultOutcome.Exception, injected)).IsTrue();
+        await Assert.That(latencyResult).IsEqualTo(42);
+        await Assert.That(injectedResult).IsEqualTo(7);
+    }
+
+    [Test]
     public async Task Chaos_Strategies_Report_At_Most_One_Continuation_Invocation()
     {
         await Assert.That(ChaosShield.Fault(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
@@ -270,7 +373,7 @@ public class ChaosStrategyTests
         {
             options.Enabled = true;
             options.InjectionRate = 0;
-            options.InjectionRateGenerator = context => context.ShieldName == "inject" ? 1 : 0;
+            options.InjectionRateGenerator = context => new(context.ShieldName == "inject" ? 1 : 0);
         }).WithName("inject");
         var outcome = await generated.ExecuteOutcomeAsync<int>(_ => new ValueTask<int>(42));
 
@@ -315,7 +418,7 @@ public class ChaosStrategyTests
         var shield = ChaosShield.Fault(options =>
         {
             options.Enabled = true;
-            options.EnabledGenerator = _ => killSwitch;
+            options.EnabledGenerator = _ => new(killSwitch);
             options.Predicate = context => !context.IsSynchronous;
         });
 
@@ -544,7 +647,7 @@ public class ChaosStrategyTests
             var generated = ChaosShield.Fault(options =>
             {
                 options.Enabled = true;
-                options.InjectionRateGenerator = _ => invalidRate;
+                options.InjectionRateGenerator = _ => new(invalidRate);
             });
             var outcome = await generated.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
 
@@ -652,12 +755,12 @@ public class ChaosStrategyTests
         var resultShield = ChaosShield.Outcome<string>(options =>
         {
             options.Enabled = true;
-            options.ResultGenerator = context => context.ShieldName!;
+            options.ResultGenerator = context => new(context.ShieldName!);
         }).WithName("generated-result");
         var faultShield = ChaosShield.Fault(options =>
         {
             options.Enabled = true;
-            options.ExceptionGenerator = context => new TestException(context.ShieldName!);
+            options.ExceptionGenerator = context => new(new TestException(context.ShieldName!));
         }).WithName("generated-fault");
 
         var result = await resultShield.ExecuteAsync(static _ => new ValueTask<string>("real"));
@@ -760,7 +863,7 @@ public class ChaosStrategyTests
             options.EnabledGenerator = _ =>
             {
                 decisionCallbacks++;
-                return true;
+                return new(true);
             };
             options.Predicate = _ =>
             {
@@ -770,7 +873,7 @@ public class ChaosStrategyTests
             options.InjectionRateGenerator = _ =>
             {
                 decisionCallbacks++;
-                return 1;
+                return new(1);
             };
             options.OnInjected = _ =>
             {
@@ -801,7 +904,7 @@ public class ChaosStrategyTests
         var shield = ChaosShield.Latency(options =>
         {
             options.Enabled = true;
-            options.DelayGenerator = static _ => TimeSpan.Zero;
+            options.DelayGenerator = static _ => new(TimeSpan.Zero);
         });
 
         var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
@@ -816,7 +919,7 @@ public class ChaosStrategyTests
         var shield = ChaosShield.Fault(options =>
         {
             options.Enabled = true;
-            options.ExceptionGenerator = static _ => null!;
+            options.ExceptionGenerator = static _ => new((Exception)null!);
         });
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));

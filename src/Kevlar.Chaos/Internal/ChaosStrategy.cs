@@ -9,8 +9,8 @@ internal abstract class ChaosStrategy : Strategy
 
     private readonly bool _enabled;
     private readonly double _injectionRate;
-    private readonly Func<KevlarContext, double>? _injectionRateGenerator;
-    private readonly Func<KevlarContext, bool>? _enabledGenerator;
+    private readonly Func<KevlarContext, ValueTask<double>>? _injectionRateGenerator;
+    private readonly Func<KevlarContext, ValueTask<bool>>? _enabledGenerator;
     private readonly Func<KevlarContext, bool>? _predicate;
     private readonly string? _requiredOperation;
     private readonly string? _requiredEnvironment;
@@ -42,22 +42,39 @@ internal abstract class ChaosStrategy : Strategy
             : Interlocked.Add(ref _nextUnseeded, GoldenRatio);
     }
 
-    protected bool TryDecide(KevlarContext context, out ChaosDecision decision)
+    protected ValueTask<ChaosDecision?> DecideAsync(KevlarContext context)
     {
-        decision = default;
         if (!_enabled)
         {
-            return false;
+            return default;
         }
 
-        if (_enabledGenerator is not null && !_enabledGenerator(context))
+        if (_enabledGenerator is not null)
         {
-            return false;
+            var enabled = InvokeGenerator(
+                _enabledGenerator,
+                context,
+                context,
+                "ChaosOptions.EnabledGenerator");
+            if (!enabled.IsCompletedSuccessfully)
+            {
+                return DecideAfterEnabledAsync(enabled, context);
+            }
+
+            if (!enabled.GetAwaiter().GetResult())
+            {
+                return default;
+            }
         }
 
+        return DecideAfterEnabled(context);
+    }
+
+    private ValueTask<ChaosDecision?> DecideAfterEnabled(KevlarContext context)
+    {
         if (_predicate is not null && !_predicate(context))
         {
-            return false;
+            return default;
         }
 
         string? operation = null;
@@ -72,30 +89,66 @@ internal abstract class ChaosStrategy : Strategy
 
         if (_requiredOperation is not null && !string.Equals(_requiredOperation, operation, StringComparison.Ordinal))
         {
-            return false;
+            return default;
         }
 
         if (_requiredEnvironment is not null && !string.Equals(_requiredEnvironment, environment, StringComparison.Ordinal))
         {
-            return false;
+            return default;
         }
 
-        var rate = _injectionRateGenerator?.Invoke(context) ?? _injectionRate;
+        if (_injectionRateGenerator is null)
+        {
+            return DecideFromRate(_injectionRate, operation, environment);
+        }
+
+        var rate = InvokeGenerator(
+            _injectionRateGenerator,
+            context,
+            context,
+            "ChaosOptions.InjectionRateGenerator");
+        return rate.IsCompletedSuccessfully
+            ? DecideFromRate(rate.GetAwaiter().GetResult(), operation, environment)
+            : DecideAfterRateAsync(rate, operation, environment);
+    }
+
+    private ValueTask<ChaosDecision?> DecideFromRate(
+        double rate,
+        string? operation,
+        string? environment)
+    {
         ValidateRate(rate, "generated injection rate");
         if (rate <= 0)
         {
-            return false;
+            return default;
         }
 
         var sample = rate >= 1 ? 0 : NextSample();
         if (sample >= rate)
         {
-            return false;
+            return default;
         }
 
-        decision = new ChaosDecision(operation, environment, rate, sample);
-        return true;
+        return new ValueTask<ChaosDecision?>(new ChaosDecision(operation, environment, rate, sample));
     }
+
+    private async ValueTask<ChaosDecision?> DecideAfterEnabledAsync(
+        ValueTask<bool> enabled,
+        KevlarContext context)
+    {
+        if (!await enabled.ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        return await DecideAfterEnabled(context).ConfigureAwait(false);
+    }
+
+    private async ValueTask<ChaosDecision?> DecideAfterRateAsync(
+        ValueTask<double> rate,
+        string? operation,
+        string? environment) =>
+        await DecideFromRate(await rate.ConfigureAwait(false), operation, environment).ConfigureAwait(false);
 
     /// <summary>
     /// Records the injection and invokes <see cref="ChaosOptions.OnInjected"/>. The returned task

@@ -19,7 +19,7 @@ Kevlar.Chaos.ChaosFaultOptions
 Kevlar.Chaos.ChaosFaultOptions.ChaosFaultOptions() -> void
 Kevlar.Chaos.ChaosFaultOptions.Exception.get -> System.Exception?
 Kevlar.Chaos.ChaosFaultOptions.Exception.set -> void
-Kevlar.Chaos.ChaosFaultOptions.ExceptionGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Exception!>?
+Kevlar.Chaos.ChaosFaultOptions.ExceptionGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<System.Exception!>>?
 Kevlar.Chaos.ChaosFaultOptions.ExceptionGenerator.set -> void
 Kevlar.Chaos.ChaosInjectedException
 Kevlar.Chaos.ChaosInjectedException.ChaosInjectedException() -> void
@@ -34,19 +34,19 @@ Kevlar.Chaos.ChaosLatencyOptions
 Kevlar.Chaos.ChaosLatencyOptions.ChaosLatencyOptions() -> void
 Kevlar.Chaos.ChaosLatencyOptions.Delay.get -> System.TimeSpan
 Kevlar.Chaos.ChaosLatencyOptions.Delay.set -> void
-Kevlar.Chaos.ChaosLatencyOptions.DelayGenerator.get -> System.Func<Kevlar.KevlarContext!, System.TimeSpan>?
+Kevlar.Chaos.ChaosLatencyOptions.DelayGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.Chaos.ChaosLatencyOptions.DelayGenerator.set -> void
 Kevlar.Chaos.ChaosOptions
 Kevlar.Chaos.ChaosOptions.ChaosOptions() -> void
 Kevlar.Chaos.ChaosOptions.Enabled.get -> bool
 Kevlar.Chaos.ChaosOptions.Enabled.set -> void
-Kevlar.Chaos.ChaosOptions.EnabledGenerator.get -> System.Func<Kevlar.KevlarContext!, bool>?
+Kevlar.Chaos.ChaosOptions.EnabledGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<bool>>?
 Kevlar.Chaos.ChaosOptions.EnabledGenerator.set -> void
 Kevlar.Chaos.ChaosOptions.Environment.get -> string?
 Kevlar.Chaos.ChaosOptions.Environment.set -> void
 Kevlar.Chaos.ChaosOptions.InjectionRate.get -> double
 Kevlar.Chaos.ChaosOptions.InjectionRate.set -> void
-Kevlar.Chaos.ChaosOptions.InjectionRateGenerator.get -> System.Func<Kevlar.KevlarContext!, double>?
+Kevlar.Chaos.ChaosOptions.InjectionRateGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<double>>?
 Kevlar.Chaos.ChaosOptions.InjectionRateGenerator.set -> void
 Kevlar.Chaos.ChaosOptions.OnInjected.get -> System.Func<Kevlar.Chaos.ChaosEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.Chaos.ChaosOptions.OnInjected.set -> void
@@ -60,7 +60,7 @@ Kevlar.Chaos.ChaosOutcomeOptions<TResult>
 Kevlar.Chaos.ChaosOutcomeOptions<TResult>.ChaosOutcomeOptions() -> void
 Kevlar.Chaos.ChaosOutcomeOptions<TResult>.Result.get -> TResult?
 Kevlar.Chaos.ChaosOutcomeOptions<TResult>.Result.set -> void
-Kevlar.Chaos.ChaosOutcomeOptions<TResult>.ResultGenerator.get -> System.Func<Kevlar.KevlarContext!, TResult>?
+Kevlar.Chaos.ChaosOutcomeOptions<TResult>.ResultGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<TResult>>?
 Kevlar.Chaos.ChaosOutcomeOptions<TResult>.ResultGenerator.set -> void
 Kevlar.Chaos.ChaosScope
 Kevlar.Chaos.ChaosShield

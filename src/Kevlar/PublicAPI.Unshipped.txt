@@ -1,4 +1,5 @@
 #nullable enable
+static Kevlar.Strategy.InvokeGenerator<TEvent, TResult>(System.Func<TEvent, System.Threading.Tasks.ValueTask<TResult>>! generator, TEvent callbackEvent, Kevlar.KevlarContext! context, string! hookName) -> System.Threading.Tasks.ValueTask<TResult>
 abstract Kevlar.KevlarMetricEnricher.Enrich(in Kevlar.KevlarMetricEnrichmentContext context) -> void
 Kevlar.KevlarMetricEnricher
 Kevlar.KevlarMetricEnricher.KevlarMetricEnricher() -> void
