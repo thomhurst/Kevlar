@@ -9,6 +9,9 @@ namespace Kevlar;
 /// and awaits <see cref="OnFallback"/>, and then runs the recovery
 /// factory. Notification failures are reported through <see cref="KevlarDiagnostics.OnCallbackError"/>
 /// and do not skip recovery.
+/// Without an ambient clause or local handling override, fallback handles ordinary exceptions and
+/// <see cref="ExecutionRejectedException"/> instances while letting cancellation and fatal runtime
+/// exceptions propagate.
 /// </remarks>
 public sealed class FallbackOptions<TResult>
 {

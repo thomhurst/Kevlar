@@ -101,20 +101,74 @@ public class DefaultHandlingTests
     }
 
     [Test]
-    public async Task Default_Fallback_Does_Not_Catch_Rejections_But_Explicit_Clause_Does()
+    public async Task Default_Fallback_Catches_Kevlar_Rejections()
     {
-        var defaultFallback = Shield.For<int>().FallbackTo(42);
-        var explicitFallback = Shield.For<int>()
-            .When<KevlarException>()
-            .FallbackTo(42);
+        Exception[] rejections =
+        [
+            new CircuitOpenException(TimeSpan.FromSeconds(1), isIsolated: false, lastException: null),
+            new RateLimitExceededException(TimeSpan.FromSeconds(1)),
+            new ConcurrencyLimitExceededException(),
+        ];
+        var shield = Shield.For<int>().FallbackTo(42);
 
-        var unhandled = await defaultFallback.ExecuteOutcomeAsync(_ =>
-            throw new RateLimitExceededException(retryAfter: null));
-        var handled = await explicitFallback.ExecuteAsync(_ =>
+        foreach (var rejection in rejections)
+        {
+            var result = await shield.ExecuteAsync(_ => throw rejection);
+
+            await Assert.That(result).IsEqualTo(42);
+        }
+
+        var explicitlyNarrowFallback = Shield.For<int>()
+            .When<InvalidOperationException>()
+            .FallbackTo(42);
+        var unhandled = await explicitlyNarrowFallback.ExecuteOutcomeAsync(_ =>
             throw new RateLimitExceededException(retryAfter: null));
 
         await Assert.That(unhandled.Exception).IsTypeOf<RateLimitExceededException>();
-        await Assert.That(handled).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Void_Default_Fallback_Catches_Kevlar_Rejections()
+    {
+        var recovered = false;
+        var shield = Shield.Fallback((_, _) =>
+        {
+            recovered = true;
+            return default;
+        });
+
+        await shield.ExecuteAsync(_ => throw new ConcurrencyLimitExceededException());
+
+        await Assert.That(recovered).IsTrue();
+    }
+
+    [Test]
+    public async Task Default_Fallback_Recovers_Open_Circuit_Without_Retrying_Rejection()
+    {
+        var retries = 0;
+        var shield = Shield.For<int>()
+            .FallbackTo(42)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = _ =>
+                {
+                    retries++;
+                    return default;
+                };
+            })
+            .CircuitBreaker(
+                consecutiveFailures: 1,
+                breakDuration: TimeSpan.FromMinutes(1));
+
+        var first = await shield.ExecuteAsync(_ => throw new InvalidOperationException());
+        retries = 0;
+        var second = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        await Assert.That(first).IsEqualTo(42);
+        await Assert.That(second).IsEqualTo(42);
+        await Assert.That(retries).IsEqualTo(0);
     }
 
     [Test]

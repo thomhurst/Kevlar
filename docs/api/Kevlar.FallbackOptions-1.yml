@@ -34,6 +34,12 @@ items:
     factory. Notification failures are reported through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref>
 
     and do not skip recovery.
+
+    Without an ambient clause or local handling override, fallback handles ordinary exceptions and
+
+    <xref href="Kevlar.ExecutionRejectedException" data-throw-if-not-resolved="false"></xref> instances while letting cancellation and fatal runtime
+
+    exceptions propagate.
   example: []
   syntax:
     content: public sealed class FallbackOptions<TResult>
@@ -296,6 +302,14 @@ references:
   name: OnCallbackError
   nameWithType: KevlarDiagnostics.OnCallbackError
   fullName: Kevlar.KevlarDiagnostics.OnCallbackError
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

@@ -361,7 +361,7 @@ public static class ShieldExtensions
         Throw.IfNull(fallback, nameof(fallback));
         return shield.Append(new VoidFallbackStrategy(
             fallback,
-            shield.JudgeOrDefault,
+            shield.FallbackJudgeOrDefault,
             null));
     }
 
@@ -383,7 +383,7 @@ public static class ShieldExtensions
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesExceptionWithContext,
-            shield.JudgeOrDefault);
+            shield.FallbackJudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             judge,
@@ -404,7 +404,7 @@ public static class ShieldExtensions
         Throw.IfNull(shield, nameof(shield));
         return shield.Append(new VoidFallbackStrategy(
             (_, token) => fallback(token),
-            shield.JudgeOrDefault,
+            shield.FallbackJudgeOrDefault,
             null));
     }
 
@@ -426,7 +426,7 @@ public static class ShieldExtensions
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesExceptionWithContext,
-            shield.JudgeOrDefault);
+            shield.FallbackJudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             (_, token) => fallback(token),
             judge,

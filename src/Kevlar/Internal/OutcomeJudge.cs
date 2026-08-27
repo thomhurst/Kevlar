@@ -11,6 +11,16 @@ internal abstract class OutcomeJudge
     /// <summary>The default: handle ordinary errors, but not cancellation, rejections, or fatal exceptions.</summary>
     public static readonly OutcomeJudge Default = new DefaultJudge();
 
+    /// <summary>The fallback default: also handle execution rejections, but not cancellation or fatal exceptions.</summary>
+    public static readonly OutcomeJudge FallbackDefault = new FallbackDefaultJudge();
+
+    internal static bool FallbackHandlesEveryOutcomeHandledBy(
+        OutcomeJudge fallbackJudge,
+        OutcomeJudge outerJudge) =>
+        ReferenceEquals(fallbackJudge, outerJudge)
+        || (ReferenceEquals(fallbackJudge, FallbackDefault)
+            && ReferenceEquals(outerJudge, Default));
+
     /// <summary>
     /// A human-readable rendering of the clause — the terms the caller wrote, joined with
     /// <c>" | "</c> — for pipeline descriptions. <see langword="null"/> when the clause adds
@@ -87,20 +97,27 @@ internal abstract class OutcomeJudge
         return false;
     }
 
+    private static bool IsOrdinaryError(Exception exception) =>
+        exception is not (
+            OperationCanceledException
+            or ExecutionRejectedException
+            or OutOfMemoryException
+            or InsufficientExecutionStackException
+            or StackOverflowException
+            or ThreadAbortException
+            or AccessViolationException);
+
     private sealed class DefaultJudge : OutcomeJudge
     {
         protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
             outcome.Exception is { } exception && IsOrdinaryError(exception);
+    }
 
-        private static bool IsOrdinaryError(Exception exception) =>
-            exception is not (
-                OperationCanceledException
-                or ExecutionRejectedException
-                or OutOfMemoryException
-                or InsufficientExecutionStackException
-                or StackOverflowException
-                or ThreadAbortException
-                or AccessViolationException);
+    private sealed class FallbackDefaultJudge : OutcomeJudge
+    {
+        protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
+            outcome.Exception is { } exception
+            && (exception is ExecutionRejectedException || IsOrdinaryError(exception));
     }
 }
 

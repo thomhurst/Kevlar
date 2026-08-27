@@ -231,6 +231,18 @@ public partial class DocsConsistencyTests
         await Assert.That(migrationGuide).Contains("TelemetryRecorder");
     }
 
+    [Test]
+    public async Task Migration_Guide_Documents_Fallback_Rejection_Handling()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationGuide = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "docs", "docs", "polly-migration.md"));
+
+        await Assert.That(migrationGuide).Contains("**Fallback handles execution rejections by default.**");
+        await Assert.That(migrationGuide).Contains("CircuitOpenException");
+        await Assert.That(migrationGuide).Contains("FallbackTo(...).Retry(3).CircuitBreaker(...)");
+    }
+
     private static Dictionary<string, ExceptionDocRow> ReadExceptionRows()
     {
         var repositoryRoot = FindRepositoryRoot();
