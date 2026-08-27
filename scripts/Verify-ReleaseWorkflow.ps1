@@ -124,6 +124,29 @@ if ($nugetPublishScript.Contains('--skip-duplicate', [StringComparison]::Ordinal
     throw 'NuGet publication must reject conflicting duplicates after comparing payloads.'
 }
 
+. (Join-Path $PSScriptRoot 'PackageDependencyPolicy.ps1')
+Assert-ShippedDependencyFloor `
+    -DependencyId 'Microsoft.Extensions.Options' `
+    -DependencyVersion '8.0.2' `
+    -Context 'fixture'
+$raisedFloorRejected = $false
+try
+{
+    Assert-ShippedDependencyFloor `
+        -DependencyId 'Microsoft.Extensions.Options' `
+        -DependencyVersion '10.0.11' `
+        -Context 'fixture'
+}
+catch
+{
+    $raisedFloorRejected = $_.Exception.Message -match 'major version 8 or earlier'
+}
+
+if (-not $raisedFloorRejected)
+{
+    throw 'Shipped dependency policy accepted a Microsoft.Extensions 10.x floor.'
+}
+
 $tagIndex = $publish.IndexOf('- name: Create and push release tag', [StringComparison]::Ordinal)
 $packageIndex = $publish.IndexOf('- name: Push to NuGet', [StringComparison]::Ordinal)
 $releaseIndex = $publish.IndexOf('- name: Create GitHub release', [StringComparison]::Ordinal)

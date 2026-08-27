@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'PackageDependencyPolicy.ps1')
 
 $isCiBuild = $env:CI -eq 'true'
 $ciPropertyValue = $isCiBuild.ToString().ToLowerInvariant()
@@ -446,6 +447,10 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 $dependencyId = $dependency.GetAttribute('id')
+                Assert-ShippedDependencyFloor `
+                    -DependencyId $dependencyId `
+                    -DependencyVersion $dependency.GetAttribute('version') `
+                    -Context "$packageId $framework"
                 $expectedExcludedAssets = if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
                 {
                     @()
@@ -907,9 +912,16 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="8.0.0" />
     <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
   </ItemGroup>
 </Project>
@@ -918,6 +930,40 @@ sealed class ExpectedConsumerException : Exception;
         Write-TextFile $projectPath $consumerProject
         Write-TextFile (Join-Path $consumerDirectory 'Program.cs') $runtimeProgram
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
+        if ($framework -eq 'net8.0')
+        {
+            $packageListJson = (& dotnet list $projectPath package --include-transitive --format json --no-restore | Out-String)
+            if ($LASTEXITCODE -ne 0)
+            {
+                throw 'Unable to inspect the .NET 8 consumer dependency graph.'
+            }
+
+            $packageList = $packageListJson | ConvertFrom-Json
+            $resolvedPackages = @(
+                $packageList.projects.frameworks.topLevelPackages
+                $packageList.projects.frameworks.transitivePackages)
+            $expectedNet8Versions = @{
+                'Microsoft.Bcl.TimeProvider' = '8.0.1'
+                'Microsoft.Extensions.Configuration' = '8.0.0'
+                'Microsoft.Extensions.Configuration.Abstractions' = '8.0.0'
+                'Microsoft.Extensions.DependencyInjection' = '8.0.1'
+                'Microsoft.Extensions.DependencyInjection.Abstractions' = '8.0.2'
+                'Microsoft.Extensions.Http' = '8.0.1'
+                'Microsoft.Extensions.Logging' = '8.0.1'
+                'Microsoft.Extensions.Logging.Abstractions' = '8.0.3'
+                'Microsoft.Extensions.Options' = '8.0.2'
+                'Microsoft.Extensions.Primitives' = '8.0.0'
+                'System.Threading.RateLimiting' = '8.0.0'
+            }
+            foreach ($entry in $expectedNet8Versions.GetEnumerator())
+            {
+                $resolvedVersion = @($resolvedPackages |
+                    Where-Object id -eq $entry.Key |
+                    ForEach-Object resolvedVersion)
+                Assert-Equal ".NET 8 consumer $($entry.Key) version" $resolvedVersion $entry.Value
+            }
+        }
+
         Invoke-DotNet @('build', $projectPath, '-c', 'Release', '--no-restore')
         $kevlarPdbFramework = $framework
         Copy-Item `
