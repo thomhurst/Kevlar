@@ -70,7 +70,7 @@ internal sealed class RetryStrategy : Strategy
         _judge = judge;
         _maxRetries = maxRetries;
         _backoff = backoff!;
-        _maxDelay = maxDelay;
+        _maxDelay = maxDelay ?? _backoff.MaxDelay;
         _onRetry = onRetry;
         _delayGenerator = delayGenerator;
         _callbackResultType = callbackResultType;
@@ -116,7 +116,9 @@ internal sealed class RetryStrategy : Strategy
 
     public override string Describe()
     {
-        var cap = _maxDelay is { } max ? $", ≤{DescribeHelper.Time(max)}" : string.Empty;
+        var cap = _maxDelay is { } max && max != _backoff.MaxDelay
+            ? $", ≤{DescribeHelper.Time(max)}"
+            : string.Empty;
         return _maxRetries == int.MaxValue
             ? $"RetryForever({_backoff}{cap})"
             : $"Retry({_maxRetries}, {_backoff}{cap})";

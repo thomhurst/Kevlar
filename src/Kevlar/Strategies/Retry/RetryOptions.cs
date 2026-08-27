@@ -44,6 +44,7 @@ public sealed class RetryOptions
     /// <summary>
     /// An absolute upper bound applied to every delay, including delays produced by
     /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
+    /// When unset, <see cref="Backoff.MaxDelay"/> is used when the backoff provides one.
     /// </summary>
     public TimeSpan? MaxDelay { get; set; }
 
@@ -58,6 +59,7 @@ public sealed class RetryOptions
     /// Overrides the computed delay for a specific retry. Receives the event with the
     /// backoff-computed delay; return a non-null value to replace it (for example, from an
     /// HTTP <c>Retry-After</c> header). <see cref="MaxDelay"/> still caps the returned value.
+    /// When it is unset, <see cref="Backoff.MaxDelay"/> caps the value when available.
     /// The generator is awaited before <see cref="OnRetry"/> runs. Do not retain the pooled
     /// <see cref="RetryEvent.Context"/> after the returned task completes.
     /// </summary>
@@ -94,6 +96,7 @@ public sealed class RetryOptions<TResult>
     /// <summary>
     /// An absolute upper bound applied to every delay, including delays produced by
     /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
+    /// When unset, <see cref="Backoff.MaxDelay"/> is used when the backoff provides one.
     /// </summary>
     public TimeSpan? MaxDelay { get; set; }
 
@@ -142,8 +145,9 @@ public sealed class RetryOptions<TResult>
     /// <summary>
     /// Overrides the computed delay for a specific retry, with the typed handled outcome.
     /// Return a non-null value to replace the backoff-computed delay;
-    /// <see cref="MaxDelay"/> still caps the returned value. The generator is awaited before
-    /// <see cref="OnRetry"/> runs.
+    /// <see cref="MaxDelay"/> still caps the returned value. When it is unset,
+    /// <see cref="Backoff.MaxDelay"/> caps the value when available. The generator is awaited
+    /// before <see cref="OnRetry"/> runs.
     /// </summary>
     public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
 }

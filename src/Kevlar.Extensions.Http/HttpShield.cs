@@ -3,6 +3,8 @@ namespace Kevlar.Extensions.Http;
 /// <summary>Building blocks for HTTP resilience shields.</summary>
 public static class HttpShield
 {
+    private static readonly TimeSpan DefaultRetryAfterMaxDelay = Backoff.Default.MaxDelay!.Value;
+
     /// <summary>
     /// Returns <see langword="true"/> for responses worth retrying: 5xx, 408 Request Timeout
     /// and 429 Too Many Requests.
@@ -81,12 +83,15 @@ public static class HttpShield
 
     /// <summary>
     /// A <see cref="RetryOptions{TResult}.DelayGenerator"/> honouring the response's
-    /// <c>Retry-After</c> header when present and longer than the computed backoff.
+    /// <c>Retry-After</c> header when present and longer than the computed backoff, capped at the
+    /// default backoff's 30-second maximum.
     /// </summary>
     public static ValueTask<TimeSpan?> RetryAfter(RetryEvent<HttpResponseMessage> retry) =>
-        new(RetryAfterCore(retry));
+        new(RetryAfterCore(retry, DefaultRetryAfterMaxDelay));
 
-    private static TimeSpan? RetryAfterCore(RetryEvent<HttpResponseMessage> retry)
+    private static TimeSpan? RetryAfterCore(
+        RetryEvent<HttpResponseMessage> retry,
+        TimeSpan maxDelay)
     {
         if (retry.Outcome.Result is not { } response)
         {
@@ -111,7 +116,13 @@ public static class HttpShield
             suggested = date - retry.Context.TimeProvider.GetUtcNow();
         }
 
-        return suggested is { } value && value > retry.Delay ? value : null;
+        if (suggested is not { } value || value <= retry.Delay)
+        {
+            return null;
+        }
+
+        var capped = value > maxDelay ? maxDelay : value;
+        return capped > retry.Delay ? capped : null;
     }
 
     /// <summary>
@@ -129,16 +140,7 @@ public static class HttpShield
             throw new ArgumentOutOfRangeException(nameof(maxDelay), "maxDelay must not be negative.");
         }
 
-        return retry =>
-        {
-            var suggested = RetryAfterCore(retry);
-            if (suggested is not { } value || value <= maxDelay)
-            {
-                return new ValueTask<TimeSpan?>(suggested);
-            }
-
-            return new ValueTask<TimeSpan?>(maxDelay > retry.Delay ? maxDelay : null);
-        };
+        return retry => new ValueTask<TimeSpan?>(RetryAfterCore(retry, maxDelay));
     }
 
     private static bool IsHttpClientTimeout(TaskCanceledException exception)
@@ -252,7 +254,9 @@ public static class HttpShield
         {
             var suggested = custom(retry);
             return suggested.IsCompletedSuccessfully
-                ? new ValueTask<TimeSpan?>(Longer(suggested.Result, RetryAfterCore(retry)))
+                ? new ValueTask<TimeSpan?>(Longer(
+                    suggested.Result,
+                    RetryAfterCore(retry, DefaultRetryAfterMaxDelay)))
                 : LongerAsync(suggested, retry);
         };
     }
@@ -260,7 +264,9 @@ public static class HttpShield
     private static async ValueTask<TimeSpan?> LongerAsync(
         ValueTask<TimeSpan?> custom,
         RetryEvent<HttpResponseMessage> retry) =>
-        Longer(await custom.ConfigureAwait(false), RetryAfterCore(retry));
+        Longer(
+            await custom.ConfigureAwait(false),
+            RetryAfterCore(retry, DefaultRetryAfterMaxDelay));
 
     private static TimeSpan? Longer(TimeSpan? first, TimeSpan? second)
     {

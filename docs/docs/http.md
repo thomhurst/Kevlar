@@ -223,7 +223,12 @@ shape.
 
 ### `HttpShield.RetryAfter`
 
-A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header (delta or date form), the retry waits what the server asked for. The server's suggestion is used only when it's *longer* than the computed backoff; no header → normal backoff applies. It returns a completed `ValueTask<TimeSpan?>`, so it binds directly as a method group (`options.DelayGenerator = HttpShield.RetryAfter`) and works with synchronous `Execute`.
+A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header
+(delta or date form), the retry waits what the server asked for, capped at 30 seconds by default.
+The server's suggestion is used only when it's *longer* than the computed backoff; no header →
+normal backoff applies. It returns a completed `ValueTask<TimeSpan?>`, so it binds directly as a
+method group (`options.DelayGenerator = HttpShield.RetryAfter`) and works with synchronous
+`Execute`. Use `HttpShield.RetryAfter(maxDelay)` to choose another cap.
 
 The standard shield composes this with a custom `Retry.DelayGenerator` and uses the longer result,
 awaiting the custom generator when it yields. Set `UseRetryAfterHeader` to `false` when the custom

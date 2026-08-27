@@ -200,7 +200,9 @@ items:
   summary: >-
     A <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref> honouring the response's
 
-    <code>Retry-After</code> header when present and longer than the computed backoff.
+    <code>Retry-After</code> header when present and longer than the computed backoff, capped at the
+
+    default backoff's 30-second maximum.
   example: []
   syntax:
     content: public static ValueTask<TimeSpan?> RetryAfter(RetryEvent<HttpResponseMessage> retry)

@@ -219,6 +219,8 @@ items:
     An absolute upper bound applied to every delay, including delays produced by
 
     <xref href="Kevlar.RetryOptions.DelayGenerator" data-throw-if-not-resolved="false"></xref> (so a huge <code>Retry-After</code> header cannot stall the pipeline).
+
+    When unset, <xref href="Kevlar.Backoff.MaxDelay" data-throw-if-not-resolved="false"></xref> is used when the backoff provides one.
   example: []
   syntax:
     content: public TimeSpan? MaxDelay { get; set; }
@@ -275,6 +277,8 @@ items:
     backoff-computed delay; return a non-null value to replace it (for example, from an
 
     HTTP <code>Retry-After</code> header). <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps the returned value.
+
+    When it is unset, <xref href="Kevlar.Backoff.MaxDelay" data-throw-if-not-resolved="false"></xref> caps the value when available.
 
     The generator is awaited before <xref href="Kevlar.RetryOptions.OnRetry" data-throw-if-not-resolved="false"></xref> runs. Do not retain the pooled
 
@@ -749,6 +753,13 @@ references:
   name: Backoff
   nameWithType: Backoff
   fullName: Kevlar.Backoff
+- uid: Kevlar.Backoff.MaxDelay
+  commentId: P:Kevlar.Backoff.MaxDelay
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_MaxDelay
+  name: MaxDelay
+  nameWithType: Backoff.MaxDelay
+  fullName: Kevlar.Backoff.MaxDelay
 - uid: Kevlar.RetryOptions.MaxDelay*
   commentId: Overload:Kevlar.RetryOptions.MaxDelay
   isExternal: true
