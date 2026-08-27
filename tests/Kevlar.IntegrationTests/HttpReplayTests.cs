@@ -413,7 +413,10 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task JsonContent_With_Consumable_Value_NoBuffer_Returns_Original_Response()
+    [Arguments(true)]
+    [Arguments(false)]
+    public async Task JsonContent_With_Consumable_Value_NoBuffer_Returns_Original_Response(
+        bool declaredAsInterface)
     {
         var values = new SingleUseAsyncEnumerable();
         var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -428,7 +431,9 @@ public class HttpReplayTests
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
         {
-            Content = JsonContent.Create<IAsyncEnumerable<int>>(values),
+            Content = declaredAsInterface
+                ? JsonContent.Create<IAsyncEnumerable<int>>(values)
+                : JsonContent.Create(values),
         };
 
         using var response = await invoker.SendAsync(request, CancellationToken.None);
