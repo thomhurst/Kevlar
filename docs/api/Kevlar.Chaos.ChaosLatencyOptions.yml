@@ -101,14 +101,14 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a callback that computes the delay for each injected execution.
+  summary: Gets or sets an awaited callback that computes the delay for each injected execution.
   example: []
   syntax:
-    content: public Func<KevlarContext, TimeSpan>? DelayGenerator { get; set; }
+    content: public Func<KevlarContext, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,System.TimeSpan}
-    content.vb: Public Property DelayGenerator As Func(Of KevlarContext, TimeSpan)
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property DelayGenerator As Func(Of KevlarContext, ValueTask(Of TimeSpan))
   overload: Kevlar.Chaos.ChaosLatencyOptions.DelayGenerator*
 references:
 - uid: Kevlar.Chaos
@@ -471,17 +471,17 @@ references:
   name: DelayGenerator
   nameWithType: ChaosLatencyOptions.DelayGenerator
   fullName: Kevlar.Chaos.ChaosLatencyOptions.DelayGenerator
-- uid: System.Func{Kevlar.KevlarContext,System.TimeSpan}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.TimeSpan}
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<KevlarContext, TimeSpan>
-  nameWithType: Func<KevlarContext, TimeSpan>
-  fullName: System.Func<Kevlar.KevlarContext, System.TimeSpan>
-  nameWithType.vb: Func(Of KevlarContext, TimeSpan)
-  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.TimeSpan)
-  name.vb: Func(Of KevlarContext, TimeSpan)
+  name: Func<KevlarContext, ValueTask<TimeSpan>>
+  nameWithType: Func<KevlarContext, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
   spec.csharp:
   - uid: System.Func`2
     name: Func
@@ -494,10 +494,16 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -513,10 +519,18 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2

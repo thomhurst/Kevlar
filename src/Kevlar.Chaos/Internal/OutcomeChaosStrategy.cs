@@ -6,7 +6,7 @@ namespace Kevlar.Chaos.Internal;
 internal sealed class OutcomeChaosStrategy<TResult> : ChaosStrategy
 {
     private readonly TResult? _result;
-    private readonly Func<KevlarContext, TResult>? _resultGenerator;
+    private readonly Func<KevlarContext, ValueTask<TResult>>? _resultGenerator;
 
     public OutcomeChaosStrategy(ChaosOutcomeOptions<TResult> options)
         : base(options)
@@ -23,13 +23,43 @@ internal sealed class OutcomeChaosStrategy<TResult> : ChaosStrategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
-        if (!TryDecide(context, out var decision))
+        var decision = DecideAsync(context);
+        return decision.IsCompletedSuccessfully
+            ? ExecuteFromDecision(next, context, decision.GetAwaiter().GetResult())
+            : ExecuteAfterDecisionAsync(next, context, decision);
+    }
+
+    private ValueTask<Outcome<T>> ExecuteFromDecision<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        ChaosDecision? decision)
+    {
+        if (decision is not { } injection)
         {
             return next.InvokeAsync(context);
         }
 
         Debug.Assert(typeof(T) == typeof(TResult), "Outcome chaos only executes inside a matching Shield<TResult>.");
-        var typedResult = _resultGenerator is null ? _result : _resultGenerator(context);
+        if (_resultGenerator is null)
+        {
+            return Inject<T>(_result, context, injection);
+        }
+
+        var result = InvokeGenerator(
+            _resultGenerator,
+            context,
+            context,
+            "ChaosOutcomeOptions.ResultGenerator");
+        return result.IsCompletedSuccessfully
+            ? Inject<T>(result.GetAwaiter().GetResult(), context, injection)
+            : InjectAfterGenerationAsync<T>(result, context, injection);
+    }
+
+    private ValueTask<Outcome<T>> Inject<T>(
+        TResult? typedResult,
+        KevlarContext context,
+        ChaosDecision decision)
+    {
         var result = Unsafe.As<TResult?, T>(ref typedResult);
 
         var notification = Notify(ChaosInjectionKind.Outcome, context, decision);
@@ -37,6 +67,18 @@ internal sealed class OutcomeChaosStrategy<TResult> : ChaosStrategy
             ? new ValueTask<Outcome<T>>(Outcome<T>.FromResult(result))
             : InjectAfterNotificationAsync(notification, result);
     }
+
+    private async ValueTask<Outcome<T>> ExecuteAfterDecisionAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        ValueTask<ChaosDecision?> decision) =>
+        await ExecuteFromDecision(next, context, await decision.ConfigureAwait(false)).ConfigureAwait(false);
+
+    private async ValueTask<Outcome<T>> InjectAfterGenerationAsync<T>(
+        ValueTask<TResult> result,
+        KevlarContext context,
+        ChaosDecision decision) =>
+        await Inject<T>(await result.ConfigureAwait(false), context, decision).ConfigureAwait(false);
 
     private static async ValueTask<Outcome<T>> InjectAfterNotificationAsync<T>(
         ValueTask notification,

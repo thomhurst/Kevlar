@@ -34,7 +34,7 @@ var faults = ChaosShield.Fault(options =>
 {
     options.Enabled = true;
     options.ExceptionGenerator = context =>
-        new IOException($"Injected fault in {context.ShieldName}");
+        new(new IOException($"Injected fault in {context.ShieldName}"));
     options.Operation = "checkout";
     options.InjectionRate = 0.01;
 });
@@ -78,7 +78,10 @@ var value = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
 
 `Enabled` is the primary safety gate. `EnabledGenerator` can add a live kill switch;
 `InjectionRateGenerator` and `Predicate` receive the current `KevlarContext`. Fixed configuration
-is copied when the shield is built, while generators are evaluated on every execution.
+is copied when the shield is built, while generators are evaluated on every execution. Every
+generator returns `ValueTask<T>` and is awaited. Return `new(value)` for synchronous work; a
+generator that actually yields requires `ExecuteAsync`, and the async-configuration analyzer
+reports it when used with synchronous `Execute`.
 
 ```csharp
 using Kevlar.Chaos;
@@ -87,10 +90,10 @@ var chaosEnabled = true;
 var deterministic = ChaosShield.Fault(options =>
 {
     options.Enabled = true;
-    options.EnabledGenerator = _ => chaosEnabled;
+    options.EnabledGenerator = _ => new(chaosEnabled);
     options.Predicate = context => !context.IsSynchronous;
     options.InjectionRateGenerator = context =>
-        context.ShieldName == "test-run" ? 0.25 : 0;
+        new(context.ShieldName == "test-run" ? 0.25 : 0);
     options.Seed = 42;
 }).WithName("test-run");
 ```

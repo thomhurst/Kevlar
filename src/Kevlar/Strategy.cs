@@ -70,6 +70,25 @@ public abstract class Strategy
     /// </summary>
     protected internal virtual string? SynchronousExecutionUnsupportedReason => null;
 
+    /// <summary>
+    /// Invokes a generator hook whose result the strategy needs. Generator failures propagate to
+    /// the caller. Under synchronous execution a generator that does not complete synchronously
+    /// throws <see cref="NotSupportedException"/>.
+    /// </summary>
+    /// <typeparam name="TEvent">The generator input type.</typeparam>
+    /// <typeparam name="TResult">The generated result type.</typeparam>
+    /// <param name="generator">The generator to invoke.</param>
+    /// <param name="callbackEvent">The input passed to the generator.</param>
+    /// <param name="context">The current execution context.</param>
+    /// <param name="hookName">The generator name used in synchronous-execution errors.</param>
+    /// <returns>The generator invocation.</returns>
+    protected static ValueTask<TResult> InvokeGenerator<TEvent, TResult>(
+        Func<TEvent, ValueTask<TResult>> generator,
+        TEvent callbackEvent,
+        KevlarContext context,
+        string hookName) =>
+        CallbackInvoker.InvokeGenerator(generator, callbackEvent, context, hookName);
+
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
 

@@ -14,12 +14,15 @@ public abstract class ChaosOptions
     /// <summary>Gets or sets the probability of injection, from zero through one. The default is one.</summary>
     public double InjectionRate { get; set; } = 1;
 
-    /// <summary>Gets or sets a callback that computes the injection rate for each execution.</summary>
-    /// <remarks>When set, this callback takes precedence over <see cref="InjectionRate"/>.</remarks>
-    public Func<KevlarContext, double>? InjectionRateGenerator { get; set; }
+    /// <summary>Gets or sets an awaited callback that computes the injection rate for each execution.</summary>
+    /// <remarks>
+    /// When set, this callback takes precedence over <see cref="InjectionRate"/>. Return a completed
+    /// <see cref="ValueTask{TResult}"/> to retain synchronous-execution compatibility.
+    /// </remarks>
+    public Func<KevlarContext, ValueTask<double>>? InjectionRateGenerator { get; set; }
 
-    /// <summary>Gets or sets a dynamic kill switch evaluated after <see cref="Enabled"/>.</summary>
-    public Func<KevlarContext, bool>? EnabledGenerator { get; set; }
+    /// <summary>Gets or sets an awaited dynamic kill switch evaluated after <see cref="Enabled"/>.</summary>
+    public Func<KevlarContext, ValueTask<bool>>? EnabledGenerator { get; set; }
 
     /// <summary>Gets or sets an additional execution predicate that bounds the blast radius.</summary>
     public Func<KevlarContext, bool>? Predicate { get; set; }

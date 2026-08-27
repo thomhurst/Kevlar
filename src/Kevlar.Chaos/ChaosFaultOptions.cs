@@ -7,6 +7,6 @@ public sealed class ChaosFaultOptions : ChaosOptions
     /// <remarks>A <see cref="ChaosInjectedException"/> is used when this value is null.</remarks>
     public Exception? Exception { get; set; }
 
-    /// <summary>Gets or sets a callback that creates the exception for each injected execution.</summary>
-    public Func<KevlarContext, Exception>? ExceptionGenerator { get; set; }
+    /// <summary>Gets or sets an awaited callback that creates the exception for each injected execution.</summary>
+    public Func<KevlarContext, ValueTask<Exception>>? ExceptionGenerator { get; set; }
 }

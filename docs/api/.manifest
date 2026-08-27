@@ -941,6 +941,7 @@
   "Kevlar.Strategy.Describe": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.Handling": "Kevlar.Strategy.yml",
+  "Kevlar.Strategy.InvokeGenerator``2(System.Func{``0,System.Threading.Tasks.ValueTask{``1}},``0,Kevlar.KevlarContext,System.String)": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.InvokesContinuationAtMostOnce": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.IsDuplicateReferenceUnsafe": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.SynchronousExecutionUnsupportedReason": "Kevlar.Strategy.yml",

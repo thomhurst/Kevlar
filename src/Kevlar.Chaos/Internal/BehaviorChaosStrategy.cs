@@ -16,32 +16,56 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
-        if (_behavior is null)
+        var behavior = _behavior;
+        if (behavior is null)
         {
             return next.InvokeAsync(context);
         }
 
-        if (!TryDecide(context, out var decision))
+        var decision = DecideAsync(context);
+        return decision.IsCompletedSuccessfully
+            ? ExecuteFromDecision(behavior, next, context, decision.GetAwaiter().GetResult())
+            : ExecuteAfterDecisionAsync(behavior, next, context, decision);
+    }
+
+    private ValueTask<Outcome<T>> ExecuteFromDecision<T, TState>(
+        Func<KevlarContext, ValueTask> behavior,
+        Continuation<T, TState> next,
+        KevlarContext context,
+        ChaosDecision? decision)
+    {
+        if (decision is not { } injection)
         {
             return next.InvokeAsync(context);
         }
 
-        var notification = Notify(ChaosInjectionKind.Behavior, context, decision);
+        var notification = Notify(ChaosInjectionKind.Behavior, context, injection);
         if (!notification.IsCompletedSuccessfully)
         {
-            return AwaitNotificationThenBehaviorAsync(notification, _behavior, next, context);
+            return AwaitNotificationThenBehaviorAsync(notification, behavior, next, context);
         }
 
-        var behavior = _behavior(context);
-        if (behavior.IsCompletedSuccessfully)
+        var execution = behavior(context);
+        if (execution.IsCompletedSuccessfully)
         {
-            behavior.GetAwaiter().GetResult();
+            execution.GetAwaiter().GetResult();
             return next.InvokeAsync(context);
         }
 
-        ThrowIfSynchronousExecutionCannotAwait(behavior, context, "ChaosBehaviorOptions.Behavior");
-        return AwaitBehaviorAsync(behavior, next, context);
+        ThrowIfSynchronousExecutionCannotAwait(execution, context, "ChaosBehaviorOptions.Behavior");
+        return AwaitBehaviorAsync(execution, next, context);
     }
+
+    private async ValueTask<Outcome<T>> ExecuteAfterDecisionAsync<T, TState>(
+        Func<KevlarContext, ValueTask> behavior,
+        Continuation<T, TState> next,
+        KevlarContext context,
+        ValueTask<ChaosDecision?> decision) =>
+        await ExecuteFromDecision(
+            behavior,
+            next,
+            context,
+            await decision.ConfigureAwait(false)).ConfigureAwait(false);
 
     private static async ValueTask<Outcome<T>> AwaitNotificationThenBehaviorAsync<T, TState>(
         ValueTask notification,

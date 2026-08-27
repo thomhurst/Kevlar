@@ -9,6 +9,7 @@ items:
   - Kevlar.Strategy.Describe
   - Kevlar.Strategy.ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)
   - Kevlar.Strategy.Handling
+  - Kevlar.Strategy.InvokeGenerator``2(System.Func{``0,System.Threading.Tasks.ValueTask{``1}},``0,Kevlar.KevlarContext,System.String)
   - Kevlar.Strategy.InvokesContinuationAtMostOnce
   - Kevlar.Strategy.IsDuplicateReferenceUnsafe
   - Kevlar.Strategy.SynchronousExecutionUnsupportedReason
@@ -124,6 +125,55 @@ items:
       type: System.String
     content.vb: Public Overridable Function Describe() As String
   overload: Kevlar.Strategy.Describe*
+- uid: Kevlar.Strategy.InvokeGenerator``2(System.Func{``0,System.Threading.Tasks.ValueTask{``1}},``0,Kevlar.KevlarContext,System.String)
+  commentId: M:Kevlar.Strategy.InvokeGenerator``2(System.Func{``0,System.Threading.Tasks.ValueTask{`1}},``0,Kevlar.KevlarContext,System.String)
+  id: InvokeGenerator``2(System.Func{``0,System.Threading.Tasks.ValueTask{``1}},``0,Kevlar.KevlarContext,System.String)
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: InvokeGenerator<TEvent, TResult>(Func<TEvent, ValueTask<TResult>>, TEvent, KevlarContext, string)
+  nameWithType: Strategy.InvokeGenerator<TEvent, TResult>(Func<TEvent, ValueTask<TResult>>, TEvent, KevlarContext, string)
+  fullName: Kevlar.Strategy.InvokeGenerator<TEvent, TResult>(System.Func<TEvent, System.Threading.Tasks.ValueTask<TResult>>, TEvent, Kevlar.KevlarContext, string)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invokes a generator hook whose result the strategy needs. Generator failures propagate to
+
+    the caller. Under synchronous execution a generator that does not complete synchronously
+
+    throws <xref href="System.NotSupportedException" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: protected static ValueTask<TResult> InvokeGenerator<TEvent, TResult>(Func<TEvent, ValueTask<TResult>> generator, TEvent callbackEvent, KevlarContext context, string hookName)
+    parameters:
+    - id: generator
+      type: System.Func{{TEvent},System.Threading.Tasks.ValueTask{{TResult}}}
+      description: The generator to invoke.
+    - id: callbackEvent
+      type: '{TEvent}'
+      description: The input passed to the generator.
+    - id: context
+      type: Kevlar.KevlarContext
+      description: The current execution context.
+    - id: hookName
+      type: System.String
+      description: The generator name used in synchronous-execution errors.
+    typeParameters:
+    - id: TEvent
+      description: The generator input type.
+    - id: TResult
+      description: The generated result type.
+    return:
+      type: System.Threading.Tasks.ValueTask{{TResult}}
+      description: The generator invocation.
+    content.vb: Protected Shared Function InvokeGenerator(Of TEvent, TResult)(generator As Func(Of TEvent, ValueTask(Of TResult)), callbackEvent As TEvent, context As KevlarContext, hookName As String) As ValueTask(Of TResult)
+  overload: Kevlar.Strategy.InvokeGenerator*
+  nameWithType.vb: Strategy.InvokeGenerator(Of TEvent, TResult)(Func(Of TEvent, ValueTask(Of TResult)), TEvent, KevlarContext, String)
+  fullName.vb: Kevlar.Strategy.InvokeGenerator(Of TEvent, TResult)(System.Func(Of TEvent, System.Threading.Tasks.ValueTask(Of TResult)), TEvent, Kevlar.KevlarContext, String)
+  name.vb: InvokeGenerator(Of TEvent, TResult)(Func(Of TEvent, ValueTask(Of TResult)), TEvent, KevlarContext, String)
 - uid: Kevlar.Strategy.#ctor
   commentId: M:Kevlar.Strategy.#ctor
   id: '#ctor'
@@ -763,6 +813,143 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
+- uid: System.NotSupportedException
+  commentId: T:System.NotSupportedException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.notsupportedexception
+  name: NotSupportedException
+  nameWithType: NotSupportedException
+  fullName: System.NotSupportedException
+- uid: Kevlar.Strategy.InvokeGenerator*
+  commentId: Overload:Kevlar.Strategy.InvokeGenerator
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_InvokeGenerator__2_System_Func___0_System_Threading_Tasks_ValueTask___1_____0_Kevlar_KevlarContext_System_String_
+  name: InvokeGenerator
+  nameWithType: Strategy.InvokeGenerator
+  fullName: Kevlar.Strategy.InvokeGenerator
+- uid: System.Func{{TEvent},System.Threading.Tasks.ValueTask{{TResult}}}
+  commentId: T:System.Func{``0,System.Threading.Tasks.ValueTask{`1}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TEvent, ValueTask<TResult>>
+  nameWithType: Func<TEvent, ValueTask<TResult>>
+  fullName: System.Func<TEvent, System.Threading.Tasks.ValueTask<TResult>>
+  nameWithType.vb: Func(Of TEvent, ValueTask(Of TResult))
+  fullName.vb: System.Func(Of TEvent, System.Threading.Tasks.ValueTask(Of TResult))
+  name.vb: Func(Of TEvent, ValueTask(Of TResult))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TEvent
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TEvent
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: '{TEvent}'
+  commentId: '!:TEvent'
+  definition: TEvent
+  name: TEvent
+  nameWithType: TEvent
+  fullName: TEvent
+- uid: System.Threading.Tasks.ValueTask{{TResult}}
+  commentId: T:System.Threading.Tasks.ValueTask{`0}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: TEvent
+  commentId: '!:TEvent'
+  name: TEvent
+  nameWithType: TEvent
+  fullName: TEvent
 - uid: Kevlar.Strategy.#ctor*
   commentId: Overload:Kevlar.Strategy.#ctor
   isExternal: true
