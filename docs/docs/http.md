@@ -350,7 +350,10 @@ then decide whether an additional attempt may be sent:
 2. **Is it safe to send twice?** A semantic question about the operation. Only the caller can
    answer it for POST, PATCH, and custom methods.
 
-When either check fails, the shield stays single-attempt for that request instead of failing it.
+When method replay is suppressed, or `NoBuffer` rejects non-replayable content, the shield stays
+single-attempt for that request instead of failing it. With `Buffer`, content that exceeds
+`MaxBufferSize` or fails serialization throws `HttpRequestReplayException` before the first
+transport attempt.
 
 ### Rebuilding the message
 
