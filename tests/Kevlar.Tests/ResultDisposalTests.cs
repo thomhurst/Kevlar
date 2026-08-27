@@ -153,6 +153,7 @@ public class ResultDisposalTests
         releases[1].SetResult();
         var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
 
+        await handled.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.That(ReferenceEquals(result, winner)).IsTrue();
         await Assert.That(handled.DisposeCount).IsEqualTo(1);
         await Assert.That(winner.DisposeCount).IsEqualTo(0);

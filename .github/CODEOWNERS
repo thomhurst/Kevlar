@@ -1,0 +1,8 @@
+# Kevlar currently has one primary maintainer. Keep the default explicit so GitHub routes every
+# change, including new paths, for owner review.
+* @thomhurst
+
+# Security and release automation are called out for visibility even though the default applies.
+/SECURITY.md @thomhurst
+/.github/workflows/ @thomhurst
+/scripts/ @thomhurst

@@ -44,6 +44,9 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 
 ### Changed
 
+- The support policy commits target-framework removals to major releases, gives obsolete APIs at
+  least one minor release before removal, provides six months of previous-major security overlap,
+  and documents dependency floors, package lockstep, cadence, maintenance, and roadmap ownership.
 - HTTP handler replay and routing options are snapshotted when a pipeline is registered or created.
   Later mutations no longer alter live handlers; configuration reload remains the explicit update
   path and publishes a fresh complete snapshot.
