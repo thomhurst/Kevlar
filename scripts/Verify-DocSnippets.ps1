@@ -21,6 +21,10 @@ $changelogPath = Join-Path $repositoryRoot 'CHANGELOG.md'
 $documentPaths = @(
     (Join-Path $repositoryRoot 'README.md')
     $changelogPath
+    Get-ChildItem (Join-Path $repositoryRoot 'src') -Directory |
+        ForEach-Object { Join-Path $_.FullName 'README.md' } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+        Sort-Object
     Get-ChildItem (Join-Path $repositoryRoot 'docs/docs') -Recurse -File -Include '*.md', '*.mdx' |
         Sort-Object FullName |
         ForEach-Object FullName
@@ -47,6 +51,12 @@ foreach ($packageId in $requiredPackages)
     if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf))
     {
         throw "Documented package '$packageId' was not packed at '$packagePath'."
+    }
+
+    $packageReadmePath = Join-Path $repositoryRoot "src/$packageId/README.md"
+    if (-not (Test-Path -LiteralPath $packageReadmePath -PathType Leaf))
+    {
+        throw "Documented package '$packageId' has no package-specific README at '$packageReadmePath'."
     }
 }
 
