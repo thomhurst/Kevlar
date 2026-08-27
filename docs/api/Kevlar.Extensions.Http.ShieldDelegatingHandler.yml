@@ -231,6 +231,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
@@ -245,6 +246,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
@@ -560,7 +562,6 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
-  href: Kevlar.Shield-1.html
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>

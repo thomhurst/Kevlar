@@ -267,6 +267,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
@@ -281,6 +282,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
@@ -661,7 +663,6 @@ references:
   commentId: T:Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.ShieldBuilder`1
-  href: Kevlar.ShieldBuilder-1.html
   name: ShieldBuilder<HttpResponseMessage>
   nameWithType: ShieldBuilder<HttpResponseMessage>
   fullName: Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage>
@@ -739,7 +740,6 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
-  href: Kevlar.Shield-1.html
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -827,7 +827,6 @@ references:
   commentId: T:Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
-  href: Kevlar.RetryEvent-1.html
   name: RetryEvent<HttpResponseMessage>
   nameWithType: RetryEvent<HttpResponseMessage>
   fullName: Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>

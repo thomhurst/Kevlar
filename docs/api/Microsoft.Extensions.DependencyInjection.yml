@@ -28,7 +28,6 @@ references:
   name: KevlarLoggingServiceCollectionExtensions
   nameWithType: KevlarLoggingServiceCollectionExtensions
   fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
-
 - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   commentId: T:Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   isExternal: true

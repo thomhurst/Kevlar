@@ -265,6 +265,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.RateLimiting
     name: RateLimiting
@@ -279,6 +280,7 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
+    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.RateLimiting
     name: RateLimiting

@@ -914,7 +914,6 @@ references:
   commentId: T:Kevlar.RetryEvent{`0}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
-  href: Kevlar.RetryEvent-1.html
   name: RetryEvent<TResult>
   nameWithType: RetryEvent<TResult>
   fullName: Kevlar.RetryEvent<TResult>
@@ -995,7 +994,6 @@ references:
   commentId: T:Kevlar.FallbackEvent{`0}
   parent: Kevlar
   definition: Kevlar.FallbackEvent`1
-  href: Kevlar.FallbackEvent-1.html
   name: FallbackEvent<TResult>
   nameWithType: FallbackEvent<TResult>
   fullName: Kevlar.FallbackEvent<TResult>
@@ -1147,7 +1145,6 @@ references:
   commentId: T:Kevlar.CircuitBreakerBreakDurationEvent{`0}
   parent: Kevlar
   definition: Kevlar.CircuitBreakerBreakDurationEvent`1
-  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
   name: CircuitBreakerBreakDurationEvent<TResult>
   nameWithType: CircuitBreakerBreakDurationEvent<TResult>
   fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
