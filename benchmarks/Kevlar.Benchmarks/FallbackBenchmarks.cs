@@ -33,6 +33,10 @@ public class FallbackBenchmarks
             7,
             static options => options.OnFallback = static async _ => await Task.Yield());
 
+    private static readonly Shield<int> KevlarSynchronousDelegate = Shield.For<int>()
+        .When<InvalidOperationException>()
+        .Fallback(static _ => new ValueTask<int>(7));
+
     private static readonly ResiliencePipeline<int> PollyFallback = new ResiliencePipelineBuilder<int>()
         .AddFallback(new FallbackStrategyOptions<int>
         {
@@ -49,6 +53,10 @@ public class FallbackBenchmarks
 
     [BenchmarkCategory("Triggered"), Benchmark(Baseline = true)]
     public ValueTask<int> Kevlar_Triggered() => KevlarFallback.ExecuteAsync(static _ => throw PrimaryError);
+
+    [BenchmarkCategory("SynchronousTriggered"), Benchmark]
+    public int Kevlar_SynchronousDelegate_Triggered() =>
+        KevlarSynchronousDelegate.Execute(static _ => throw PrimaryError);
 
     [BenchmarkCategory("Triggered"), Benchmark]
     public ValueTask<int> Polly_Triggered() => PollyFallback.ExecuteAsync(static ValueTask<int> (_) => throw PrimaryError);

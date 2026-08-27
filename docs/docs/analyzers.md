@@ -364,11 +364,11 @@ Disable it project-wide with `dotnet_diagnostic.KEV011.severity = none`.
 
 ## KEV012: async configuration with synchronous Execute
 
-Every strategy hook returns `ValueTask`, and Kevlar never blocks the calling thread on one: under
-synchronous `Execute`, a hook that does not complete synchronously throws `NotSupportedException`
-at that call. `KEV012` reports the statically visible form — an `async` lambda, an `async`
-anonymous method, or a method group naming an `async` method assigned to a hook of a shield that
-is then passed to `Execute`:
+Every strategy hook and fallback recovery delegate returns `ValueTask`, and Kevlar never blocks the
+calling thread on one: under synchronous `Execute`, a delegate that does not complete synchronously
+throws `NotSupportedException` at that call. `KEV012` reports the statically visible form — an
+`async` lambda, an `async` anonymous method, or a method group naming an `async` method assigned to
+a hook or fallback recovery on a shield that is then passed to `Execute`:
 
 ```csharp
 #pragma warning disable KEV012 // Deliberately demonstrates the unsafe form.
@@ -393,10 +393,10 @@ var value = shield.Execute(static _ => 42);
 ```
 
 The rule recognizes hook assignments in a configuration lambda on the same fluent chain or through
-a stable local alias. It also recognizes `Fallback` recovery delegates and `UseRateLimiter`
-adapters, whose runtime contracts are async-only. Configuration lambdas are inspected only on known
-Kevlar strategy factories, so a custom extension that merely inspects genuine Kevlar options remains
-clean.
+a stable local alias. It also recognizes `Fallback` recovery delegates that are statically `async`.
+`UseRateLimiter` adapters remain async-only. Configuration lambdas are inspected only on known
+Kevlar strategy factories, so a custom extension that merely inspects genuine Kevlar options
+remains clean.
 
 The analyzer does not guess through fields, parameters, local delegates, or opaque factories; the
 runtime guard still protects those cases. `ExecuteAsync` and configurations whose hooks complete

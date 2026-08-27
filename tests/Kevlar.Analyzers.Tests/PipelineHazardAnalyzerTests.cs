@@ -6705,7 +6705,10 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteWithContext(static _ => 1);",
             "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteOutcome(static _ => 1);",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejected = async _ => await Task.Yield()).Execute(_ => 1);",
-            "_ = Shield.For<int>().Fallback(static _ => ValueTask.FromResult(0)).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(async _ => { await Task.Yield(); return 0; }).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(async (_, _) => { await Task.Yield(); return 0; }).Execute(_ => 1);",
+            "Shield.Fallback(async _ => await Task.Yield()).Execute(static _ => { });",
+            "Shield.When<InvalidOperationException>().Fallback(async (_, _) => await Task.Yield()).Execute(static _ => { });",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(_ => 1);",
             "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
             "_ = ChaosShield.Behavior(options => { options.Enabled = false; if (DateTime.UtcNow.Ticks > 0) { options.Enabled = true; } options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
@@ -6726,6 +6729,11 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetry = RetryAsync).Execute(_ => 1);",
             members: "private static async ValueTask RetryAsync(RetryEvent item) => await Task.Yield();");
         await AssertRuleAsync(asyncMethodGroup, "KEV012");
+
+        var asyncFallbackMethodGroup = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().When<Exception>().Fallback(RecoverAsync).Execute(_ => 1);",
+            members: "private static async ValueTask<int> RecoverAsync(CancellationToken token) { await Task.Yield(); return 0; }");
+        await AssertRuleAsync(asyncFallbackMethodGroup, "KEV012");
 
         var additionalOptionShapes = new[]
         {
@@ -6767,6 +6775,10 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.RateLimit(options => options.OnRejected = static _ => default).Execute(_ => 1);",
             "_ = Shield.ConcurrencyLimit(options => options.OnRejected = static _ => default).Execute(_ => 1);",
             "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallback = static _ => default).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(static _ => ValueTask.FromResult(0)).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(static (_, _) => new ValueTask<int>(0)).Execute(_ => 1);",
+            "Shield.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+            "Shield.When<InvalidOperationException>().Fallback(static (_, _) => default).Execute(static _ => { });",
             "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
             "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
             "_ = Shield.Retry(options => { options.DelayGenerator = async _ => { await Task.Yield(); return null; }; options.MaxRetries = 0; }).Execute(_ => 1);",
@@ -6794,6 +6806,11 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetry = Retry).Execute(_ => 1);",
             members: "private static ValueTask Retry(RetryEvent item) => ValueTask.CompletedTask;");
         await Assert.That(methodGroup).IsEmpty();
+
+        var fallbackMethodGroup = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().When<Exception>().Fallback(Recover).Execute(_ => 1);",
+            members: "private static ValueTask<int> Recover(CancellationToken token) => new(0);");
+        await Assert.That(fallbackMethodGroup).IsEmpty();
     }
 
     [Test]

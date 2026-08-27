@@ -705,6 +705,7 @@ Classic Polly v7 concepts translate as follows:
 | Polly v7 | Kevlar |
 |---|---|
 | `Policy.Handle<T>().WaitAndRetryAsync(...)` | `Shield.When<T>().Retry(...)` |
+| `Policy.Handle<T>().Fallback(...)` / `FallbackAsync(...)` | `Shield.When<T>().Fallback(...)`; a completed `ValueTask` recovery runs inline under synchronous `Execute` |
 | `AddPolicyHandler(policy)` | build a shield, then `AddShield(shield)` |
 | `AddTransientHttpErrorPolicy(...)` / `HandleTransientHttpError()` | `HttpShield.WhenTransient()` followed by strategies |
 | `CircuitBreakerAsync(n, duration)` | `CircuitBreaker(consecutiveFailures: n, breakDuration: duration)` |

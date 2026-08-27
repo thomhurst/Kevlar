@@ -67,19 +67,20 @@ rejected statically, before the action runs:
 
 | Pipeline configuration | Synchronous `Execute` behavior |
 |---|---|
-| Empty shield, fixed timeout, constant fallback, or hooks that complete synchronously | Runs on the calling thread |
+| Empty shield, fixed timeout, constant fallback, or hooks and fallback delegates that complete synchronously | Runs on the calling thread |
 | Retry delay, queued rate limit, or queued concurrency limit | Blocks the calling thread until the delay or queue admission completes |
 | `TimeoutGenerator`, `BreakDurationGenerator`, or `DelayGenerator` returning a completed `ValueTask` | Invokes the generator inline; no async transition is introduced |
 | Any hook or generator that returns an incomplete `ValueTask`, including `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` at that call; use `ExecuteAsync` or make the hook complete synchronously |
+| A fallback recovery delegate that returns an incomplete `ValueTask` | Throws `NotSupportedException` at that call; use `ExecuteAsync` or make the delegate complete synchronously |
 | `CircuitBreakerMonitor.Isolate()` / `Reset()` with an `OnStateChanged` hook that yields | Blocks until the observer completes; the observer runs on the thread pool |
 | Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
-| A `ValueTask`-returning fallback recovery delegate or any `UseRateLimiter` adapter | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` |
+| Any `UseRateLimiter` adapter | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` |
 | Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
 
 [`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) reports `async`
-delegates assigned to hooks of a shield that is passed to `Execute`. A shield obtained from a field,
-parameter, or opaque factory may still contain such a hook, so the runtime guard remains
-authoritative.
+delegates assigned to hooks or fallback recovery on a shield that is passed to `Execute`. A shield
+obtained from a field, parameter, or opaque factory may still contain such a delegate, so the
+runtime guard remains authoritative.
 
 ## Zero-closure hot paths
 

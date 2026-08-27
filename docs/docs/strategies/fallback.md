@@ -170,6 +170,10 @@ fallback, the delegate receives the timeout scope's token and must observe it to
 total budget. If the fallback is outside the timeout, timeout cleanup completes first and the
 fallback receives the restored caller token.
 
+A fallback delegate that returns a completed `ValueTask` runs inline under synchronous `Execute`.
+One that remains incomplete throws `NotSupportedException` at that call; use `ExecuteAsync` for
+asynchronous recovery.
+
 ## Placement
 
 Fallback is usually **outermost** — the last line of defence after retries and breakers have given up:

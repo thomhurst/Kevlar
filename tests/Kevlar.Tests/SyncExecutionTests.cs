@@ -234,79 +234,84 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Execute_Rejects_Forwarded_Async_Fallback_Recovery_Before_Invoking_The_Action()
+    public async Task Sync_Execute_Rejects_Fallback_Recovery_That_Does_Not_Complete_Synchronously()
     {
-        var actionInvoked = false;
-        var typed = Shield.For<int>().Fallback(static token => RecoverAsync(token));
-        var untyped = Shield.Empty.Fallback(static token => RecoverVoidAsync(token));
-        Exception? typedException = null;
-        Exception? untypedException = null;
+        var typedGate = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var untypedGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var actionInvocations = 0;
+        var typed = Shield.For<int>().Fallback(_ => new ValueTask<int>(typedGate.Task));
+        var untyped = Shield.Empty.Fallback(_ => new ValueTask(untypedGate.Task));
 
         var previous = SynchronizationContext.Current;
         try
         {
             SynchronizationContext.SetSynchronizationContext(new NonPumpingSynchronizationContext());
-            try
-            {
-                _ = typed.Execute(_ =>
+            var typedException = await Assert.That(() => typed.Execute(_ =>
                 {
-                    actionInvoked = true;
+                    actionInvocations++;
                     throw new InvalidOperationException();
-                });
-            }
-            catch (Exception exception)
-            {
-                typedException = exception;
-            }
+                }))
+                .Throws<NotSupportedException>();
+            var untypedException = await Assert.That(() => untyped.Execute(_ =>
+                {
+                    actionInvocations++;
+                    throw new InvalidOperationException();
+                }))
+                .Throws<NotSupportedException>();
 
-            try
-            {
-                untyped.Execute(_ =>
-                {
-                    actionInvoked = true;
-                    throw new InvalidOperationException();
-                });
-            }
-            catch (Exception exception)
-            {
-                untypedException = exception;
-            }
+            await Assert.That(typedException!.Message).Contains("FallbackOptions<TResult>");
+            await Assert.That(untypedException!.Message).Contains("FallbackOptions");
+            await Assert.That(actionInvocations).IsEqualTo(2);
         }
         finally
         {
             SynchronizationContext.SetSynchronizationContext(previous);
+            typedGate.TrySetResult(42);
+            untypedGate.TrySetResult();
         }
-
-        await Assert.That(typedException).IsTypeOf<NotSupportedException>();
-        await Assert.That(untypedException).IsTypeOf<NotSupportedException>();
-        await Assert.That(typedException!.Message).Contains("Fallback recovery delegate");
-        await Assert.That(untypedException!.Message).Contains("Fallback recovery delegate");
-        await Assert.That(actionInvoked).IsFalse();
     }
 
     [Test]
-    public async Task Sync_Execute_Rejects_Async_Shaped_Fallback_Even_When_It_Completes_Synchronously()
+    public async Task Sync_Execute_Runs_Fallback_Recovery_That_Completes_Synchronously()
     {
+        var untypedFallbackInvoked = false;
         var typed = Shield.For<int>().Fallback(static _ => new ValueTask<int>(42));
-        var untyped = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
+        var untyped = Shield.Empty.Fallback(_ =>
+        {
+            untypedFallbackInvoked = true;
+            return ValueTask.CompletedTask;
+        });
 
-        await Assert.That(() => typed.Execute(_ => throw new InvalidOperationException()))
-            .Throws<NotSupportedException>();
-        await Assert.That(() => untyped.Execute(_ => throw new InvalidOperationException()))
-            .Throws<NotSupportedException>();
+        var result = typed.Execute(_ => throw new InvalidOperationException());
+        untyped.Execute(_ => throw new InvalidOperationException());
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(untypedFallbackInvoked).IsTrue();
     }
 
-    private static async ValueTask<int> RecoverAsync(CancellationToken cancellationToken)
+    [Test]
+    public async Task Sync_ExecuteOutcome_Captures_Incomplete_Fallback_Recovery()
     {
-        await Task.Yield();
-        cancellationToken.ThrowIfCancellationRequested();
-        return 42;
-    }
+        var typedGate = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var untypedGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var typed = Shield.For<int>().Fallback(_ => new ValueTask<int>(typedGate.Task));
+        var untyped = Shield.Empty.Fallback(_ => new ValueTask(untypedGate.Task));
 
-    private static async ValueTask RecoverVoidAsync(CancellationToken cancellationToken)
-    {
-        await Task.Yield();
-        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            var typedOutcome = typed.ExecuteOutcome(_ => throw new InvalidOperationException());
+            var untypedOutcome = untyped.ExecuteOutcome(_ => throw new InvalidOperationException());
+
+            await Assert.That(typedOutcome.Exception).IsTypeOf<NotSupportedException>();
+            await Assert.That(untypedOutcome.Exception).IsTypeOf<NotSupportedException>();
+            await Assert.That(typedOutcome.Exception!.Message).Contains("FallbackOptions<TResult>");
+            await Assert.That(untypedOutcome.Exception!.Message).Contains("FallbackOptions");
+        }
+        finally
+        {
+            typedGate.TrySetResult(42);
+            untypedGate.TrySetResult();
+        }
     }
 
     [Test]
