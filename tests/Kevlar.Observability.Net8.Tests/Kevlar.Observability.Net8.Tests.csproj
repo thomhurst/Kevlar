@@ -13,6 +13,7 @@
   <ItemGroup>
     <Compile Include="..\Kevlar.Chaos.Tests\DocsConsistencyTests.cs" Link="DocsConsistencyTests.cs" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
   </ItemGroup>
 
 </Project>
