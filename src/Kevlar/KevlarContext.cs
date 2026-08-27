@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Kevlar.Internal;
 using Reservoir;
 
 namespace Kevlar;
@@ -32,7 +33,6 @@ public sealed class KevlarContext
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
     private int _attemptNumber;
-    private bool _isSynchronous;
     private string? _shieldName;
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
@@ -67,11 +67,11 @@ public sealed class KevlarContext
         get
         {
             ThrowIfReturnedToPool();
-            return _isSynchronous;
+            return SynchronousExecutionKind != SynchronousExecutionKind.None;
         }
-
-        internal set => _isSynchronous = value;
     }
+
+    internal SynchronousExecutionKind SynchronousExecutionKind { get; set; }
 
     /// <summary>The name of the executing shield, if one was assigned via <c>WithName</c>.</summary>
     public string? ShieldName
@@ -203,13 +203,17 @@ public sealed class KevlarContext
             exception);
     }
 
-    internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
+    internal static KevlarContext Rent(
+        CancellationToken cancellationToken,
+        SynchronousExecutionKind synchronousExecutionKind,
+        TimeProvider timeProvider,
+        string? shieldName)
     {
         var context = Pool.Rent();
 
         MarkRented(context);
         context.CancellationToken = cancellationToken;
-        context.IsSynchronous = isSynchronous;
+        context.SynchronousExecutionKind = synchronousExecutionKind;
         context.TimeProvider = timeProvider;
         context.ShieldName = shieldName;
         context.StrategyIndex = -1;
@@ -218,14 +222,25 @@ public sealed class KevlarContext
         return context;
     }
 
+    internal static KevlarContext Rent(
+        CancellationToken cancellationToken,
+        bool isSynchronous,
+        TimeProvider timeProvider,
+        string? shieldName) =>
+        Rent(
+            cancellationToken,
+            isSynchronous ? SynchronousExecutionKind.Execute : SynchronousExecutionKind.None,
+            timeProvider,
+            shieldName);
+
     internal static KevlarContext RentChild(
         KevlarContext parent,
         string? shieldName,
-        bool isSynchronous)
+        SynchronousExecutionKind synchronousExecutionKind)
     {
         var context = Rent(
             parent.CancellationToken,
-            isSynchronous,
+            synchronousExecutionKind,
             parent.TimeProvider,
             shieldName);
         context._forkBaseline ??= new KevlarProperties();
@@ -258,7 +273,7 @@ public sealed class KevlarContext
         var snapshot = new KevlarContext
         {
             CancellationToken = CancellationToken,
-            IsSynchronous = IsSynchronous,
+            SynchronousExecutionKind = SynchronousExecutionKind,
             TimeProvider = TimeProvider,
             ShieldName = ShieldName,
             StrategyIndex = StrategyIndex,
@@ -274,7 +289,7 @@ public sealed class KevlarContext
     /// </summary>
     internal KevlarContext Fork(CancellationToken cancellationToken)
     {
-        var fork = Rent(cancellationToken, IsSynchronous, TimeProvider, ShieldName);
+        var fork = Rent(cancellationToken, SynchronousExecutionKind, TimeProvider, ShieldName);
         fork.StrategyIndex = StrategyIndex;
         fork.AttemptNumber = AttemptNumber;
         fork.TelemetryListener = TelemetryListener;
@@ -364,7 +379,7 @@ public sealed class KevlarContext
         public bool TryReset(KevlarContext context)
         {
             context.CancellationToken = default;
-            context.IsSynchronous = false;
+            context.SynchronousExecutionKind = SynchronousExecutionKind.None;
             context.ShieldName = null;
             context.StrategyIndex = -1;
             context.AttemptNumber = 0;

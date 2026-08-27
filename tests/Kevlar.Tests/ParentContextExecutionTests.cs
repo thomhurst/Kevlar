@@ -89,6 +89,31 @@ public class ParentContextExecutionTests
     }
 
     [Test]
+    public async Task Synchronous_Nested_Hook_Rejection_Recommends_Context_Async_Overload()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = async _ => await gate.Task;
+        });
+        NotSupportedException? rejection = null;
+
+        await Shield.Empty.ExecuteWithContextAsync(async parentContext =>
+        {
+            rejection = await Assert.That(() => shield.ExecuteWithContext(
+                    parentContext,
+                    static _ => throw new InvalidOperationException()))
+                .Throws<NotSupportedException>();
+        });
+
+        await Assert.That(rejection!.Message)
+            .Contains("Use ExecuteWithContextAsync instead of ExecuteWithContext");
+        gate.SetResult();
+    }
+
+    [Test]
     public async Task Parent_Cancellation_Cancels_Nested_Execution()
     {
         using var cancellation = new CancellationTokenSource();

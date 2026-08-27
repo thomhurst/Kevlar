@@ -43,7 +43,7 @@ internal static class ShieldEngine
             }
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
@@ -94,7 +94,7 @@ internal static class ShieldEngine
             return AwaitDirectOutcomeAsync(execution, shieldName, startedAt);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
@@ -166,7 +166,7 @@ internal static class ShieldEngine
             {
                 var cancelledContext = KevlarContext.Rent(
                     cancellationToken,
-                    isSynchronous: false,
+                    SynchronousExecutionKind.None,
                     timeProvider,
                     shieldName);
                 NotifyCompleted(onCompleted, state, cancelledContext.PropertiesForCompletion);
@@ -176,7 +176,7 @@ internal static class ShieldEngine
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         try
         {
             initializeProperties(state, context.Properties);
@@ -217,7 +217,7 @@ internal static class ShieldEngine
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.RentChild(parentContext, shieldName, isSynchronous: false);
+        var context = KevlarContext.RentChild(parentContext, shieldName, SynchronousExecutionKind.None);
         var pipeline = RunWithContextAsync(head, state, action, context);
         if (pipeline.IsCompletedSuccessfully)
         {
@@ -249,10 +249,12 @@ internal static class ShieldEngine
             head,
             startedAt,
             shieldName,
-            synchronousMethodName: nameof(Shield.ExecuteWithContext),
-            asynchronousMethodName: nameof(Shield.ExecuteWithContextAsync));
+            SynchronousExecutionKind.ExecuteWithContext);
 
-        var context = KevlarContext.RentChild(parentContext, shieldName, isSynchronous: true);
+        var context = KevlarContext.RentChild(
+            parentContext,
+            shieldName,
+            SynchronousExecutionKind.ExecuteWithContext);
         try
         {
             var pipeline = RunWithContextSync(head, state, action, context);
@@ -299,9 +301,13 @@ internal static class ShieldEngine
             }
         }
 
-        ValidateSynchronousExecution(head, startedAt, shieldName);
+        ValidateSynchronousExecution(head, startedAt, shieldName, SynchronousExecutionKind.Execute);
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.Execute,
+            timeProvider,
+            shieldName);
 
         try
         {
@@ -356,15 +362,18 @@ internal static class ShieldEngine
                 head,
                 startedAt,
                 shieldName,
-                synchronousMethodName: nameof(Shield.ExecuteOutcome),
-                asynchronousMethodName: nameof(Shield.ExecuteOutcomeAsync));
+                SynchronousExecutionKind.ExecuteOutcome);
         }
         catch (Exception exception)
         {
             return Outcome<T>.FromException(exception);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.ExecuteOutcome,
+            timeProvider,
+            shieldName);
         try
         {
             var pipeline = RunSync(head, state, action, context);
@@ -406,10 +415,13 @@ internal static class ShieldEngine
             head,
             startedAt,
             shieldName,
-            synchronousMethodName: nameof(Shield.ExecuteWithContext),
-            asynchronousMethodName: nameof(Shield.ExecuteWithContextAsync));
+            SynchronousExecutionKind.ExecuteWithContext);
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.ExecuteWithContext,
+            timeProvider,
+            shieldName);
         try
         {
             try
@@ -440,15 +452,14 @@ internal static class ShieldEngine
         StrategyNode? head,
         long startedAt,
         string? shieldName,
-        string synchronousMethodName = nameof(Shield.Execute),
-        string asynchronousMethodName = nameof(Shield.ExecuteAsync))
+        SynchronousExecutionKind kind)
     {
         if (head?.SynchronousExecutionUnsupportedReason is { } reason)
         {
             RecordExecution(startedAt, shieldName, success: false);
             throw new NotSupportedException(
                 $"Synchronous execution does not support {reason}. " +
-                $"Use {asynchronousMethodName} instead of {synchronousMethodName}.");
+                $"{SynchronousExecutionGuard.GetAdvice(kind)}.");
         }
     }
 

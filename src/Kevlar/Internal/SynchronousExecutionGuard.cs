@@ -41,8 +41,15 @@ internal static class SynchronousExecutionGuard
         var shield = context.ShieldName is { Length: > 0 } name ? $" on shield '{name}'" : string.Empty;
         return new SynchronousExecutionRejectionException(
             $"Synchronous execution does not support {hookName} completing asynchronously{shield}. " +
-            "Use ExecuteAsync instead of Execute, or make the callback complete synchronously.");
+            $"{GetAdvice(context.SynchronousExecutionKind)}, or make the callback complete synchronously.");
     }
+
+    internal static string GetAdvice(SynchronousExecutionKind kind) => kind switch
+    {
+        SynchronousExecutionKind.ExecuteOutcome => "Use ExecuteOutcomeAsync instead of ExecuteOutcome",
+        SynchronousExecutionKind.ExecuteWithContext => "Use ExecuteWithContextAsync instead of ExecuteWithContext",
+        _ => "Use ExecuteAsync instead of Execute",
+    };
 
     internal static bool IsRejection(Exception exception) =>
         exception is SynchronousExecutionRejectionException;
