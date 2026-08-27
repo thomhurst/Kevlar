@@ -219,11 +219,19 @@ public static class ShieldHttpClientBuilderExtensions
         configure(options);
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
-        return UseStandardTimeout(builder)
-            .AddHttpMessageHandler(services => new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                handlerOptions,
-                CreateDecorator(services, builder.Name)));
+        var registration = RegisterSharedPipeline(builder);
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    handlerOptions));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>
