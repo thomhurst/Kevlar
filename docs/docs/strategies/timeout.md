@@ -41,7 +41,9 @@ Internally, the timeout strategy swaps `context.CancellationToken` for a linked 
 
 Two behaviours worth knowing:
 
-- If your delegate completes successfully *despite* the token firing, the result is still delivered.
+- If your delegate completes *despite* the token firing, its result or non-cancellation exception is
+  still delivered. Kevlar emits a `timeout_ignored` Warning event containing the elapsed duration,
+  increments `kevlar.timeouts` with `outcome=ignored`, and does not invoke `OnTimeout`.
 - Cancellation from your own outer token is **not** reported as a timeout — it propagates as a normal `OperationCanceledException`.
 
 ## Cancellation arbitration

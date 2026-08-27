@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Time.Testing;
+
 namespace Kevlar.Tests;
 
 public class TimeoutArbitrationTests
@@ -295,6 +297,50 @@ public class TimeoutArbitrationTests
     }
 
     [Test]
+    public async Task Ignored_Timeout_Emits_Elapsed_Telemetry_Without_OnTimeout()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var timeoutEvents = 0;
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "timeout_ignored"
+                && telemetryEvent.ShieldName == "timeout-ignored-telemetry")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var shield = Shield.Timeout(options =>
+        {
+            options.Timeout = TimeSpan.FromSeconds(1);
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
+        })
+            .WithName("timeout-ignored-telemetry")
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteAsync(async _ =>
+        {
+            started.SetResult();
+            await release.Task;
+            return 42;
+        }).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+        release.SetResult();
+        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observed.EventName).IsEqualTo("timeout_ignored");
+        await Assert.That(observed.Severity).IsEqualTo(KevlarTelemetrySeverity.Warning);
+        await Assert.That(observed.Duration).IsEqualTo(TimeSpan.FromSeconds(2));
+        await Assert.That(observed.IsSuccess).IsTrue();
+        await Assert.That(timeoutEvents).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Outer_Strategy_Sees_Caller_Token_After_Success_And_Timeout()
     {
         var timeProvider = new ManualTimeProvider();
@@ -472,6 +518,12 @@ public class TimeoutArbitrationTests
             ((TaskCompletionSource)state!).TrySetResult(), cancelled);
         await cancelled.Task;
         throw new OperationCanceledException("wrapped without token");
+    }
+
+    private sealed class CallbackTelemetryListener(Action<KevlarTelemetryEvent> callback)
+        : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback(telemetryEvent);
     }
 
     private sealed class ManualTimeProvider : TimeProvider

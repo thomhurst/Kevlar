@@ -102,6 +102,7 @@ internal sealed class TimeoutStrategy : Strategy
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
+        var startedAt = context.TimeProvider.GetTimestamp();
 
         try
         {
@@ -139,14 +140,19 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitAsync(execution, context, priorToken, timeoutSource, timer, timeout);
+            return AwaitAsync(execution, context, priorToken, timeoutSource, timer, timeout, startedAt);
         }
 
         var outcome = execution.Result;
         if (outcome.Exception is not OperationCanceledException cancellationException)
         {
-            Cleanup(context, priorToken, timeoutSource, timer);
-            return new ValueTask<Outcome<T>>(outcome);
+            return new ValueTask<Outcome<T>>(CompleteNonCancellation(
+                outcome,
+                context,
+                priorToken,
+                timeoutSource,
+                timer,
+                startedAt));
         }
 
         return CompleteCancellationAsync(
@@ -165,7 +171,8 @@ internal sealed class TimeoutStrategy : Strategy
         CancellationToken priorToken,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
-        TimeSpan timeout)
+        TimeSpan timeout,
+        long startedAt)
     {
         Outcome<T> outcome;
 
@@ -181,8 +188,13 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (outcome.Exception is not OperationCanceledException cancellationException)
         {
-            Cleanup(context, priorToken, timeoutSource, timer);
-            return outcome;
+            return CompleteNonCancellation(
+                outcome,
+                context,
+                priorToken,
+                timeoutSource,
+                timer,
+                startedAt);
         }
 
         return await CompleteCancellationAsync(
@@ -193,6 +205,32 @@ internal sealed class TimeoutStrategy : Strategy
             timeoutSource,
             timer,
             timeout).ConfigureAwait(false);
+    }
+
+    private Outcome<T> CompleteNonCancellation<T>(
+        Outcome<T> outcome,
+        KevlarContext context,
+        CancellationToken priorToken,
+        CancellationTokenSource timeoutSource,
+        ITimer? timer,
+        long startedAt)
+    {
+        context.CancellationToken = priorToken;
+        timer?.Dispose();
+        var timeoutIgnored = !priorToken.IsCancellationRequested && timeoutSource.IsCancellationRequested;
+        timeoutSource.Dispose();
+
+        if (timeoutIgnored)
+        {
+            KevlarMetrics.TimeoutIgnored(
+                context,
+                _telemetryName,
+                context.TimeProvider.GetElapsedTime(startedAt),
+                outcome.IsSuccess,
+                outcome.Exception);
+        }
+
+        return outcome;
     }
 
     private static void Cleanup(

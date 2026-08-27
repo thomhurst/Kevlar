@@ -70,9 +70,10 @@ registered `ILoggerFactory`. Explicit `WithLogging` calls remain local to that s
 | 1007 | concurrency-limit rejection | Warning |
 | 1008 | callback error | Error |
 | 1009 | HTTP attempts suppressed | Information |
+| 1010 | timeout cancellation ignored | Warning |
 
 Structured state includes the applicable subset of `ShieldName`, `StrategyIndex`, `Attempt`,
-`Delay`, `Duration`, `Outcome`, `FromState`, `ToState`, `RetryAfter`, `CallbackKind`, and
+`Delay`, `Duration`, `Elapsed`, `Outcome`, `FromState`, `ToState`, `RetryAfter`, `CallbackKind`, and
 `SuppressionReason`. HTTP retry and suppression events also include `RequestMethod` and `RequestUri`;
 the URI omits query and fragment data.
 

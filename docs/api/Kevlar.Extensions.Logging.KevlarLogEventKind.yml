@@ -15,6 +15,7 @@ items:
   - Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored
   langs:
   - csharp
   - vb
@@ -228,6 +229,26 @@ items:
   example: []
   syntax:
     content: AttemptsSuppressed = 9
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored
+  id: TimeoutIgnored
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: TimeoutIgnored
+  nameWithType: KevlarLogEventKind.TimeoutIgnored
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: An execution completed after ignoring timeout cancellation.
+  example: []
+  syntax:
+    content: TimeoutIgnored = 10
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 references:

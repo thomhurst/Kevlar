@@ -45,6 +45,9 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
   strategies, and void fallbacks that do not need the handled exception.
 - Circuit-open, rate-limit, concurrency-limit, and timeout failures expose conventional public
   exception constructors while retaining strategy-specific metadata.
+- Timeout strategies emit `timeout_ignored` telemetry, a structured Warning log, and a
+  `kevlar.timeouts` measurement with `outcome=ignored` when a delegate completes after ignoring
+  timeout cancellation; the delegate's outcome remains unchanged and `OnTimeout` is not invoked.
 
 ### Changed
 

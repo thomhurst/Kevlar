@@ -91,6 +91,37 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Ignored_Timeout_Logs_Elapsed_Duration_At_Warning()
+    {
+        var logger = new FakeLogger();
+        var timeProvider = new FakeTimeProvider();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider)
+            .WithLogging(logger);
+
+        var execution = shield.ExecuteAsync(async _ =>
+        {
+            started.SetResult();
+            await release.Task;
+            return 42;
+        }).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+        release.SetResult();
+
+        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        var record = logger.Collector.GetSnapshot().Single();
+        await Assert.That(record.Id).IsEqualTo(new EventId(1010, "TimeoutIgnored"));
+        await Assert.That(record.Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(record.GetStructuredStateValue("Elapsed")).IsEqualTo(TimeSpan.FromSeconds(2).ToString());
+        await Assert.That(record.GetStructuredStateValue("Outcome")).IsEqualTo("success");
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Breaker_Opened_Logs_Error_With_State_And_Break_Duration()
     {
         var logger = new FakeLogger();

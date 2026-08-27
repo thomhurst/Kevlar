@@ -36,7 +36,11 @@ items:
 
     <ul><li><code>kevlar.executions</code> — completed public execution calls, including empty shields and
 
-    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.http.replay_suppressed</code> — HTTP requests whose configured additional attempts
+    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy, including delegates
+
+    that complete after ignoring cancellation; attributes <code>kevlar.shield.name</code> and optional
+
+    <code>outcome</code> (<code>ignored</code>)</li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.http.replay_suppressed</code> — HTTP requests whose configured additional attempts
 
     were disabled for replay safety; attributes <code>kevlar.shield.name</code> and
 

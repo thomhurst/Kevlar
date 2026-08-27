@@ -32,4 +32,7 @@ public enum KevlarLogEventKind
 
     /// <summary>HTTP replay safety disabled configured additional attempts.</summary>
     AttemptsSuppressed,
+
+    /// <summary>An execution completed after ignoring timeout cancellation.</summary>
+    TimeoutIgnored,
 }

@@ -15,7 +15,9 @@ namespace Kevlar;
 /// <item><c>kevlar.executions</c> — completed public execution calls, including empty shields and
 /// pre-cancelled calls; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c> (<c>success</c>/<c>failure</c>)</item>
 /// <item><c>kevlar.retries</c> — retry attempts; attribute <c>kevlar.shield.name</c></item>
-/// <item><c>kevlar.timeouts</c> — executions cancelled by a timeout strategy; attribute <c>kevlar.shield.name</c></item>
+/// <item><c>kevlar.timeouts</c> — executions cancelled by a timeout strategy, including delegates
+/// that complete after ignoring cancellation; attributes <c>kevlar.shield.name</c> and optional
+/// <c>outcome</c> (<c>ignored</c>)</item>
 /// <item><c>kevlar.hedges</c> — extra hedged attempts launched; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>

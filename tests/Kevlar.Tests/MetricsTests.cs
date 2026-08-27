@@ -684,6 +684,35 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Ignored_Timeouts_Are_Counted_With_Their_Outcome()
+    {
+        using var listener = new KevlarMeterListener();
+        var timeProvider = new FakeTimeProvider();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(1))
+            .WithName("metrics-timeouts-ignored")
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteAsync(async _ =>
+        {
+            started.SetResult();
+            await release.Task;
+            return 42;
+        }).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+        release.SetResult();
+
+        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(listener.Total(
+            "kevlar.timeouts",
+            "metrics-timeouts-ignored",
+            ("outcome", "ignored"))).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Timeout_Telemetry_Uses_The_Surfaced_Exception()
     {
         using var meterListener = new KevlarMeterListener();

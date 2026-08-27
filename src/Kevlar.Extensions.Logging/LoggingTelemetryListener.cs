@@ -258,6 +258,11 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 LoggerMessages.Timeout(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.Duration, outcome, telemetryEvent.Exception);
                 break;
+            case KevlarLogEventKind.TimeoutIgnored:
+                LoggerMessages.TimeoutIgnored(logger, telemetryEvent.ShieldName,
+                    telemetryEvent.StrategyIndex, telemetryEvent.Duration, outcome,
+                    telemetryEvent.Exception);
+                break;
             case KevlarLogEventKind.CircuitState:
                 if (telemetryEvent.ToState == CircuitState.Open)
                 {
@@ -355,6 +360,12 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.Duration, outcome);
                 break;
+            case KevlarLogEventKind.TimeoutIgnored:
+                logger.Log(level, eventId, telemetryEvent.Exception,
+                    "Shield {ShieldName} strategy {StrategyIndex} completed after ignoring timeout cancellation for {Elapsed}; outcome {Outcome}",
+                    telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
+                    telemetryEvent.Duration, outcome);
+                break;
             case KevlarLogEventKind.CircuitState:
                 if (telemetryEvent.ToState == CircuitState.Open)
                 {
@@ -445,6 +456,11 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
             case "timeout":
                 kind = KevlarLogEventKind.Timeout;
                 eventId = new EventId(1002, "Timeout");
+                level = LogLevel.Warning;
+                return true;
+            case "timeout_ignored":
+                kind = KevlarLogEventKind.TimeoutIgnored;
+                eventId = new EventId(1010, "TimeoutIgnored");
                 level = LogLevel.Warning;
                 return true;
             case "circuit_opened":
