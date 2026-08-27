@@ -91,9 +91,10 @@ callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
-`OnFallback` is awaited before the fallback value or factory runs. Callback failures are reported
-through `KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip
-recovery. Fallback factory failures are preserved as the pipeline outcome.
+`OnFallback` is awaited before the fallback value or factory runs. Under the shared
+[callback-failure contract](../observability.md#callback-failures), failures are reported through
+`KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip recovery.
+Fallback factory failures are preserved as the pipeline outcome.
 
 ## Notifications
 

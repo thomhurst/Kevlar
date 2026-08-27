@@ -218,6 +218,19 @@ public partial class DocsConsistencyTests
         }
     }
 
+    [Test]
+    public async Task Migration_Guide_Documents_Hook_Exception_Isolation()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationGuide = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "docs", "docs", "polly-migration.md"));
+
+        await Assert.That(migrationGuide).Contains("**Hook exceptions never propagate.**");
+        await Assert.That(migrationGuide).Contains("KevlarDiagnostics.OnCallbackError");
+        await Assert.That(migrationGuide).Contains("AddKevlarLogging");
+        await Assert.That(migrationGuide).Contains("TelemetryRecorder");
+    }
+
     private static Dictionary<string, ExceptionDocRow> ReadExceptionRows()
     {
         var repositoryRoot = FindRepositoryRoot();

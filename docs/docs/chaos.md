@@ -125,7 +125,9 @@ var behavior = ChaosShield.Behavior(options =>
 awaited before the injection proceeds, and `return default;` suffices for synchronous work. The
 event identifies the injection kind, effective rate and sample, operation, environment, and
 `KevlarContext`. The context is pooled: copy values inside the callback rather than retaining the
-context or event.
+context or event. Hook exceptions follow the shared
+[callback-failure contract](observability.md#callback-failures): Kevlar reports them without
+replacing the injected outcome.
 
 On .NET 8+, the `Kevlar.Chaos` meter publishes the `kevlar.chaos.injections` counter. Its tags are
 `kevlar.chaos.kind` plus the available `kevlar.shield.name`, `kevlar.chaos.operation`, and

@@ -150,8 +150,9 @@ transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` wh
 may yield so the calling thread is not blocked; these methods await every bound breaker in binding
 order. If an observer throws,
 later observers still run and the circuit keeps its new, usable state. Observer failures are
-reported through `KevlarDiagnostics.OnCallbackError` and never replace an execution outcome or
-block a transition.
+reported through `KevlarDiagnostics.OnCallbackError` under the shared
+[callback-failure contract](../observability.md#callback-failures) and never replace an execution
+outcome or block a transition.
 
 ## Share the circuit deliberately
 

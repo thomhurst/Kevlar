@@ -41,7 +41,8 @@ Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **im
 For an actual rejection, Kevlar records the rejection counter, awaits `OnRejected`, then surfaces
 `ConcurrencyLimitExceededException`. Observable limiter gauges report the current state at the next
 metrics collection. The event includes the configured concurrency/queue limits, strategy index, and
-`KevlarContext`. Callback failures are reported through `KevlarDiagnostics.OnCallbackError`, and
+`KevlarContext`. Under the shared [callback-failure contract](../observability.md#callback-failures),
+failures are reported through `KevlarDiagnostics.OnCallbackError`, and
 `ConcurrencyLimitExceededException` remains the rejection outcome. A hook that completes
 synchronously works with synchronous `Execute`; one that yields throws `NotSupportedException`
 there and must run through `ExecuteAsync`.

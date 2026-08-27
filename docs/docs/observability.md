@@ -287,6 +287,10 @@ through `KevlarDiagnostics.OnCallbackError`, increments `kevlar.callback_errors`
 Each diagnostics subscriber is isolated too: one throwing subscriber cannot prevent later
 subscribers from receiving the error.
 
+This differs from Polly, where a strategy-hook exception propagates to the caller. During migration,
+use `KevlarDiagnostics.OnCallbackError`, `AddKevlarLogging`, or `TelemetryRecorder` in tests to keep
+hook failures visible. See [semantic differences](polly-migration.md#semantic-differences).
+
 `CallbackErrorEvent` is detached from the pooled execution context. It carries the callback kind,
 stable source, shield name, strategy index, and original exception, so it can safely be retained or
 queued. Satellite integrations use `CallbackErrorKind.Custom` and identify their callback through

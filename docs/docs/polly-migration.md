@@ -672,6 +672,10 @@ accepts `RateLimiter`, `PartitionedRateLimiter<KevlarContext>`, or a custom leas
   `Wrap` and `Compose` seal clauses at composition boundaries.
 - **Fallback ordering fails fast.** Kevlar rejects a fallback placed inside a retry, hedge, or
   breaker when both share the same clause; Polly builds that ineffective order silently.
+- **Hook exceptions never propagate.** Polly lets a strategy-hook exception fail the execution.
+  Kevlar reports hook failures without replacing the protected outcome. Observe them through
+  `KevlarDiagnostics.OnCallbackError`, structured logging from `AddKevlarLogging`, or
+  `TelemetryRecorder` in tests. See [callback failures](observability.md#callback-failures).
 - **Unhandled circuit outcomes are neutral.** Current Kevlar, like Polly, neither records an
   unhandled exception as a breaker failure nor resets prior consecutive failures.
 - **State is by instance.** Both libraries share breaker and limiter state only when the same built
