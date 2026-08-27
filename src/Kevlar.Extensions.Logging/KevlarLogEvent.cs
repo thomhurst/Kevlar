@@ -18,6 +18,7 @@ public readonly struct KevlarLogEvent
         FromState = telemetryEvent.FromState;
         ToState = telemetryEvent.ToState;
         RetryAfter = telemetryEvent.RetryAfter;
+        SuppressionReason = telemetryEvent.SuppressionReason;
         CallbackKind = telemetryEvent.CallbackKind;
     }
 
@@ -59,6 +60,9 @@ public readonly struct KevlarLogEvent
 
     /// <summary>The estimated retry delay for a rejection.</summary>
     public TimeSpan? RetryAfter { get; }
+
+    /// <summary>The bounded reason additional attempts were suppressed.</summary>
+    public string? SuppressionReason { get; }
 
     /// <summary>The callback family that failed.</summary>
     public CallbackErrorKind? CallbackKind { get; }

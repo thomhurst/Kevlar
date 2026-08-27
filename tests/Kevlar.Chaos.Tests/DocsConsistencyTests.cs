@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
+using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Kevlar.Chaos;
+using Kevlar.Extensions.Http;
 
 namespace Kevlar.Chaos.Tests;
 
@@ -112,6 +114,20 @@ public class DocsConsistencyTests
                 .WithName("docs-chaos")
                 .ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
         }
+
+        using var handler = new ShieldDelegatingHandler(
+            HttpShield.WhenTransient()
+                .Retry(1, Backoff.None)
+                .WithName("docs-http"))
+        {
+            InnerHandler = new UnavailableHandler(),
+        };
+        using var invoker = new HttpMessageInvoker(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://example.test/upload")
+        {
+            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+        };
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
     }
 
     private static Dictionary<string, InstrumentRow> ParseInstrumentTable()
@@ -282,6 +298,14 @@ public class DocsConsistencyTests
         string Unit,
         string MinimumTarget,
         HashSet<string> Tags);
+
+    private sealed class UnavailableHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+    }
 
     private sealed class InstrumentObserver : IDisposable
     {

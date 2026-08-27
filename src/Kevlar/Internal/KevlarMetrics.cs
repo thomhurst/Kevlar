@@ -54,6 +54,10 @@ internal static class KevlarMetrics
         "kevlar.rejections",
         "{rejection}",
         "Executions rejected before the user delegate starts.");
+    private static readonly Counter<long> HttpReplaySuppressions = Meter.CreateCounter<long>(
+        "kevlar.http.replay_suppressed",
+        "{request}",
+        "HTTP requests whose configured additional attempts were disabled for replay safety.");
     private static readonly Counter<long> CircuitTransitions = Meter.CreateCounter<long>(
         "kevlar.circuit_breaker.transitions",
         "{transition}",
@@ -285,6 +289,32 @@ internal static class KevlarMetrics
             rejectionKind: kind);
     }
 
+    public static void HttpReplaySuppressed(KevlarContext context, string reason)
+    {
+#if NET8_0_OR_GREATER
+        if (HttpReplaySuppressions.Enabled)
+        {
+            var tags = NameTags(context.ShieldName);
+            tags.Add("kevlar.suppression.reason", reason);
+            HttpReplaySuppressions.Add(1, tags);
+        }
+#endif
+        if (!KevlarTelemetry.IsEventEnabled(context))
+        {
+            return;
+        }
+
+        KevlarTelemetry.Record(
+            context,
+            strategyName: "HTTP",
+            eventName: "attempts_suppressed",
+            KevlarTelemetrySeverity.Information,
+            context.StrategyIndex,
+            context.AttemptNumber,
+            isSuccess: true,
+            suppressionReason: reason);
+    }
+
     public static void CircuitTransition(CircuitState from, CircuitState to)
     {
 #if NET8_0_OR_GREATER
@@ -371,6 +401,11 @@ internal static class KevlarMetrics
         if (telemetryEvent.OperationKey is not null)
         {
             tags.Add("kevlar.operation.key", telemetryEvent.OperationKey);
+        }
+
+        if (telemetryEvent.SuppressionReason is not null)
+        {
+            tags.Add("kevlar.suppression.reason", telemetryEvent.SuppressionReason);
         }
 
         if (StrategyEvents.Enabled)

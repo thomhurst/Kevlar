@@ -22,6 +22,7 @@ public readonly struct KevlarTelemetryEvent
         CircuitState? toState,
         TimeSpan? retryAfter,
         string? rejectionKind,
+        string? suppressionReason,
         CallbackErrorKind? callbackKind,
         KevlarContext context)
     {
@@ -41,6 +42,7 @@ public readonly struct KevlarTelemetryEvent
         ToState = toState;
         RetryAfter = retryAfter;
         RejectionKind = rejectionKind;
+        SuppressionReason = suppressionReason;
         CallbackKind = callbackKind;
         _context = context;
     }
@@ -92,6 +94,9 @@ public readonly struct KevlarTelemetryEvent
 
     internal string? RejectionKind { get; }
 
+    /// <summary>The bounded reason additional attempts were suppressed, when applicable.</summary>
+    public string? SuppressionReason { get; }
+
     /// <summary>The callback family that failed, when this is a callback-error event.</summary>
     public CallbackErrorKind? CallbackKind { get; }
 
@@ -116,6 +121,7 @@ public readonly struct KevlarTelemetryEvent
         ToState,
         RetryAfter,
         RejectionKind,
+        SuppressionReason,
         CallbackKind,
         Context);
 }

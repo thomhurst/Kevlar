@@ -21,6 +21,7 @@ items:
   - Kevlar.KevlarTelemetryEvent.ShieldName
   - Kevlar.KevlarTelemetryEvent.StrategyIndex
   - Kevlar.KevlarTelemetryEvent.StrategyName
+  - Kevlar.KevlarTelemetryEvent.SuppressionReason
   - Kevlar.KevlarTelemetryEvent.ToState
   langs:
   - csharp
@@ -389,6 +390,29 @@ items:
       type: System.Nullable{System.TimeSpan}
     content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
   overload: Kevlar.KevlarTelemetryEvent.RetryAfter*
+- uid: Kevlar.KevlarTelemetryEvent.SuppressionReason
+  commentId: P:Kevlar.KevlarTelemetryEvent.SuppressionReason
+  id: SuppressionReason
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: SuppressionReason
+  nameWithType: KevlarTelemetryEvent.SuppressionReason
+  fullName: Kevlar.KevlarTelemetryEvent.SuppressionReason
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The bounded reason additional attempts were suppressed, when applicable.
+  example: []
+  syntax:
+    content: public string? SuppressionReason { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property SuppressionReason As String
+  overload: Kevlar.KevlarTelemetryEvent.SuppressionReason*
 - uid: Kevlar.KevlarTelemetryEvent.CallbackKind
   commentId: P:Kevlar.KevlarTelemetryEvent.CallbackKind
   id: CallbackKind
@@ -904,6 +928,13 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: '?'
+- uid: Kevlar.KevlarTelemetryEvent.SuppressionReason*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.SuppressionReason
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_SuppressionReason
+  name: SuppressionReason
+  nameWithType: KevlarTelemetryEvent.SuppressionReason
+  fullName: Kevlar.KevlarTelemetryEvent.SuppressionReason
 - uid: Kevlar.KevlarTelemetryEvent.CallbackKind*
   commentId: Overload:Kevlar.KevlarTelemetryEvent.CallbackKind
   isExternal: true

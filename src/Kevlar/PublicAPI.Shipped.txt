@@ -758,6 +758,7 @@ Kevlar.KevlarTelemetryEvent.Severity.get -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetryEvent.ShieldName.get -> string?
 Kevlar.KevlarTelemetryEvent.StrategyIndex.get -> int
 Kevlar.KevlarTelemetryEvent.StrategyName.get -> string!
+Kevlar.KevlarTelemetryEvent.SuppressionReason.get -> string?
 Kevlar.KevlarTelemetryEvent.ToState.get -> Kevlar.CircuitState?
 Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Error = 2 -> Kevlar.KevlarTelemetrySeverity

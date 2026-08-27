@@ -207,6 +207,10 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
   `IDisposable`; disposal failures are isolated through `CallbackErrorKind.ResultDisposal`, while
   the selected terminal result remains caller-owned. The `netstandard2.0` package carries the
   required async-disposal runtime dependency.
+- Ordinary `JsonContent` request bodies can now be retried without buffering. Replay remains
+  conservative for `JsonContent` declared as `IAsyncEnumerable<T>` and other one-shot content.
+  When HTTP replay safety disables a configured multi-attempt shield, Kevlar emits the
+  `attempts_suppressed` event, Information log 1009, and `kevlar.http.replay_suppressed` metric.
 - Circuit-breaker monitors and testing snapshots report `HalfOpen` as soon as break duration
   elapses. Stale outcomes cannot alter newer state generations, and exceptions that opened a
   circuit are released when it closes or resets.

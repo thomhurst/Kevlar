@@ -14,8 +14,10 @@ Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter.get -> System.TimeSpan?
 Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName.get -> string?
 Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex.get -> int
 Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName.get -> string!
+Kevlar.Extensions.Logging.KevlarLogEvent.SuppressionReason.get -> string?
 Kevlar.Extensions.Logging.KevlarLogEvent.ToState.get -> Kevlar.CircuitState?
 Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed = 9 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError = 7 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected = 8 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState = 2 -> Kevlar.Extensions.Logging.KevlarLogEventKind

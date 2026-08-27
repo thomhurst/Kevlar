@@ -117,4 +117,14 @@ internal static partial class LoggerMessages
         CallbackErrorKind? callbackKind,
         string outcome,
         Exception? exception);
+
+    [LoggerMessage(EventId = 1009, EventName = "AttemptsSuppressed", Level = LogLevel.Information,
+        Message = "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
+        SkipEnabledCheck = true)]
+    public static partial void AttemptsSuppressed(
+        ILogger logger,
+        string? shieldName,
+        string? suppressionReason,
+        string? requestMethod,
+        string? requestUri);
 }

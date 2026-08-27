@@ -19,6 +19,9 @@ namespace Kevlar;
 /// <item><c>kevlar.hedges</c> — extra hedged attempts launched; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>
+/// <item><c>kevlar.http.replay_suppressed</c> — HTTP requests whose configured additional attempts
+/// were disabled for replay safety; attributes <c>kevlar.shield.name</c> and
+/// <c>kevlar.suppression.reason</c></item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
 /// <item><c>kevlar.callback_errors</c> — exceptions thrown by callbacks or cleanup operations;
 /// attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
