@@ -15,6 +15,7 @@ Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary sync
 
 [Documentation](https://thomhurst.github.io/Kevlar/docs/getting-started) ·
 [Strategies](https://thomhurst.github.io/Kevlar/docs/category/strategies) ·
+[API Reference](https://thomhurst.github.io/Kevlar/api/index.html) ·
 [Benchmarks](https://thomhurst.github.io/Kevlar/docs/benchmarks)
 
 ## Get started
@@ -166,6 +167,7 @@ configuration-bound shields and `IKevlarRegistry`.
 ## Where next?
 
 - Follow the [getting-started guide](https://thomhurst.github.io/Kevlar/docs/getting-started).
+- Browse the complete [API reference](https://thomhurst.github.io/Kevlar/api/index.html).
 - Browse the [strategy reference](https://thomhurst.github.io/Kevlar/docs/category/strategies).
 - Add [HTTP resilience](https://thomhurst.github.io/Kevlar/docs/http),
   [dependency injection](https://thomhurst.github.io/Kevlar/docs/dependency-injection), or

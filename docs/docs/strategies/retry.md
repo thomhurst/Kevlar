@@ -21,6 +21,31 @@ The count is **retries, not attempts**: `Retry(3)` makes up to 4 total attempts 
 plus 3 retries. The same reading applies to `MaxRetries` in the options form, and to every `Retry`
 overload on `Shield`, `Shield<T>`, and the `When…` builders.
 
+This executable check removes delays and verifies the count:
+
+<!-- doc-test-run: getting-started-retry-count -->
+```csharp
+var attempts = 0;
+var retryWithoutDelay = Shield.Retry(3, Backoff.None);
+
+try
+{
+    await retryWithoutDelay.ExecuteAsync(_ =>
+    {
+        attempts++;
+        return ValueTask.FromException(new HttpRequestException("offline"));
+    });
+}
+catch (HttpRequestException)
+{
+}
+
+if (attempts != 4)
+{
+    throw new InvalidOperationException($"Expected 4 attempts, observed {attempts}.");
+}
+```
+
 :::tip The default is the good one
 Bare `Shield.Retry(3)` gives exponential backoff **with equal jitter**, 250ms base, capped at 30s. Jitter prevents retry storms where every failed caller retries in lockstep; you'd have configured this anyway.
 :::
