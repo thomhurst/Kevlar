@@ -7,7 +7,7 @@ namespace Kevlar;
 /// Selects and retains an independent result-aware <see cref="Shield{TResult}"/> for each partition key.
 /// </summary>
 /// <remarks>
-/// Retention is bounded by <see cref="PartitionedShieldOptions.MaxPartitions"/>. Eviction
+/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey, TResult}.MaxPartitions"/>. Eviction
 /// removes only the provider's reference: callers that already hold the old shield, including
 /// active executions, continue normally. A later lookup creates a fresh partition with fresh
 /// strategy state. Partition keys are never added to metric tags or shield names automatically.
@@ -20,20 +20,26 @@ public sealed class PartitionedShield<TKey, TResult>
     /// <summary>Creates a bounded result-aware partition provider.</summary>
     public PartitionedShield(
         Func<TKey, Shield<TResult>> factory,
-        PartitionedShieldOptions? options = null,
+        PartitionedShieldOptions<TKey, TResult>? options = null,
         IEqualityComparer<TKey>? comparer = null) =>
-        _cache = new PartitionCache<TKey, Shield<TResult>>(Wrap(factory), options, comparer);
+        _cache = new PartitionCache<TKey, Shield<TResult>>(
+            Wrap(factory),
+            (options ?? new PartitionedShieldOptions<TKey, TResult>()).Snapshot(),
+            comparer);
 
     private PartitionedShield(
         Func<TKey, ValueTask<Shield<TResult>>> factory,
-        PartitionedShieldOptions? options,
+        PartitionedShieldOptions<TKey, TResult>? options,
         IEqualityComparer<TKey>? comparer) =>
-        _cache = new PartitionCache<TKey, Shield<TResult>>(factory, options, comparer);
+        _cache = new PartitionCache<TKey, Shield<TResult>>(
+            factory,
+            (options ?? new PartitionedShieldOptions<TKey, TResult>()).Snapshot(),
+            comparer);
 
     /// <summary>Creates a bounded result-aware partition provider with an asynchronous factory.</summary>
     public static PartitionedShield<TKey, TResult> CreateAsync(
         Func<TKey, ValueTask<Shield<TResult>>> factory,
-        PartitionedShieldOptions? options = null,
+        PartitionedShieldOptions<TKey, TResult>? options = null,
         IEqualityComparer<TKey>? comparer = null) =>
         new(factory, options, comparer);
 

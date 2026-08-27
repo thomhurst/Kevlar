@@ -9,7 +9,7 @@ public class PartitionedShieldContractTests
     {
         var provider = new PartitionedShield<string>(
             _ => Shield.Empty,
-            new PartitionedShieldOptions { MaxPartitions = 2 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 2 });
         var first = provider.GetShield("first");
         _ = provider.GetShield("second");
 
@@ -30,7 +30,7 @@ public class PartitionedShieldContractTests
         var timeProvider = new FakeTimeProvider();
         var provider = new PartitionedShield<string>(
             _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 IdleExpiration = TimeSpan.FromMinutes(1),
                 TimeProvider = timeProvider,

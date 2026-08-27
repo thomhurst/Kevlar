@@ -88,7 +88,7 @@ internal static class NetFrameworkCompatibilityTests
     {
         var partitions = new PartitionedShield<string, int>(
             static _ => Shield.For<int>().FallbackTo(42),
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<string, int> { MaxPartitions = 1 });
         _ = partitions.GetShield("first");
         _ = partitions.GetShield("second");
 

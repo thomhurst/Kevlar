@@ -6,8 +6,8 @@ items:
   parent: Kevlar.Extensions.DependencyInjection
   children:
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddKevlar(Microsoft.Extensions.DependencyInjection.IServiceCollection)
-  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
-  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions{``0}},System.Collections.Generic.IEqualityComparer{``0})
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions{``0,``1}},System.Collections.Generic.IEqualityComparer{``0})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
@@ -856,17 +856,17 @@ items:
   nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions, TResult)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield(Of TResult)), Action(Of Exception))
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions, TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of TOptions, System.IServiceProvider, Kevlar.Shield(Of TResult)), System.Action(Of System.Exception))
   name.vb: AddReloadingShield(Of TOptions, TResult)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield(Of TResult)), Action(Of Exception))
-- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
-  id: AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions{``0}},System.Collections.Generic.IEqualityComparer{``0})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions{`0}},System.Collections.Generic.IEqualityComparer{`0})
+  id: AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions{``0}},System.Collections.Generic.IEqualityComparer{``0})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   langs:
   - csharp
   - vb
-  name: AddPartitionedShield<TKey>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield>, Action<PartitionedShieldOptions>?, IEqualityComparer<TKey>?)
-  nameWithType: KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield>, Action<PartitionedShieldOptions>?, IEqualityComparer<TKey>?)
-  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<System.IServiceProvider, TKey, Kevlar.Shield>, System.Action<Kevlar.PartitionedShieldOptions>?, System.Collections.Generic.IEqualityComparer<TKey>?)
+  name: AddPartitionedShield<TKey>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield>, Action<PartitionedShieldOptions<TKey>>?, IEqualityComparer<TKey>?)
+  nameWithType: KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield>, Action<PartitionedShieldOptions<TKey>>?, IEqualityComparer<TKey>?)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<System.IServiceProvider, TKey, Kevlar.Shield>, System.Action<Kevlar.PartitionedShieldOptions<TKey>>?, System.Collections.Generic.IEqualityComparer<TKey>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.DependencyInjection
@@ -874,7 +874,7 @@ items:
   summary: Registers a named, bounded untyped partition provider as a keyed singleton service.
   example: []
   syntax:
-    content: 'public static IServiceCollection AddPartitionedShield<TKey>(this IServiceCollection services, string name, Func<IServiceProvider, TKey, Shield> factory, Action<PartitionedShieldOptions>? configure = null, IEqualityComparer<TKey>? comparer = null) where TKey : notnull'
+    content: 'public static IServiceCollection AddPartitionedShield<TKey>(this IServiceCollection services, string name, Func<IServiceProvider, TKey, Shield> factory, Action<PartitionedShieldOptions<TKey>>? configure = null, IEqualityComparer<TKey>? comparer = null) where TKey : notnull'
     parameters:
     - id: services
       type: Microsoft.Extensions.DependencyInjection.IServiceCollection
@@ -883,29 +883,29 @@ items:
     - id: factory
       type: System.Func{System.IServiceProvider,{TKey},Kevlar.Shield}
     - id: configure
-      type: System.Action{Kevlar.PartitionedShieldOptions}
+      type: System.Action{Kevlar.PartitionedShieldOptions{{TKey}}}
     - id: comparer
       type: System.Collections.Generic.IEqualityComparer{{TKey}}
     typeParameters:
     - id: TKey
     return:
       type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    content.vb: Public Shared Function AddPartitionedShield(Of TKey)(services As IServiceCollection, name As String, factory As Func(Of IServiceProvider, TKey, Shield), configure As Action(Of PartitionedShieldOptions) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As IServiceCollection
+    content.vb: Public Shared Function AddPartitionedShield(Of TKey)(services As IServiceCollection, name As String, factory As Func(Of IServiceProvider, TKey, Shield), configure As Action(Of PartitionedShieldOptions(Of TKey)) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As IServiceCollection
   overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield*
-  nameWithType.vb: KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield), Action(Of PartitionedShieldOptions), IEqualityComparer(Of TKey))
-  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, TKey, Kevlar.Shield), System.Action(Of Kevlar.PartitionedShieldOptions), System.Collections.Generic.IEqualityComparer(Of TKey))
-  name.vb: AddPartitionedShield(Of TKey)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield), Action(Of PartitionedShieldOptions), IEqualityComparer(Of TKey))
-- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{`1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
-  id: AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield), Action(Of PartitionedShieldOptions(Of TKey)), IEqualityComparer(Of TKey))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, TKey, Kevlar.Shield), System.Action(Of Kevlar.PartitionedShieldOptions(Of TKey)), System.Collections.Generic.IEqualityComparer(Of TKey))
+  name.vb: AddPartitionedShield(Of TKey)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield), Action(Of PartitionedShieldOptions(Of TKey)), IEqualityComparer(Of TKey))
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions{``0,``1}},System.Collections.Generic.IEqualityComparer{``0})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{`1}},System.Action{Kevlar.PartitionedShieldOptions{``0,``1}},System.Collections.Generic.IEqualityComparer{`0})
+  id: AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions{``0,``1}},System.Collections.Generic.IEqualityComparer{``0})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   langs:
   - csharp
   - vb
-  name: AddPartitionedShield<TKey, TResult>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield<TResult>>, Action<PartitionedShieldOptions>?, IEqualityComparer<TKey>?)
-  nameWithType: KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield<TResult>>, Action<PartitionedShieldOptions>?, IEqualityComparer<TKey>?)
-  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<System.IServiceProvider, TKey, Kevlar.Shield<TResult>>, System.Action<Kevlar.PartitionedShieldOptions>?, System.Collections.Generic.IEqualityComparer<TKey>?)
+  name: AddPartitionedShield<TKey, TResult>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield<TResult>>, Action<PartitionedShieldOptions<TKey, TResult>>?, IEqualityComparer<TKey>?)
+  nameWithType: KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(IServiceCollection, string, Func<IServiceProvider, TKey, Shield<TResult>>, Action<PartitionedShieldOptions<TKey, TResult>>?, IEqualityComparer<TKey>?)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<System.IServiceProvider, TKey, Kevlar.Shield<TResult>>, System.Action<Kevlar.PartitionedShieldOptions<TKey, TResult>>?, System.Collections.Generic.IEqualityComparer<TKey>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.DependencyInjection
@@ -913,7 +913,7 @@ items:
   summary: Registers a named, bounded result-aware partition provider as a keyed singleton service.
   example: []
   syntax:
-    content: 'public static IServiceCollection AddPartitionedShield<TKey, TResult>(this IServiceCollection services, string name, Func<IServiceProvider, TKey, Shield<TResult>> factory, Action<PartitionedShieldOptions>? configure = null, IEqualityComparer<TKey>? comparer = null) where TKey : notnull'
+    content: 'public static IServiceCollection AddPartitionedShield<TKey, TResult>(this IServiceCollection services, string name, Func<IServiceProvider, TKey, Shield<TResult>> factory, Action<PartitionedShieldOptions<TKey, TResult>>? configure = null, IEqualityComparer<TKey>? comparer = null) where TKey : notnull'
     parameters:
     - id: services
       type: Microsoft.Extensions.DependencyInjection.IServiceCollection
@@ -922,7 +922,7 @@ items:
     - id: factory
       type: System.Func{System.IServiceProvider,{TKey},Kevlar.Shield{{TResult}}}
     - id: configure
-      type: System.Action{Kevlar.PartitionedShieldOptions}
+      type: System.Action{Kevlar.PartitionedShieldOptions{{TKey},{TResult}}}
     - id: comparer
       type: System.Collections.Generic.IEqualityComparer{{TKey}}
     typeParameters:
@@ -930,11 +930,11 @@ items:
     - id: TResult
     return:
       type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    content.vb: Public Shared Function AddPartitionedShield(Of TKey, TResult)(services As IServiceCollection, name As String, factory As Func(Of IServiceProvider, TKey, Shield(Of TResult)), configure As Action(Of PartitionedShieldOptions) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As IServiceCollection
+    content.vb: Public Shared Function AddPartitionedShield(Of TKey, TResult)(services As IServiceCollection, name As String, factory As Func(Of IServiceProvider, TKey, Shield(Of TResult)), configure As Action(Of PartitionedShieldOptions(Of TKey, TResult)) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As IServiceCollection
   overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield*
-  nameWithType.vb: KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey, TResult)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield(Of TResult)), Action(Of PartitionedShieldOptions), IEqualityComparer(Of TKey))
-  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey, TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, TKey, Kevlar.Shield(Of TResult)), System.Action(Of Kevlar.PartitionedShieldOptions), System.Collections.Generic.IEqualityComparer(Of TKey))
-  name.vb: AddPartitionedShield(Of TKey, TResult)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield(Of TResult)), Action(Of PartitionedShieldOptions), IEqualityComparer(Of TKey))
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey, TResult)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield(Of TResult)), Action(Of PartitionedShieldOptions(Of TKey, TResult)), IEqualityComparer(Of TKey))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey, TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, TKey, Kevlar.Shield(Of TResult)), System.Action(Of Kevlar.PartitionedShieldOptions(Of TKey, TResult)), System.Collections.Generic.IEqualityComparer(Of TKey))
+  name.vb: AddPartitionedShield(Of TKey, TResult)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield(Of TResult)), Action(Of PartitionedShieldOptions(Of TKey, TResult)), IEqualityComparer(Of TKey))
 references:
 - uid: Kevlar.Extensions.DependencyInjection
   commentId: N:Kevlar.Extensions.DependencyInjection
@@ -1934,7 +1934,7 @@ references:
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield*
   commentId: Overload:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield
   isExternal: true
-  href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddPartitionedShield__1_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_System_Func_System_IServiceProvider___0_Kevlar_Shield__System_Action_Kevlar_PartitionedShieldOptions__System_Collections_Generic_IEqualityComparer___0__
+  href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddPartitionedShield__1_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_System_Func_System_IServiceProvider___0_Kevlar_Shield__System_Action_Kevlar_PartitionedShieldOptions___0___System_Collections_Generic_IEqualityComparer___0__
   name: AddPartitionedShield
   nameWithType: KevlarServiceCollectionExtensions.AddPartitionedShield
   fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield
@@ -1991,27 +1991,30 @@ references:
     isExternal: true
     href: Kevlar.Shield.html
   - name: )
-- uid: System.Action{Kevlar.PartitionedShieldOptions}
-  commentId: T:System.Action{Kevlar.PartitionedShieldOptions}
+- uid: System.Action{Kevlar.PartitionedShieldOptions{{TKey}}}
+  commentId: T:System.Action{Kevlar.PartitionedShieldOptions{`0}}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<PartitionedShieldOptions>
-  nameWithType: Action<PartitionedShieldOptions>
-  fullName: System.Action<Kevlar.PartitionedShieldOptions>
-  nameWithType.vb: Action(Of PartitionedShieldOptions)
-  fullName.vb: System.Action(Of Kevlar.PartitionedShieldOptions)
-  name.vb: Action(Of PartitionedShieldOptions)
+  name: Action<PartitionedShieldOptions<TKey>>
+  nameWithType: Action<PartitionedShieldOptions<TKey>>
+  fullName: System.Action<Kevlar.PartitionedShieldOptions<TKey>>
+  nameWithType.vb: Action(Of PartitionedShieldOptions(Of TKey))
+  fullName.vb: System.Action(Of Kevlar.PartitionedShieldOptions(Of TKey))
+  name.vb: Action(Of PartitionedShieldOptions(Of TKey))
   spec.csharp:
   - uid: System.Action`1
     name: Action
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.action-1
   - name: <
-  - uid: Kevlar.PartitionedShieldOptions
+  - uid: Kevlar.PartitionedShieldOptions`1
     name: PartitionedShieldOptions
     isExternal: true
-    href: Kevlar.PartitionedShieldOptions.html
+    href: Kevlar.PartitionedShieldOptions-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -2021,10 +2024,15 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.PartitionedShieldOptions
+  - uid: Kevlar.PartitionedShieldOptions`1
     name: PartitionedShieldOptions
     isExternal: true
-    href: Kevlar.PartitionedShieldOptions.html
+    href: Kevlar.PartitionedShieldOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
   - name: )
 - uid: System.Collections.Generic.IEqualityComparer{{TKey}}
   commentId: T:System.Collections.Generic.IEqualityComparer{`0}
@@ -2177,6 +2185,55 @@ references:
     href: Kevlar.Shield-1.html
   - name: (
   - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.Action{Kevlar.PartitionedShieldOptions{{TKey},{TResult}}}
+  commentId: T:System.Action{Kevlar.PartitionedShieldOptions{``0,``1}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<PartitionedShieldOptions<TKey, TResult>>
+  nameWithType: Action<PartitionedShieldOptions<TKey, TResult>>
+  fullName: System.Action<Kevlar.PartitionedShieldOptions<TKey, TResult>>
+  nameWithType.vb: Action(Of PartitionedShieldOptions(Of TKey, TResult))
+  fullName.vb: System.Action(Of Kevlar.PartitionedShieldOptions(Of TKey, TResult))
+  name.vb: Action(Of PartitionedShieldOptions(Of TKey, TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
   - name: " "
   - name: TResult
   - name: )

@@ -11,7 +11,7 @@ execution-scoped objects that must remain owned by one operation.
 | Types | Guarantee |
 |---|---|
 | `Shield`, `Shield<TResult>`, `ShieldBuilder`, `ShieldBuilder<TResult>` | Immutable and thread-safe. Fluent calls return new values; copies intentionally share existing stateful strategies. |
-| [`PartitionedShield<TKey>` and `PartitionedShield<TKey, TResult>`](partitioning.md) | Thread-safe. Partition creation is coordinated and retained state is bounded by `PartitionedShieldOptions`. Eviction can occur immediately after a lookup, so a snapshot is never a reservation. |
+| [`PartitionedShield<TKey>` and `PartitionedShield<TKey, TResult>`](partitioning.md) | Thread-safe. Partition creation is coordinated and retained state is bounded by `PartitionedShieldOptions<TKey>` or `PartitionedShieldOptions<TKey, TResult>`. Eviction can occur immediately after a lookup, so a snapshot is never a reservation. |
 | `CircuitBreakerMonitor` | Thread-safe and bindable to multiple circuit breakers. `StateChanged` notifications are serialized per breaker; different breakers may publish concurrently. |
 | `KevlarContext`, `KevlarProperties` | Execution-scoped and not safe for caller-created concurrent access. Do not retain them after the delegate or callback returns. Hedge attempts receive detached property containers, but mutable values stored inside them remain the caller's responsibility. |
 | `IKevlarRegistry`, `IShieldProvider` | Thread-safe singleton services. Registry lookups return immutable snapshots. Reloading names expose only a keyed provider; query it or the registry once per operation. |
@@ -35,7 +35,7 @@ The following public mutable types follow that rule:
 
 | Package | Mutable setup or control types |
 |---|---|
-| Core | `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
+| Core | `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions<TKey>`, `PartitionedShieldOptions<TKey, TResult>`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
 | Chaos | `ChaosBehaviorOptions`, `ChaosFaultOptions`, `ChaosLatencyOptions`, `ChaosOutcomeOptions<TResult>` |
 | Dependency injection | `CircuitBreakerDefinition`, `ConcurrencyLimitDefinition`, `RateLimitDefinition`, `ReloadingShieldOptions`, `RetryDefinition`, `ShieldDefinition` |
 | HTTP | `HttpEndpointRoutingOptions`, `KevlarRequestOptions`, `ShieldHttpHandlerOptions`, `StandardHedgeShieldOptions`, `StandardHttpShieldOptions` |

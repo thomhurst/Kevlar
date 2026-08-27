@@ -148,17 +148,26 @@ items:
   - uid: Kevlar.Outcome`1
     name: Outcome<T>
     type: Struct
-  - uid: Kevlar.PartitionCreatedNotification
-    name: PartitionCreatedNotification
+  - uid: Kevlar.PartitionCreatedEvent`1
+    name: PartitionCreatedEvent<TKey>
     type: Struct
-  - uid: Kevlar.PartitionEvictionNotification
-    name: PartitionEvictionNotification
+  - uid: Kevlar.PartitionCreatedEvent`2
+    name: PartitionCreatedEvent<TKey, TResult>
+    type: Struct
+  - uid: Kevlar.PartitionEvictedEvent`1
+    name: PartitionEvictedEvent<TKey>
+    type: Struct
+  - uid: Kevlar.PartitionEvictedEvent`2
+    name: PartitionEvictedEvent<TKey, TResult>
     type: Struct
   - uid: Kevlar.PartitionEvictionReason
     name: PartitionEvictionReason
     type: Enum
-  - uid: Kevlar.PartitionedShieldOptions
-    name: PartitionedShieldOptions
+  - uid: Kevlar.PartitionedShieldOptions`1
+    name: PartitionedShieldOptions<TKey>
+    type: Class
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions<TKey, TResult>
     type: Class
   - uid: Kevlar.PartitionedShield`1
     name: PartitionedShield<TKey>

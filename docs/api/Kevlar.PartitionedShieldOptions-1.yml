@@ -1,0 +1,691 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.PartitionedShieldOptions`1
+  commentId: T:Kevlar.PartitionedShieldOptions`1
+  id: PartitionedShieldOptions`1
+  parent: Kevlar
+  children:
+  - Kevlar.PartitionedShieldOptions`1.#ctor
+  - Kevlar.PartitionedShieldOptions`1.IdleExpiration
+  - Kevlar.PartitionedShieldOptions`1.MaxPartitions
+  - Kevlar.PartitionedShieldOptions`1.OnCreated
+  - Kevlar.PartitionedShieldOptions`1.OnEvicted
+  - Kevlar.PartitionedShieldOptions`1.TimeProvider
+  langs:
+  - csharp
+  - vb
+  name: PartitionedShieldOptions<TKey>
+  nameWithType: PartitionedShieldOptions<TKey>
+  fullName: Kevlar.PartitionedShieldOptions<TKey>
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Controls retention for an untyped partitioned shield provider.
+  example: []
+  syntax:
+    content: 'public sealed class PartitionedShieldOptions<TKey> where TKey : notnull'
+    typeParameters:
+    - id: TKey
+    content.vb: Public NotInheritable Class PartitionedShieldOptions(Of TKey)
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+  nameWithType.vb: PartitionedShieldOptions(Of TKey)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey)
+  name.vb: PartitionedShieldOptions(Of TKey)
+- uid: Kevlar.PartitionedShieldOptions`1.#ctor
+  commentId: M:Kevlar.PartitionedShieldOptions`1.#ctor
+  id: '#ctor'
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: PartitionedShieldOptions()
+  nameWithType: PartitionedShieldOptions<TKey>.PartitionedShieldOptions()
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.PartitionedShieldOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public PartitionedShieldOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.PartitionedShieldOptions`1.#ctor*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).New()
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).New()
+  name.vb: New()
+- uid: Kevlar.PartitionedShieldOptions`1.MaxPartitions
+  commentId: P:Kevlar.PartitionedShieldOptions`1.MaxPartitions
+  id: MaxPartitions
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: MaxPartitions
+  nameWithType: PartitionedShieldOptions<TKey>.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.MaxPartitions
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets or sets the maximum number of retained partitions. The least recently used partition
+
+    is evicted before this bound is exceeded. Defaults to 1,000.
+  example: []
+  syntax:
+    content: public int MaxPartitions { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxPartitions As Integer
+  overload: Kevlar.PartitionedShieldOptions`1.MaxPartitions*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).MaxPartitions
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`1.IdleExpiration
+  commentId: P:Kevlar.PartitionedShieldOptions`1.IdleExpiration
+  id: IdleExpiration
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: IdleExpiration
+  nameWithType: PartitionedShieldOptions<TKey>.IdleExpiration
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.IdleExpiration
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets or sets the optional idle duration after which a partition may be evicted on the next
+
+    provider operation. A null value disables idle expiry.
+  example: []
+  syntax:
+    content: public TimeSpan? IdleExpiration { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property IdleExpiration As TimeSpan?
+  overload: Kevlar.PartitionedShieldOptions`1.IdleExpiration*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).IdleExpiration
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).IdleExpiration
+- uid: Kevlar.PartitionedShieldOptions`1.TimeProvider
+  commentId: P:Kevlar.PartitionedShieldOptions`1.TimeProvider
+  id: TimeProvider
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: TimeProvider
+  nameWithType: PartitionedShieldOptions<TKey>.TimeProvider
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.TimeProvider
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets or sets the time source used for idle expiry. Defaults to system time.
+  example: []
+  syntax:
+    content: public TimeProvider TimeProvider { get; set; }
+    parameters: []
+    return:
+      type: System.TimeProvider
+    content.vb: Public Property TimeProvider As TimeProvider
+  overload: Kevlar.PartitionedShieldOptions`1.TimeProvider*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).TimeProvider
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`1.OnCreated
+  commentId: P:Kevlar.PartitionedShieldOptions`1.OnCreated
+  id: OnCreated
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnCreated
+  nameWithType: PartitionedShieldOptions<TKey>.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OnCreated
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited after a partition is created and retained. Return
+
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+  example: []
+  syntax:
+    content: public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.PartitionCreatedEvent{{TKey}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnCreated As Func(Of PartitionCreatedEvent(Of TKey), ValueTask)
+  overload: Kevlar.PartitionedShieldOptions`1.OnCreated*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OnCreated
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OnCreated
+- uid: Kevlar.PartitionedShieldOptions`1.OnEvicted
+  commentId: P:Kevlar.PartitionedShieldOptions`1.OnEvicted
+  id: OnEvicted
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnEvicted
+  nameWithType: PartitionedShieldOptions<TKey>.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OnEvicted
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited after a partition is removed from the provider and before an
+
+    automatically evicted partition's slot is reused. A cold lookup reentered from this
+
+    callback may return an unretained shield when the invoking eviction owns all available
+
+    capacity. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+  example: []
+  syntax:
+    content: public Func<PartitionEvictedEvent<TKey>, ValueTask>? OnEvicted { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.PartitionEvictedEvent{{TKey}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnEvicted As Func(Of PartitionEvictedEvent(Of TKey), ValueTask)
+  overload: Kevlar.PartitionedShieldOptions`1.OnEvicted*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OnEvicted
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OnEvicted
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.PartitionedShieldOptions`1.#ctor*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.#ctor
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1__ctor
+  name: PartitionedShieldOptions
+  nameWithType: PartitionedShieldOptions<TKey>.PartitionedShieldOptions
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.PartitionedShieldOptions
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).New
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).New
+  name.vb: New
+- uid: Kevlar.PartitionedShieldOptions`1.MaxPartitions*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.MaxPartitions
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_MaxPartitions
+  name: MaxPartitions
+  nameWithType: PartitionedShieldOptions<TKey>.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.MaxPartitions
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).MaxPartitions
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).MaxPartitions
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.PartitionedShieldOptions`1.IdleExpiration*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.IdleExpiration
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_IdleExpiration
+  name: IdleExpiration
+  nameWithType: PartitionedShieldOptions<TKey>.IdleExpiration
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.IdleExpiration
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).IdleExpiration
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).IdleExpiration
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions`1.TimeProvider*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.TimeProvider
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_TimeProvider
+  name: TimeProvider
+  nameWithType: PartitionedShieldOptions<TKey>.TimeProvider
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.TimeProvider
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).TimeProvider
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).TimeProvider
+- uid: System.TimeProvider
+  commentId: T:System.TimeProvider
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timeprovider
+  name: TimeProvider
+  nameWithType: TimeProvider
+  fullName: System.TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`1.OnCreated*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.OnCreated
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_OnCreated
+  name: OnCreated
+  nameWithType: PartitionedShieldOptions<TKey>.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OnCreated
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OnCreated
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OnCreated
+- uid: System.Func{Kevlar.PartitionCreatedEvent{{TKey}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionCreatedEvent{`0},System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<PartitionCreatedEvent<TKey>, ValueTask>
+  nameWithType: Func<PartitionCreatedEvent<TKey>, ValueTask>
+  fullName: System.Func<Kevlar.PartitionCreatedEvent<TKey>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionCreatedEvent(Of TKey), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionCreatedEvent(Of TKey), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionCreatedEvent(Of TKey), ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.PartitionCreatedEvent`1
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionCreatedEvent`1
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions`1.OnEvicted*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.OnEvicted
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_OnEvicted
+  name: OnEvicted
+  nameWithType: PartitionedShieldOptions<TKey>.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OnEvicted
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OnEvicted
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OnEvicted
+- uid: System.Func{Kevlar.PartitionEvictedEvent{{TKey}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionEvictedEvent{`0},System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<PartitionEvictedEvent<TKey>, ValueTask>
+  nameWithType: Func<PartitionEvictedEvent<TKey>, ValueTask>
+  fullName: System.Func<Kevlar.PartitionEvictedEvent<TKey>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionEvictedEvent(Of TKey), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionEvictedEvent(Of TKey), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionEvictedEvent(Of TKey), ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.PartitionEvictedEvent`1
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionEvictedEvent`1
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )

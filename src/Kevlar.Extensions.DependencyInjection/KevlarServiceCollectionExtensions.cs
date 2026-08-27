@@ -414,7 +414,7 @@ public static class KevlarServiceCollectionExtensions
         this IServiceCollection services,
         string name,
         Func<IServiceProvider, TKey, Shield> factory,
-        Action<PartitionedShieldOptions>? configure = null,
+        Action<PartitionedShieldOptions<TKey>>? configure = null,
         IEqualityComparer<TKey>? comparer = null)
         where TKey : notnull
     {
@@ -422,7 +422,7 @@ public static class KevlarServiceCollectionExtensions
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
-        var options = new PartitionedShieldOptions();
+        var options = new PartitionedShieldOptions<TKey>();
         configure?.Invoke(options);
         services.AddKeyedSingleton<PartitionedShield<TKey>>(name, (serviceProvider, _) =>
             new PartitionedShield<TKey>(
@@ -439,7 +439,7 @@ public static class KevlarServiceCollectionExtensions
         this IServiceCollection services,
         string name,
         Func<IServiceProvider, TKey, Shield<TResult>> factory,
-        Action<PartitionedShieldOptions>? configure = null,
+        Action<PartitionedShieldOptions<TKey, TResult>>? configure = null,
         IEqualityComparer<TKey>? comparer = null)
         where TKey : notnull
     {
@@ -447,7 +447,7 @@ public static class KevlarServiceCollectionExtensions
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
-        var options = new PartitionedShieldOptions();
+        var options = new PartitionedShieldOptions<TKey, TResult>();
         configure?.Invoke(options);
         services.AddKeyedSingleton<PartitionedShield<TKey, TResult>>(name, (serviceProvider, _) =>
             new PartitionedShield<TKey, TResult>(

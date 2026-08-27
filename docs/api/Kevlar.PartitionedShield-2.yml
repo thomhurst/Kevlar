@@ -5,13 +5,13 @@ items:
   id: PartitionedShield`2
   parent: Kevlar
   children:
-  - Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  - Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
   - Kevlar.PartitionedShield`2.CapacityEvictionCount
   - Kevlar.PartitionedShield`2.Clear
   - Kevlar.PartitionedShield`2.ClearAsync
   - Kevlar.PartitionedShield`2.ClearedEvictionCount
   - Kevlar.PartitionedShield`2.Count
-  - Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  - Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
   - Kevlar.PartitionedShield`2.CreatedCount
   - Kevlar.PartitionedShield`2.EvictionCount
   - Kevlar.PartitionedShield`2.ExpirationEvictionCount
@@ -34,7 +34,7 @@ items:
   namespace: Kevlar
   summary: Selects and retains an independent result-aware <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> for each partition key.
   remarks: >-
-    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions.MaxPartitions" data-throw-if-not-resolved="false"></xref>. Eviction
+    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions%602.MaxPartitions" data-throw-if-not-resolved="false"></xref>. Eviction
 
     removes only the provider's reference: callers that already hold the old shield, including
 
@@ -60,16 +60,16 @@ items:
   nameWithType.vb: PartitionedShield(Of TKey, TResult)
   fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult)
   name.vb: PartitionedShield(Of TKey, TResult)
-- uid: Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
-  commentId: M:Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
-  id: '#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})'
+- uid: Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
+  commentId: M:Kevlar.PartitionedShield`2.#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
+  id: '#ctor(System.Func{`0,Kevlar.Shield{`1}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})'
   parent: Kevlar.PartitionedShield`2
   langs:
   - csharp
   - vb
-  name: PartitionedShield(Func<TKey, Shield<TResult>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
-  nameWithType: PartitionedShield<TKey, TResult>.PartitionedShield(Func<TKey, Shield<TResult>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
-  fullName: Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield(System.Func<TKey, Kevlar.Shield<TResult>>, Kevlar.PartitionedShieldOptions?, System.Collections.Generic.IEqualityComparer<TKey>?)
+  name: PartitionedShield(Func<TKey, Shield<TResult>>, PartitionedShieldOptions<TKey, TResult>?, IEqualityComparer<TKey>?)
+  nameWithType: PartitionedShield<TKey, TResult>.PartitionedShield(Func<TKey, Shield<TResult>>, PartitionedShieldOptions<TKey, TResult>?, IEqualityComparer<TKey>?)
+  fullName: Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield(System.Func<TKey, Kevlar.Shield<TResult>>, Kevlar.PartitionedShieldOptions<TKey, TResult>?, System.Collections.Generic.IEqualityComparer<TKey>?)
   type: Constructor
   assemblies:
   - Kevlar
@@ -77,29 +77,29 @@ items:
   summary: Creates a bounded result-aware partition provider.
   example: []
   syntax:
-    content: public PartitionedShield(Func<TKey, Shield<TResult>> factory, PartitionedShieldOptions? options = null, IEqualityComparer<TKey>? comparer = null)
+    content: public PartitionedShield(Func<TKey, Shield<TResult>> factory, PartitionedShieldOptions<TKey, TResult>? options = null, IEqualityComparer<TKey>? comparer = null)
     parameters:
     - id: factory
       type: System.Func{{TKey},Kevlar.Shield{{TResult}}}
     - id: options
-      type: Kevlar.PartitionedShieldOptions
+      type: Kevlar.PartitionedShieldOptions{{TKey},{TResult}}
     - id: comparer
       type: System.Collections.Generic.IEqualityComparer{{TKey}}
-    content.vb: Public Sub New(factory As Func(Of TKey, Shield(Of TResult)), options As PartitionedShieldOptions = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing)
+    content.vb: Public Sub New(factory As Func(Of TKey, Shield(Of TResult)), options As PartitionedShieldOptions(Of TKey, TResult) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing)
   overload: Kevlar.PartitionedShield`2.#ctor*
-  nameWithType.vb: PartitionedShield(Of TKey, TResult).New(Func(Of TKey, Shield(Of TResult)), PartitionedShieldOptions, IEqualityComparer(Of TKey))
-  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult).New(System.Func(Of TKey, Kevlar.Shield(Of TResult)), Kevlar.PartitionedShieldOptions, System.Collections.Generic.IEqualityComparer(Of TKey))
-  name.vb: New(Func(Of TKey, Shield(Of TResult)), PartitionedShieldOptions, IEqualityComparer(Of TKey))
-- uid: Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
-  commentId: M:Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
-  id: CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  nameWithType.vb: PartitionedShield(Of TKey, TResult).New(Func(Of TKey, Shield(Of TResult)), PartitionedShieldOptions(Of TKey, TResult), IEqualityComparer(Of TKey))
+  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult).New(System.Func(Of TKey, Kevlar.Shield(Of TResult)), Kevlar.PartitionedShieldOptions(Of TKey, TResult), System.Collections.Generic.IEqualityComparer(Of TKey))
+  name.vb: New(Func(Of TKey, Shield(Of TResult)), PartitionedShieldOptions(Of TKey, TResult), IEqualityComparer(Of TKey))
+- uid: Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
+  commentId: M:Kevlar.PartitionedShield`2.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
+  id: CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield{`1}}},Kevlar.PartitionedShieldOptions{`0,`1},System.Collections.Generic.IEqualityComparer{`0})
   parent: Kevlar.PartitionedShield`2
   langs:
   - csharp
   - vb
-  name: CreateAsync(Func<TKey, ValueTask<Shield<TResult>>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
-  nameWithType: PartitionedShield<TKey, TResult>.CreateAsync(Func<TKey, ValueTask<Shield<TResult>>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
-  fullName: Kevlar.PartitionedShield<TKey, TResult>.CreateAsync(System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield<TResult>>>, Kevlar.PartitionedShieldOptions?, System.Collections.Generic.IEqualityComparer<TKey>?)
+  name: CreateAsync(Func<TKey, ValueTask<Shield<TResult>>>, PartitionedShieldOptions<TKey, TResult>?, IEqualityComparer<TKey>?)
+  nameWithType: PartitionedShield<TKey, TResult>.CreateAsync(Func<TKey, ValueTask<Shield<TResult>>>, PartitionedShieldOptions<TKey, TResult>?, IEqualityComparer<TKey>?)
+  fullName: Kevlar.PartitionedShield<TKey, TResult>.CreateAsync(System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield<TResult>>>, Kevlar.PartitionedShieldOptions<TKey, TResult>?, System.Collections.Generic.IEqualityComparer<TKey>?)
   type: Method
   assemblies:
   - Kevlar
@@ -107,21 +107,21 @@ items:
   summary: Creates a bounded result-aware partition provider with an asynchronous factory.
   example: []
   syntax:
-    content: public static PartitionedShield<TKey, TResult> CreateAsync(Func<TKey, ValueTask<Shield<TResult>>> factory, PartitionedShieldOptions? options = null, IEqualityComparer<TKey>? comparer = null)
+    content: public static PartitionedShield<TKey, TResult> CreateAsync(Func<TKey, ValueTask<Shield<TResult>>> factory, PartitionedShieldOptions<TKey, TResult>? options = null, IEqualityComparer<TKey>? comparer = null)
     parameters:
     - id: factory
       type: System.Func{{TKey},System.Threading.Tasks.ValueTask{Kevlar.Shield{{TResult}}}}
     - id: options
-      type: Kevlar.PartitionedShieldOptions
+      type: Kevlar.PartitionedShieldOptions{{TKey},{TResult}}
     - id: comparer
       type: System.Collections.Generic.IEqualityComparer{{TKey}}
     return:
       type: Kevlar.PartitionedShield`2
-    content.vb: Public Shared Function CreateAsync(factory As Func(Of TKey, ValueTask(Of Shield(Of TResult))), options As PartitionedShieldOptions = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As PartitionedShield(Of TKey, TResult)
+    content.vb: Public Shared Function CreateAsync(factory As Func(Of TKey, ValueTask(Of Shield(Of TResult))), options As PartitionedShieldOptions(Of TKey, TResult) = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As PartitionedShield(Of TKey, TResult)
   overload: Kevlar.PartitionedShield`2.CreateAsync*
-  nameWithType.vb: PartitionedShield(Of TKey, TResult).CreateAsync(Func(Of TKey, ValueTask(Of Shield(Of TResult))), PartitionedShieldOptions, IEqualityComparer(Of TKey))
-  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult).CreateAsync(System.Func(Of TKey, System.Threading.Tasks.ValueTask(Of Kevlar.Shield(Of TResult))), Kevlar.PartitionedShieldOptions, System.Collections.Generic.IEqualityComparer(Of TKey))
-  name.vb: CreateAsync(Func(Of TKey, ValueTask(Of Shield(Of TResult))), PartitionedShieldOptions, IEqualityComparer(Of TKey))
+  nameWithType.vb: PartitionedShield(Of TKey, TResult).CreateAsync(Func(Of TKey, ValueTask(Of Shield(Of TResult))), PartitionedShieldOptions(Of TKey, TResult), IEqualityComparer(Of TKey))
+  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult).CreateAsync(System.Func(Of TKey, System.Threading.Tasks.ValueTask(Of Kevlar.Shield(Of TResult))), Kevlar.PartitionedShieldOptions(Of TKey, TResult), System.Collections.Generic.IEqualityComparer(Of TKey))
+  name.vb: CreateAsync(Func(Of TKey, ValueTask(Of Shield(Of TResult))), PartitionedShieldOptions(Of TKey, TResult), IEqualityComparer(Of TKey))
 - uid: Kevlar.PartitionedShield`2.GetShield(`0)
   commentId: M:Kevlar.PartitionedShield`2.GetShield(`0)
   id: GetShield(`0)
@@ -541,13 +541,15 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.PartitionedShieldOptions.MaxPartitions
-  commentId: P:Kevlar.PartitionedShieldOptions.MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`2.MaxPartitions
+  commentId: P:Kevlar.PartitionedShieldOptions`2.MaxPartitions
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaxPartitions
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_MaxPartitions
   name: MaxPartitions
-  nameWithType: PartitionedShieldOptions.MaxPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
@@ -771,7 +773,7 @@ references:
 - uid: Kevlar.PartitionedShield`2.#ctor*
   commentId: Overload:Kevlar.PartitionedShield`2.#ctor
   isExternal: true
-  href: Kevlar.PartitionedShield-2.html#Kevlar_PartitionedShield_2__ctor_System_Func__0_Kevlar_Shield__1___Kevlar_PartitionedShieldOptions_System_Collections_Generic_IEqualityComparer__0__
+  href: Kevlar.PartitionedShield-2.html#Kevlar_PartitionedShield_2__ctor_System_Func__0_Kevlar_Shield__1___Kevlar_PartitionedShieldOptions__0__1__System_Collections_Generic_IEqualityComparer__0__
   name: PartitionedShield
   nameWithType: PartitionedShield<TKey, TResult>.PartitionedShield
   fullName: Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield
@@ -827,14 +829,41 @@ references:
   - name: TResult
   - name: )
   - name: )
-- uid: Kevlar.PartitionedShieldOptions
-  commentId: T:Kevlar.PartitionedShieldOptions
+- uid: Kevlar.PartitionedShieldOptions{{TKey},{TResult}}
+  commentId: T:Kevlar.PartitionedShieldOptions{`0,`1}
   parent: Kevlar
-  isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html
-  name: PartitionedShieldOptions
-  nameWithType: PartitionedShieldOptions
-  fullName: Kevlar.PartitionedShieldOptions
+  definition: Kevlar.PartitionedShieldOptions`2
+  href: Kevlar.PartitionedShieldOptions-2.html
+  name: PartitionedShieldOptions<TKey, TResult>
+  nameWithType: PartitionedShieldOptions<TKey, TResult>
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult)
+  name.vb: PartitionedShieldOptions(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: System.Collections.Generic.IEqualityComparer{{TKey}}
   commentId: T:System.Collections.Generic.IEqualityComparer{`0}
   parent: System.Collections.Generic
@@ -894,6 +923,40 @@ references:
   - name: Of
   - name: " "
   - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions`2
+  commentId: T:Kevlar.PartitionedShieldOptions`2
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-2.html
+  name: PartitionedShieldOptions<TKey, TResult>
+  nameWithType: PartitionedShieldOptions<TKey, TResult>
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult)
+  name.vb: PartitionedShieldOptions(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
   - name: ','
   - name: " "
   - name: TResult
@@ -966,7 +1029,7 @@ references:
 - uid: Kevlar.PartitionedShield`2.CreateAsync*
   commentId: Overload:Kevlar.PartitionedShield`2.CreateAsync
   isExternal: true
-  href: Kevlar.PartitionedShield-2.html#Kevlar_PartitionedShield_2_CreateAsync_System_Func__0_System_Threading_Tasks_ValueTask_Kevlar_Shield__1____Kevlar_PartitionedShieldOptions_System_Collections_Generic_IEqualityComparer__0__
+  href: Kevlar.PartitionedShield-2.html#Kevlar_PartitionedShield_2_CreateAsync_System_Func__0_System_Threading_Tasks_ValueTask_Kevlar_Shield__1____Kevlar_PartitionedShieldOptions__0__1__System_Collections_Generic_IEqualityComparer__0__
   name: CreateAsync
   nameWithType: PartitionedShield<TKey, TResult>.CreateAsync
   fullName: Kevlar.PartitionedShield<TKey, TResult>.CreateAsync

@@ -101,14 +101,14 @@ public class PartitionedShieldAsyncTests
         var evictions = new List<(string Key, PartitionEvictionReason Reason)>();
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 2,
                 IdleExpiration = TimeSpan.FromMinutes(1),
                 TimeProvider = timeProvider,
                 OnEvicted = item =>
                 {
-                    evictions.Add(((string)item.Key, item.Reason));
+                    evictions.Add((item.Key, item.Reason));
                     return default;
                 },
             });
@@ -121,9 +121,44 @@ public class PartitionedShieldAsyncTests
 
         await Assert.That(evictions).IsEquivalentTo([
             ("first", PartitionEvictionReason.Capacity),
-            ("second", PartitionEvictionReason.Idle),
-            ("third", PartitionEvictionReason.Idle),
+            ("second", PartitionEvictionReason.Expiration),
+            ("third", PartitionEvictionReason.Expiration),
         ]);
+    }
+
+    [Test]
+    public async Task Typed_Lifecycle_Callbacks_Expose_Typed_Keys_And_Shields()
+    {
+        string? createdKey = null;
+        Shield<int>? createdShield = null;
+        string? evictedKey = null;
+        Shield<int>? evictedShield = null;
+        var provider = new PartitionedShield<string, int>(
+            key => Shield.For<int>().WithName(key),
+            new PartitionedShieldOptions<string, int>
+            {
+                MaxPartitions = 1,
+                OnCreated = item =>
+                {
+                    createdKey = item.Key;
+                    createdShield = item.Shield;
+                    return default;
+                },
+                OnEvicted = item =>
+                {
+                    evictedKey = item.Key;
+                    evictedShield = item.Shield;
+                    return default;
+                },
+            });
+
+        var first = provider.GetShield("first");
+        _ = provider.GetShield("second");
+
+        await Assert.That(createdKey).IsEqualTo("second");
+        await Assert.That(createdShield).IsSameReferenceAs(provider.GetShield("second"));
+        await Assert.That(evictedKey).IsEqualTo("first");
+        await Assert.That(evictedShield).IsSameReferenceAs(first);
     }
 
     [Test]
@@ -133,7 +168,7 @@ public class PartitionedShieldAsyncTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async _ =>
@@ -159,7 +194,7 @@ public class PartitionedShieldAsyncTests
     {
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = static _ => throw new InvalidOperationException("observer"),
@@ -177,7 +212,7 @@ public class PartitionedShieldAsyncTests
     {
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = static _ => ValueTask.FromException(new InvalidOperationException("observer")),
@@ -198,7 +233,7 @@ public class PartitionedShieldAsyncTests
         var evictedCallbacks = 0;
         provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnCreated = async item =>
@@ -230,7 +265,7 @@ public class PartitionedShieldAsyncTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async _ =>
@@ -263,12 +298,12 @@ public class PartitionedShieldAsyncTests
         Shield? nested = null;
         provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "first")
+                    if (item.Key == "first")
                     {
                         nested = await provider!.GetShieldAsync("nested");
                     }
@@ -297,12 +332,12 @@ public class PartitionedShieldAsyncTests
         var factoryCalls = 0;
         provider = new PartitionedShield<string>(
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "first")
+                    if (item.Key == "first")
                     {
                         nested = await provider!.GetShieldAsync("second");
                     }
@@ -344,12 +379,12 @@ public class PartitionedShieldAsyncTests
 
                 return Shield.Empty.WithName($"{key}-{nestedFactoryCalls}");
             },
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "first")
+                    if (item.Key == "first")
                     {
                         callbackEntered.TrySetResult();
                         await continueCallback.Task;
@@ -385,12 +420,12 @@ public class PartitionedShieldAsyncTests
         var factoryCalls = 0;
         provider = new PartitionedShield<string>(
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "first")
+                    if (item.Key == "first")
                     {
                         _ = await provider!.TryRemoveAsync("retained");
                         callbackShield = await provider.GetShieldAsync("publisher");
@@ -420,12 +455,12 @@ public class PartitionedShieldAsyncTests
         var factoryCalls = 0;
         provider = new PartitionedShield<string>(
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
-                    switch ((string)item.Key)
+                    switch (item.Key)
                     {
                         case "first":
                             _ = await provider!.TryRemoveAsync("retained");
@@ -473,12 +508,12 @@ public class PartitionedShieldAsyncTests
 
                 return Shield.Empty.WithName(key);
             },
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "removed")
+                    if (item.Key == "removed")
                     {
                         callbackShield = await provider!.GetShieldAsync("pending");
                     }
@@ -507,12 +542,12 @@ public class PartitionedShieldAsyncTests
         Shield? secondNested = null;
         provider = new PartitionedShield<string>(
             key => Shield.Empty.WithName(key),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
-                    if ((string)item.Key == "removed")
+                    if (item.Key == "removed")
                     {
                         firstNested = await provider!.GetShieldAsync("first-nested");
                         secondNested = await provider.GetShieldAsync("second-nested");
@@ -543,12 +578,12 @@ public class PartitionedShieldAsyncTests
                 resources[key] = new DisposableResource();
                 return Shield.Empty;
             },
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 1,
                 OnEvicted = item =>
                 {
-                    resources[(string)item.Key].Dispose();
+                    resources[item.Key].Dispose();
                     return default;
                 },
             });
@@ -566,7 +601,7 @@ public class PartitionedShieldAsyncTests
         var evicted = new List<string>();
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 OnCreated = item =>
                 {
@@ -602,7 +637,7 @@ public class PartitionedShieldAsyncTests
     {
         var provider = new PartitionedShield<int>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<int> { MaxPartitions = 1 });
         _ = provider.GetShield(1);
         _ = provider.GetShield(2);
         var snapshot = provider.GetStateSnapshot();

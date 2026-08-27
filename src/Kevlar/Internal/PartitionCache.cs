@@ -12,8 +12,8 @@ internal sealed class PartitionCache<TKey, TShield>
     private readonly int _maximumPartitions;
     private readonly TimeSpan? _idleExpiration;
     private readonly TimeProvider _timeProvider;
-    private readonly Func<PartitionCreatedNotification, ValueTask>? _onCreated;
-    private readonly Func<PartitionEvictionNotification, ValueTask>? _onEvicted;
+    private readonly Func<TKey, TShield, ValueTask>? _onCreated;
+    private readonly Func<TKey, TShield, PartitionEvictionReason, ValueTask>? _onEvicted;
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
 
     private Entry? _leastRecentlyUsed;
@@ -27,11 +27,10 @@ internal sealed class PartitionCache<TKey, TShield>
 
     public PartitionCache(
         Func<TKey, ValueTask<TShield>> factory,
-        PartitionedShieldOptions? options,
+        PartitionCacheOptions<TKey, TShield> options,
         IEqualityComparer<TKey>? comparer)
     {
         Throw.IfNull(factory, nameof(factory));
-        options ??= new PartitionedShieldOptions();
         Throw.IfOutOfRange(
             options.MaxPartitions <= 0,
             nameof(options),
@@ -207,7 +206,7 @@ internal sealed class PartitionCache<TKey, TShield>
 
         await NotifyAutomaticEvictionsAsync(
                 expired,
-                PartitionEvictionReason.Idle,
+                PartitionEvictionReason.Expiration,
                 creates ? creation : null)
             .ConfigureAwait(false);
 
@@ -340,7 +339,7 @@ internal sealed class PartitionCache<TKey, TShield>
 
                 await NotifyEvictedAsync(
                         expired,
-                        PartitionEvictionReason.Idle,
+                        PartitionEvictionReason.Expiration,
                         blockedCreation: creation)
                     .ConfigureAwait(false);
                 if (capacityEviction is not null)
@@ -390,7 +389,7 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
             .ConfigureAwait(false);
         return shield;
     }
@@ -418,7 +417,7 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
             .ConfigureAwait(false);
         if (removed is not null)
         {
@@ -471,7 +470,7 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
             .ConfigureAwait(false);
         return expired?.Count ?? 0;
     }
@@ -505,7 +504,7 @@ internal sealed class PartitionCache<TKey, TShield>
 
         try
         {
-            await _onCreated(new PartitionCreatedNotification(key, shield)).ConfigureAwait(false);
+            await _onCreated(key, shield).ConfigureAwait(false);
         }
         catch
         {
@@ -561,7 +560,7 @@ internal sealed class PartitionCache<TKey, TShield>
 
             try
             {
-                await _onEvicted(new PartitionEvictionNotification(entry.Key, entry.Shield, reason))
+                await _onEvicted(entry.Key, entry.Shield, reason)
                     .ConfigureAwait(false);
             }
             catch

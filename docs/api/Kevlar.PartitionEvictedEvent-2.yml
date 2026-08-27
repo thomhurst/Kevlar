@@ -1,27 +1,31 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.PartitionCreatedNotification
-  commentId: T:Kevlar.PartitionCreatedNotification
-  id: PartitionCreatedNotification
+- uid: Kevlar.PartitionEvictedEvent`2
+  commentId: T:Kevlar.PartitionEvictedEvent`2
+  id: PartitionEvictedEvent`2
   parent: Kevlar
   children:
-  - Kevlar.PartitionCreatedNotification.Key
-  - Kevlar.PartitionCreatedNotification.Shield
+  - Kevlar.PartitionEvictedEvent`2.Key
+  - Kevlar.PartitionEvictedEvent`2.Reason
+  - Kevlar.PartitionEvictedEvent`2.Shield
   langs:
   - csharp
   - vb
-  name: PartitionCreatedNotification
-  nameWithType: PartitionCreatedNotification
-  fullName: Kevlar.PartitionCreatedNotification
+  name: PartitionEvictedEvent<TKey, TResult>
+  nameWithType: PartitionEvictedEvent<TKey, TResult>
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>
   type: Struct
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Describes a newly created partition.
+  summary: Describes a result-aware partition removed from a provider.
   example: []
   syntax:
-    content: public readonly struct PartitionCreatedNotification
-    content.vb: Public Structure PartitionCreatedNotification
+    content: 'public readonly struct PartitionEvictedEvent<TKey, TResult> where TKey : notnull'
+    typeParameters:
+    - id: TKey
+    - id: TResult
+    content.vb: Public Structure PartitionEvictedEvent(Of TKey, TResult)
   inheritedMembers:
   - System.ValueType.Equals(System.Object)
   - System.ValueType.GetHashCode
@@ -29,16 +33,19 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.PartitionCreatedNotification.Key
-  commentId: P:Kevlar.PartitionCreatedNotification.Key
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult)
+  name.vb: PartitionEvictedEvent(Of TKey, TResult)
+- uid: Kevlar.PartitionEvictedEvent`2.Key
+  commentId: P:Kevlar.PartitionEvictedEvent`2.Key
   id: Key
-  parent: Kevlar.PartitionCreatedNotification
+  parent: Kevlar.PartitionEvictedEvent`2
   langs:
   - csharp
   - vb
   name: Key
-  nameWithType: PartitionCreatedNotification.Key
-  fullName: Kevlar.PartitionCreatedNotification.Key
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Key
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Key
   type: Property
   assemblies:
   - Kevlar
@@ -46,35 +53,64 @@ items:
   summary: Gets the partition key.
   example: []
   syntax:
-    content: public object Key { get; }
+    content: public TKey Key { get; }
     parameters: []
     return:
-      type: System.Object
-    content.vb: Public ReadOnly Property Key As Object
-  overload: Kevlar.PartitionCreatedNotification.Key*
-- uid: Kevlar.PartitionCreatedNotification.Shield
-  commentId: P:Kevlar.PartitionCreatedNotification.Shield
+      type: '{TKey}'
+    content.vb: Public ReadOnly Property Key As TKey
+  overload: Kevlar.PartitionEvictedEvent`2.Key*
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Key
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Key
+- uid: Kevlar.PartitionEvictedEvent`2.Shield
+  commentId: P:Kevlar.PartitionEvictedEvent`2.Shield
   id: Shield
-  parent: Kevlar.PartitionCreatedNotification
+  parent: Kevlar.PartitionEvictedEvent`2
   langs:
   - csharp
   - vb
   name: Shield
-  nameWithType: PartitionCreatedNotification.Shield
-  fullName: Kevlar.PartitionCreatedNotification.Shield
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Shield
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Shield
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Gets the created <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> or result-aware shield.
+  summary: Gets the removed result-aware shield.
   example: []
   syntax:
-    content: public object Shield { get; }
+    content: public Shield<TResult> Shield { get; }
     parameters: []
     return:
-      type: System.Object
-    content.vb: Public ReadOnly Property Shield As Object
-  overload: Kevlar.PartitionCreatedNotification.Shield*
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public ReadOnly Property Shield As Shield(Of TResult)
+  overload: Kevlar.PartitionEvictedEvent`2.Shield*
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Shield
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Shield
+- uid: Kevlar.PartitionEvictedEvent`2.Reason
+  commentId: P:Kevlar.PartitionEvictedEvent`2.Reason
+  id: Reason
+  parent: Kevlar.PartitionEvictedEvent`2
+  langs:
+  - csharp
+  - vb
+  name: Reason
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Reason
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Reason
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets why the partition was removed.
+  example: []
+  syntax:
+    content: public PartitionEvictionReason Reason { get; }
+    parameters: []
+    return:
+      type: Kevlar.PartitionEvictionReason
+    content.vb: Public ReadOnly Property Reason As PartitionEvictionReason
+  overload: Kevlar.PartitionEvictedEvent`2.Reason*
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Reason
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Reason
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -300,25 +336,106 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.PartitionCreatedNotification.Key*
-  commentId: Overload:Kevlar.PartitionCreatedNotification.Key
+- uid: Kevlar.PartitionEvictedEvent`2.Key*
+  commentId: Overload:Kevlar.PartitionEvictedEvent`2.Key
   isExternal: true
-  href: Kevlar.PartitionCreatedNotification.html#Kevlar_PartitionCreatedNotification_Key
+  href: Kevlar.PartitionEvictedEvent-2.html#Kevlar_PartitionEvictedEvent_2_Key
   name: Key
-  nameWithType: PartitionCreatedNotification.Key
-  fullName: Kevlar.PartitionCreatedNotification.Key
-- uid: Kevlar.Shield
-  commentId: T:Kevlar.Shield
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Key
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Key
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Key
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Key
+- uid: '{TKey}'
+  commentId: '!:TKey'
+  definition: TKey
+  name: TKey
+  nameWithType: TKey
+  fullName: TKey
+- uid: TKey
+  name: TKey
+  nameWithType: TKey
+  fullName: TKey
+- uid: Kevlar.PartitionEvictedEvent`2.Shield*
+  commentId: Overload:Kevlar.PartitionEvictedEvent`2.Shield
+  isExternal: true
+  href: Kevlar.PartitionEvictedEvent-2.html#Kevlar_PartitionEvictedEvent_2_Shield
+  name: Shield
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Shield
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Shield
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Shield
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Shield
+- uid: Kevlar.Shield{{TResult}}
+  commentId: T:Kevlar.Shield{`1}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
   parent: Kevlar
   isExternal: true
-  href: Kevlar.Shield.html
-  name: Shield
-  nameWithType: Shield
-  fullName: Kevlar.Shield
-- uid: Kevlar.PartitionCreatedNotification.Shield*
-  commentId: Overload:Kevlar.PartitionCreatedNotification.Shield
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionEvictedEvent`2.Reason*
+  commentId: Overload:Kevlar.PartitionEvictedEvent`2.Reason
   isExternal: true
-  href: Kevlar.PartitionCreatedNotification.html#Kevlar_PartitionCreatedNotification_Shield
-  name: Shield
-  nameWithType: PartitionCreatedNotification.Shield
-  fullName: Kevlar.PartitionCreatedNotification.Shield
+  href: Kevlar.PartitionEvictedEvent-2.html#Kevlar_PartitionEvictedEvent_2_Reason
+  name: Reason
+  nameWithType: PartitionEvictedEvent<TKey, TResult>.Reason
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>.Reason
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult).Reason
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult).Reason
+- uid: Kevlar.PartitionEvictionReason
+  commentId: T:Kevlar.PartitionEvictionReason
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionEvictionReason.html
+  name: PartitionEvictionReason
+  nameWithType: PartitionEvictionReason
+  fullName: Kevlar.PartitionEvictionReason

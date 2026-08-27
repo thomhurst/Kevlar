@@ -2,8 +2,8 @@ using Kevlar.Internal;
 
 namespace Kevlar;
 
-/// <summary>Controls retention for an untyped partitioned shield provider.</summary>
-public sealed class PartitionedShieldOptions<TKey>
+/// <summary>Controls retention for a result-aware partitioned shield provider.</summary>
+public sealed class PartitionedShieldOptions<TKey, TResult>
     where TKey : notnull
 {
     /// <summary>
@@ -25,7 +25,7 @@ public sealed class PartitionedShieldOptions<TKey>
     /// Invoked and awaited after a partition is created and retained. Return
     /// <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }
+    public Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>? OnCreated { get; set; }
 
     /// <summary>
     /// Invoked and awaited after a partition is removed from the provider and before an
@@ -33,22 +33,22 @@ public sealed class PartitionedShieldOptions<TKey>
     /// callback may return an unretained shield when the invoking eviction owns all available
     /// capacity. Return <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<PartitionEvictedEvent<TKey>, ValueTask>? OnEvicted { get; set; }
+    public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted { get; set; }
 
-    internal PartitionCacheOptions<TKey, Shield> Snapshot()
+    internal PartitionCacheOptions<TKey, Shield<TResult>> Snapshot()
     {
         var onCreated = OnCreated;
         var onEvicted = OnEvicted;
-        return new PartitionCacheOptions<TKey, Shield>(
+        return new PartitionCacheOptions<TKey, Shield<TResult>>(
             MaxPartitions,
             IdleExpiration,
             TimeProvider,
             onCreated is null
                 ? null
-                : (key, shield) => onCreated(new PartitionCreatedEvent<TKey>(key, shield)),
+                : (key, shield) => onCreated(new PartitionCreatedEvent<TKey, TResult>(key, shield)),
             onEvicted is null
                 ? null
                 : (key, shield, reason) => onEvicted(
-                    new PartitionEvictedEvent<TKey>(key, shield, reason)));
+                    new PartitionEvictedEvent<TKey, TResult>(key, shield, reason)));
     }
 }

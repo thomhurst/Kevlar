@@ -210,7 +210,7 @@ internal static class StressRunner
             $"{PartitionKeys:N0} keys with a {MaxPartitions:N0}-partition bound...");
         var partitions = PartitionedShield<int>.CreateAsync(
             static key => new ValueTask<Shield>(Shield.Retry(key & 1, Backoff.None)),
-            new PartitionedShieldOptions { MaxPartitions = MaxPartitions });
+            new PartitionedShieldOptions<int> { MaxPartitions = MaxPartitions });
 
         for (var operation = 0; operation < PartitionExecutions; operation++)
         {

@@ -155,8 +155,10 @@ public class ApiShapeTests
     [Test]
     public async Task Strategy_Event_Structs_Have_One_Context_Contract()
     {
-        var eventTypes = GetStrategyEventTypes()
-            .Where(static type => type != typeof(CallbackErrorEvent))
+        var eventTypes = GetEventTypes()
+            .Where(static type =>
+                type != typeof(CallbackErrorEvent)
+                && !type.Name.StartsWith("Partition", StringComparison.Ordinal))
             .ToArray();
 
         await Assert.That(eventTypes.Length).IsGreaterThan(0);
@@ -200,12 +202,13 @@ public class ApiShapeTests
             "Fallback",
             "Hedge",
             "KevlarTelemetry",
+            "Partition",
             "RateLimit",
             "RateLimiter",
             "Retry",
             "Timeout",
         };
-        var eventTypes = GetStrategyEventTypes();
+        var eventTypes = GetEventTypes();
 
         await Assert.That(eventTypes.All(type => prefixes.Any(prefix =>
             type.Name.StartsWith(prefix, StringComparison.Ordinal)))).IsTrue();
@@ -566,7 +569,7 @@ public class ApiShapeTests
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 
-    private static Type[] GetStrategyEventTypes() =>
+    private static Type[] GetEventTypes() =>
         new[]
         {
             typeof(Shield).Assembly,
