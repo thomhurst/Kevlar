@@ -35,6 +35,24 @@ builder.Services.AddHttpClient("downstream")
     });
 
 await using var app = builder.Build();
+app.MapGet("/orders", async (IHttpClientFactory clientFactory, CancellationToken cancellationToken) =>
+{
+    var endpointClient = clientFactory.CreateClient("downstream");
+    using var endpointResponse = await endpointClient.GetAsync("https://sample.invalid/orders", cancellationToken);
+    return Results.Ok(new
+    {
+        Status = endpointResponse.StatusCode,
+        Attempts = Volatile.Read(ref attempts),
+        Retries = Interlocked.Read(ref retries),
+    });
+});
+
+if (!args.Contains("--smoke", StringComparer.Ordinal))
+{
+    await app.RunAsync();
+    return;
+}
+
 var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("downstream");
 using var response = await client.GetAsync("https://sample.invalid/orders");
 var provider = app.Services.GetRequiredKeyedService<IShieldProvider>("background-jobs");

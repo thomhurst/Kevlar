@@ -34,7 +34,7 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
 
-if ($sidebarSource -notmatch "'getting-started',\s*'polly-migration',\s*'handling-failures'")
+if ($sidebarSource -notmatch "'getting-started',\s*'polly-migration'")
 {
     $errors.Add("Documentation sidebar must place 'polly-migration' immediately after 'getting-started'.")
 }
@@ -229,6 +229,60 @@ $dependencyInjectionSource = Get-Content -LiteralPath (Join-Path $resolvedDocsPa
 if ($dependencyInjectionSource.Contains('builder.Configuration', [StringComparison]::Ordinal))
 {
     $errors.Add('dependency-injection.md must define IConfiguration explicitly instead of relying on an undefined builder.Configuration.')
+}
+
+foreach ($requiredPage in @('glossary.md', 'cookbook.md'))
+{
+    if (-not (Test-Path -LiteralPath (Join-Path $resolvedDocsPath $requiredPage)))
+    {
+        $errors.Add("Required documentation page '$requiredPage' is missing.")
+    }
+}
+
+$webApiProgram = Get-Content -LiteralPath (Join-Path $repositoryRoot 'samples/WebApi/Program.cs') -Raw
+if (-not $webApiProgram.Contains('.MapGet(', [StringComparison]::Ordinal))
+{
+    $errors.Add('samples/WebApi must map a minimal API endpoint with MapGet.')
+}
+
+foreach ($sampleDirectory in Get-ChildItem (Join-Path $repositoryRoot 'samples') -Directory)
+{
+    $sampleReadme = Join-Path $sampleDirectory.FullName 'README.md'
+    if (-not (Test-Path -LiteralPath $sampleReadme))
+    {
+        continue
+    }
+
+    $wordCount = @((Get-Content -LiteralPath $sampleReadme -Raw) -split '\s+' | Where-Object { $_ }).Count
+    if ($wordCount -lt 70)
+    {
+        $errors.Add("Sample README '$($sampleDirectory.Name)' must contain at least 70 words; found $wordCount.")
+    }
+}
+
+$benchmarkDescriptions = [ordered]@{
+    'OverheadBenchmarks.cs' = 'Kevlar_EmptyOutcomeState'
+    'TimeoutBenchmarks.cs' = 'Kevlar_SynchronousGenerator_HappyPath'
+    'ConcurrencyLimitBenchmarks.cs' = 'Kevlar_WithHooks_Uncontended'
+    'RateLimitBenchmarks.cs' = 'Kevlar_WithHooks_Uncontended'
+    'FallbackBenchmarks.cs' = 'Kevlar_NoNotification'
+    'PipelineBenchmarks.cs' = 'Kevlar_TokenBucketRatioFiveStrategyChainSync'
+}
+foreach ($entry in $benchmarkDescriptions.GetEnumerator())
+{
+    $benchmarkPath = Join-Path $repositoryRoot "benchmarks/Kevlar.Benchmarks/$($entry.Key)"
+    $benchmarkSource = Get-Content -LiteralPath $benchmarkPath -Raw
+    $pattern = '(?s)\[[^\]]*Benchmark\([^\]]*Description\s*=\s*"[^"]+"[^\]]*\)\]\s*public\s+[^\r\n]+\s+{0}\s*\(' -f [regex]::Escape($entry.Value)
+    if (-not [regex]::IsMatch($benchmarkSource, $pattern))
+    {
+        $errors.Add("Benchmark '$($entry.Value)' in '$($entry.Key)' must declare Benchmark.Description.")
+    }
+}
+
+$grpcSource = Get-Content -LiteralPath (Join-Path $resolvedDocsPath 'grpc.md') -Raw
+if ($grpcSource.Contains('doc-test-ignore', [StringComparison]::Ordinal))
+{
+    $errors.Add('grpc.md snippets must compile against the documentation test client instead of using doc-test-ignore.')
 }
 
 foreach ($document in $documents)

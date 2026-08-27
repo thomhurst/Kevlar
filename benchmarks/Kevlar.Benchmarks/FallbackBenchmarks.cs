@@ -53,7 +53,9 @@ public class FallbackBenchmarks
     [BenchmarkCategory("Triggered"), Benchmark]
     public ValueTask<int> Polly_Triggered() => PollyFallback.ExecuteAsync(static ValueTask<int> (_) => throw PrimaryError);
 
-    [BenchmarkCategory("Notifications"), Benchmark(Baseline = true)]
+    [BenchmarkCategory("Notifications"), Benchmark(
+        Baseline = true,
+        Description = "Kevlar fallback without notification")]
     public ValueTask<int> Kevlar_NoNotification() => KevlarFallback.ExecuteAsync(static _ => throw PrimaryError);
 
     [BenchmarkCategory("Notifications"), Benchmark]

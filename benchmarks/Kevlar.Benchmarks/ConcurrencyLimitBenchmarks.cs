@@ -30,7 +30,7 @@ public class ConcurrencyLimitBenchmarks
     [BenchmarkCategory("Uncontended"), Benchmark]
     public ValueTask<int> Polly_Uncontended() => PollyConcurrency.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("Uncontended"), Benchmark]
+    [BenchmarkCategory("Uncontended"), Benchmark(Description = "Kevlar concurrency limiter with hooks")]
     public ValueTask<int> Kevlar_WithHooks_Uncontended() =>
         KevlarConcurrencyWithHooks.ExecuteAsync(static _ => new ValueTask<int>(42));
 }

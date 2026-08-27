@@ -138,6 +138,34 @@ its `Events` property and `WaitForEventCountAsync`. Kevlar intentionally does no
 `ActivitySource` spans: use the metrics and listener hook to enrich the tracing system already owned
 by the application or transport.
 
+For applications that want one span per Kevlar event, bridge the listener into an application-owned
+`ActivitySource`. Keep tags bounded and copy everything needed during the callback because the
+context is pooled:
+
+<!-- doc-test-declaration: split-before=using var activitySource -->
+```csharp
+using System.Diagnostics;
+
+sealed class KevlarActivityListener(ActivitySource source) : IKevlarTelemetryListener
+{
+    public void OnEvent(in KevlarTelemetryEvent item)
+    {
+        using var activity = source.StartActivity(
+            $"kevlar.{item.EventName}",
+            ActivityKind.Internal);
+        activity?.SetTag("kevlar.shield.name", item.ShieldName);
+        activity?.SetTag("kevlar.strategy.name", item.StrategyName);
+        activity?.SetTag("kevlar.attempt.number", item.AttemptNumber);
+    }
+}
+
+using var activitySource = new ActivitySource("Catalog.Resilience");
+using var tracingSubscription = KevlarDiagnostics.Listen(new KevlarActivityListener(activitySource));
+```
+
+If the protected transport already creates a client span, prefer adding events or tags to that span
+instead of creating a second overlapping duration span.
+
 The state gauges are observable instruments sampled only when the metrics reader collects them. They read the strategies' existing synchronized state instead of publishing from execution paths, so enabling state metrics adds no state-publication locks or listener callbacks to each execution. Listener failures therefore remain confined to collection. Gauges aggregate by shield name and carry a bounded `kevlar.strategy.index` attribute (the strategy's zero-based pipeline position), so independent stateful strategies in one named pipeline remain distinct. Shared strategies expose up to 64 observed name/index aliases; additional aliases are omitted to bound memory and series growth. Registrations hold strategy instances weakly and discard collected registrations during observation, so telemetry does not keep an abandoned shield alive.
 
 This executable example verifies a completed execution with `MeterListener`:

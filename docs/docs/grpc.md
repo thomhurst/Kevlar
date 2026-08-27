@@ -20,7 +20,6 @@ gRPC status handling is opt-in. `GrpcShield.WhenTransient()` handles `RpcExcepti
 
 It does not retry `Cancelled`, validation failures, authentication failures, or other statuses.
 
-<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
 ```csharp
 using Grpc.Core.Interceptors;
 using Kevlar;
@@ -40,8 +39,10 @@ The final response or `RpcException` remains the caller's result. Superseded ret
 
 Use `ShieldStreamingClientInterceptor` for server-streaming, client-streaming, and duplex calls:
 
-<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
 ```csharp
+using Grpc.Core.Interceptors;
+using Kevlar.Extensions.Grpc;
+
 var streamingShield = Shield.Timeout(TimeSpan.FromSeconds(5));
 var client = new Orders.OrdersClient(
     channel.Intercept(new ShieldStreamingClientInterceptor(streamingShield)));
@@ -55,8 +56,10 @@ The interceptor uses explicit progress boundaries:
 
 When server-stream establishment needs retry or hedging and later reads still need a timeout, supply separate shields:
 
-<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
 ```csharp
+using Grpc.Core.Interceptors;
+using Kevlar.Extensions.Grpc;
+
 var establishment = GrpcShield.WhenTransient().Retry(2, Backoff.None);
 var operations = Shield.Timeout(TimeSpan.FromSeconds(3));
 var interceptor = new ShieldStreamingClientInterceptor(establishment, operations);
@@ -80,7 +83,6 @@ A Kevlar operation timeout is not an idle-stream timer. Use the gRPC deadline wh
 
 The package integrates with `Grpc.Net.ClientFactory` and the existing Kevlar registry:
 
-<!-- doc-test-ignore: requires an application-generated gRPC client -->
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;

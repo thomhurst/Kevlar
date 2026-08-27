@@ -63,7 +63,7 @@ public class RateLimitBenchmarks
     public ValueTask<int> Polly_TokenBucketUncontended() =>
         PollyRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("TokenBucketUncontended"), Benchmark]
+    [BenchmarkCategory("TokenBucketUncontended"), Benchmark(Description = "Kevlar token bucket with hooks")]
     public ValueTask<int> Kevlar_WithHooks_Uncontended() =>
         KevlarRateLimitWithHooks.ExecuteAsync(static _ => new ValueTask<int>(42));
 

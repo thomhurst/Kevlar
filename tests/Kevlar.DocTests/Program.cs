@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
 using Kevlar;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
@@ -42,6 +43,7 @@ internal abstract class SnippetContext
     protected static readonly StubClient client = new();
     protected static readonly HttpClient httpClient = new(new StubHttpHandler());
     protected static readonly HttpClient http = httpClient;
+    protected static readonly GrpcChannel channel = GrpcChannel.ForAddress("https://grpc.example.test");
     protected static readonly IServiceCollection services = new ServiceCollection();
     protected static readonly IKevlarRegistry registry = null!;
     protected static readonly StubBuilder builder = new();
