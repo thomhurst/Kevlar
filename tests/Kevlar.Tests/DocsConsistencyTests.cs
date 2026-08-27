@@ -71,7 +71,11 @@ public partial class DocsConsistencyTests
         foreach (var exception in exceptions)
         {
             var outcome = Outcome<int>.FromException(exception);
-            var expected = OutcomeJudge.Default.ShouldHandle(in outcome) ? "Yes" : "No";
+            var expected = OutcomeJudge.Default.ShouldHandle(in outcome)
+                ? "Yes"
+                : OutcomeJudge.FallbackDefault.ShouldHandle(in outcome)
+                    ? "Fallback only"
+                    : "No";
             await Assert.That(rows[exception.GetType().Name].DefaultClause).IsEqualTo(expected);
         }
     }

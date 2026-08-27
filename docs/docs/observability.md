@@ -44,8 +44,9 @@ Console.WriteLine(shield);
 // [when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)
 ```
 
-Shields that use only the default handling—ordinary exceptions, excluding cancellation, Kevlar's
-fail-fast rejections, and fatal runtime failures—print exactly as before, with no prefix.
+Shields that use only strategy defaults print exactly as before, with no prefix. Retry, circuit
+breaker, and hedge defaults exclude cancellation, Kevlar's fail-fast rejections, and fatal runtime
+failures; fallback additionally handles fail-fast rejections.
 
 ## Metrics
 

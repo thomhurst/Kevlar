@@ -123,9 +123,10 @@ Shield
     .Fallback(...);                // fallback reacts to TimeoutExceededException only
 ```
 
-`Wrap` and `Compose` are scope boundaries. A reactive strategy added afterwards uses Kevlar's
-default handling—ordinary exceptions, excluding cancellation, Kevlar's fail-fast rejections, and
-fatal runtime failures—unless the new expression declares a clause locally:
+`Wrap` and `Compose` are scope boundaries. A reactive strategy added afterwards uses its default
+handling unless the new expression declares a clause locally. Retry, circuit breaker, and hedge
+exclude cancellation, Kevlar's fail-fast rejections, and fatal runtime failures; fallback also
+handles fail-fast rejections:
 
 ```csharp
 var apiDefaults = Shield.When<HttpRequestException>().Retry(3);
