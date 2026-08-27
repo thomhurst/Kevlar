@@ -104,7 +104,7 @@ public class DocsConsistencyTests
 
         var partitions = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaximumPartitions = 1 });
+            new PartitionedShieldOptions { MaxPartitions = 1 });
         _ = partitions.GetShield("docs-first");
         _ = partitions.GetShield("docs-second");
 

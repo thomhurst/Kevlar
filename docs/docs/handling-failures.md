@@ -63,7 +63,7 @@ continues that clause on the returned builder. The compiler therefore enforces
 ## Clauses are ambient
 
 A clause applies to the strategy it is attached to *and* to every reactive strategy chained after
-it, until you write a new clause, call `WhenAnyError()`, or compose with `Wrap`/`Compose`:
+it, until you write a new clause, call `WithDefaultHandling()`, or compose with `Wrap`/`Compose`:
 
 <!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
@@ -115,7 +115,7 @@ editor.
 
 ### Reset to default handling
 
-Call `WhenAnyError()` to clear the ambient clause. Reactive strategies chained after it return to
+Call `WithDefaultHandling()` to clear the ambient clause. Reactive strategies chained after it return to
 Kevlar's default handling: ordinary exceptions, excluding cancellation, Kevlar's fail-fast
 rejections, and fatal runtime failures.
 
@@ -123,11 +123,11 @@ rejections, and fatal runtime failures.
 var shield = Shield
     .When<HttpRequestException>()
     .Retry(3)                                      // handles HttpRequestException only
-    .WhenAnyError()
+    .WithDefaultHandling()
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)); // handles ordinary exceptions
 ```
 
-`WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only
+`WithDefaultHandling()` preserves existing strategies, the shield name, and its `TimeProvider`; it only
 changes handling for reactive strategies added afterwards. It is available on both `Shield` and
 `Shield<T>`.
 
@@ -186,7 +186,7 @@ Shield.For<int>().WhenResultEquals(-1).Retry(2);      // clean: the failing valu
 ```
 
 All four are named after the `WhenResult` / `OrResult` family precisely so they cannot be confused
-with `WhenAnyError()`, which resets *handling* to Kevlar's default.
+with `WithDefaultHandling()`, which resets *handling* to Kevlar's default.
 
 ## Context-aware clauses
 
@@ -270,6 +270,6 @@ overload inside the strategy so exception and result rules stay aligned with the
 `shield.For<T>()`, `WithName(...)`, and `WithTimeProvider(...)` are same-chain copies, so they
 preserve the ambient clause. `Wrap(...)` and `Shield.Compose(...)` are composition boundaries:
 strategies already inside keep their original handling, but reactive strategies chained afterwards
-use the default unless you declare a new local clause. Within one chain, `WhenAnyError()` explicitly
+use the default unless you declare a new local clause. Within one chain, `WithDefaultHandling()` explicitly
 returns subsequent strategies to the default.
 :::

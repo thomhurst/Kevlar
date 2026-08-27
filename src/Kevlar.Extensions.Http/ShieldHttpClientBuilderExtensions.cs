@@ -293,7 +293,7 @@ public static class ShieldHttpClientBuilderExtensions
         var snapshot = new ShieldHttpHandlerOptions
         {
             ContentReplayPolicy = source.ContentReplayPolicy,
-            MaximumBufferSize = source.MaximumBufferSize,
+            MaxBufferSize = source.MaxBufferSize,
             AllowUnsafeMethodReplay = source.AllowUnsafeMethodReplay,
             RequestFactory = source.RequestFactory,
             Routing = Snapshot(source.Routing),
@@ -474,9 +474,9 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentOutOfRangeException(nameof(options), "ContentReplayPolicy is invalid.");
         }
 
-        if (options.Handler.MaximumBufferSize <= 0)
+        if (options.Handler.MaxBufferSize <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferSize must be positive.");
+            throw new ArgumentOutOfRangeException(nameof(options), "MaxBufferSize must be positive.");
         }
 
         if (options.Routing.Endpoints.Count == 0)
@@ -503,7 +503,7 @@ public static class ShieldHttpClientBuilderExtensions
         return new ShieldHttpHandlerOptions
         {
             ContentReplayPolicy = options.Handler.ContentReplayPolicy,
-            MaximumBufferSize = options.Handler.MaximumBufferSize,
+            MaxBufferSize = options.Handler.MaxBufferSize,
             AllowUnsafeMethodReplay = options.Handler.AllowUnsafeMethodReplay,
             RequestFactory = options.Handler.RequestFactory,
             Routing = routing,

@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.PartitionedShieldOptions.#ctor
   - Kevlar.PartitionedShieldOptions.IdleExpiration
-  - Kevlar.PartitionedShieldOptions.MaximumPartitions
+  - Kevlar.PartitionedShieldOptions.MaxPartitions
   - Kevlar.PartitionedShieldOptions.OnCreated
   - Kevlar.PartitionedShieldOptions.OnEvicted
   - Kevlar.PartitionedShieldOptions.TimeProvider
@@ -56,16 +56,16 @@ items:
   nameWithType.vb: PartitionedShieldOptions.New()
   fullName.vb: Kevlar.PartitionedShieldOptions.New()
   name.vb: New()
-- uid: Kevlar.PartitionedShieldOptions.MaximumPartitions
-  commentId: P:Kevlar.PartitionedShieldOptions.MaximumPartitions
-  id: MaximumPartitions
+- uid: Kevlar.PartitionedShieldOptions.MaxPartitions
+  commentId: P:Kevlar.PartitionedShieldOptions.MaxPartitions
+  id: MaxPartitions
   parent: Kevlar.PartitionedShieldOptions
   langs:
   - csharp
   - vb
-  name: MaximumPartitions
-  nameWithType: PartitionedShieldOptions.MaximumPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaximumPartitions
+  name: MaxPartitions
+  nameWithType: PartitionedShieldOptions.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
   type: Property
   assemblies:
   - Kevlar
@@ -76,12 +76,12 @@ items:
     is evicted before this bound is exceeded. Defaults to 1,000.
   example: []
   syntax:
-    content: public int MaximumPartitions { get; set; }
+    content: public int MaxPartitions { get; set; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public Property MaximumPartitions As Integer
-  overload: Kevlar.PartitionedShieldOptions.MaximumPartitions*
+    content.vb: Public Property MaxPartitions As Integer
+  overload: Kevlar.PartitionedShieldOptions.MaxPartitions*
 - uid: Kevlar.PartitionedShieldOptions.IdleExpiration
   commentId: P:Kevlar.PartitionedShieldOptions.IdleExpiration
   id: IdleExpiration
@@ -418,13 +418,13 @@ references:
   nameWithType.vb: PartitionedShieldOptions.New
   fullName.vb: Kevlar.PartitionedShieldOptions.New
   name.vb: New
-- uid: Kevlar.PartitionedShieldOptions.MaximumPartitions*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.MaximumPartitions
+- uid: Kevlar.PartitionedShieldOptions.MaxPartitions*
+  commentId: Overload:Kevlar.PartitionedShieldOptions.MaxPartitions
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaximumPartitions
-  name: MaximumPartitions
-  nameWithType: PartitionedShieldOptions.MaximumPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaximumPartitions
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaxPartitions
+  name: MaxPartitions
+  nameWithType: PartitionedShieldOptions.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

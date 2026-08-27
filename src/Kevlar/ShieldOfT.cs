@@ -71,36 +71,36 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     // ── Handling clauses ────────────────────────────────────────────────────────────────
 
-    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When<TException>()
         where TException : Exception
         => new ShieldBuilder<TResult>(this).Or<TException>();
 
-    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When<TException>(Func<TException, bool> predicate)
         where TException : Exception
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
-    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause using the typed outcome and active execution context.</summary>
     public ShieldBuilder<TResult> WhenContext(Func<HandlingEvent<TResult>, bool> predicate) =>
         new ShieldBuilder<TResult>(this).OrContext(predicate);
 
-    /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
 
     /// <summary>Starts a result handling clause using the typed outcome and active execution context.</summary>
     public ShieldBuilder<TResult> WhenResultContext(Func<HandlingEvent<TResult>, bool> predicate) =>
         new ShieldBuilder<TResult>(this).OrResultContext(predicate);
 
-    /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResultEquals(TResult result) => new ShieldBuilder<TResult>(this).OrResultEquals(result);
 
     /// <summary>
     /// Starts a handling clause for results equal to <c>default(TResult)</c> — <see langword="null"/>
-    /// for reference types. Use <see cref="WhenAnyError"/> to return to default handling.
+    /// for reference types. Use <see cref="WithDefaultHandling"/> to return to default handling.
     /// </summary>
     /// <remarks>
     /// For a reference type prefer <see cref="ShieldResultExtensions.WhenResultIsNull{TResult}(Shield{TResult})"/>,
@@ -113,7 +113,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
     /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
-    public Shield<TResult> WhenAnyError() =>
+    public Shield<TResult> WithDefaultHandling() =>
         new(Strategies, OutcomeJudge.Default, Name, Time, AppliedDecorators);
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────

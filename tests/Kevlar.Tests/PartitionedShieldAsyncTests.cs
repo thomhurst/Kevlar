@@ -103,7 +103,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 2,
+                MaxPartitions = 2,
                 IdleExpiration = TimeSpan.FromMinutes(1),
                 TimeProvider = timeProvider,
                 OnEvicted = item =>
@@ -135,7 +135,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async _ =>
                 {
                     entered.TrySetResult();
@@ -161,7 +161,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = static _ => throw new InvalidOperationException("observer"),
             });
         _ = provider.GetShield("first");
@@ -179,7 +179,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = static _ => ValueTask.FromException(new InvalidOperationException("observer")),
             });
         _ = provider.GetShield("first");
@@ -200,7 +200,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnCreated = async item =>
                 {
                     _ = item;
@@ -232,7 +232,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async _ =>
                 {
                     entered.TrySetResult();
@@ -265,7 +265,7 @@ public class PartitionedShieldAsyncTests
             static _ => Shield.Empty,
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "first")
@@ -299,7 +299,7 @@ public class PartitionedShieldAsyncTests
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "first")
@@ -346,7 +346,7 @@ public class PartitionedShieldAsyncTests
             },
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "first")
@@ -387,7 +387,7 @@ public class PartitionedShieldAsyncTests
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 2,
+                MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "first")
@@ -422,7 +422,7 @@ public class PartitionedShieldAsyncTests
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 2,
+                MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
                     switch ((string)item.Key)
@@ -475,7 +475,7 @@ public class PartitionedShieldAsyncTests
             },
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 2,
+                MaxPartitions = 2,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "removed")
@@ -509,7 +509,7 @@ public class PartitionedShieldAsyncTests
             key => Shield.Empty.WithName(key),
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = async item =>
                 {
                     if ((string)item.Key == "removed")
@@ -545,7 +545,7 @@ public class PartitionedShieldAsyncTests
             },
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 1,
+                MaxPartitions = 1,
                 OnEvicted = item =>
                 {
                     resources[(string)item.Key].Dispose();
@@ -602,12 +602,11 @@ public class PartitionedShieldAsyncTests
     {
         var provider = new PartitionedShield<int>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaximumPartitions = 1 });
+            new PartitionedShieldOptions { MaxPartitions = 1 });
         _ = provider.GetShield(1);
         _ = provider.GetShield(2);
         var snapshot = provider.GetStateSnapshot();
 
-        await Assert.That(snapshot.ContractVersion).IsEqualTo(1);
         await Assert.That(snapshot.Count).IsEqualTo(1);
         await Assert.That(snapshot.CreatedCount).IsEqualTo(2);
         await Assert.That(snapshot.CapacityEvictionCount).IsEqualTo(1);

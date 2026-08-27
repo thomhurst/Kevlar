@@ -106,7 +106,7 @@ var search = Shield.For<HttpResponseMessage>()
 ```
 
 **A clause is ambient.** It applies to the strategy it is attached to *and* to every reactive
-strategy chained after it, until a new clause replaces it, `WhenAnyError()` resets it, or
+strategy chained after it, until a new clause replaces it, `WithDefaultHandling()` resets it, or
 `Wrap`/`Compose` seals it. Above, the fallback, the retry *and* the circuit breaker all react to
 the same three conditions. Nothing repeats the predicate per strategy:
 

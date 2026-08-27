@@ -103,9 +103,9 @@ internal sealed class HttpShieldPipeline
             throw new ArgumentOutOfRangeException(nameof(options), "ContentReplayPolicy is invalid.");
         }
 
-        if (options.MaximumBufferSize <= 0)
+        if (options.MaxBufferSize <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferSize must be positive.");
+            throw new ArgumentOutOfRangeException(nameof(options), "MaxBufferSize must be positive.");
         }
 
         if (options.Routing is not { } routing)

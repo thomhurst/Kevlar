@@ -39,8 +39,8 @@ Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.get -> b
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.set -> void
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.get -> Kevlar.Extensions.Http.HttpContentReplayPolicy
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.set -> void
-Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.get -> long
-Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize.get -> long
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize.set -> void
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage!>>?
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.set -> void
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.get -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions?
@@ -91,6 +91,9 @@ static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShiel
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHedgeShieldOptions!>! configure, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 Kevlar.Extensions.Http.KevlarHttp
+Kevlar.Extensions.Http.KevlarHttpKeys
+static Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod.get -> Kevlar.KevlarKey<string!>
+static Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri.get -> Kevlar.KevlarKey<string!>
 Kevlar.Extensions.Http.KevlarHttpRequestExtensions
 Kevlar.Extensions.Http.KevlarRequestOptions
 Kevlar.Extensions.Http.KevlarRequestOptions.AllowReplay.get -> bool?

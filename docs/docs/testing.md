@@ -95,7 +95,7 @@ var execution = shield.ExecuteAsync<int>(_ =>
         : new ValueTask<int>(42);
 }).AsTask();
 
-await execution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the first retry delay");
 await timeProvider.AdvanceUntilAsync(
@@ -139,7 +139,7 @@ var execution = shield.ExecuteAsync<int>(_ =>
     return ValueTask.FromException<int>(new InvalidOperationException());
 }, cancellation.Token).AsTask();
 
-await execution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the retry delay scheduled after the early advance");
 var timeout = Task.Delay(TimeSpan.FromSeconds(1));
@@ -206,7 +206,7 @@ await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 
 var state = shield.GetStateSnapshot();
 var limiter = state.Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
-if (state.ContractVersion != 1 || limiter.AvailablePermits != 1)
+if (limiter.AvailablePermits != 1)
 {
     throw new InvalidOperationException("The limiter did not return to its idle state.");
 }
@@ -288,7 +288,7 @@ var execution = shield.ExecuteAsync(_ =>
     return new ValueTask<HttpResponseMessage>(new HttpResponseMessage(HttpStatusCode.OK));
 }).AsTask();
 
-await execution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the Retry-After delay");
 await timeProvider.AdvanceUntilAsync(

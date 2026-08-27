@@ -1,17 +1,17 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Testing.ShieldExecutionExtensions
-  commentId: T:Kevlar.Testing.ShieldExecutionExtensions
-  id: ShieldExecutionExtensions
+- uid: Kevlar.Testing.ShieldExecution
+  commentId: T:Kevlar.Testing.ShieldExecution
+  id: ShieldExecution
   parent: Kevlar.Testing
   children:
-  - Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
+  - Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
   langs:
   - csharp
   - vb
-  name: ShieldExecutionExtensions
-  nameWithType: ShieldExecutionExtensions
-  fullName: Kevlar.Testing.ShieldExecutionExtensions
+  name: ShieldExecution
+  nameWithType: ShieldExecution
+  fullName: Kevlar.Testing.ShieldExecution
   type: Class
   assemblies:
   - Kevlar.Testing
@@ -19,8 +19,8 @@ items:
   summary: Provides bounded, scheduler-driven waits for shield executions under test.
   example: []
   syntax:
-    content: public static class ShieldExecutionExtensions
-    content.vb: Public Module ShieldExecutionExtensions
+    content: public static class ShieldExecution
+    content.vb: Public Module ShieldExecution
   inheritance:
   - System.Object
   inheritedMembers:
@@ -31,17 +31,16 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
-  commentId: M:Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
+- uid: Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
   id: WaitForPendingAsync(System.Threading.Tasks.Task,System.Func{System.Boolean},System.String,System.Int32,System.Threading.CancellationToken)
-  isExtensionMethod: true
-  parent: Kevlar.Testing.ShieldExecutionExtensions
+  parent: Kevlar.Testing.ShieldExecution
   langs:
   - csharp
   - vb
   name: WaitForPendingAsync(Task, Func<bool>, string, int, CancellationToken)
-  nameWithType: ShieldExecutionExtensions.WaitForPendingAsync(Task, Func<bool>, string, int, CancellationToken)
-  fullName: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(System.Threading.Tasks.Task, System.Func<bool>, string, int, System.Threading.CancellationToken)
+  nameWithType: ShieldExecution.WaitForPendingAsync(Task, Func<bool>, string, int, CancellationToken)
+  fullName: Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task, System.Func<bool>, string, int, System.Threading.CancellationToken)
   type: Method
   assemblies:
   - Kevlar.Testing
@@ -49,7 +48,7 @@ items:
   summary: Waits until caller-observable work has started while verifying that the execution remains pending.
   example: []
   syntax:
-    content: public static ValueTask WaitForPendingAsync(this Task execution, Func<bool> workStarted, string workDescription, int maxYields = 100, CancellationToken cancellationToken = default)
+    content: public static ValueTask WaitForPendingAsync(Task execution, Func<bool> workStarted, string workDescription, int maxYields = 100, CancellationToken cancellationToken = default)
     parameters:
     - id: execution
       type: System.Threading.Tasks.Task
@@ -72,13 +71,13 @@ items:
     return:
       type: System.Threading.Tasks.ValueTask
     content.vb: Public Shared Function WaitForPendingAsync(execution As Task, workStarted As Func(Of Boolean), workDescription As String, maxYields As Integer = 100, cancellationToken As CancellationToken = Nothing) As ValueTask
-  overload: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync*
+  overload: Kevlar.Testing.ShieldExecution.WaitForPendingAsync*
   exceptions:
   - type: Kevlar.Testing.ShieldAssertionException
     commentId: T:Kevlar.Testing.ShieldAssertionException
     description: The execution completes before the work is observed, or the work is not observed within the bound.
-  nameWithType.vb: ShieldExecutionExtensions.WaitForPendingAsync(Task, Func(Of Boolean), String, Integer, CancellationToken)
-  fullName.vb: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(System.Threading.Tasks.Task, System.Func(Of Boolean), String, Integer, System.Threading.CancellationToken)
+  nameWithType.vb: ShieldExecution.WaitForPendingAsync(Task, Func(Of Boolean), String, Integer, CancellationToken)
+  fullName.vb: Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task, System.Func(Of Boolean), String, Integer, System.Threading.CancellationToken)
   name.vb: WaitForPendingAsync(Task, Func(Of Boolean), String, Integer, CancellationToken)
 references:
 - uid: Kevlar.Testing
@@ -352,13 +351,13 @@ references:
   name: ShieldAssertionException
   nameWithType: ShieldAssertionException
   fullName: Kevlar.Testing.ShieldAssertionException
-- uid: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync*
-  commentId: Overload:Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync
+- uid: Kevlar.Testing.ShieldExecution.WaitForPendingAsync*
+  commentId: Overload:Kevlar.Testing.ShieldExecution.WaitForPendingAsync
   isExternal: true
-  href: Kevlar.Testing.ShieldExecutionExtensions.html#Kevlar_Testing_ShieldExecutionExtensions_WaitForPendingAsync_System_Threading_Tasks_Task_System_Func_System_Boolean__System_String_System_Int32_System_Threading_CancellationToken_
+  href: Kevlar.Testing.ShieldExecution.html#Kevlar_Testing_ShieldExecution_WaitForPendingAsync_System_Threading_Tasks_Task_System_Func_System_Boolean__System_String_System_Int32_System_Threading_CancellationToken_
   name: WaitForPendingAsync
-  nameWithType: ShieldExecutionExtensions.WaitForPendingAsync
-  fullName: Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync
+  nameWithType: ShieldExecution.WaitForPendingAsync
+  fullName: Kevlar.Testing.ShieldExecution.WaitForPendingAsync
 - uid: System.Threading.Tasks.Task
   commentId: T:System.Threading.Tasks.Task
   parent: System.Threading.Tasks

@@ -18,7 +18,7 @@ public class PartitioningBenchmarks
         static _ => Shield.Retry(0, Backoff.None));
     private readonly PartitionedShield<int> _evicting = new(
         static _ => Shield.Retry(0, Backoff.None),
-        new PartitionedShieldOptions { MaximumPartitions = 1 });
+        new PartitionedShieldOptions { MaxPartitions = 1 });
 
     private int _evictionKey;
 

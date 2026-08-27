@@ -82,7 +82,7 @@ internal sealed class HttpRequestTemplate
             {
                 throw new HttpRequestReplayException(
                     $"Request content could not be buffered safely within the {maximumBufferSize}-byte limit. " +
-                    "Increase MaximumBufferSize or provide RequestFactory.",
+                    "Increase MaxBufferSize or provide RequestFactory.",
                     exception);
             }
 
@@ -131,7 +131,7 @@ internal sealed class HttpRequestTemplate
                     request.Dispose();
                     throw new HttpRequestReplayException(
                         "Request content is not replayable with ContentReplayPolicy.NoBuffer. " +
-                        "Use Buffer with a bounded MaximumBufferSize, or provide RequestFactory.");
+                        "Use Buffer with a bounded MaxBufferSize, or provide RequestFactory.");
                 }
 
                 request.Content = new ReplayableContent(replayContent, _contentHeaders);
@@ -162,7 +162,7 @@ internal sealed class HttpRequestTemplate
 
     private static HttpRequestReplayException TooLarge(long maximumBufferSize) => new(
         $"Request content exceeds the {maximumBufferSize}-byte replay buffer limit. " +
-        "Increase MaximumBufferSize or provide RequestFactory.");
+        "Increase MaxBufferSize or provide RequestFactory.");
 
     internal static bool IsInherentlyReplayable(HttpContent content)
     {

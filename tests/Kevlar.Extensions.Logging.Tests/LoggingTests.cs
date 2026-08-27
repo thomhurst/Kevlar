@@ -315,6 +315,8 @@ public class LoggingTests
         await Assert.That(order.SequenceEqual(["log", "callback"])).IsTrue();
         await Assert.That(callbackRecord.Level).IsEqualTo(LogLevel.Error);
         await Assert.That(callbackRecord.GetStructuredStateValue("CallbackKind")).IsEqualTo("Retry");
+        await Assert.That(callbackRecord.GetStructuredStateValue("CallbackSource"))
+            .IsEqualTo("RetryOptions.OnRetry");
         await Assert.That(ReferenceEquals(callbackRecord.Exception, callbackFailure)).IsTrue();
     }
 
@@ -414,7 +416,8 @@ public class LoggingTests
 
             await Assert.That(failingScope.IsDisposed).IsTrue();
             await Assert.That(survivingScope.IsDisposed).IsTrue();
-            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Logging);
+            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Custom);
+            await Assert.That(reported?.Source).IsEqualTo("Kevlar.Extensions.Logging");
             await Assert.That(ReferenceEquals(reported?.Exception, failure)).IsTrue();
         }
         finally
@@ -446,9 +449,10 @@ public class LoggingTests
             var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(-1));
 
             await Assert.That(result).IsEqualTo(-1);
-            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Logging);
+            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Custom);
+            await Assert.That(reported?.Source).IsEqualTo("Kevlar.Extensions.Logging");
             await Assert.That(ReferenceEquals(reported?.Exception, formatterFailure)).IsTrue();
-            await Assert.That(measurements).IsEquivalentTo(["logging"]);
+            await Assert.That(measurements).IsEquivalentTo(["custom"]);
             await Assert.That(logger.Collector.GetSnapshot().Any(record =>
                 record.Id == new EventId(1008, "CallbackError"))).IsTrue();
         }
@@ -480,7 +484,8 @@ public class LoggingTests
 
             await Assert.That(outcome.Exception).IsTypeOf<TestException>();
             await Assert.That(reports).IsEqualTo(1);
-            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Logging);
+            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Custom);
+            await Assert.That(reported?.Source).IsEqualTo("Kevlar.Extensions.Logging");
             await Assert.That(ReferenceEquals(reported?.Exception, logger.Failure)).IsTrue();
         }
         finally

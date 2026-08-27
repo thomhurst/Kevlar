@@ -39,7 +39,7 @@ public class BackoffConfigurationTests
         foreach (var expected in cases)
         {
             await Assert.That(expected.Backoff.Kind).IsEqualTo(expected.Kind);
-            await Assert.That(expected.Backoff.InitialDelay).IsEqualTo(expected.InitialDelay);
+            await Assert.That(expected.Backoff.BaseDelay).IsEqualTo(expected.BaseDelay);
             await Assert.That(expected.Backoff.Factor).IsEqualTo(expected.Factor);
             await Assert.That(expected.Backoff.MaxDelay).IsEqualTo(expected.MaxDelay);
             await Assert.That(expected.Backoff.Jitter).IsEqualTo(expected.Jitter);
@@ -49,7 +49,7 @@ public class BackoffConfigurationTests
     private sealed record ExpectedConfiguration(
         Backoff Backoff,
         BackoffKind Kind,
-        TimeSpan? InitialDelay,
+        TimeSpan? BaseDelay,
         double? Factor,
         TimeSpan? MaxDelay,
         Jitter? Jitter);

@@ -133,7 +133,7 @@ var execution = Shield
     })
     .AsTask();
 
-await execution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the first timed attempt");
 await time.AdvanceUntilAsync(
@@ -180,7 +180,7 @@ var execution = shield.ExecuteAsync(async token =>
     await never.Task;
 }).AsTask();
 
-await execution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the timed attempt");
 await time.AdvanceUntilAsync(

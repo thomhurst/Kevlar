@@ -1,7 +1,7 @@
 namespace Kevlar.Testing;
 
 /// <summary>Provides bounded, scheduler-driven waits for shield executions under test.</summary>
-public static class ShieldExecutionExtensions
+public static class ShieldExecution
 {
     /// <summary>
     /// Waits until caller-observable work has started while verifying that the execution remains pending.
@@ -18,7 +18,7 @@ public static class ShieldExecutionExtensions
     /// The execution completes before the work is observed, or the work is not observed within the bound.
     /// </exception>
     public static async ValueTask WaitForPendingAsync(
-        this Task execution,
+        Task execution,
         Func<bool> workStarted,
         string workDescription,
         int maxYields = 100,

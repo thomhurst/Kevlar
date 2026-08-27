@@ -12,9 +12,4 @@ public static class KevlarKeys
     /// </remarks>
     public static KevlarKey<string> OperationKey { get; } = new("kevlar.operation.key");
 
-    /// <summary>The HTTP request method supplied by the Kevlar HTTP integration.</summary>
-    public static KevlarKey<string> HttpRequestMethod { get; } = new("kevlar.http.request.method");
-
-    /// <summary>The HTTP request URI without its query string or fragment.</summary>
-    public static KevlarKey<string> HttpRequestUri { get; } = new("kevlar.http.request.uri");
 }

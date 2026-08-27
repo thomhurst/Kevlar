@@ -20,6 +20,7 @@ public readonly struct KevlarLogEvent
         RetryAfter = telemetryEvent.RetryAfter;
         SuppressionReason = telemetryEvent.SuppressionReason;
         CallbackKind = telemetryEvent.CallbackKind;
+        CallbackSource = telemetryEvent.CallbackSource;
     }
 
     /// <summary>The mapped logging event kind.</summary>
@@ -66,4 +67,7 @@ public readonly struct KevlarLogEvent
 
     /// <summary>The callback family that failed.</summary>
     public CallbackErrorKind? CallbackKind { get; }
+
+    /// <summary>The stable callback or integration identifier that failed.</summary>
+    public string? CallbackSource { get; }
 }

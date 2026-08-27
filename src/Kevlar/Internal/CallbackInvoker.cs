@@ -31,7 +31,7 @@ internal static class CallbackInvoker
         }
         catch (Exception exception)
         {
-            KevlarDiagnostics.ReportCallbackError(kind, context, exception);
+            KevlarDiagnostics.ReportCallbackError(kind, context, exception, hookName);
             return default;
         }
 
@@ -42,7 +42,7 @@ internal static class CallbackInvoker
         }
 
         SynchronousExecutionGuard.ThrowIfIncomplete(in notification, context, hookName);
-        return AwaitAsync(notification, kind, context);
+        return AwaitAsync(notification, kind, context, hookName);
     }
 
     /// <summary>
@@ -64,7 +64,8 @@ internal static class CallbackInvoker
     private static async ValueTask AwaitAsync(
         ValueTask notification,
         CallbackErrorKind kind,
-        KevlarContext context)
+        KevlarContext context,
+        string hookName)
     {
         try
         {
@@ -72,7 +73,7 @@ internal static class CallbackInvoker
         }
         catch (Exception exception)
         {
-            KevlarDiagnostics.ReportCallbackError(kind, context, exception);
+            KevlarDiagnostics.ReportCallbackError(kind, context, exception, hookName);
         }
     }
 }

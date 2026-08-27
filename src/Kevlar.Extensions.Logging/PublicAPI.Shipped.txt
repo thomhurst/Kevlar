@@ -2,6 +2,7 @@
 Kevlar.Extensions.Logging.KevlarLogEvent
 Kevlar.Extensions.Logging.KevlarLogEvent.Attempt.get -> int
 Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind.get -> Kevlar.CallbackErrorKind?
+Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource.get -> string?
 Kevlar.Extensions.Logging.KevlarLogEvent.Delay.get -> System.TimeSpan
 Kevlar.Extensions.Logging.KevlarLogEvent.Duration.get -> System.TimeSpan
 Kevlar.Extensions.Logging.KevlarLogEvent.EventName.get -> string!

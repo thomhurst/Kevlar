@@ -122,10 +122,10 @@ items:
   - Kevlar.Shield.Kevlar.ShieldExtensions.Use(Kevlar.Strategy)
   - Kevlar.Shield.Kevlar.ShieldExtensions.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When(System.Func{System.Exception,System.Boolean})
-  - Kevlar.Shield.Kevlar.ShieldExtensions.WhenAnyError
   - Kevlar.Shield.Kevlar.ShieldExtensions.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1(System.Func{{TException},System.Boolean})
+  - Kevlar.Shield.Kevlar.ShieldExtensions.WithDefaultHandling
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithName(System.String)
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithTimeProvider(System.TimeProvider)
   - Kevlar.Shield.Kevlar.ShieldExtensions.Wrap(Kevlar.Shield)
@@ -806,7 +806,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: 'Starts a handling clause: subsequent reactive strategies act on exceptions of type <code class="typeparamref">TException</code>. Use <xref href="Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.'
+  summary: 'Starts a handling clause: subsequent reactive strategies act on exceptions of type <code class="typeparamref">TException</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.'
   example: []
   syntax:
     content: 'public static ShieldBuilder When<TException>() where TException : Exception'
@@ -833,7 +833,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Starts a handling clause for exceptions of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  summary: Starts a handling clause for exceptions of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
   example: []
   syntax:
     content: 'public static ShieldBuilder When<TException>(Func<TException, bool> predicate) where TException : Exception'
@@ -863,7 +863,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Starts a handling clause for exceptions matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  summary: Starts a handling clause for exceptions matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
   example: []
   syntax:
     content: public static ShieldBuilder When(Func<Exception, bool> predicate)
@@ -3552,36 +3552,6 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
   - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldExtensions.WhenAnyError
-  commentId: M:Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  parent: Kevlar.ShieldExtensions
-  definition: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  name: WhenAnyError(Shield)
-  nameWithType: ShieldExtensions.WhenAnyError(Shield)
-  fullName: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  spec.csharp:
-  - uid: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-    name: WhenAnyError
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-    name: WhenAnyError
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldExtensions.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
   commentId: M:Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
   parent: Kevlar.ShieldExtensions
@@ -3766,6 +3736,36 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+  - name: )
+- uid: Kevlar.Shield.Kevlar.ShieldExtensions.WithDefaultHandling
+  commentId: M:Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  parent: Kevlar.ShieldExtensions
+  definition: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  name: WithDefaultHandling(Shield)
+  nameWithType: ShieldExtensions.WithDefaultHandling(Shield)
+  fullName: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+    name: WithDefaultHandling
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+    name: WithDefaultHandling
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldExtensions.WithName(System.String)
   commentId: M:Kevlar.ShieldExtensions.WithName(Kevlar.Shield,System.String)
@@ -6950,35 +6950,6 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
   - name: )
-- uid: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  commentId: M:Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  isExternal: true
-  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  name: WhenAnyError(Shield)
-  nameWithType: ShieldExtensions.WhenAnyError(Shield)
-  fullName: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-  spec.csharp:
-  - uid: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-    name: WhenAnyError
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldExtensions.WhenAnyError(Kevlar.Shield)
-    name: WhenAnyError
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenAnyError_Kevlar_Shield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: )
 - uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
   commentId: M:Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
   isExternal: true
@@ -7160,6 +7131,35 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+  - name: )
+- uid: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  commentId: M:Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  name: WithDefaultHandling(Shield)
+  nameWithType: ShieldExtensions.WithDefaultHandling(Shield)
+  fullName: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+    name: WithDefaultHandling
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
+    name: WithDefaultHandling
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WithDefaultHandling_Kevlar_Shield_
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: Kevlar.ShieldExtensions.WithName(Kevlar.Shield,System.String)
   commentId: M:Kevlar.ShieldExtensions.WithName(Kevlar.Shield,System.String)

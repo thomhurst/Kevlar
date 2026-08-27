@@ -33,9 +33,9 @@ internal sealed class PartitionCache<TKey, TShield>
         Throw.IfNull(factory, nameof(factory));
         options ??= new PartitionedShieldOptions();
         Throw.IfOutOfRange(
-            options.MaximumPartitions <= 0,
+            options.MaxPartitions <= 0,
             nameof(options),
-            "MaximumPartitions must be positive.");
+            "MaxPartitions must be positive.");
         Throw.IfOutOfRange(
             options.IdleExpiration is { } idleExpiration && idleExpiration <= TimeSpan.Zero,
             nameof(options),
@@ -43,7 +43,7 @@ internal sealed class PartitionCache<TKey, TShield>
         Throw.IfNull(options.TimeProvider, nameof(options));
 
         _factory = factory;
-        _maximumPartitions = options.MaximumPartitions;
+        _maximumPartitions = options.MaxPartitions;
         _idleExpiration = options.IdleExpiration;
         _timeProvider = options.TimeProvider;
         _onCreated = options.OnCreated;

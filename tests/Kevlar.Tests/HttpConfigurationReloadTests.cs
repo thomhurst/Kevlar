@@ -81,7 +81,7 @@ public class HttpConfigurationReloadTests
             ("ConcurrencyLimit:QueueLimit", "4"),
             ("AttemptTimeout", "00:00:02"),
             ("Handler:ContentReplayPolicy", "Buffer"),
-            ("Handler:MaximumBufferSize", "4096"),
+            ("Handler:MaxBufferSize", "4096"),
             ("Handler:AllowUnsafeMethodReplay", "true"),
             ("Handler:Routing:SelectionMode", "Weighted"),
             ("Handler:Routing:Seed", "7"),
@@ -117,7 +117,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.ConcurrencyLimit.QueueLimit).IsEqualTo(4);
         await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(bound.Handler.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
-        await Assert.That(bound.Handler.MaximumBufferSize).IsEqualTo(4096);
+        await Assert.That(bound.Handler.MaxBufferSize).IsEqualTo(4096);
         await Assert.That(bound.Handler.AllowUnsafeMethodReplay).IsTrue();
         await Assert.That(bound.Handler.Routing!.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
         await Assert.That(bound.Handler.Routing.Seed).IsEqualTo(7);
@@ -190,7 +190,7 @@ public class HttpConfigurationReloadTests
             ("Routing:SelectionMode", "Weighted"),
             ("Routing:Seed", "9"),
             ("Handler:ContentReplayPolicy", "Buffer"),
-            ("Handler:MaximumBufferSize", "8192"),
+            ("Handler:MaxBufferSize", "8192"),
             ("Handler:AllowUnsafeMethodReplay", "true"),
             ("Routing:Endpoints:0", "https://one.example"));
         StandardHedgeShieldOptions? bound = null;
@@ -216,7 +216,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.Routing.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
         await Assert.That(bound.Routing.Seed).IsEqualTo(9);
         await Assert.That(bound.Handler.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
-        await Assert.That(bound.Handler.MaximumBufferSize).IsEqualTo(8192);
+        await Assert.That(bound.Handler.MaxBufferSize).IsEqualTo(8192);
         await Assert.That(bound.Handler.AllowUnsafeMethodReplay).IsTrue();
         await Assert.That(bound.Routing.Endpoints.Single().Uri.Host).IsEqualTo("one.example");
     }
@@ -248,7 +248,7 @@ public class HttpConfigurationReloadTests
 
     [Test]
     [Arguments("Retry:MaxRetries", "many", "an integer")]
-    [Arguments("Handler:MaximumBufferSize", "large", "an integer")]
+    [Arguments("Handler:MaxBufferSize", "large", "an integer")]
     [Arguments("CircuitBreaker:FailureRatio", "often", "a number")]
     [Arguments("Handler:AllowUnsafeMethodReplay", "perhaps", "a Boolean")]
     [Arguments("TotalTimeout", "soon", "a TimeSpan")]
@@ -285,7 +285,7 @@ public class HttpConfigurationReloadTests
     [Arguments("ConcurrencyLimit:MaxConcurrency", "0", "must be positive")]
     [Arguments("ConcurrencyLimit:QueueLimit", "-1", "must not be negative")]
     [Arguments("AttemptTimeout", "00:00:00", "must be positive or Timeout.InfiniteTimeSpan")]
-    [Arguments("Handler:MaximumBufferSize", "0", "must be positive")]
+    [Arguments("Handler:MaxBufferSize", "0", "must be positive")]
     [Arguments("Handler:Routing:Endpoints:0:Weight", "0", "must be positive")]
     public async Task Invalid_Standard_Ranges_Report_Exact_Paths(
         string key,
@@ -800,7 +800,7 @@ public class HttpConfigurationReloadTests
         {
             ContentReplayPolicy = (HttpContentReplayPolicy)int.MaxValue,
         };
-        var invalidBuffer = new ShieldHttpHandlerOptions { MaximumBufferSize = 0 };
+        var invalidBuffer = new ShieldHttpHandlerOptions { MaxBufferSize = 0 };
         var invalidSelection = CreateRoutingOptions();
         invalidSelection.Routing!.SelectionMode = (HttpEndpointSelectionMode)int.MaxValue;
         var emptyRouting = new ShieldHttpHandlerOptions { Routing = new HttpEndpointRoutingOptions() };

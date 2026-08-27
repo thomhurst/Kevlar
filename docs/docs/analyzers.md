@@ -208,7 +208,7 @@ transient.Or<TimeoutExceededException>();                     // KEV007 — the 
 var shield = transient.Retry(3);                              // still HttpRequestException only
 ```
 
-The second is a clause that a later `When…` or `WhenAnyError()` replaces while only *proactive*
+The second is a clause that a later `When…` or `WithDefaultHandling()` replaces while only *proactive*
 strategies — timeout, rate limit, concurrency limit — sat in between. Proactive strategies never
 consult clauses, so the first clause never applied to anything:
 
@@ -217,7 +217,7 @@ consult clauses, so the first clause never applied to anything:
 var shield = Shield
     .When<HttpRequestException>()                 // KEV007 — only the timeout saw this clause
     .Timeout(TimeSpan.FromSeconds(5))
-    .WhenAnyError()
+    .WithDefaultHandling()
     .Retry(3);
 ```
 
@@ -228,7 +228,7 @@ var shield = Shield
     .When<HttpRequestException>()
     .Timeout(TimeSpan.FromSeconds(5))
     .Retry(3)                                     // the clause reaches a reactive strategy
-    .WhenAnyError()
+    .WithDefaultHandling()
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
@@ -262,7 +262,7 @@ reported by [`KEV007`](#kev007-dead-handling-clause) instead, which names that h
 ## KEV009: inherited handling clause
 
 A [handling clause](handling-failures.md) stays ambient: it applies to the strategy it is attached to
-*and* to every reactive strategy chained after it, until a new `When…` replaces it, `WhenAnyError()`
+*and* to every reactive strategy chained after it, until a new `When…` replaces it, `WithDefaultHandling()`
 resets it, or `Wrap`/`Compose` seals it. That is by design — writing the clause once is the point —
 but only the *first* strategy states it at its own call site. `KEV009` is an informational hint, not
 a warning: it marks the second and later strategies so the clause's span is visible in the editor.
@@ -283,7 +283,7 @@ handling — a new clause, a reset, or a local override:
 var shield = Shield
     .When<HttpRequestException>()
     .Retry(3)
-    .WhenAnyError()
+    .WithDefaultHandling()
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
@@ -348,7 +348,7 @@ var shield = Shield
 ```
 
 A local `HandlesException` or `HandlesResult` override also makes the policy explicit. The rule
-does not report proactive strategies, an explicit `WhenAnyError()` reset, or opaque configuration
+does not report proactive strategies, an explicit `WithDefaultHandling()` reset, or opaque configuration
 that the analyzer cannot prove still uses the default.
 
 `KEV011` is an informational design hint, not a warning. Keep the default when it is deliberate,

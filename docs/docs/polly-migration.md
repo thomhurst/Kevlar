@@ -84,7 +84,7 @@ var handledShield = Shield.For<HttpResponseMessage>()
 ```
 
 For a direct per-strategy translation, set `HandlesException` and `HandlesResult` on that
-strategy's options. A local override replaces the ambient clause. `WhenAnyError()` returns later
+strategy's options. A local override replaces the ambient clause. `WithDefaultHandling()` returns later
 strategies to Kevlar's default handling.
 
 Polly predicates that inspect `args.AttemptNumber` or `args.Context.Properties` map to a
@@ -428,7 +428,7 @@ var pollyExecution = defaultPollyRetry.ExecuteAsync<int>(_ =>
     Interlocked.Increment(ref pollyAttempts);
     return ValueTask.FromException<int>(new InvalidOperationException());
 }).AsTask();
-await pollyExecution.WaitForPendingAsync(() => Volatile.Read(ref pollyAttempts) == 1, "Polly retry");
+await ShieldExecution.WaitForPendingAsync(pollyExecution, () => Volatile.Read(ref pollyAttempts) == 1, "Polly retry");
 await pollyClock.AdvanceUntilAsync(
     TimeSpan.FromSeconds(2),
     () => Volatile.Read(ref pollyAttempts) == 4,
@@ -456,7 +456,7 @@ var kevlarExecution = defaultKevlarRetry.ExecuteAsync<int>(_ =>
 }).AsTask();
 for (var retryIndex = 0; retryIndex < 3; retryIndex++)
 {
-    await kevlarExecution.WaitForPendingAsync(
+    await ShieldExecution.WaitForPendingAsync(kevlarExecution,
         () => Volatile.Read(ref delayCount) > retryIndex,
         $"Kevlar retry {retryIndex + 1}");
     kevlarClock.Advance(retryDelays[retryIndex]);
@@ -539,7 +539,7 @@ var pollyHedgeExecution = pollyHedge.ExecuteAsync(_ =>
     Interlocked.Increment(ref pollyHedgeAttempts) == 1
         ? new ValueTask<int>(pollyPrimary.Task)
         : new ValueTask<int>(42)).AsTask();
-await pollyHedgeExecution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(pollyHedgeExecution,
     () => Volatile.Read(ref pollyHedgeAttempts) == 1,
     "Polly primary hedge");
 await pollyHedgeClock.AdvanceUntilAsync(
@@ -559,7 +559,7 @@ var kevlarHedgeExecution = kevlarHedge.ExecuteAsync<int>(_ =>
     Interlocked.Increment(ref kevlarHedgeAttempts) == 1
         ? new ValueTask<int>(kevlarPrimary.Task)
         : new ValueTask<int>(42)).AsTask();
-await kevlarHedgeExecution.WaitForPendingAsync(
+await ShieldExecution.WaitForPendingAsync(kevlarHedgeExecution,
     () => Volatile.Read(ref kevlarHedgeAttempts) == 1,
     "Kevlar primary hedge");
 await kevlarHedgeClock.AdvanceUntilAsync(

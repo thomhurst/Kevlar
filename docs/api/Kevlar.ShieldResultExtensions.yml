@@ -57,7 +57,7 @@ items:
   summary: >-
     Starts a handling clause for <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> results. Use
 
-    <xref href="Kevlar.Shield%601.WhenAnyError" data-throw-if-not-resolved="false"></xref> to return to default handling.
+    <xref href="Kevlar.Shield%601.WithDefaultHandling" data-throw-if-not-resolved="false"></xref> to return to default handling.
   remarks: >-
     Prefer this to <xref href="Kevlar.Shield%601.WhenResultIsDefault" data-throw-if-not-resolved="false"></xref> whenever the result is a
 
@@ -390,27 +390,27 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Shield`1.WhenAnyError
-  commentId: M:Kevlar.Shield`1.WhenAnyError
+- uid: Kevlar.Shield`1.WithDefaultHandling
+  commentId: M:Kevlar.Shield`1.WithDefaultHandling
   isExternal: true
-  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
-  name: WhenAnyError()
-  nameWithType: Shield<TResult>.WhenAnyError()
-  fullName: Kevlar.Shield<TResult>.WhenAnyError()
-  nameWithType.vb: Shield(Of TResult).WhenAnyError()
-  fullName.vb: Kevlar.Shield(Of TResult).WhenAnyError()
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WithDefaultHandling
+  name: WithDefaultHandling()
+  nameWithType: Shield<TResult>.WithDefaultHandling()
+  fullName: Kevlar.Shield<TResult>.WithDefaultHandling()
+  nameWithType.vb: Shield(Of TResult).WithDefaultHandling()
+  fullName.vb: Kevlar.Shield(Of TResult).WithDefaultHandling()
   spec.csharp:
-  - uid: Kevlar.Shield`1.WhenAnyError
-    name: WhenAnyError
+  - uid: Kevlar.Shield`1.WithDefaultHandling
+    name: WithDefaultHandling
     isExternal: true
-    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WithDefaultHandling
   - name: (
   - name: )
   spec.vb:
-  - uid: Kevlar.Shield`1.WhenAnyError
-    name: WhenAnyError
+  - uid: Kevlar.Shield`1.WithDefaultHandling
+    name: WithDefaultHandling
     isExternal: true
-    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WithDefaultHandling
   - name: (
   - name: )
 - uid: Kevlar.Shield`1.WhenResultIsDefault

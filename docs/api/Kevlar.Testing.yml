@@ -27,7 +27,7 @@ items:
   - Kevlar.Testing.ShieldDescriptor
   - Kevlar.Testing.ShieldDescriptorAssertionExtensions
   - Kevlar.Testing.ShieldDescriptorExtensions
-  - Kevlar.Testing.ShieldExecutionExtensions
+  - Kevlar.Testing.ShieldExecution
   - Kevlar.Testing.ShieldStateSnapshot
   - Kevlar.Testing.ShieldStateSnapshotExtensions
   - Kevlar.Testing.StrategyDescriptor
@@ -214,13 +214,13 @@ references:
   name: ShieldDescriptorExtensions
   nameWithType: ShieldDescriptorExtensions
   fullName: Kevlar.Testing.ShieldDescriptorExtensions
-- uid: Kevlar.Testing.ShieldExecutionExtensions
-  commentId: T:Kevlar.Testing.ShieldExecutionExtensions
+- uid: Kevlar.Testing.ShieldExecution
+  commentId: T:Kevlar.Testing.ShieldExecution
   isExternal: true
-  href: Kevlar.Testing.ShieldExecutionExtensions.html
-  name: ShieldExecutionExtensions
-  nameWithType: ShieldExecutionExtensions
-  fullName: Kevlar.Testing.ShieldExecutionExtensions
+  href: Kevlar.Testing.ShieldExecution.html
+  name: ShieldExecution
+  nameWithType: ShieldExecution
+  fullName: Kevlar.Testing.ShieldExecution
 - uid: Kevlar.Testing.ShieldStateSnapshot
   commentId: T:Kevlar.Testing.ShieldStateSnapshot
   parent: Kevlar.Testing

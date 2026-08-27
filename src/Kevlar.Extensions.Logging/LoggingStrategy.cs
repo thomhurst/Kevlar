@@ -102,7 +102,11 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
         }
         catch (Exception exception)
         {
-            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Logging, context, exception);
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.Custom,
+                context,
+                exception,
+                "Kevlar.Extensions.Logging");
         }
     }
 }
@@ -137,7 +141,11 @@ internal sealed class LoggingRegistration(
             }
             catch (Exception exception)
             {
-                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Logging, context, exception);
+                KevlarDiagnostics.ReportCallbackError(
+                    CallbackErrorKind.Custom,
+                    context,
+                    exception,
+                    "Kevlar.Extensions.Logging");
             }
         }
 

@@ -96,7 +96,7 @@ var background  = Shield.Timeout(TimeSpan.FromSeconds(30)).Retry(5).Wrap(downstr
 ## Handling clauses flow down a fluent chain
 
 :::tip The ambient clause rule
-A [handling clause](handling-failures.md) applies to **the strategy it is attached to and to every reactive strategy chained after it**, until a new clause replaces it, `WhenAnyError()` resets it, or `Wrap`/`Compose` seals it at a composition boundary.
+A [handling clause](handling-failures.md) applies to **the strategy it is attached to and to every reactive strategy chained after it**, until a new clause replaces it, `WithDefaultHandling()` resets it, or `Wrap`/`Compose` seals it at a composition boundary.
 :::
 
 The circuit breaker below never declares a clause of its own. It inherits the one written at the top of the chain, so only `HttpRequestException` counts toward tripping it:

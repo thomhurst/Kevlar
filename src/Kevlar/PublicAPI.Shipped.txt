@@ -248,22 +248,21 @@ Kevlar.CallbackErrorEvent.CallbackErrorEvent() -> void
 Kevlar.CallbackErrorEvent.Exception.get -> System.Exception!
 Kevlar.CallbackErrorEvent.Kind.get -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorEvent.ShieldName.get -> string?
+Kevlar.CallbackErrorEvent.Source.get -> string!
 Kevlar.CallbackErrorEvent.StrategyIndex.get -> int
 Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.ChaosInjected = 9 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Logging = 10 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.ResultDisposal = 11 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitMonitor = 3 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitStateChanged = 2 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 6 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Custom = 8 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.Fallback = 5 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.Hedge = 4 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.RateLimitRejected = 7 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.RateLimiterAdapterRejected = 8 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ResultDisposal = 9 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.Retry = 0 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.Timeout = 1 -> Kevlar.CallbackErrorKind
 static Kevlar.KevlarDiagnostics.OnCallbackError -> System.Action<Kevlar.CallbackErrorEvent>?
-static Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind kind, Kevlar.KevlarContext! context, System.Exception! exception) -> void
+static Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind kind, Kevlar.KevlarContext! context, System.Exception! exception, string! source) -> void
 Kevlar.CircuitBreakerOptions.Name.get -> string?
 Kevlar.CircuitBreakerOptions.Name.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.Name.get -> string?
@@ -295,7 +294,7 @@ Kevlar.BackoffKind.None = 0 -> Kevlar.BackoffKind
 abstract Kevlar.Backoff.Kind.get -> Kevlar.BackoffKind
 virtual Kevlar.Backoff.Factor.get -> double?
 virtual Kevlar.Backoff.GetDelay(int attempt, System.TimeSpan previousDelay) -> System.TimeSpan
-virtual Kevlar.Backoff.InitialDelay.get -> System.TimeSpan?
+virtual Kevlar.Backoff.BaseDelay.get -> System.TimeSpan?
 virtual Kevlar.Backoff.Jitter.get -> Kevlar.Jitter?
 virtual Kevlar.Backoff.MaxDelay.get -> System.TimeSpan?
 Kevlar.Jitter
@@ -304,7 +303,7 @@ Kevlar.Jitter.Equal = 1 -> Kevlar.Jitter
 Kevlar.Jitter.Full = 2 -> Kevlar.Jitter
 Kevlar.Jitter.None = 0 -> Kevlar.Jitter
 static Kevlar.Backoff.Constant(System.TimeSpan delay, Kevlar.Jitter jitter = Kevlar.Jitter.None) -> Kevlar.Backoff!
-static Kevlar.Backoff.Exponential(System.TimeSpan initialDelay, double factor = 2, System.TimeSpan? maxDelay = null, Kevlar.Jitter jitter = Kevlar.Jitter.Equal) -> Kevlar.Backoff!
+static Kevlar.Backoff.Exponential(System.TimeSpan baseDelay, double factor = 2, System.TimeSpan? maxDelay = null, Kevlar.Jitter jitter = Kevlar.Jitter.Equal) -> Kevlar.Backoff!
 static Kevlar.Backoff.Linear(System.TimeSpan step, System.TimeSpan? maxDelay = null, Kevlar.Jitter jitter = Kevlar.Jitter.None) -> Kevlar.Backoff!
 Kevlar.HandlingClause
 Kevlar.HandlingClause.HandlingClause() -> void
@@ -356,12 +355,12 @@ Kevlar.KevlarContext.StrategyIndex.get -> int
 Kevlar.Outcome<T>.TryGetResult(out T result) -> bool
 Kevlar.Shield.ExecuteOutcomeAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
-Kevlar.Shield<TResult>.WhenAnyError() -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.WithDefaultHandling() -> Kevlar.Shield<TResult>!
 Kevlar.TimeoutOptions.TimeoutGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.TimeoutOptions.TimeoutGenerator.set -> void
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
-static Kevlar.ShieldExtensions.WhenAnyError(this Kevlar.Shield! shield) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.WithDefaultHandling(this Kevlar.Shield! shield) -> Kevlar.Shield!
 Kevlar.PartitionedShield<TKey, TResult>
 Kevlar.PartitionedShield<TKey, TResult>.CapacityEvictionCount.get -> long
 Kevlar.PartitionedShield<TKey, TResult>.ClearedEvictionCount.get -> long
@@ -376,7 +375,6 @@ Kevlar.PartitionedShield<TKey, TResult>.GetShieldAsync(TKey key) -> System.Threa
 Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield(System.Func<TKey, Kevlar.Shield<TResult>!>! factory, Kevlar.PartitionedShieldOptions? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
 Kevlar.PartitionedShield<TKey, TResult>.PruneExpired() -> int
 Kevlar.PartitionedShield<TKey, TResult>.PruneExpiredAsync() -> System.Threading.Tasks.ValueTask<int>
-Kevlar.PartitionedShield<TKey, TResult>.Remove(TKey key) -> bool
 Kevlar.PartitionedShield<TKey, TResult>.TryGetShield(TKey key, out Kevlar.Shield<TResult>? shield) -> bool
 Kevlar.PartitionedShield<TKey, TResult>.TryRemove(TKey key) -> bool
 Kevlar.PartitionedShield<TKey, TResult>.TryRemoveAsync(TKey key) -> System.Threading.Tasks.ValueTask<bool>
@@ -395,7 +393,6 @@ Kevlar.PartitionedShield<TKey>.GetShieldAsync(TKey key) -> System.Threading.Task
 Kevlar.PartitionedShield<TKey>.PartitionedShield(System.Func<TKey, Kevlar.Shield!>! factory, Kevlar.PartitionedShieldOptions? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
 Kevlar.PartitionedShield<TKey>.PruneExpired() -> int
 Kevlar.PartitionedShield<TKey>.PruneExpiredAsync() -> System.Threading.Tasks.ValueTask<int>
-Kevlar.PartitionedShield<TKey>.Remove(TKey key) -> bool
 Kevlar.PartitionedShield<TKey>.TryGetShield(TKey key, out Kevlar.Shield? shield) -> bool
 Kevlar.PartitionedShield<TKey>.TryRemove(TKey key) -> bool
 Kevlar.PartitionedShield<TKey>.TryRemoveAsync(TKey key) -> System.Threading.Tasks.ValueTask<bool>
@@ -416,8 +413,8 @@ Kevlar.PartitionEvictionReason.Idle = 1 -> Kevlar.PartitionEvictionReason
 Kevlar.PartitionedShieldOptions
 Kevlar.PartitionedShieldOptions.IdleExpiration.get -> System.TimeSpan?
 Kevlar.PartitionedShieldOptions.IdleExpiration.set -> void
-Kevlar.PartitionedShieldOptions.MaximumPartitions.get -> int
-Kevlar.PartitionedShieldOptions.MaximumPartitions.set -> void
+Kevlar.PartitionedShieldOptions.MaxPartitions.get -> int
+Kevlar.PartitionedShieldOptions.MaxPartitions.set -> void
 Kevlar.PartitionedShieldOptions.OnCreated.get -> System.Func<Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask>?
 Kevlar.PartitionedShieldOptions.OnCreated.set -> void
 Kevlar.PartitionedShieldOptions.OnEvicted.get -> System.Func<Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask>?
@@ -743,6 +740,7 @@ Kevlar.KevlarKeys
 Kevlar.KevlarTelemetryEvent
 Kevlar.KevlarTelemetryEvent.AttemptNumber.get -> int
 Kevlar.KevlarTelemetryEvent.CallbackKind.get -> Kevlar.CallbackErrorKind?
+Kevlar.KevlarTelemetryEvent.CallbackSource.get -> string?
 Kevlar.KevlarTelemetryEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.KevlarTelemetryEvent.Delay.get -> System.TimeSpan
 Kevlar.KevlarTelemetryEvent.Duration.get -> System.TimeSpan
@@ -766,6 +764,4 @@ Kevlar.KevlarTelemetrySeverity.Information = 0 -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Warning = 1 -> Kevlar.KevlarTelemetrySeverity
 static Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener! listener) -> System.IDisposable!
 static Kevlar.KevlarKeys.OperationKey.get -> Kevlar.KevlarKey<string!>
-static Kevlar.KevlarKeys.HttpRequestMethod.get -> Kevlar.KevlarKey<string!>
-static Kevlar.KevlarKeys.HttpRequestUri.get -> Kevlar.KevlarKey<string!>
 Kevlar.KevlarContext.RecordEvent(string! eventName, Kevlar.KevlarTelemetrySeverity severity = Kevlar.KevlarTelemetrySeverity.Information, System.Exception? exception = null, int? attemptNumber = null, string? strategyName = null) -> void

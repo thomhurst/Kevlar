@@ -134,7 +134,7 @@ public static class ShieldDescriptorExtensions
 
     private static BackoffDescriptor DescribeBackoff(Backoff backoff) => new(
         backoff.Kind,
-        backoff.InitialDelay,
+        backoff.BaseDelay,
         backoff.Factor,
         backoff.MaxDelay,
         backoff.Jitter);

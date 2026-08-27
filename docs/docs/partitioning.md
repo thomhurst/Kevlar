@@ -14,7 +14,7 @@ var endpoints = new PartitionedShield<string>(
         .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)),
     new PartitionedShieldOptions
     {
-        MaximumPartitions = 500,
+        MaxPartitions = 500,
         IdleExpiration = TimeSpan.FromMinutes(20),
     },
     StringComparer.OrdinalIgnoreCase);
@@ -42,7 +42,7 @@ result-aware handling and fallbacks.
 
 ## Retention and eviction
 
-Every provider is bounded. `MaximumPartitions` defaults to 1,000, and the least recently used
+Every provider is bounded. `MaxPartitions` defaults to 1,000, and the least recently used
 partition is evicted before that limit can be exceeded. `IdleExpiration` is optional and
 opportunistic: expired entries are removed by later provider operations or an explicit
 `PruneExpired()` call; no timer or background worker is retained.
@@ -64,7 +64,7 @@ var observed = new PartitionedShield<string>(
     static _ => Shield.Empty,
     new PartitionedShieldOptions
     {
-        MaximumPartitions = 2,
+        MaxPartitions = 2,
         OnCreated = item =>
         {
             Console.WriteLine($"Created {item.Key}");
@@ -97,7 +97,7 @@ services.AddPartitionedShield<Uri>(
         .WithName("outbound-endpoint"),
     options =>
     {
-        options.MaximumPartitions = 200;
+        options.MaxPartitions = 200;
         options.IdleExpiration = TimeSpan.FromMinutes(15);
     });
 
@@ -122,7 +122,7 @@ services.AddPartitionedShield<string, TenantResult>(
         .When<TimeoutExceededException>()
         .CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromSeconds(20))
         .WithName("tenant-operation"),
-    options => options.MaximumPartitions = 5_000,
+    options => options.MaxPartitions = 5_000,
     StringComparer.Ordinal);
 ```
 

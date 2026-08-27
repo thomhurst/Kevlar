@@ -153,7 +153,7 @@ public class FallbackEdgeCaseTests
         var shield = Shield.For<int>()
             .When<Exception>()
             .FallbackTo(-1)
-            .WhenAnyError()
+            .WithDefaultHandling()
             .CircuitBreaker(1, TimeSpan.FromMinutes(1));
 
         // First execution trips the breaker; the fallback replaces the original failure.

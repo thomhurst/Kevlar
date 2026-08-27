@@ -24,6 +24,7 @@ public readonly struct KevlarTelemetryEvent
         string? rejectionKind,
         string? suppressionReason,
         CallbackErrorKind? callbackKind,
+        string? callbackSource,
         KevlarContext context)
     {
         EventName = eventName;
@@ -44,6 +45,7 @@ public readonly struct KevlarTelemetryEvent
         RejectionKind = rejectionKind;
         SuppressionReason = suppressionReason;
         CallbackKind = callbackKind;
+        CallbackSource = callbackSource;
         _context = context;
     }
 
@@ -100,6 +102,9 @@ public readonly struct KevlarTelemetryEvent
     /// <summary>The callback family that failed, when this is a callback-error event.</summary>
     public CallbackErrorKind? CallbackKind { get; }
 
+    /// <summary>The stable callback or integration identifier, when this is a callback-error event.</summary>
+    public string? CallbackSource { get; }
+
     /// <summary>The active execution context. It is valid only during the listener callback.</summary>
     public KevlarContext Context => _context
         ?? throw new InvalidOperationException("The telemetry event is uninitialized.");
@@ -123,5 +128,6 @@ public readonly struct KevlarTelemetryEvent
         RejectionKind,
         SuppressionReason,
         CallbackKind,
+        CallbackSource,
         Context);
 }

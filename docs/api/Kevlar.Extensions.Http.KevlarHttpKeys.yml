@@ -1,110 +1,119 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Testing.ExecutionProbeSnapshot
-  commentId: T:Kevlar.Testing.ExecutionProbeSnapshot
-  id: ExecutionProbeSnapshot
-  parent: Kevlar.Testing
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys
+  commentId: T:Kevlar.Extensions.Http.KevlarHttpKeys
+  id: KevlarHttpKeys
+  parent: Kevlar.Extensions.Http
   children:
-  - Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
-  - Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  - Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
+  - Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri
   langs:
   - csharp
   - vb
-  name: ExecutionProbeSnapshot
-  nameWithType: ExecutionProbeSnapshot
-  fullName: Kevlar.Testing.ExecutionProbeSnapshot
+  name: KevlarHttpKeys
+  nameWithType: KevlarHttpKeys
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys
   type: Class
   assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: An immutable, versioned snapshot of execution-probe observations.
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Well-known execution-property keys published by the Kevlar HTTP integration.
   example: []
   syntax:
-    content: public sealed class ExecutionProbeSnapshot
-    content.vb: Public NotInheritable Class ExecutionProbeSnapshot
+    content: public static class KevlarHttpKeys
+    content.vb: Public Module KevlarHttpKeys
   inheritance:
   - System.Object
   inheritedMembers:
   - System.Object.GetType
+  - System.Object.MemberwiseClone
   - System.Object.ToString
   - System.Object.Equals(System.Object)
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
-  commentId: P:Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
-  id: AttemptCount
-  parent: Kevlar.Testing.ExecutionProbeSnapshot
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
+  commentId: P:Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
+  id: RequestMethod
+  parent: Kevlar.Extensions.Http.KevlarHttpKeys
   langs:
   - csharp
   - vb
-  name: AttemptCount
-  nameWithType: ExecutionProbeSnapshot.AttemptCount
-  fullName: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  name: RequestMethod
+  nameWithType: KevlarHttpKeys.RequestMethod
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
   type: Property
   assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Gets the number of delegate invocations.
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The HTTP request method.
   example: []
   syntax:
-    content: public int AttemptCount { get; }
+    content: public static KevlarKey<string> RequestMethod { get; }
     parameters: []
     return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property AttemptCount As Integer
-  overload: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount*
-- uid: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
-  commentId: P:Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
-  id: CancellationCount
-  parent: Kevlar.Testing.ExecutionProbeSnapshot
+      type: Kevlar.KevlarKey{System.String}
+    content.vb: Public Shared ReadOnly Property RequestMethod As KevlarKey(Of String)
+  overload: Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod*
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri
+  commentId: P:Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri
+  id: RequestUri
+  parent: Kevlar.Extensions.Http.KevlarHttpKeys
   langs:
   - csharp
   - vb
-  name: CancellationCount
-  nameWithType: ExecutionProbeSnapshot.CancellationCount
-  fullName: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  name: RequestUri
+  nameWithType: KevlarHttpKeys.RequestUri
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri
   type: Property
   assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Gets the number of active attempt tokens that requested cancellation.
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The HTTP request URI without its query string or fragment.
   example: []
   syntax:
-    content: public int CancellationCount { get; }
+    content: public static KevlarKey<string> RequestUri { get; }
     parameters: []
     return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property CancellationCount As Integer
-  overload: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount*
+      type: Kevlar.KevlarKey{System.String}
+    content.vb: Public Shared ReadOnly Property RequestUri As KevlarKey(Of String)
+  overload: Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri*
 references:
-- uid: Kevlar.Testing
-  commentId: N:Kevlar.Testing
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
   isExternal: true
   href: Kevlar.html
-  name: Kevlar.Testing
-  nameWithType: Kevlar.Testing
-  fullName: Kevlar.Testing
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
   spec.csharp:
   - uid: Kevlar
     name: Kevlar
     isExternal: true
     href: Kevlar.html
   - name: .
-  - uid: Kevlar.Testing
-    name: Testing
+  - uid: Kevlar.Extensions
+    name: Extensions
     isExternal: true
-    href: Kevlar.Testing.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
   spec.vb:
   - uid: Kevlar
     name: Kevlar
     isExternal: true
     href: Kevlar.html
   - name: .
-  - uid: Kevlar.Testing
-    name: Testing
+  - uid: Kevlar.Extensions
+    name: Extensions
     isExternal: true
-    href: Kevlar.Testing.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
 - uid: System.Object
   commentId: T:System.Object
   parent: System
@@ -138,6 +147,30 @@ references:
     name: GetType
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
   - name: (
   - name: )
 - uid: System.Object.ToString
@@ -318,28 +351,88 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount*
-  commentId: Overload:Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
   isExternal: true
-  href: Kevlar.Testing.ExecutionProbeSnapshot.html#Kevlar_Testing_ExecutionProbeSnapshot_AttemptCount
-  name: AttemptCount
-  nameWithType: ExecutionProbeSnapshot.AttemptCount
-  fullName: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
-- uid: System.Int32
-  commentId: T:System.Int32
-  parent: System
+  href: Kevlar.Extensions.Http.KevlarHttpKeys.html#Kevlar_Extensions_Http_KevlarHttpKeys_RequestMethod
+  name: RequestMethod
+  nameWithType: KevlarHttpKeys.RequestMethod
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod
+- uid: Kevlar.KevlarKey{System.String}
+  commentId: T:Kevlar.KevlarKey{System.String}
+  parent: Kevlar
+  definition: Kevlar.KevlarKey`1
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<string>
+  nameWithType: KevlarKey<string>
+  fullName: Kevlar.KevlarKey<string>
+  nameWithType.vb: KevlarKey(Of String)
+  fullName.vb: Kevlar.KevlarKey(Of String)
+  name.vb: KevlarKey(Of String)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - uid: System.String
+    name: string
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.String
+    name: String
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: )
+- uid: Kevlar.KevlarKey`1
+  commentId: T:Kevlar.KevlarKey`1
+  parent: Kevlar
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.int32
-  name: int
-  nameWithType: int
-  fullName: int
-  nameWithType.vb: Integer
-  fullName.vb: Integer
-  name.vb: Integer
-- uid: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount*
-  commentId: Overload:Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<T>
+  nameWithType: KevlarKey<T>
+  fullName: Kevlar.KevlarKey<T>
+  nameWithType.vb: KevlarKey(Of T)
+  fullName.vb: Kevlar.KevlarKey(Of T)
+  name.vb: KevlarKey(Of T)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
   isExternal: true
-  href: Kevlar.Testing.ExecutionProbeSnapshot.html#Kevlar_Testing_ExecutionProbeSnapshot_CancellationCount
-  name: CancellationCount
-  nameWithType: ExecutionProbeSnapshot.CancellationCount
-  fullName: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpKeys.html#Kevlar_Extensions_Http_KevlarHttpKeys_RequestUri
+  name: RequestUri
+  nameWithType: KevlarHttpKeys.RequestUri
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri

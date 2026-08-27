@@ -42,25 +42,25 @@ public abstract class Backoff
     }
 
     /// <summary>
-    /// Exponentially increasing delay: <paramref name="initialDelay"/>, then multiplied by
+    /// Exponentially increasing delay: <paramref name="baseDelay"/>, then multiplied by
     /// <paramref name="factor"/> after each attempt. The default equal jitter scales each delay
     /// by a random factor in [0.5, 1.5) to avoid synchronized retry storms. Decorrelated jitter
-    /// instead selects each delay between the initial delay and three times the preceding delay.
+    /// instead selects each delay between the base delay and three times the preceding delay.
     /// </summary>
     public static Backoff Exponential(
-        TimeSpan initialDelay,
+        TimeSpan baseDelay,
         double factor = 2.0,
         TimeSpan? maxDelay = null,
         Jitter jitter = global::Kevlar.Jitter.Equal)
     {
-        Throw.IfOutOfRange(initialDelay < TimeSpan.Zero, nameof(initialDelay), "Initial delay must not be negative.");
+        Throw.IfOutOfRange(baseDelay < TimeSpan.Zero, nameof(baseDelay), "Base delay must not be negative.");
         Throw.IfOutOfRange(
             factor < 1.0 || double.IsNaN(factor) || double.IsInfinity(factor),
             nameof(factor),
             "Factor must be finite and at least 1.");
         ValidateMaxDelay(maxDelay);
         ValidateJitter(jitter);
-        return new ExponentialBackoff(initialDelay, factor, maxDelay, jitter);
+        return new ExponentialBackoff(baseDelay, factor, maxDelay, jitter);
     }
 
     /// <summary>A caller-supplied delay function receiving the 1-based retry attempt number.</summary>
@@ -83,8 +83,8 @@ public abstract class Backoff
     /// <summary>The stable category of this backoff.</summary>
     public abstract BackoffKind Kind { get; }
 
-    /// <summary>The constant delay, linear step, or exponential initial delay, when applicable.</summary>
-    public virtual TimeSpan? InitialDelay => null;
+    /// <summary>The constant delay, linear step, or exponential base delay, when applicable.</summary>
+    public virtual TimeSpan? BaseDelay => null;
 
     /// <summary>The exponential multiplier, when applicable.</summary>
     public virtual double? Factor => null;
@@ -142,26 +142,26 @@ public abstract class Backoff
 
     private protected static TimeSpan GetDecorrelatedDelay(
         int attempt,
-        TimeSpan initialDelay,
+        TimeSpan baseDelay,
         TimeSpan? maxDelay)
     {
         ValidateAttempt(attempt);
-        var previousDelay = initialDelay;
+        var previousDelay = baseDelay;
         for (var currentAttempt = 0; currentAttempt < attempt; currentAttempt++)
         {
-            previousDelay = GetDecorrelatedDelay(initialDelay, previousDelay, maxDelay);
+            previousDelay = GetDecorrelatedDelay(baseDelay, previousDelay, maxDelay);
         }
 
         return previousDelay;
     }
 
     private protected static TimeSpan GetDecorrelatedDelay(
-        TimeSpan initialDelay,
+        TimeSpan baseDelay,
         TimeSpan previousDelay,
         TimeSpan? maxDelay)
     {
-        var lowerTicks = (double)initialDelay.Ticks;
-        var previousTicks = previousDelay > TimeSpan.Zero ? previousDelay.Ticks : initialDelay.Ticks;
+        var lowerTicks = (double)baseDelay.Ticks;
+        var previousTicks = previousDelay > TimeSpan.Zero ? previousDelay.Ticks : baseDelay.Ticks;
         var upperTicks = Math.Max(lowerTicks, previousTicks * 3d);
         return FromTicksClamped(
             lowerTicks + (SharedRandom.NextDouble() * (upperTicks - lowerTicks)),
@@ -210,7 +210,7 @@ public abstract class Backoff
         public override BackoffKind Kind =>
             _delay == TimeSpan.Zero ? BackoffKind.None : BackoffKind.Constant;
 
-        public override TimeSpan? InitialDelay => _delay;
+        public override TimeSpan? BaseDelay => _delay;
 
         public override Jitter? Jitter => _jitter;
 
@@ -251,7 +251,7 @@ public abstract class Backoff
 
         public override BackoffKind Kind => BackoffKind.Linear;
 
-        public override TimeSpan? InitialDelay => _step;
+        public override TimeSpan? BaseDelay => _step;
 
         public override TimeSpan? MaxDelay => _maxDelay;
 
@@ -263,14 +263,14 @@ public abstract class Backoff
 
     private sealed class ExponentialBackoff : Backoff
     {
-        private readonly TimeSpan _initialDelay;
+        private readonly TimeSpan _baseDelay;
         private readonly double _factor;
         private readonly TimeSpan? _maxDelay;
         private readonly Jitter _jitter;
 
-        public ExponentialBackoff(TimeSpan initialDelay, double factor, TimeSpan? maxDelay, Jitter jitter)
+        public ExponentialBackoff(TimeSpan baseDelay, double factor, TimeSpan? maxDelay, Jitter jitter)
         {
-            _initialDelay = initialDelay;
+            _baseDelay = baseDelay;
             _factor = factor;
             _maxDelay = maxDelay;
             _jitter = jitter;
@@ -281,10 +281,10 @@ public abstract class Backoff
             ValidateAttempt(attempt);
             if (_jitter == global::Kevlar.Jitter.Decorrelated)
             {
-                return GetDecorrelatedDelay(attempt, _initialDelay, _maxDelay);
+                return GetDecorrelatedDelay(attempt, _baseDelay, _maxDelay);
             }
 
-            var ticks = _initialDelay.Ticks * Math.Pow(_factor, attempt - 1);
+            var ticks = _baseDelay.Ticks * Math.Pow(_factor, attempt - 1);
             return FromTicksClamped(ApplyJitter(ticks, _jitter), _maxDelay);
         }
 
@@ -292,13 +292,13 @@ public abstract class Backoff
         {
             ValidateAttempt(attempt);
             return _jitter == global::Kevlar.Jitter.Decorrelated
-                ? GetDecorrelatedDelay(_initialDelay, previousDelay, _maxDelay)
+                ? GetDecorrelatedDelay(_baseDelay, previousDelay, _maxDelay)
                 : GetDelay(attempt);
         }
 
         public override BackoffKind Kind => BackoffKind.Exponential;
 
-        public override TimeSpan? InitialDelay => _initialDelay;
+        public override TimeSpan? BaseDelay => _baseDelay;
 
         public override double? Factor => _factor;
 
@@ -307,7 +307,7 @@ public abstract class Backoff
         public override Jitter? Jitter => _jitter;
 
         public override string ToString() => FormattableString.Invariant(
-            $"exponential {DescribeHelper.Time(_initialDelay)} ×{_factor:0.#}{DescribeJitter(_jitter)}{DescribeCap(_maxDelay)}");
+            $"exponential {DescribeHelper.Time(_baseDelay)} ×{_factor:0.#}{DescribeJitter(_jitter)}{DescribeCap(_maxDelay)}");
     }
 
     private sealed class CustomBackoff : Backoff

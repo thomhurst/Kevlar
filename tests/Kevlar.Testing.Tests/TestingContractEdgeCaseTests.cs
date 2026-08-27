@@ -60,19 +60,19 @@ public class TestingContractEdgeCaseTests
         Task? missingExecution = null;
         var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
 
-        await Assert.That(async () => await missingExecution!.WaitForPendingAsync(
+        await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(missingExecution!,
                 static () => true,
                 "missing execution"))
             .Throws<ArgumentNullException>();
-        await Assert.That(async () => await pending.WaitForPendingAsync(
+        await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(pending,
                 null!,
                 "missing predicate"))
             .Throws<ArgumentNullException>();
-        await Assert.That(async () => await pending.WaitForPendingAsync(
+        await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(pending,
                 static () => true,
                 " "))
             .Throws<ArgumentException>();
-        await Assert.That(async () => await pending.WaitForPendingAsync(
+        await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(pending,
                 static () => true,
                 "invalid yield bound",
                 maxYields: 0))

@@ -124,7 +124,7 @@ public class DependencyInjectionTests
             "tenants",
             (serviceProvider, _) => Shield.Timeout(
                 serviceProvider.GetRequiredService<TimeoutSetting>().Value),
-            options => options.MaximumPartitions = 10);
+            options => options.MaxPartitions = 10);
         using var provider = services.BuildServiceProvider();
 
         var first = provider.GetRequiredKeyedService<PartitionedShield<string>>("tenants");

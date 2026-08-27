@@ -5,11 +5,13 @@ public readonly struct CallbackErrorEvent
 {
     internal CallbackErrorEvent(
         CallbackErrorKind kind,
+        string source,
         string? shieldName,
         int strategyIndex,
         Exception exception)
     {
         Kind = kind;
+        Source = source;
         ShieldName = shieldName;
         StrategyIndex = strategyIndex;
         Exception = exception;
@@ -17,6 +19,9 @@ public readonly struct CallbackErrorEvent
 
     /// <summary>Gets the callback or cleanup family that failed.</summary>
     public CallbackErrorKind Kind { get; }
+
+    /// <summary>Gets the stable callback or integration identifier.</summary>
+    public string Source { get; }
 
     /// <summary>Gets the shield name, or <see langword="null"/> for an unnamed shield.</summary>
     public string? ShieldName { get; }

@@ -23,7 +23,7 @@ public class TimeControlTests
                 : new ValueTask<int>(42);
         }).AsTask();
 
-        await execution.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(execution,
             () => Volatile.Read(ref attempts) == 1,
             "the first retry delay");
         await timeProvider.AdvanceUntilAsync(
@@ -51,7 +51,7 @@ public class TimeControlTests
             return 0;
         }).AsTask();
 
-        await execution.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(execution,
             () => started.Task.IsCompleted,
             "the timed execution");
         await timeProvider.AdvanceUntilAsync(
@@ -116,7 +116,7 @@ public class TimeControlTests
             return new ValueTask<int>(2);
         }).AsTask();
 
-        await queued.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(queued,
             () => admission.WasObserved,
             "the rate-limit queue");
         await timeProvider.AdvanceUntilAsync(
@@ -146,7 +146,7 @@ public class TimeControlTests
         }).AsTask();
         var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2)).AsTask();
 
-        await queued.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(queued,
             () => admission.WasObserved,
             "the concurrency-limit queue");
         release.TrySetResult();
@@ -175,7 +175,7 @@ public class TimeControlTests
             return 42;
         }).AsTask();
 
-        await execution.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(execution,
             () => Volatile.Read(ref attempts) == 1,
             "the primary hedge attempt");
         await timeProvider.AdvanceUntilAsync(
@@ -199,7 +199,7 @@ public class TimeControlTests
             return 0;
         }, cancellation.Token).AsTask();
 
-        await execution.WaitForPendingAsync(
+        await ShieldExecution.WaitForPendingAsync(execution,
             () => started.Task.IsCompleted,
             "the cancellable execution");
         cancellation.Cancel();
@@ -213,7 +213,7 @@ public class TimeControlTests
         using var cancellation = new CancellationTokenSource();
         var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var wait = pending.Task.WaitForPendingAsync(
+        var wait = ShieldExecution.WaitForPendingAsync(pending.Task,
             () =>
             {
                 cancellation.Cancel();
@@ -232,7 +232,7 @@ public class TimeControlTests
     public async Task Bounds_Report_Execution_And_Condition_Details()
     {
         var completed = Task.CompletedTask;
-        var pendingFailure = await Assert.That(async () => await completed.WaitForPendingAsync(
+        var pendingFailure = await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(completed,
                 static () => false,
                 "a retry delay",
                 maxYields: 1))
@@ -241,7 +241,7 @@ public class TimeControlTests
         await Assert.That(pendingFailure.Message).Contains("RanToCompletion");
 
         var neverStarts = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var missingWork = await Assert.That(async () => await neverStarts.Task.WaitForPendingAsync(
+        var missingWork = await Assert.That(async () => await ShieldExecution.WaitForPendingAsync(neverStarts.Task,
                 static () => false,
                 "a missing attempt",
                 maxYields: 1))
@@ -267,7 +267,7 @@ public class TimeControlTests
     {
         var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _ = await Assert.That(
-                async () => await pending.Task.WaitForPendingAsync(
+                async () => await ShieldExecution.WaitForPendingAsync(pending.Task,
                     static () => false,
                     "pending work",
                     maxYields: 0))

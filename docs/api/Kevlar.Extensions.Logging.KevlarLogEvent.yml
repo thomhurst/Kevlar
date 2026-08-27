@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
   - Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  - Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
   - Kevlar.Extensions.Logging.KevlarLogEvent.Delay
   - Kevlar.Extensions.Logging.KevlarLogEvent.Duration
   - Kevlar.Extensions.Logging.KevlarLogEvent.EventName
@@ -387,6 +388,29 @@ items:
       type: System.Nullable{Kevlar.CallbackErrorKind}
     content.vb: Public ReadOnly Property CallbackKind As CallbackErrorKind?
   overload: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
+  id: CallbackSource
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: CallbackSource
+  nameWithType: KevlarLogEvent.CallbackSource
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The stable callback or integration identifier that failed.
+  example: []
+  syntax:
+    content: public string? CallbackSource { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property CallbackSource As String
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource*
 references:
 - uid: Kevlar.Extensions.Logging
   commentId: N:Kevlar.Extensions.Logging
@@ -879,3 +903,10 @@ references:
     isExternal: true
     href: Kevlar.CallbackErrorKind.html
   - name: '?'
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_CallbackSource
+  name: CallbackSource
+  nameWithType: KevlarLogEvent.CallbackSource
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
