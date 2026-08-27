@@ -143,7 +143,7 @@ Kevlar.Shield<TResult>.When(System.Func<System.Exception!, bool>! predicate) -> 
 Kevlar.Shield<TResult>.When<TException>() -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.WhenResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.Shield<TResult>.WhenResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResultEquals(TResult result) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.WithName(string! name) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.WithTimeProvider(System.TimeProvider! timeProvider) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Wrap(Kevlar.Shield! inner) -> Kevlar.Shield<TResult>!
@@ -164,7 +164,7 @@ Kevlar.ShieldBuilder<TResult>.CircuitBreaker(int consecutiveFailures, System.Tim
 Kevlar.ShieldBuilder<TResult>.Or<TException>() -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder<TResult>.Or<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder<TResult>.OrResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.ShieldBuilder<TResult>.OrResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResultEquals(TResult result) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder<TResult>.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Retry(int maxRetries = 3) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield<TResult>!

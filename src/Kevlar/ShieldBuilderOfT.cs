@@ -103,7 +103,7 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Returns a new builder that also handles results equal to <paramref name="result"/>.</summary>
-    public ShieldBuilder<TResult> OrResult(TResult result) =>
+    public ShieldBuilder<TResult> OrResultEquals(TResult result) =>
         WithResult(
             candidate => EqualityComparer<TResult>.Default.Equals(candidate, result),
             "result " + DescribeHelper.Value(result));

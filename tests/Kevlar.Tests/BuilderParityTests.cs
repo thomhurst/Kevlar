@@ -67,7 +67,7 @@ public class BuilderParityTests
         var generatorCalls = 0;
         var attempts = 0;
         var shield = Shield.For<int>()
-            .WhenResult(0)
+            .WhenResultEquals(0)
             .Timeout(options => options.TimeoutGenerator = _ =>
             {
                 generatorCalls++;

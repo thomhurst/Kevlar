@@ -83,7 +83,7 @@ public class DescribeTests
     [Test]
     public async Task Typed_Shields_And_Fallbacks_Describe_Themselves()
     {
-        var shield = Shield.For<int>().WhenResult(0).FallbackTo(-1).Retry(1, Backoff.None);
+        var shield = Shield.For<int>().WhenResultEquals(0).FallbackTo(-1).Retry(1, Backoff.None);
 
         await Assert.That(shield.ToString()).IsEqualTo("[when result 0] Fallback(value) → Retry(1, no delay)");
     }
@@ -115,7 +115,7 @@ public class DescribeTests
             .IsEqualTo("[when default result] Retry(1, no delay)");
         await Assert.That(Shield.For<string?>().WhenResultIsNull().Retry(1, Backoff.None).ToString())
             .IsEqualTo("[when null result] Retry(1, no delay)");
-        await Assert.That(Shield.For<string>().WhenResult("busy").Retry(1, Backoff.None).ToString())
+        await Assert.That(Shield.For<string>().WhenResultEquals("busy").Retry(1, Backoff.None).ToString())
             .IsEqualTo("[when result \"busy\"] Retry(1, no delay)");
     }
 
@@ -126,7 +126,7 @@ public class DescribeTests
         CultureInfo.CurrentCulture = new CultureInfo("de-DE");
         try
         {
-            await Assert.That(Shield.For<double>().WhenResult(1.5).Retry(1, Backoff.None).ToString())
+            await Assert.That(Shield.For<double>().WhenResultEquals(1.5).Retry(1, Backoff.None).ToString())
                 .IsEqualTo("[when result 1.5] Retry(1, no delay)");
         }
         finally

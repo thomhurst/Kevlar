@@ -92,7 +92,7 @@ public class TaskOverloadTests
     public async Task Typed_Shield_Accepts_Task_Delegates()
     {
         var attempts = 0;
-        var shield = Shield.For<int>().WhenResult(0).Retry(1, Backoff.None);
+        var shield = Shield.For<int>().WhenResultEquals(0).Retry(1, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ => Task.FromResult(attempts++ == 0 ? 0 : 5));
 
@@ -102,7 +102,7 @@ public class TaskOverloadTests
     [Test]
     public async Task Typed_Shield_Task_Overloads_Thread_State_And_Outcomes()
     {
-        var shield = Shield.For<int>().WhenResult(0).Retry(0, Backoff.None);
+        var shield = Shield.For<int>().WhenResultEquals(0).Retry(0, Backoff.None);
 
         var result = await shield.ExecuteAsync(20, static (state, _) => Task.FromResult(state + 22));
         await Assert.That(result).IsEqualTo(42);

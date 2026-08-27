@@ -9200,7 +9200,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "When" or "WhenContext" or "WhenResult" or "WhenResultContext"
+        (method.Name is "When" or "WhenContext" or "WhenResult" or "WhenResultEquals" or "WhenResultContext"
             or "WhenResultIsDefault" or "WhenResultIsNull" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));

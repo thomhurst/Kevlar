@@ -163,7 +163,7 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task Typed_Policies_Support_ExecuteOutcome()
     {
-        var shield = Shield.For<int>().WhenResult(-1).Retry(0, Backoff.None);
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(0, Backoff.None);
 
         var failure = await shield.ExecuteOutcomeAsync(_ => throw new InvalidOperationException("boom"));
         await Assert.That(failure.IsSuccess).IsFalse();

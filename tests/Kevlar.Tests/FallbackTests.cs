@@ -33,7 +33,7 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Applies_To_Handled_Results()
     {
-        var shield = Shield.For<int>().WhenResult(-1).FallbackTo(0);
+        var shield = Shield.For<int>().WhenResultEquals(-1).FallbackTo(0);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
@@ -43,7 +43,7 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Is_Not_Used_On_Success()
     {
-        var shield = Shield.For<int>().WhenResult(-1).FallbackTo(0);
+        var shield = Shield.For<int>().WhenResultEquals(-1).FallbackTo(0);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
@@ -64,7 +64,7 @@ public class FallbackTests
     {
         var fired = false;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .FallbackTo(0, options => options.OnFallback = _ =>
             {
                 fired = true;

@@ -90,7 +90,7 @@ public class NewApiTests
         var shield = Shield.For<int>()
             .When<ArgumentException>()
             .Or<InvalidOperationException>()
-            .OrResult(0)
+            .OrResultEquals(0)
             .Retry(3, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ =>
@@ -282,7 +282,7 @@ public class NewApiTests
         var seen = new List<Outcome<int>>();
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .OrResult(0)
+            .OrResultEquals(0)
             .Retry(options =>
             {
                 options.MaxRetries = 2;
@@ -380,7 +380,7 @@ public class NewApiTests
     {
         var order = new List<string>();
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -414,7 +414,7 @@ public class NewApiTests
     {
         var reportedDelays = new List<TimeSpan>();
         var shield = Shield.For<int>()
-            .WhenResult(0)
+            .WhenResultEquals(0)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -495,7 +495,7 @@ public class NewApiTests
 
         var typedAttempts = 0;
         var typed = Shield.For<int>()
-            .WhenResult(0)
+            .WhenResultEquals(0)
             .Or(exception => exception is TimeoutException)
             .Retry(2, Backoff.None);
 

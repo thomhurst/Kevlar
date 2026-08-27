@@ -46,7 +46,7 @@ public class RetryHookCancellationTests
         var completedHooks = 0;
         var seenResult = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 3;
@@ -290,7 +290,7 @@ public class RetryHookCancellationTests
         var results = new List<int>();
         var attempts = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 1;

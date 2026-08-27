@@ -125,7 +125,7 @@ public class PipelineDescriptorTests
     public async Task Typed_Fallback_And_Composition_Are_Described_Without_State_Exposure()
     {
         var outer = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .FallbackTo(42)
             .Retry(2, Backoff.None)
             .WithName("typed");

@@ -11,7 +11,7 @@ public class FallbackAsyncHookTests
         Outcome<object> hookOutcome = default;
         Outcome<object> factoryOutcome = default;
         var shield = Shield.For<object>()
-            .WhenResult(handled)
+            .WhenResultEquals(handled)
             .Fallback(
                 (outcome, _) =>
                 {

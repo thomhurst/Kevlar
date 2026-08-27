@@ -91,7 +91,7 @@ public class FallbackEdgeCaseTests
         object? seenResult = null;
         Exception? seenException = null;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .FallbackTo(0, options => options.OnFallback = fallback =>
             {
                 seenResult = fallback.Outcome.Result;

@@ -67,7 +67,7 @@ var unavailable = ChaosShield.Outcome<int>(options =>
 });
 
 var shield = Shield.For<int>()
-    .WhenResult(-1)
+    .WhenResultEquals(-1)
     .FallbackTo(0)
     .Wrap(unavailable);
 

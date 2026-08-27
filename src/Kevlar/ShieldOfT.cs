@@ -96,7 +96,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         new ShieldBuilder<TResult>(this).OrResultContext(predicate);
 
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);
+    public ShieldBuilder<TResult> WhenResultEquals(TResult result) => new ShieldBuilder<TResult>(this).OrResultEquals(result);
 
     /// <summary>
     /// Starts a handling clause for results equal to <c>default(TResult)</c> — <see langword="null"/>

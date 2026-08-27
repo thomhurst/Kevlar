@@ -37,7 +37,7 @@ public class LoggingTests
     public async Task WithLogging_On_Typed_And_Untyped_Shields()
     {
         var logger = new FakeLogger();
-        var typed = Shield.For<int>().WhenResult(-1).Retry(1, Backoff.None).WithLogging(logger);
+        var typed = Shield.For<int>().WhenResultEquals(-1).Retry(1, Backoff.None).WithLogging(logger);
         var untyped = Shield.Retry(1, Backoff.None).WithLogging(logger);
 
         _ = await typed.ExecuteAsync(static _ => new ValueTask<int>(-1));
@@ -54,7 +54,7 @@ public class LoggingTests
         var logger = new FakeLogger();
         object? formatted = null;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options => options.ResultFormatter = result =>
             {
@@ -166,7 +166,7 @@ public class LoggingTests
         var attempts = 0;
         var hedge = Shield.Hedge(1, TimeSpan.Zero).WithLogging(logger);
         var fallback = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .FallbackTo(0)
             .WithLogging(logger, options => options.ResultFormatter = result => $"result:{result}");
 
@@ -325,7 +325,7 @@ public class LoggingTests
         var logger = new FakeLogger();
         var formatterCalls = 0;
         var information = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options =>
             {
@@ -333,7 +333,7 @@ public class LoggingTests
                 options.ResultFormatter = result => $"result:{result}";
             });
         var disabled = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options =>
             {
@@ -438,7 +438,7 @@ public class LoggingTests
         try
         {
             var shield = Shield.For<int>()
-                .WhenResult(-1)
+            .WhenResultEquals(-1)
                 .Retry(1, Backoff.None)
                 .WithName(shieldName)
                 .WithLogging(logger, options => options.ResultFormatter = _ => throw formatterFailure);
@@ -513,7 +513,7 @@ public class LoggingTests
         var logger = new FakeLogger();
         var formatterCalls = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options =>
             {
@@ -537,7 +537,7 @@ public class LoggingTests
     {
         var logger = new FakeLogger();
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options => options.SeverityProvider = logEvent =>
                 logEvent.Result is int value && value < 0
@@ -557,7 +557,7 @@ public class LoggingTests
         var logger = new FakeLogger();
         var providerCalls = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .WithLogging(logger, options => options.SeverityProvider = _ =>
                 Interlocked.Increment(ref providerCalls) % 2 == 1

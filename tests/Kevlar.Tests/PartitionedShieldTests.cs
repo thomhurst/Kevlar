@@ -132,7 +132,7 @@ public class PartitionedShieldTests
     public async Task Typed_Partitions_Preserve_Result_Aware_State()
     {
         var provider = new PartitionedShield<string, int>(_ =>
-            Shield.For<int>().WhenResult(-1).FallbackTo(0));
+            Shield.For<int>().WhenResultEquals(-1).FallbackTo(0));
 
         var result = await provider.GetShield("typed")
             .ExecuteAsync(_ => new ValueTask<int>(-1));

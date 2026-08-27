@@ -58,7 +58,7 @@ public class StrategyHandlingOverrideTests
     public async Task Typed_Retry_Exception_Override_Uses_Typed_Options()
     {
         var attempts = 0;
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;

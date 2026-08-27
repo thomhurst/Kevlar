@@ -76,14 +76,14 @@ public class AllocationBudgetTests
         options.OnRejected = static _ => ValueTask.CompletedTask;
     });
     private readonly Shield<int> _typedJudge = Shield.For<int>()
-        .WhenResult(-1)
+        .WhenResultEquals(-1)
         .Retry(3, Backoff.None);
     private readonly Shield<int> _contextTypedJudge = Shield.For<int>()
         .WhenResultContext(static handling =>
             handling.Outcome.TryGetResult(out var result) && result < 0)
         .Retry(3, Backoff.None);
     private readonly Shield<int> _typedRetryNotification = Shield.For<int>()
-        .WhenResult(-1)
+        .WhenResultEquals(-1)
         .Retry(static options =>
         {
             options.MaxRetries = 1;
@@ -146,7 +146,7 @@ public class AllocationBudgetTests
                 : throw new InvalidOperationException("Expected the primary outcome.");
     });
     private readonly Shield<int> _disabledLogging = Shield.For<int>()
-        .WhenResult(-1)
+        .WhenResultEquals(-1)
         .Retry(1, Backoff.None)
         .WithLogging(EnabledNoopLogger.Instance, static options =>
         {
@@ -155,7 +155,7 @@ public class AllocationBudgetTests
                 "Disabled logging must not format results.");
         });
     private readonly Shield<int> _quotaDisabledLogging = Shield.For<int>()
-        .WhenResult(-1)
+        .WhenResultEquals(-1)
         .Retry(1, Backoff.None)
         .WithLogging(EnabledNoopLogger.Instance, static options =>
         {

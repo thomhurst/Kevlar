@@ -316,6 +316,44 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task ResultEquals_Accepts_Null_Without_Overload_Ambiguity()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    _ = Shield.For<string?>().WhenResultEquals(null).Retry();
+                    _ = Shield.For<string?>().When<System.Exception>().OrResultEquals(null).Retry();
+                }
+            }
+            """);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    [Test]
+    public async Task Result_Predicate_Names_Do_Not_Have_Value_Overloads()
+    {
+        var legacyValueOverloads = new[] { typeof(Shield<>), typeof(ShieldBuilder<>) }
+            .SelectMany(static type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            .Where(static method => method.Name is "WhenResult" or "OrResult")
+            .Where(static method => method.GetParameters() is [{ ParameterType.IsGenericParameter: true }])
+            .Select(static method => $"{method.DeclaringType}.{method.Name}")
+            .ToArray();
+
+        await Assert.That(legacyValueOverloads).IsEmpty();
+    }
+
+    [Test]
     public async Task Reloading_Shield_Legacy_Callback_Literals_Remain_Unambiguous()
     {
         var compilation = CreateCompilation(

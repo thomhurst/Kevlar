@@ -50,8 +50,8 @@ items:
   - Kevlar.Shield`1.WhenAnyError
   - Kevlar.Shield`1.WhenContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
   - Kevlar.Shield`1.WhenResult(System.Func{`0,System.Boolean})
-  - Kevlar.Shield`1.WhenResult(`0)
   - Kevlar.Shield`1.WhenResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  - Kevlar.Shield`1.WhenResultEquals(`0)
   - Kevlar.Shield`1.WhenResultIsDefault
   - Kevlar.Shield`1.When``1
   - Kevlar.Shield`1.When``1(System.Func{``0,System.Boolean})
@@ -271,16 +271,16 @@ items:
   nameWithType.vb: Shield(Of TResult).WhenResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
   fullName.vb: Kevlar.Shield(Of TResult).WhenResultContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
   name.vb: WhenResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
-- uid: Kevlar.Shield`1.WhenResult(`0)
-  commentId: M:Kevlar.Shield`1.WhenResult(`0)
-  id: WhenResult(`0)
+- uid: Kevlar.Shield`1.WhenResultEquals(`0)
+  commentId: M:Kevlar.Shield`1.WhenResultEquals(`0)
+  id: WhenResultEquals(`0)
   parent: Kevlar.Shield`1
   langs:
   - csharp
   - vb
-  name: WhenResult(TResult)
-  nameWithType: Shield<TResult>.WhenResult(TResult)
-  fullName: Kevlar.Shield<TResult>.WhenResult(TResult)
+  name: WhenResultEquals(TResult)
+  nameWithType: Shield<TResult>.WhenResultEquals(TResult)
+  fullName: Kevlar.Shield<TResult>.WhenResultEquals(TResult)
   type: Method
   assemblies:
   - Kevlar
@@ -288,16 +288,16 @@ items:
   summary: Starts a handling clause for results equal to <code class="paramref">result</code>. Use <xref href="Kevlar.Shield%601.WhenAnyError" data-throw-if-not-resolved="false"></xref> to return to default handling.
   example: []
   syntax:
-    content: public ShieldBuilder<TResult> WhenResult(TResult result)
+    content: public ShieldBuilder<TResult> WhenResultEquals(TResult result)
     parameters:
     - id: result
       type: '{TResult}'
     return:
       type: Kevlar.ShieldBuilder{{TResult}}
-    content.vb: Public Function WhenResult(result As TResult) As ShieldBuilder(Of TResult)
-  overload: Kevlar.Shield`1.WhenResult*
-  nameWithType.vb: Shield(Of TResult).WhenResult(TResult)
-  fullName.vb: Kevlar.Shield(Of TResult).WhenResult(TResult)
+    content.vb: Public Function WhenResultEquals(result As TResult) As ShieldBuilder(Of TResult)
+  overload: Kevlar.Shield`1.WhenResultEquals*
+  nameWithType.vb: Shield(Of TResult).WhenResultEquals(TResult)
+  fullName.vb: Kevlar.Shield(Of TResult).WhenResultEquals(TResult)
 - uid: Kevlar.Shield`1.WhenResultIsDefault
   commentId: M:Kevlar.Shield`1.WhenResultIsDefault
   id: WhenResultIsDefault
@@ -4125,6 +4125,15 @@ references:
   fullName: Kevlar.Shield<TResult>.WhenResultContext
   nameWithType.vb: Shield(Of TResult).WhenResultContext
   fullName.vb: Kevlar.Shield(Of TResult).WhenResultContext
+- uid: Kevlar.Shield`1.WhenResultEquals*
+  commentId: Overload:Kevlar.Shield`1.WhenResultEquals
+  isExternal: true
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenResultEquals__0_
+  name: WhenResultEquals
+  nameWithType: Shield<TResult>.WhenResultEquals
+  fullName: Kevlar.Shield<TResult>.WhenResultEquals
+  nameWithType.vb: Shield(Of TResult).WhenResultEquals
+  fullName.vb: Kevlar.Shield(Of TResult).WhenResultEquals
 - uid: '{TResult}'
   commentId: '!:TResult'
   definition: TResult

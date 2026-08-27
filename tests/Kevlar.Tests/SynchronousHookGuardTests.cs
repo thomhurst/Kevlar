@@ -122,7 +122,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_OnRetry_That_Yields_Is_Rejected_By_Execute()
     {
         using var gate = new Gate();
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -136,7 +136,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_OnRetry_That_Yields_Fails_ExecuteOutcome()
     {
         using var gate = new Gate();
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -150,7 +150,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_OnRetry_That_Completes_Synchronously_Runs_Under_Execute()
     {
         var observed = 0;
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -171,7 +171,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_DelayGenerator_That_Yields_Is_Rejected_By_Execute()
     {
         using var gate = new Gate();
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -189,7 +189,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_DelayGenerator_That_Yields_Fails_ExecuteOutcome()
     {
         using var gate = new Gate();
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -209,7 +209,7 @@ public class SynchronousHookGuardTests
     public async Task Typed_Retry_DelayGenerator_That_Completes_Synchronously_Runs_Under_Execute()
     {
         var observed = 0;
-        var shield = Shield.For<int>().WhenResult(-1).Retry(options =>
+        var shield = Shield.For<int>().WhenResultEquals(-1).Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;

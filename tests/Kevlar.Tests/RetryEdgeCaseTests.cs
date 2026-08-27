@@ -10,7 +10,7 @@ public class RetryEdgeCaseTests
     {
         var strategy = new SourceBackedResultStrategy();
         var shield = Shield.For<int>()
-            .WhenResult(0)
+            .WhenResultEquals(0)
             .Retry(1, Backoff.None)
             .Use(strategy);
 
@@ -333,7 +333,7 @@ public class RetryEdgeCaseTests
     {
         var events = new List<(object? Result, Exception? Exception)>();
         var shield = Shield.For<int>()
-            .WhenResult(0)
+            .WhenResultEquals(0)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -358,7 +358,7 @@ public class RetryEdgeCaseTests
     public async Task WhenResult_Value_Overload_Uses_Equality()
     {
         var attempts = 0;
-        var shield = Shield.For<string>().WhenResult("retry-me").Retry(3, Backoff.None);
+        var shield = Shield.For<string>().WhenResultEquals("retry-me").Retry(3, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ =>
         {
@@ -376,7 +376,7 @@ public class RetryEdgeCaseTests
         var attempts = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .OrResult(-1)
+            .OrResultEquals(-1)
             .Retry(3, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ =>
