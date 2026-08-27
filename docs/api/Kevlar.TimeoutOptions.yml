@@ -124,20 +124,20 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Produces the timeout for each execution and is awaited before the timer is armed. The
+    Produces the timeout for each execution and is awaited before the timer is armed. The event
 
-    returned value must be positive and no greater than the runtime timer limit. Return
+    carries the configured <xref href="Kevlar.TimeoutOptions.Timeout" data-throw-if-not-resolved="false"></xref> and execution context. The returned value must
 
-    <code>new(timeout)</code> from a synchronous generator. The context is valid only until the
+    be positive and no greater than the runtime timer limit. Return <code>new(timeout)</code> from a
 
-    returned task completes.
+    synchronous generator. The event context is valid only until the returned task completes.
   example: []
   syntax:
-    content: public Func<KevlarContext, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+    content: public Func<TimeoutEvent, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
-    content.vb: Public Property TimeoutGenerator As Func(Of KevlarContext, ValueTask(Of TimeSpan))
+      type: System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property TimeoutGenerator As Func(Of TimeoutEvent, ValueTask(Of TimeSpan))
   overload: Kevlar.TimeoutOptions.TimeoutGenerator*
 - uid: Kevlar.TimeoutOptions.OnTimeout
   commentId: P:Kevlar.TimeoutOptions.OnTimeout
@@ -459,27 +459,27 @@ references:
   name: TimeoutGenerator
   nameWithType: TimeoutOptions.TimeoutGenerator
   fullName: Kevlar.TimeoutOptions.TimeoutGenerator
-- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+- uid: System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<KevlarContext, ValueTask<TimeSpan>>
-  nameWithType: Func<KevlarContext, ValueTask<TimeSpan>>
-  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<System.TimeSpan>>
-  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
-  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
-  name.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
+  name: Func<TimeoutEvent, ValueTask<TimeSpan>>
+  nameWithType: Func<TimeoutEvent, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of TimeoutEvent, ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of TimeoutEvent, ValueTask(Of TimeSpan))
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
     isExternal: true
-    href: Kevlar.KevlarContext.html
+    href: Kevlar.TimeoutEvent.html
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask`1
@@ -501,10 +501,10 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
     isExternal: true
-    href: Kevlar.KevlarContext.html
+    href: Kevlar.TimeoutEvent.html
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask`1

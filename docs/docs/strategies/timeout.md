@@ -58,19 +58,19 @@ This caller-first rule also applies to nested timeouts. A cancelled outer timeou
 
 ## Dynamic timeouts and notifications
 
-Use `TimeoutGenerator` to compute the budget per execution. It returns `ValueTask<TimeSpan>`, so
-the same property serves a synchronous computation (`context => new(duration)`) and an `async`
-one. The generator runs before the timer is armed or the executed delegate starts. Its result
-overrides the fixed `Timeout` for that execution and must be positive and within the runtime timer
-limit:
+Use `TimeoutGenerator` to compute the budget per execution. It receives a `TimeoutEvent` containing
+the configured default timeout and execution context, and returns `ValueTask<TimeSpan>`, so the same
+property serves synchronous and asynchronous computations. The generator runs before the timer is
+armed or the executed delegate starts. Its result overrides the fixed `Timeout` for that execution
+and must be positive and within the runtime timer limit:
 
 ```csharp
 var shield = Shield.Timeout(o =>
 {
-    o.TimeoutGenerator = context => new(
-        context.ShieldName == "interactive"
+    o.TimeoutGenerator = timeout => new(
+        timeout.Context.ShieldName == "interactive"
             ? TimeSpan.FromSeconds(2)
-            : TimeSpan.FromSeconds(30));
+            : timeout.Timeout);
 
     o.OnTimeout = timeout =>
     {

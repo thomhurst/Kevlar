@@ -13,7 +13,7 @@ internal sealed class TimeoutStrategy : Strategy
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
     private readonly TimeSpan _timeout;
-    private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
+    private readonly Func<TimeoutEvent, ValueTask<TimeSpan>>? _timeoutGenerator;
     private readonly Func<TimeoutEvent, ValueTask>? _onTimeout;
     private readonly string _telemetryName;
 
@@ -54,9 +54,10 @@ internal sealed class TimeoutStrategy : Strategy
             return ExecuteWithTimeout(next, context, _timeout);
         }
 
+        var generatorEvent = new TimeoutEvent(_timeout, context);
         var generation = CallbackInvoker.InvokeGenerator(
             _timeoutGenerator,
-            context,
+            generatorEvent,
             context,
             "TimeoutOptions.TimeoutGenerator");
         if (!generation.IsCompletedSuccessfully)

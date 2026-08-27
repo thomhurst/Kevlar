@@ -384,10 +384,10 @@ Use `ExecuteAsync`, or make the delegate complete synchronously. A non-`async` l
 
 ```csharp
 var shield = Shield.Timeout(options =>
-    options.TimeoutGenerator = static context => new(
-        context.ShieldName == "interactive"
+    options.TimeoutGenerator = static timeout => new(
+        timeout.Context.ShieldName == "interactive"
             ? TimeSpan.FromSeconds(2)
-            : TimeSpan.FromSeconds(30)));
+            : timeout.Timeout));
 
 var value = shield.Execute(static _ => 42);
 ```

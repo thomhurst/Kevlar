@@ -51,7 +51,7 @@ public class TimeoutBenchmarks
     public ValueTask<int> Kevlar_AsyncHookConfigured_HappyPath() =>
         KevlarAsyncHookConfigured.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    private static async ValueTask<TimeSpan> GenerateTimeoutAsync(KevlarContext _)
+    private static async ValueTask<TimeSpan> GenerateTimeoutAsync(TimeoutEvent _)
     {
         await Task.Yield();
         return TimeSpan.FromSeconds(10);

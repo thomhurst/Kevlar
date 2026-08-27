@@ -5,15 +5,27 @@ namespace Kevlar.Tests;
 public class TimeoutDynamicOptionsTests
 {
     [Test]
-    public async Task Generated_Timeout_Uses_The_Execution_Context()
+    public async Task Timeout_Generator_Uses_Timeout_Event()
+    {
+        var property = typeof(TimeoutOptions).GetProperty(nameof(TimeoutOptions.TimeoutGenerator));
+
+        await Assert.That(property).IsNotNull();
+        await Assert.That(property!.PropertyType)
+            .IsEqualTo(typeof(Func<TimeoutEvent, ValueTask<TimeSpan>>));
+    }
+
+    [Test]
+    public async Task Generated_Timeout_Uses_The_Event_Context_And_Configured_Default()
     {
         var fakeTime = new FakeTimeProvider();
         string? observedName = null;
+        var observedDefault = TimeSpan.Zero;
         var shield = Shield.Timeout(options =>
             {
-                options.TimeoutGenerator = context =>
+                options.TimeoutGenerator = timeout =>
                 {
-                    observedName = context.ShieldName;
+                    observedName = timeout.Context.ShieldName;
+                    observedDefault = timeout.Timeout;
                     return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(2));
                 };
             })
@@ -31,6 +43,7 @@ public class TimeoutDynamicOptionsTests
         var exception = await Assert.That(async () => await execution).Throws<TimeoutExceededException>();
         await Assert.That(exception!.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(observedName).IsEqualTo("dynamic-timeout");
+        await Assert.That(observedDefault).IsEqualTo(TimeSpan.FromSeconds(30));
         await Assert.That(shield.ToString()).IsEqualTo("dynamic-timeout: Timeout(dynamic)");
     }
 
@@ -40,9 +53,9 @@ public class TimeoutDynamicOptionsTests
         var sawSynchronousContext = false;
         var shield = Shield<int>.Empty.Timeout(options =>
         {
-            options.TimeoutGenerator = context =>
+            options.TimeoutGenerator = timeout =>
             {
-                sawSynchronousContext = context.IsSynchronous;
+                sawSynchronousContext = timeout.Context.IsSynchronous;
                 return new(TimeSpan.FromMinutes(1));
             };
         });
@@ -60,9 +73,9 @@ public class TimeoutDynamicOptionsTests
         var actionStarted = false;
         var shield = Shield.Timeout(options =>
         {
-            options.TimeoutGenerator = async context =>
+            options.TimeoutGenerator = async timeout =>
             {
-                await generatorGate.EnterAsync(context.CancellationToken);
+                await generatorGate.EnterAsync(timeout.Context.CancellationToken);
                 return TimeSpan.FromMinutes(1);
             };
         });
@@ -91,10 +104,12 @@ public class TimeoutDynamicOptionsTests
         var actionStarted = false;
         var shield = Shield.Timeout(options =>
         {
-            options.TimeoutGenerator = async context =>
+            options.TimeoutGenerator = async timeout =>
             {
                 generatorStarted.SetResult();
-                await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, context.CancellationToken);
+                await Task.Delay(
+                    System.Threading.Timeout.InfiniteTimeSpan,
+                    timeout.Context.CancellationToken);
                 return TimeSpan.FromMinutes(1);
             };
         });
