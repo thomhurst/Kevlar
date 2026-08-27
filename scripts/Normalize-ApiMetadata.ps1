@@ -6,7 +6,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $resolvedMetadataPath = (Resolve-Path -LiteralPath $MetadataPath).Path
-$metadataFiles = @(Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File)
+$metadataFiles = @(
+    Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File |
+        Sort-Object -Property Name
+)
 $localReferencePages = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
 $localPages = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $assembliesByUid = [Collections.Generic.Dictionary[string, string[]]]::new([StringComparer]::Ordinal)
