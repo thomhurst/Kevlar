@@ -13,6 +13,8 @@ items:
   - Kevlar.Extensions.Logging.KevlarLogEvent.EventName
   - Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   - Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  - Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
+  - Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
   - Kevlar.Extensions.Logging.KevlarLogEvent.Kind
   - Kevlar.Extensions.Logging.KevlarLogEvent.Result
   - Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
@@ -181,6 +183,52 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property AttemptNumber As Integer
   overload: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
+  id: IsWinner
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: IsWinner
+  nameWithType: KevlarLogEvent.IsWinner
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Whether this hedge attempt supplied the selected pipeline outcome.
+  example: []
+  syntax:
+    content: public bool IsWinner { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsWinner As Boolean
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
+  id: IsCancelled
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: IsCancelled
+  nameWithType: KevlarLogEvent.IsCancelled
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Whether this hedge attempt completed through cancellation.
+  example: []
+  syntax:
+    content: public bool IsCancelled { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsCancelled As Boolean
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled*
 - uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   id: Exception
@@ -736,6 +784,31 @@ references:
   name: AttemptNumber
   nameWithType: KevlarLogEvent.AttemptNumber
   fullName: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_IsWinner
+  name: IsWinner
+  nameWithType: KevlarLogEvent.IsWinner
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.IsWinner
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_IsCancelled
+  name: IsCancelled
+  nameWithType: KevlarLogEvent.IsCancelled
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.IsCancelled
 - uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception*
   commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   isExternal: true

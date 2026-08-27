@@ -25,6 +25,8 @@ public readonly struct KevlarTelemetryEvent
         string? suppressionReason,
         CallbackErrorKind? callbackKind,
         string? callbackSource,
+        bool isWinner,
+        bool isCancelled,
         KevlarContext context)
     {
         EventName = eventName;
@@ -46,6 +48,8 @@ public readonly struct KevlarTelemetryEvent
         SuppressionReason = suppressionReason;
         CallbackKind = callbackKind;
         CallbackSource = callbackSource;
+        IsWinner = isWinner;
+        IsCancelled = isCancelled;
         _context = context;
     }
 
@@ -69,6 +73,12 @@ public readonly struct KevlarTelemetryEvent
 
     /// <summary>Whether the event's outcome succeeded.</summary>
     public bool IsSuccess { get; }
+
+    /// <summary>Whether this hedge-attempt event describes the outcome selected by the pipeline.</summary>
+    public bool IsWinner { get; }
+
+    /// <summary>Whether this hedge-attempt event completed through cancellation.</summary>
+    public bool IsCancelled { get; }
 
     /// <summary>The associated exception, if any.</summary>
     public Exception? Exception { get; }
@@ -129,5 +139,7 @@ public readonly struct KevlarTelemetryEvent
         SuppressionReason,
         CallbackKind,
         CallbackSource,
+        IsWinner,
+        IsCancelled,
         Context);
 }

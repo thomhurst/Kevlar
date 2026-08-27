@@ -11,6 +11,8 @@ public readonly struct KevlarLogEvent
         StrategyName = telemetryEvent.StrategyName;
         StrategyIndex = telemetryEvent.StrategyIndex;
         AttemptNumber = telemetryEvent.AttemptNumber;
+        IsWinner = telemetryEvent.IsWinner;
+        IsCancelled = telemetryEvent.IsCancelled;
         Exception = telemetryEvent.Exception;
         Result = telemetryEvent.Result;
         Delay = telemetryEvent.Delay;
@@ -40,6 +42,12 @@ public readonly struct KevlarLogEvent
 
     /// <summary>The zero-based attempt number.</summary>
     public int AttemptNumber { get; }
+
+    /// <summary>Whether this hedge attempt supplied the selected pipeline outcome.</summary>
+    public bool IsWinner { get; }
+
+    /// <summary>Whether this hedge attempt completed through cancellation.</summary>
+    public bool IsCancelled { get; }
 
     /// <summary>The associated exception, when present.</summary>
     public Exception? Exception { get; }

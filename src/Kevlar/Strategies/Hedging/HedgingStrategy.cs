@@ -5,6 +5,8 @@ namespace Kevlar.Strategies;
 
 internal sealed class HedgingStrategy : Strategy
 {
+    private const long DisabledAttemptTimestamp = long.MinValue;
+
     protected internal override string? SynchronousExecutionUnsupportedReason =>
         _maxHedgedAttempts > 0 ? "hedging" : null;
     private readonly OutcomeJudge _judge;
@@ -137,7 +139,7 @@ internal sealed class HedgingStrategy : Strategy
             return ExecuteCoreAsync(
                 next,
                 context,
-                primary.AsPending(),
+                primary.AsPending(GetAttemptStartedAt(primary.Context)),
                 hedgesLaunched: 0,
                 default,
                 startedAt,
@@ -154,6 +156,17 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Context,
                 attempt: 0,
                 strategyIndex);
+            if (shouldHandle)
+            {
+                KevlarMetrics.HedgeAttempt(
+                    primary.Context,
+                    _telemetryName,
+                    primary.Attempt,
+                    in outcome,
+                    isWinner: false,
+                    TimeSpan.Zero);
+            }
+
             if (!shouldHandle)
             {
                 CopyAttemptProperties(primary.Context, context);
@@ -279,8 +292,14 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
-                    if (!shouldHandle
-                        || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0)
+                    var isWinner = !shouldHandle
+                        || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
+                    RecordAttempt(
+                        in completedAttempt,
+                        in outcome,
+                        isWinner,
+                        _telemetryName);
+                    if (isWinner)
                     {
                         if (!ReferenceEquals(judgingContext, completedAttempt.Context))
                         {
@@ -344,7 +363,7 @@ internal sealed class HedgingStrategy : Strategy
             foreach (var attempt in pending)
             {
                 attempt.Cancellation.Cancel();
-                Cleanup(attempt, terminalOutcome);
+                Cleanup(attempt, terminalOutcome, _telemetryName);
             }
 
             if (lastOutcome is { } superseded)
@@ -429,7 +448,7 @@ internal sealed class HedgingStrategy : Strategy
 
         context.CancellationToken.ThrowIfCancellationRequested();
         return new ValueTask<HedgeAttempt<T>>(
-            StartHedgeAttempt(next, context, attemptNumber, outcome, delay).AsPending());
+            StartHedgeAttempt(next, context, attemptNumber, outcome, delay));
     }
 
     private ValueTask InvokeOnHedgeAsync<T>(
@@ -467,7 +486,7 @@ internal sealed class HedgingStrategy : Strategy
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         await notification.ConfigureAwait(false);
         context.CancellationToken.ThrowIfCancellationRequested();
-        return StartHedgeAttempt(next, context, attemptNumber, outcome, delay).AsPending();
+        return StartHedgeAttempt(next, context, attemptNumber, outcome, delay);
     }
 
     private StartedAttempt<T> StartPrimaryAttempt<T, TState>(
@@ -489,7 +508,7 @@ internal sealed class HedgingStrategy : Strategy
         }
     }
 
-    private StartedAttempt<T> StartHedgeAttempt<T, TState>(
+    private HedgeAttempt<T> StartHedgeAttempt<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
@@ -499,6 +518,7 @@ internal sealed class HedgingStrategy : Strategy
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
         fork.AttemptNumber = attemptNumber;
+        var startedAt = GetAttemptStartedAt(fork);
         OriginalActionContextCapture<T>? contextCapture = null;
         try
         {
@@ -523,11 +543,12 @@ internal sealed class HedgingStrategy : Strategy
                         attemptNumber,
                         exception,
                         delay);
-                    return new StartedAttempt<T>(
-                        new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
+                    return new HedgeAttempt<T>(
+                        Task.FromResult(Outcome<T>.FromException(exception)),
                         cancellation,
                         fork,
                         attemptNumber,
+                        startedAt,
                         contextCapture);
                 }
 
@@ -542,7 +563,13 @@ internal sealed class HedgingStrategy : Strategy
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
-            return new StartedAttempt<T>(execution, cancellation, fork, attemptNumber, contextCapture);
+            return new HedgeAttempt<T>(
+                execution.AsTask(),
+                cancellation,
+                fork,
+                attemptNumber,
+                startedAt,
+                contextCapture);
         }
         catch
         {
@@ -1110,15 +1137,19 @@ internal sealed class HedgingStrategy : Strategy
         throw new InvalidOperationException("The completed hedge attempt was not pending.");
     }
 
-    private static void Cleanup<T>(HedgeAttempt<T> attempt, Outcome<T>? terminalOutcome)
+    private static void Cleanup<T>(
+        HedgeAttempt<T> attempt,
+        Outcome<T>? terminalOutcome,
+        string strategyName)
     {
         if (attempt.Task.Status != TaskStatus.RanToCompletion)
         {
-            _ = CleanupAsync(attempt, terminalOutcome);
+            _ = CleanupAsync(attempt, terminalOutcome, strategyName);
             return;
         }
 
         var outcome = attempt.Task.Result;
+        RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
         var disposal = terminalOutcome is { } terminal
             && OutcomeDisposer.IsSameResult(in outcome, in terminal)
                 ? default
@@ -1139,11 +1170,15 @@ internal sealed class HedgingStrategy : Strategy
 
     private static async Task CleanupAsync<T>(
         HedgeAttempt<T> attempt,
-        Outcome<T>? terminalOutcome)
+        Outcome<T>? terminalOutcome,
+        string strategyName)
     {
+        var recorded = false;
         try
         {
             var outcome = await attempt.Task.ConfigureAwait(false);
+            recorded = true;
+            RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
             if (terminalOutcome is not { } terminal
                 || !OutcomeDisposer.IsSameResult(in outcome, in terminal))
             {
@@ -1152,8 +1187,14 @@ internal sealed class HedgingStrategy : Strategy
                     attempt.Context).ConfigureAwait(false);
             }
         }
-        catch
+        catch (Exception exception)
         {
+            if (!recorded)
+            {
+                var outcome = Outcome<T>.FromException(exception);
+                RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
+            }
+
             // Attempt failures are already represented by the selected pipeline outcome.
         }
         finally
@@ -1191,6 +1232,46 @@ internal sealed class HedgingStrategy : Strategy
             context.CancellationToken));
     }
 
+    private static long GetAttemptStartedAt(KevlarContext context) =>
+        KevlarMetrics.HedgeAttemptEnabled(context)
+            ? context.TimeProvider.GetTimestamp()
+            : DisabledAttemptTimestamp;
+
+    private static void RecordAttempt<T>(
+        in HedgeAttempt<T> attempt,
+        in Outcome<T> outcome,
+        bool isWinner,
+        string strategyName) =>
+        RecordAttempt(
+            attempt.Context,
+            attempt.Attempt,
+            attempt.StartedAt,
+            in outcome,
+            isWinner,
+            strategyName);
+
+    private static void RecordAttempt<T>(
+        KevlarContext context,
+        int attemptNumber,
+        long startedAt,
+        in Outcome<T> outcome,
+        bool isWinner,
+        string strategyName)
+    {
+        if (startedAt == DisabledAttemptTimestamp)
+        {
+            return;
+        }
+
+        KevlarMetrics.HedgeAttempt(
+            context,
+            strategyName,
+            attemptNumber,
+            in outcome,
+            isWinner,
+            context.TimeProvider.GetElapsedTime(startedAt));
+    }
+
     private readonly struct HedgeAttempt<T>
     {
         public HedgeAttempt(
@@ -1198,12 +1279,14 @@ internal sealed class HedgingStrategy : Strategy
             CancellationTokenSource cancellation,
             KevlarContext context,
             int attempt,
+            long startedAt,
             OriginalActionContextCapture<T>? contextCapture)
         {
             Task = task;
             Cancellation = cancellation;
             Context = context;
             Attempt = attempt;
+            StartedAt = startedAt;
             ContextCapture = contextCapture;
         }
 
@@ -1214,6 +1297,8 @@ internal sealed class HedgingStrategy : Strategy
         public KevlarContext Context { get; }
 
         public int Attempt { get; }
+
+        public long StartedAt { get; }
 
         private OriginalActionContextCapture<T>? ContextCapture { get; }
 
@@ -1249,11 +1334,12 @@ internal sealed class HedgingStrategy : Strategy
 
         public KevlarContext Context { get; }
 
-        private int Attempt { get; }
+        public int Attempt { get; }
 
         private OriginalActionContextCapture<T>? ContextCapture { get; }
 
-        public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context, Attempt, ContextCapture);
+        public HedgeAttempt<T> AsPending(long startedAt) =>
+            new(Execution.AsTask(), Cancellation, Context, Attempt, startedAt, ContextCapture);
 
         public void Dispose()
         {

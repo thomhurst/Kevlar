@@ -14,7 +14,9 @@ items:
   - Kevlar.KevlarTelemetryEvent.EventName
   - Kevlar.KevlarTelemetryEvent.Exception
   - Kevlar.KevlarTelemetryEvent.FromState
+  - Kevlar.KevlarTelemetryEvent.IsCancelled
   - Kevlar.KevlarTelemetryEvent.IsSuccess
+  - Kevlar.KevlarTelemetryEvent.IsWinner
   - Kevlar.KevlarTelemetryEvent.OperationKey
   - Kevlar.KevlarTelemetryEvent.Result
   - Kevlar.KevlarTelemetryEvent.RetryAfter
@@ -207,6 +209,52 @@ items:
       type: System.Boolean
     content.vb: Public ReadOnly Property IsSuccess As Boolean
   overload: Kevlar.KevlarTelemetryEvent.IsSuccess*
+- uid: Kevlar.KevlarTelemetryEvent.IsWinner
+  commentId: P:Kevlar.KevlarTelemetryEvent.IsWinner
+  id: IsWinner
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: IsWinner
+  nameWithType: KevlarTelemetryEvent.IsWinner
+  fullName: Kevlar.KevlarTelemetryEvent.IsWinner
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Whether this hedge-attempt event describes the outcome selected by the pipeline.
+  example: []
+  syntax:
+    content: public bool IsWinner { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsWinner As Boolean
+  overload: Kevlar.KevlarTelemetryEvent.IsWinner*
+- uid: Kevlar.KevlarTelemetryEvent.IsCancelled
+  commentId: P:Kevlar.KevlarTelemetryEvent.IsCancelled
+  id: IsCancelled
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: IsCancelled
+  nameWithType: KevlarTelemetryEvent.IsCancelled
+  fullName: Kevlar.KevlarTelemetryEvent.IsCancelled
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Whether this hedge-attempt event completed through cancellation.
+  example: []
+  syntax:
+    content: public bool IsCancelled { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsCancelled As Boolean
+  overload: Kevlar.KevlarTelemetryEvent.IsCancelled*
 - uid: Kevlar.KevlarTelemetryEvent.Exception
   commentId: P:Kevlar.KevlarTelemetryEvent.Exception
   id: Exception
@@ -798,6 +846,20 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
+- uid: Kevlar.KevlarTelemetryEvent.IsWinner*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.IsWinner
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_IsWinner
+  name: IsWinner
+  nameWithType: KevlarTelemetryEvent.IsWinner
+  fullName: Kevlar.KevlarTelemetryEvent.IsWinner
+- uid: Kevlar.KevlarTelemetryEvent.IsCancelled*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.IsCancelled
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_IsCancelled
+  name: IsCancelled
+  nameWithType: KevlarTelemetryEvent.IsCancelled
+  fullName: Kevlar.KevlarTelemetryEvent.IsCancelled
 - uid: Kevlar.KevlarTelemetryEvent.Exception*
   commentId: Overload:Kevlar.KevlarTelemetryEvent.Exception
   isExternal: true

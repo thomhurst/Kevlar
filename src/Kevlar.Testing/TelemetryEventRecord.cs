@@ -13,6 +13,8 @@ public sealed class TelemetryEventRecord
         StrategyIndex = telemetryEvent.StrategyIndex;
         AttemptNumber = telemetryEvent.AttemptNumber;
         IsSuccess = telemetryEvent.IsSuccess;
+        IsWinner = telemetryEvent.IsWinner;
+        IsCancelled = telemetryEvent.IsCancelled;
         Exception = telemetryEvent.Exception;
         Duration = telemetryEvent.Duration;
         OperationKey = telemetryEvent.OperationKey;
@@ -41,6 +43,12 @@ public sealed class TelemetryEventRecord
 
     /// <inheritdoc cref="KevlarTelemetryEvent.IsSuccess"/>
     public bool IsSuccess { get; }
+
+    /// <inheritdoc cref="KevlarTelemetryEvent.IsWinner"/>
+    public bool IsWinner { get; }
+
+    /// <inheritdoc cref="KevlarTelemetryEvent.IsCancelled"/>
+    public bool IsCancelled { get; }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.Exception"/>
     public Exception? Exception { get; }

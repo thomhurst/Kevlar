@@ -71,6 +71,8 @@ internal static class KevlarTelemetry
             suppressionReason,
             callbackKind: null,
             callbackSource: null,
+            isWinner: false,
+            isCancelled: false,
             context);
 
         KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration: false);
@@ -161,6 +163,8 @@ internal static class KevlarTelemetry
         string? suppressionReason = null,
         CallbackErrorKind? callbackKind = null,
         string? callbackSource = null,
+        bool isWinner = false,
+        bool isCancelled = false,
         bool localOnly = false)
     {
         var listeners = localOnly ? [] : Volatile.Read(ref _listeners);
@@ -195,6 +199,8 @@ internal static class KevlarTelemetry
             suppressionReason,
             callbackKind,
             callbackSource,
+            isWinner,
+            isCancelled,
             context);
 
         if (!localOnly)

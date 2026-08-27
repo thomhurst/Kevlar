@@ -76,6 +76,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.retries` | Counter | `{retry}` | `net8.0` | retry attempts | `kevlar.shield.name` |
 | `kevlar.timeouts` | Counter | `{timeout}` | `net8.0` | executions cancelled by a timeout strategy, including delegates that complete after ignoring cancellation | `kevlar.shield.name`, optional `outcome` (`ignored`) |
 | `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts launched | `kevlar.shield.name` |
+| `kevlar.hedge_attempts` | Counter | `{attempt}` | `net8.0` | completed attempts within hedged executions | `kevlar.shield.name`, `result` (`won`/`lost`/`cancelled`/`failed`) |
 | `kevlar.fallbacks` | Counter | `{fallback}` | `net8.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
 | `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`) |
 | `kevlar.http.replay_suppressed` | Counter | `{request}` | `net8.0` | HTTP requests whose configured additional attempts were disabled for replay safety | `kevlar.shield.name`, `kevlar.suppression.reason` (`replay_disabled`/`unsafe_method`/`non_replayable_content`) |
@@ -109,7 +110,7 @@ Every strategy options type has an optional `Name`. When unset, telemetry uses t
 name such as `Retry`; when set, the configured value becomes `kevlar.strategy.name`. Keep strategy
 names bounded just like shield names.
 
-Built-in `kevlar.event.name` values are `execution_attempt`, `retry`, `timeout`, `timeout_ignored`, `hedge`,
+Built-in `kevlar.event.name` values are `execution_attempt`, `retry`, `timeout`, `timeout_ignored`, `hedge`, `hedge_attempt`,
 `fallback`, `rejection`, `circuit_opened`, `circuit_half_opened`, `circuit_closed`, and
 `circuit_isolated`; the HTTP integration also emits `attempts_suppressed`. `Kevlar.Chaos`
 additionally emits `chaos_latency`, `chaos_fault`,

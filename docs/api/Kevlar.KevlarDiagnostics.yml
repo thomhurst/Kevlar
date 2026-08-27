@@ -40,7 +40,9 @@ items:
 
     that complete after ignoring cancellation; attributes <code>kevlar.shield.name</code> and optional
 
-    <code>outcome</code> (<code>ignored</code>)</li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.http.replay_suppressed</code> — HTTP requests whose configured additional attempts
+    <code>outcome</code> (<code>ignored</code>)</li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedge_attempts</code> — completed attempts within hedged executions; attributes
+
+    <code>kevlar.shield.name</code> and <code>result</code> (<code>won</code>/<code>lost</code>/<code>cancelled</code>/<code>failed</code>)</li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.http.replay_suppressed</code> — HTTP requests whose configured additional attempts
 
     were disabled for replay safety; attributes <code>kevlar.shield.name</code> and
 

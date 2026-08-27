@@ -250,6 +250,7 @@ public class MetricsTests
             ["kevlar.retries"] = "{retry}",
             ["kevlar.timeouts"] = "{timeout}",
             ["kevlar.hedges"] = "{hedge}",
+            ["kevlar.hedge_attempts"] = "{attempt}",
             ["kevlar.fallbacks"] = "{fallback}",
             ["kevlar.rejections"] = "{rejection}",
             ["kevlar.http.replay_suppressed"] = "{request}",
@@ -1191,6 +1192,14 @@ public class MetricsTests
         await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
         await Assert.That(listener.Total("kevlar.hedges", "metrics-hedge")).IsEqualTo(1);
+        await Assert.That(listener.Total(
+            "kevlar.hedge_attempts",
+            "metrics-hedge",
+            ("result", "won"))).IsEqualTo(1);
+        await Assert.That(listener.Total(
+            "kevlar.hedge_attempts",
+            "metrics-hedge",
+            ("result", "lost"))).IsEqualTo(1);
     }
 
     [Test]
@@ -1219,7 +1228,8 @@ public class MetricsTests
         await Assert.That(observed.EventName).IsEqualTo("hedge");
         await Assert.That(observed.IsSuccess).IsFalse();
         await Assert.That(ReferenceEquals(observed.Exception, generatorFailure)).IsTrue();
-        var tags = meterListener.Measurements("kevlar.strategy.events", "metrics-failed-hedge").Single();
+        var tags = meterListener.Measurements("kevlar.strategy.events", "metrics-failed-hedge")
+            .Single(item => Equals(item["kevlar.event.name"], "hedge"));
         await Assert.That(tags["exception.type"]).IsEqualTo(typeof(InvalidOperationException).FullName);
     }
 
