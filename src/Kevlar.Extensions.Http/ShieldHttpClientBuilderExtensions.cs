@@ -378,14 +378,14 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     /// <summary>
-    /// Adds a standard pipeline that hedges against the request's authority: total timeout,
+    /// Adds one shared standard pipeline that hedges against the request's authority: total timeout,
     /// hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder) =>
         AddStandardHedgeShield(builder, static _ => { });
 
     /// <summary>
-    /// Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
+    /// Adds one shared standard pipeline with optional endpoint routing: total timeout, hedging,
     /// per-authority concurrency limit and circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(
@@ -406,12 +406,20 @@ public static class ShieldHttpClientBuilderExtensions
         configure(options);
         var shield = CreateHedgeShield(options);
         var handlerOptions = CreateHandlerOptions(options);
+        var registration = RegisterSharedPipeline(builder);
 
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                handlerOptions,
-                CreateDecorator(services, builder.Name)));
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    handlerOptions));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>
