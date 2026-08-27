@@ -44,18 +44,41 @@ internal abstract class OutcomeJudge
 
     public virtual bool IsContextAware => false;
 
-    protected internal static void ReportPredicateFailure(Exception exception)
+    private static void ReportPredicateFailure(
+        Exception exception,
+        KevlarContext? context)
     {
-        try
+        if (context is not null)
         {
-            System.Diagnostics.Trace.TraceError(
-                "Kevlar handling predicate failed and was treated as not handled: {0}",
-                exception);
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.HandlingPredicate,
+                context,
+                exception,
+                "HandlingPredicate");
         }
-        catch
+    }
+
+    protected static bool EvaluatePredicates<T>(
+        Func<T, bool>[] predicates,
+        T value,
+        KevlarContext? context)
+    {
+        foreach (var predicate in predicates)
         {
-            // Diagnostics must not change the protected execution's outcome.
+            try
+            {
+                if (predicate(value))
+                {
+                    return true;
+                }
+            }
+            catch (Exception exception)
+            {
+                ReportPredicateFailure(exception, context);
+            }
         }
+
+        return false;
     }
 
     private sealed class DefaultJudge : OutcomeJudge
@@ -78,35 +101,52 @@ internal abstract class OutcomeJudge
 /// <summary>Handles outcomes whose exception matches a caller-supplied predicate.</summary>
 internal sealed class ExceptionJudge : OutcomeJudge
 {
-    private readonly Func<Exception, bool> _predicate;
+    private readonly Func<Exception, bool>[] _predicates;
     private readonly string? _description;
 
     public ExceptionJudge(Func<Exception, bool> predicate, string? description = null)
+        : this([predicate], description)
     {
-        _predicate = predicate;
+    }
+
+    public ExceptionJudge(Func<Exception, bool>[] predicates, string? description = null)
+    {
+        _predicates = predicates;
         _description = description;
     }
 
     public override string? Description => _description;
 
     protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
-        outcome.Exception is { } exception && _predicate(exception);
+        outcome.Exception is { } exception
+        && EvaluatePredicates(_predicates, exception, context);
 }
 
 /// <summary>Handles exceptions using the active execution and strategy context.</summary>
 internal sealed class ContextExceptionJudge : OutcomeJudge
 {
-    private readonly Func<Exception, bool>? _exceptionPredicate;
-    private readonly Func<HandlingEvent, bool> _predicate;
+    private readonly Func<Exception, bool>[] _exceptionPredicates;
+    private readonly Func<HandlingEvent, bool>[] _contextPredicates;
     private readonly string? _description;
 
     public ContextExceptionJudge(
         Func<Exception, bool>? exceptionPredicate,
         Func<HandlingEvent, bool> predicate,
         string? description = null)
+        : this(
+            exceptionPredicate is null ? [] : [exceptionPredicate],
+            [predicate],
+            description)
     {
-        _exceptionPredicate = exceptionPredicate;
-        _predicate = predicate;
+    }
+
+    public ContextExceptionJudge(
+        Func<Exception, bool>[] exceptionPredicates,
+        Func<HandlingEvent, bool>[] contextPredicates,
+        string? description = null)
+    {
+        _exceptionPredicates = exceptionPredicates;
+        _contextPredicates = contextPredicates;
         _description = description;
     }
 
@@ -120,22 +160,12 @@ internal sealed class ContextExceptionJudge : OutcomeJudge
         int attempt,
         int strategyIndex) =>
         outcome.Exception is { } exception
-        && ((_exceptionPredicate?.Invoke(exception) ?? false)
-            || (context is not null
-                && InvokeSafely(new HandlingEvent(exception, context, attempt, strategyIndex))));
-
-    private bool InvokeSafely(HandlingEvent handlingEvent)
-    {
-        try
-        {
-            return _predicate(handlingEvent);
-        }
-        catch (Exception exception)
-        {
-            ReportPredicateFailure(exception);
-            return false;
-        }
-    }
+        && (EvaluatePredicates(_exceptionPredicates, exception, context)
+            || context is not null
+            && EvaluatePredicates(
+                _contextPredicates,
+                new HandlingEvent(exception, context, attempt, strategyIndex),
+                context));
 }
 
 /// <summary>
@@ -144,9 +174,9 @@ internal sealed class ContextExceptionJudge : OutcomeJudge
 /// </summary>
 internal sealed class TypedJudge<TResult> : OutcomeJudge
 {
-    private readonly Func<Exception, bool>? _exceptionPredicate;
-    private readonly Func<TResult, bool>? _resultPredicate;
-    private readonly Func<HandlingEvent<TResult>, bool>? _contextPredicate;
+    private readonly Func<Exception, bool>[] _exceptionPredicates;
+    private readonly Func<TResult, bool>[] _resultPredicates;
+    private readonly Func<HandlingEvent<TResult>, bool>[] _contextPredicates;
     private readonly string? _description;
 
     public TypedJudge(
@@ -154,16 +184,29 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
         Func<TResult, bool>? resultPredicate,
         string? description = null,
         Func<HandlingEvent<TResult>, bool>? contextPredicate = null)
+        : this(
+            exceptionPredicate is null ? [] : [exceptionPredicate],
+            resultPredicate is null ? [] : [resultPredicate],
+            description,
+            contextPredicate is null ? [] : [contextPredicate])
     {
-        _exceptionPredicate = exceptionPredicate;
-        _resultPredicate = resultPredicate;
-        _contextPredicate = contextPredicate;
+    }
+
+    public TypedJudge(
+        Func<Exception, bool>[] exceptionPredicates,
+        Func<TResult, bool>[] resultPredicates,
+        string? description = null,
+        Func<HandlingEvent<TResult>, bool>[]? contextPredicates = null)
+    {
+        _exceptionPredicates = exceptionPredicates;
+        _resultPredicates = resultPredicates;
+        _contextPredicates = contextPredicates ?? [];
         _description = description;
     }
 
     public override string? Description => _description;
 
-    public override bool IsContextAware => _contextPredicate is not null;
+    public override bool IsContextAware => _contextPredicates.Length != 0;
 
     protected override bool ShouldHandleCore<T>(
         in Outcome<T> outcome,
@@ -171,34 +214,30 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
         int attempt,
         int strategyIndex)
     {
-        if (_contextPredicate is not null && context is not null && typeof(T) == typeof(TResult))
+        if (_contextPredicates.Length != 0 && context is not null && typeof(T) == typeof(TResult))
         {
             var typedOutcome = Unsafe.As<Outcome<T>, Outcome<TResult>>(
                 ref Unsafe.AsRef(in outcome));
-            try
+            if (EvaluatePredicates(
+                _contextPredicates,
+                new HandlingEvent<TResult>(typedOutcome, context, attempt, strategyIndex),
+                context))
             {
-                if (_contextPredicate(new HandlingEvent<TResult>(typedOutcome, context, attempt, strategyIndex)))
-                {
-                    return true;
-                }
-            }
-            catch (Exception predicateException)
-            {
-                ReportPredicateFailure(predicateException);
+                return true;
             }
         }
 
         if (outcome.Exception is { } exception)
         {
-            return _exceptionPredicate?.Invoke(exception) ?? false;
+            return EvaluatePredicates(_exceptionPredicates, exception, context);
         }
 
-        if (_resultPredicate is null || typeof(T) != typeof(TResult))
+        if (_resultPredicates.Length == 0 || typeof(T) != typeof(TResult))
         {
             return false;
         }
 
-        var predicate = (Func<T, bool>)(object)_resultPredicate;
-        return predicate(outcome.Result!);
+        var predicates = (Func<T, bool>[])(object)_resultPredicates;
+        return EvaluatePredicates(predicates, outcome.Result!, context);
     }
 }

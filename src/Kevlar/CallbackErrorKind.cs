@@ -32,4 +32,7 @@ public enum CallbackErrorKind
 
     /// <summary>Disposal of a superseded result.</summary>
     ResultDisposal,
+
+    /// <summary>A handling-clause or strategy handling predicate.</summary>
+    HandlingPredicate,
 }

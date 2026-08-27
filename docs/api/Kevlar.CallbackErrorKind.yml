@@ -10,6 +10,7 @@ items:
   - Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
   - Kevlar.CallbackErrorKind.Custom
   - Kevlar.CallbackErrorKind.Fallback
+  - Kevlar.CallbackErrorKind.HandlingPredicate
   - Kevlar.CallbackErrorKind.Hedge
   - Kevlar.CallbackErrorKind.RateLimitRejected
   - Kevlar.CallbackErrorKind.ResultDisposal
@@ -228,6 +229,26 @@ items:
   example: []
   syntax:
     content: ResultDisposal = 9
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.HandlingPredicate
+  commentId: F:Kevlar.CallbackErrorKind.HandlingPredicate
+  id: HandlingPredicate
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: HandlingPredicate
+  nameWithType: CallbackErrorKind.HandlingPredicate
+  fullName: Kevlar.CallbackErrorKind.HandlingPredicate
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A handling-clause or strategy handling predicate.
+  example: []
+  syntax:
+    content: HandlingPredicate = 10
     return:
       type: Kevlar.CallbackErrorKind
 references:

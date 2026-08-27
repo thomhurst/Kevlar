@@ -32,6 +32,7 @@
   "Kevlar.CallbackErrorKind.ConcurrencyLimitRejected": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.Custom": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.Fallback": "Kevlar.CallbackErrorKind.yml",
+  "Kevlar.CallbackErrorKind.HandlingPredicate": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.Hedge": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.RateLimitRejected": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.ResultDisposal": "Kevlar.CallbackErrorKind.yml",

@@ -240,22 +240,52 @@ public class CompositionContractTests
     }
 
     [Test]
-    public async Task Predicate_Failure_Surfaces_The_Original_Instance()
+    public async Task Predicate_Failure_Preserves_The_Execution_Failure()
     {
         var predicateFailure = new InvalidOperationException("predicate failed");
+        var executionFailure = new ArgumentException("execution failed");
         var shield = Shield.When(_ => throw predicateFailure).Retry(1, Backoff.None);
-        Exception? caught = null;
+        var attempts = 0;
 
-        try
+        var thrown = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
-            await shield.ExecuteAsync<int>(_ => throw new ArgumentException());
-        }
-        catch (Exception exception)
-        {
-            caught = exception;
-        }
+            attempts++;
+            throw executionFailure;
+        })).Throws<ArgumentException>();
 
-        await Assert.That(ReferenceEquals(caught, predicateFailure)).IsTrue();
+        await Assert.That(thrown).IsSameReferenceAs(executionFailure);
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Predicate_Failure_Does_Not_Skip_Later_Exception_Alternative()
+    {
+        var attempts = 0;
+        var shield = Shield
+            .When(_ => throw new InvalidOperationException("predicate"))
+            .Or<ArgumentException>()
+            .Retry(1, Backoff.None);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(
+            ++attempts == 1 ? throw new ArgumentException("execution") : 42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Predicate_Failure_Does_Not_Skip_Later_Result_Alternative()
+    {
+        var attempts = 0;
+        var shield = Shield.For<int>()
+            .WhenResult(_ => throw new InvalidOperationException("predicate"))
+            .OrResult(static result => result == 1)
+            .Retry(1, Backoff.None);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(++attempts));
+
+        await Assert.That(result).IsEqualTo(2);
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     [Test]

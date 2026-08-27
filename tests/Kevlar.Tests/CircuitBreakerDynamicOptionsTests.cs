@@ -533,7 +533,7 @@ public class CircuitBreakerDynamicOptionsTests
     }
 
     [Test]
-    public async Task Configured_Breaker_Returns_Synchronous_Processing_Failure_As_Faulted_ValueTask()
+    public async Task Configured_Breaker_Preserves_Operation_Failure_When_Predicate_Throws()
     {
         var predicateFailure = new InvalidOperationException("predicate");
         var shield = Shield.When(_ => throw predicateFailure).CircuitBreaker(options =>
@@ -554,9 +554,10 @@ public class CircuitBreakerDynamicOptionsTests
             var execution = strategy.ExecuteAsync(continuation, context);
 
             await Assert.That(execution.IsCompleted).IsTrue();
-            await Assert.That(execution.IsCompletedSuccessfully).IsFalse();
-            var thrown = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
-            await Assert.That(ReferenceEquals(thrown, predicateFailure)).IsTrue();
+            await Assert.That(execution.IsCompletedSuccessfully).IsTrue();
+            var outcome = await execution;
+            await Assert.That(outcome.Exception).IsTypeOf<ApplicationException>();
+            await Assert.That(outcome.Exception).IsNotSameReferenceAs(predicateFailure);
         }
         finally
         {

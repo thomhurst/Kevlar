@@ -201,10 +201,10 @@ public sealed class ShieldBuilder
     {
         var description = DescribeHelper.Clause(_clauseTerms);
         OutcomeJudge judge = _contextPredicates.Length == 0
-            ? new ExceptionJudge(Combine(_predicates), description)
+            ? new ExceptionJudge(_predicates, description)
             : new ContextExceptionJudge(
-                _predicates.Length == 0 ? null : Combine(_predicates),
-                CombineContexts(_contextPredicates),
+                _predicates,
+                _contextPredicates,
                 description);
         return new Shield(
             _parent.Strategies,
@@ -236,64 +236,5 @@ public sealed class ShieldBuilder
         Array.Copy(source, appended, source.Length);
         appended[source.Length] = item;
         return appended;
-    }
-
-    internal static Func<Exception, bool> Combine(Func<Exception, bool>[] predicates)
-    {
-        if (predicates.Length == 0)
-        {
-            throw new InvalidOperationException("No handling clauses were added.");
-        }
-
-        if (predicates.Length == 1)
-        {
-            return predicates[0];
-        }
-
-        return exception =>
-        {
-            foreach (var predicate in predicates)
-            {
-                if (predicate(exception))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-    }
-
-    private static Func<HandlingEvent, bool> CombineContexts(Func<HandlingEvent, bool>[] predicates)
-    {
-        if (predicates.Length == 1)
-        {
-            return predicates[0];
-        }
-
-        return handling =>
-            EvaluateContextPredicates(predicates, handling);
-    }
-
-    internal static bool EvaluateContextPredicates<TEvent>(
-        Func<TEvent, bool>[] predicates,
-        TEvent handling)
-    {
-        foreach (var predicate in predicates)
-        {
-            try
-            {
-                if (predicate(handling))
-                {
-                    return true;
-                }
-            }
-            catch (Exception exception)
-            {
-                OutcomeJudge.ReportPredicateFailure(exception);
-            }
-        }
-
-        return false;
     }
 }
