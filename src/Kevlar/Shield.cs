@@ -1,7 +1,7 @@
 using Kevlar.Internal;
 using Kevlar.Strategies;
 
-#pragma warning disable RS0026 // Execution overload parity intentionally keeps CancellationToken optional.
+#pragma warning disable RS0026, RS0027 // Execution overload parity intentionally keeps CancellationToken optional.
 
 namespace Kevlar;
 
@@ -274,6 +274,34 @@ public sealed class Shield : IShieldLifecycle
     }
 
     /// <summary>
+    /// Executes a context-aware delegate through the pipeline using the properties, cancellation
+    /// token, and time provider from <paramref name="parentContext"/>.
+    /// </summary>
+    public ValueTask<T> ExecuteAsync<T>(Func<KevlarContext, ValueTask<T>> action, KevlarContext parentContext)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        ThrowIfVoidFallbackResultExecution();
+        return ShieldEngine.ExecuteWithParentContextAsync(Head, Name, action, static (a, context) => a(context), parentContext);
+    }
+
+    /// <summary>
+    /// Executes a context-aware delegate through the pipeline using the properties, cancellation
+    /// token, and time provider from <paramref name="parentContext"/>, threading
+    /// <paramref name="state"/> to avoid closure allocations.
+    /// </summary>
+    public ValueTask<T> ExecuteAsync<T, TState>(
+        TState state,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        KevlarContext parentContext)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        ThrowIfVoidFallbackResultExecution();
+        return ShieldEngine.ExecuteWithParentContextAsync(Head, Name, state, action, parentContext);
+    }
+
+    /// <summary>
     /// Initializes execution properties, then executes a context-aware delegate through the pipeline.
     /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
     /// </summary>
@@ -370,6 +398,50 @@ public sealed class Shield : IShieldLifecycle
                 return Nothing.Value;
             },
             cancellationToken));
+    }
+
+    /// <summary>
+    /// Executes a context-aware void delegate through the pipeline using the properties,
+    /// cancellation token, and time provider from <paramref name="parentContext"/>.
+    /// </summary>
+    public ValueTask ExecuteAsync(Func<KevlarContext, ValueTask> action, KevlarContext parentContext)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        return StripResult(ShieldEngine.ExecuteWithParentContextAsync(
+            Head,
+            Name,
+            action,
+            static async (a, context) =>
+            {
+                await a(context).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            parentContext));
+    }
+
+    /// <summary>
+    /// Executes a context-aware void delegate through the pipeline using the properties,
+    /// cancellation token, and time provider from <paramref name="parentContext"/>, threading
+    /// <paramref name="state"/> to avoid closure allocations.
+    /// </summary>
+    public ValueTask ExecuteAsync<TState>(
+        TState state,
+        Func<TState, KevlarContext, ValueTask> action,
+        KevlarContext parentContext)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        return StripResult(ShieldEngine.ExecuteWithParentContextAsync(
+            Head,
+            Name,
+            (state, action),
+            static async (s, context) =>
+            {
+                await s.action(s.state, context).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            parentContext));
     }
 
     /// <summary>

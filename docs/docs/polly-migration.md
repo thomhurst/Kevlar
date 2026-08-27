@@ -156,6 +156,40 @@ await contextShield.ExecuteWithContextAsync(
     cancellationToken);
 ```
 
+Inside a context-aware delegate, pass that context to another shield to preserve the logical
+operation across a nested pipeline:
+
+```csharp
+var tenantKey = new KevlarKey<string>("tenant");
+var outerShield = Shield.Empty;
+var innerShield = Shield.Retry(1, Backoff.None);
+await outerShield.ExecuteWithContextAsync(
+    (tenantKey, tenant: "north", operation: "catalog-read"),
+    static (state, properties) =>
+    {
+        properties.Set(state.tenantKey, state.tenant);
+        properties.Set(KevlarKeys.OperationKey, state.operation);
+    },
+    async (state, parentContext) =>
+    {
+        await innerShield.ExecuteAsync(
+            static async context =>
+            {
+                var operation = context.Properties.GetOrDefault(
+                    KevlarKeys.OperationKey,
+                    "missing");
+                await Task.Delay(operation.Length, context.CancellationToken);
+            },
+            parentContext);
+    },
+    cancellationToken);
+```
+
+The nested execution starts an independently pooled child context with the parent's properties,
+effective cancellation token, and `TimeProvider`. Child property changes are merged back into the
+parent when the nested execution completes. Await the nested call before the parent delegate exits;
+neither context may be retained.
+
 | Polly v8 | Kevlar |
 |---|---|
 | `ResilienceContext` | `KevlarContext` |
@@ -163,7 +197,8 @@ await contextShield.ExecuteWithContextAsync(
 | `ResiliencePropertyKey<T>` | `KevlarKey<T>` |
 | `ResilienceContext.OperationKey` | `KevlarKeys.OperationKey` in `KevlarProperties` |
 | `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName` / `KevlarContext.ShieldName` |
-| `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
+| Top-level `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
+| Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteAsync(callback, parentContext)` |
 | `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
 
 Do not retain either library's pooled context beyond the current callback or execution delegate.

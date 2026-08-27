@@ -218,6 +218,28 @@ public sealed class KevlarContext
         return context;
     }
 
+    internal static KevlarContext RentChild(KevlarContext parent, string? shieldName)
+    {
+        var context = Rent(
+            parent.CancellationToken,
+            isSynchronous: false,
+            parent.TimeProvider,
+            shieldName);
+        context._forkBaseline ??= new KevlarProperties();
+        parent.Properties.CopyTo(context._forkBaseline);
+        context._forkBaseline.CopyTo(context.Properties);
+        context._hasForkBaseline = true;
+        return context;
+    }
+
+    internal void CopyChangesToParent(KevlarContext parent)
+    {
+        lock (_completionPropertiesLock)
+        {
+            PropertiesForCompletion.ApplyChangesSince(_forkBaseline!, parent.Properties);
+        }
+    }
+
     internal static void Return(KevlarContext context)
     {
         MarkReturned(context);
