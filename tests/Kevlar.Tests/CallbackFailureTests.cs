@@ -282,6 +282,24 @@ public class CallbackFailureTests
 
     [Test]
     [NotInParallel]
+    public async Task None_Callback_Error_Kind_Produces_A_Metric()
+    {
+        var shieldName = $"callback-{Guid.NewGuid():N}";
+        var measurements = new List<(string Kind, string Source)>();
+        using var listener = CreateCallbackErrorListener(shieldName, measurements);
+
+        Shield.Empty.WithName(shieldName).ExecuteWithContext(context =>
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.None,
+                context,
+                new IOException("callback"),
+                "test.none"));
+
+        await Assert.That(measurements).IsEquivalentTo([("none", "test.none")]);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Throwing_Monitor_Subscriber_Does_Not_Block_Other_Subscribers_Or_Controls()
     {
         var monitor = new CircuitBreakerMonitor();
