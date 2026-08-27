@@ -149,11 +149,11 @@ across the nested pipeline:
 var nestedResult = await Shield.Empty.ExecuteWithContextAsync(async parentContext =>
 {
     var asyncResult = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(
-        static childContext => new ValueTask<int>(childContext.ShieldName?.Length ?? 0),
-        parentContext);
+        parentContext,
+        static childContext => new ValueTask<int>(childContext.ShieldName?.Length ?? 0));
     var syncResult = Shield.Empty.ExecuteWithContext(
-        static childContext => childContext.ShieldName?.Length ?? 0,
-        parentContext);
+        parentContext,
+        static childContext => childContext.ShieldName?.Length ?? 0);
     return asyncResult + syncResult;
 });
 ```
