@@ -44,6 +44,21 @@ public static class KevlarHttpRequestExtensions
         return request;
     }
 
+    /// <summary>
+    /// Permits retries, hedges, and other additional attempts for this request even though its
+    /// HTTP method is not replay-safe. Content must still be replayable.
+    /// </summary>
+    /// <remarks>
+    /// Opt in only when the server treats the operation as idempotent, for example because the
+    /// request carries an idempotency key that the server deduplicates. Clones preserve headers,
+    /// so every attempt sends the same key.
+    /// </remarks>
+    public static HttpRequestMessage AllowReplay(this HttpRequestMessage request)
+    {
+        KevlarHttp.GetRequestOptions(request).AllowReplay = true;
+        return request;
+    }
+
     /// <summary>Suppresses retries, hedges, and other additional attempts for this request.</summary>
     public static HttpRequestMessage DisableReplay(this HttpRequestMessage request)
     {

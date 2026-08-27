@@ -35,15 +35,19 @@ Remember that `Retry(3)` means one initial attempt plus at most three retries.
 
 ## Why did my POST run once or throw `HttpRequestReplayException`?
 
-HTTP retries and hedges need a fresh request per attempt. Method safety and content replayability
-are separate requirements. POST, PATCH, and custom methods require `AllowUnsafeMethodReplay = true`
-or a `RequestFactory`. Their content must also be replayable: select buffering, supply a
+HTTP retries and hedges need a fresh request per attempt. Kevlar rebuilds the message itself, so
+the gate is not cloning: method safety and content replayability are separate requirements. POST,
+PATCH, and custom methods stay single-attempt until you opt in, because only the caller knows
+whether the server can safely execute the operation twice. Opt in with `request.AllowReplay()` for
+one known-idempotent request, `AllowUnsafeMethodReplay = true` for a whole client, or a
+`RequestFactory`. Their content must also be replayable: select buffering, supply a
 `RequestFactory`, or use content supported by the `NoBuffer` policy. A `HttpRequestReplayException`
 indicates a replay configuration failure such as a null request from the factory or content
-exceeding the requested buffer limit. See [HTTP replay safety](http.md#safe-request-replay).
+exceeding the requested buffer limit. See [method safety](http.md#method-safety).
 
 Do not enable unsafe replay blindly. Prefer idempotency keys and server-side deduplication for
-operations that create or mutate data.
+operations that create or mutate data; clones preserve headers, so every attempt sends the same
+key.
 
 ## Why are some metrics missing on .NET 8?
 

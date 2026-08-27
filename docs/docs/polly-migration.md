@@ -295,14 +295,15 @@ kevlarHedgeServices.AddHttpClient("hedged-catalog")
 
 Configure `Routing.Endpoints` only when attempts should use alternate authorities.
 
-Kevlar buffers only bounded content and does not replay unsafe methods by default. Enable
-`AllowUnsafeMethodReplay`, choose a bounded buffering policy, or supply a `RequestFactory` when a
-POST-like request is intentionally replayable. See [safe request replay](http.md#safe-request-replay).
-Per-request properties, shield overrides, replay opt-out, cancellation linking, selectors, and
-request-keyed partitions are covered in [per-request options](http.md#per-request-options).
-Use `WithKevlarProperties`, `WithShield`, `WithShieldName`, and
-`WithKevlarCancellationToken` to configure the corresponding request options fluently;
-`DisableReplay` opts out only that request.
+Kevlar buffers only bounded content and does not replay unsafe methods by default. Call
+`AllowReplay()` on a known-idempotent request, enable `AllowUnsafeMethodReplay` for a client,
+choose a bounded buffering policy, or supply a `RequestFactory` when a POST-like request is
+intentionally replayable. See [safe request replay](http.md#safe-request-replay).
+Per-request properties, shield overrides, replay opt-in and opt-out, cancellation linking,
+selectors, and request-keyed partitions are covered in
+[per-request options](http.md#per-request-options). Use `WithKevlarProperties`, `WithShield`,
+`WithShieldName`, and `WithKevlarCancellationToken` to configure the corresponding request options
+fluently; `AllowReplay` and `DisableReplay` opt only that request in or out.
 
 ## Telemetry
 
@@ -416,7 +417,7 @@ required.
 | Hedging | 1 additional attempt (2 total); delay 2 s | 1 additional attempt (2 total); delay 1 s |
 | Concurrency | permit limit 1,000; queue limit 0 | maximum concurrency 10; queue limit 0 |
 | Standard HTTP retry | 3 retries; exponential from 2 s; decorrelated jitter; no delay cap | 3 retries; exponential from 250 ms; equal jitter; 10 s cap; honours `Retry-After` |
-| Standard HTTP unsafe methods | POST, PATCH, DELETE, and custom methods are retried by default | POST, PATCH, and custom methods remain single-attempt unless `AllowUnsafeMethodReplay`, per-request `AllowReplay`, or a `RequestFactory` opts in |
+| Standard HTTP unsafe methods | POST, PATCH, DELETE, and custom methods are retried by default | POST, PATCH, and custom methods remain single-attempt unless `AllowUnsafeMethodReplay`, per-request `AllowReplay()`, or a `RequestFactory` opts in |
 | Standard HTTP circuit breaker | failure ratio 0.1; minimum throughput 100; sampling 30 s; break 5 s | failure ratio 0.5; minimum throughput 10; sampling 30 s; break 15 s |
 | Standard HTTP and hedging concurrency | permit limit 1,000; queue limit 0 | no limiter unless `ConcurrencyLimit` is configured |
 | Chaos | enabled; injection rate 0.001 | disabled; injection rate 1 |

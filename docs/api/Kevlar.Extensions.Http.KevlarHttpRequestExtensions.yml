@@ -5,6 +5,7 @@ items:
   id: KevlarHttpRequestExtensions
   parent: Kevlar.Extensions.Http
   children:
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(System.Net.Http.HttpRequestMessage)
   - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
   - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})
@@ -128,6 +129,41 @@ items:
   nameWithType.vb: KevlarHttpRequestExtensions.WithShieldName(HttpRequestMessage, String)
   fullName.vb: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage, String)
   name.vb: WithShieldName(HttpRequestMessage, String)
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(System.Net.Http.HttpRequestMessage)
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(System.Net.Http.HttpRequestMessage)
+  id: AllowReplay(System.Net.Http.HttpRequestMessage)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: AllowReplay(HttpRequestMessage)
+  nameWithType: KevlarHttpRequestExtensions.AllowReplay(HttpRequestMessage)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(System.Net.Http.HttpRequestMessage)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Permits retries, hedges, and other additional attempts for this request even though its
+
+    HTTP method is not replay-safe. Content must still be replayable.
+  remarks: >-
+    Opt in only when the server treats the operation as idempotent, for example because the
+
+    request carries an idempotency key that the server deduplicates. Clones preserve headers,
+
+    so every attempt sends the same key.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage AllowReplay(this HttpRequestMessage request)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function AllowReplay(request As HttpRequestMessage) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay*
 - uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
   commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
   id: DisableReplay(System.Net.Http.HttpRequestMessage)
@@ -666,6 +702,13 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_AllowReplay_System_Net_Http_HttpRequestMessage_
+  name: AllowReplay
+  nameWithType: KevlarHttpRequestExtensions.AllowReplay
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay
 - uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay*
   commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay
   isExternal: true
