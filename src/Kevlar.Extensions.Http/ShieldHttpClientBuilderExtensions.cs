@@ -65,7 +65,7 @@ public static class ShieldHttpClientBuilderExtensions
                     optionsSnapshot));
             return new ShieldDelegatingHandler(
                 pipeline,
-                CreateDecorator(services, builder.Name));
+                CreateDecorator(registry.Services, builder.Name));
         });
     }
 

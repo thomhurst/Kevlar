@@ -898,6 +898,9 @@ public class HttpConfigurationReloadTests
         routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
         var options = new ShieldHttpHandlerOptions { Routing = routing };
         var services = new ServiceCollection();
+        services.AddScoped<ApplicationProviderDecorator>();
+        services.AddScoped<IShieldDecorator>(serviceProvider =>
+            serviceProvider.GetRequiredService<ApplicationProviderDecorator>());
         services.AddHttpClient("client")
             .SetHandlerLifetime(TimeSpan.FromSeconds(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
@@ -911,6 +914,7 @@ public class HttpConfigurationReloadTests
             })
             .AddShield(HttpShield.WhenTransient().Retry(0, Backoff.None), options);
         using var provider = services.BuildServiceProvider();
+        var decorator = provider.GetRequiredService<ApplicationProviderDecorator>();
         var factory = provider.GetRequiredService<IHttpClientFactory>();
 
         using (var first = factory.CreateClient("client"))
@@ -936,6 +940,7 @@ public class HttpConfigurationReloadTests
 
         await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
         await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+        await Assert.That(decorator.Count).IsEqualTo(2);
     }
 
     [Test]
@@ -1238,6 +1243,25 @@ public class HttpConfigurationReloadTests
     public sealed class TypedClient(HttpClient client)
     {
         public Task<HttpResponseMessage> GetAsync() => client.GetAsync("https://example.test/");
+    }
+
+    private sealed class ApplicationProviderDecorator : IShieldDecorator
+    {
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        public Shield Decorate(Shield shield, string? name)
+        {
+            Interlocked.Increment(ref _count);
+            return shield;
+        }
+
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            Interlocked.Increment(ref _count);
+            return shield;
+        }
     }
 
     private sealed class FuncHandler(
