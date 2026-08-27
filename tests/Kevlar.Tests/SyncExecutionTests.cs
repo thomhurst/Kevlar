@@ -315,6 +315,83 @@ public class SyncExecutionTests
     }
 
     [Test]
+    public async Task Sync_Incomplete_Typed_Fallback_Bypasses_Outer_Retry()
+    {
+        var gate = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var actionInvocations = 0;
+        var shield = Shield.For<int>()
+            .Retry(1, Backoff.None)
+            .When<InvalidOperationException>()
+            .Fallback(_ => new ValueTask<int>(gate.Task));
+
+        try
+        {
+            await Assert.That(() => shield.Execute(_ =>
+                Interlocked.Increment(ref actionInvocations) == 1
+                    ? throw new InvalidOperationException()
+                    : 42))
+                .Throws<NotSupportedException>();
+            await Assert.That(actionInvocations).IsEqualTo(1);
+        }
+        finally
+        {
+            gate.TrySetResult(42);
+        }
+    }
+
+    [Test]
+    public async Task Sync_Incomplete_Fallback_Bypasses_Explicit_Outer_Retry()
+    {
+        var gate = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var actionInvocations = 0;
+        var shield = Shield.For<int>()
+            .When<NotSupportedException>()
+            .Retry(1, Backoff.None)
+            .When<InvalidOperationException>()
+            .Fallback(_ => new ValueTask<int>(gate.Task));
+
+        try
+        {
+            await Assert.That(() => shield.Execute(_ =>
+                Interlocked.Increment(ref actionInvocations) == 1
+                    ? throw new InvalidOperationException()
+                    : 42))
+                .Throws<NotSupportedException>();
+            await Assert.That(actionInvocations).IsEqualTo(1);
+        }
+        finally
+        {
+            gate.TrySetResult(42);
+        }
+    }
+
+    [Test]
+    public async Task Sync_Incomplete_Void_Fallback_Bypasses_Outer_Retry()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var actionInvocations = 0;
+        var shield = Shield.Retry(1, Backoff.None)
+            .When<InvalidOperationException>()
+            .Fallback(_ => new ValueTask(gate.Task));
+
+        try
+        {
+            await Assert.That(() => shield.Execute(_ =>
+            {
+                if (Interlocked.Increment(ref actionInvocations) == 1)
+                {
+                    throw new InvalidOperationException();
+                }
+            })).Throws<NotSupportedException>();
+            await Assert.That(actionInvocations).IsEqualTo(1);
+        }
+        finally
+        {
+            gate.TrySetResult();
+        }
+    }
+
+    [Test]
     public async Task Extension_Strategy_Can_Reject_Synchronous_Execution()
     {
         var actionInvoked = false;

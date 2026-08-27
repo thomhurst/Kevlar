@@ -18,7 +18,22 @@ internal abstract class OutcomeJudge
     /// </summary>
     public virtual string? Description => null;
 
-    public abstract bool ShouldHandle<T>(
+    public bool ShouldHandle<T>(
+        in Outcome<T> outcome,
+        KevlarContext? context,
+        int attempt,
+        int strategyIndex)
+    {
+        if (outcome.Exception is { } exception
+            && SynchronousExecutionGuard.IsRejection(exception))
+        {
+            return false;
+        }
+
+        return ShouldHandleCore(in outcome, context, attempt, strategyIndex);
+    }
+
+    protected abstract bool ShouldHandleCore<T>(
         in Outcome<T> outcome,
         KevlarContext? context,
         int attempt,
@@ -45,7 +60,7 @@ internal abstract class OutcomeJudge
 
     private sealed class DefaultJudge : OutcomeJudge
     {
-        public override bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
+        protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
             outcome.Exception is { } exception && IsOrdinaryError(exception);
 
         private static bool IsOrdinaryError(Exception exception) =>
@@ -74,7 +89,7 @@ internal sealed class ExceptionJudge : OutcomeJudge
 
     public override string? Description => _description;
 
-    public override bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
+    protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
         outcome.Exception is { } exception && _predicate(exception);
 }
 
@@ -99,7 +114,7 @@ internal sealed class ContextExceptionJudge : OutcomeJudge
 
     public override bool IsContextAware => true;
 
-    public override bool ShouldHandle<T>(
+    protected override bool ShouldHandleCore<T>(
         in Outcome<T> outcome,
         KevlarContext? context,
         int attempt,
@@ -150,7 +165,7 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
 
     public override bool IsContextAware => _contextPredicate is not null;
 
-    public override bool ShouldHandle<T>(
+    protected override bool ShouldHandleCore<T>(
         in Outcome<T> outcome,
         KevlarContext? context,
         int attempt,

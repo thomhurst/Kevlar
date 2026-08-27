@@ -6,6 +6,8 @@ namespace Kevlar.Internal;
 /// </summary>
 internal static class SynchronousExecutionGuard
 {
+    private static readonly object RejectionMarker = new();
+
     /// <summary>
     /// Throws when <paramref name="pending"/> is still running and the execution is synchronous.
     /// A completed (successful or faulted) hook is left for the caller to observe.
@@ -39,10 +41,15 @@ internal static class SynchronousExecutionGuard
     internal static NotSupportedException CreateException(KevlarContext context, string hookName)
     {
         var shield = context.ShieldName is { Length: > 0 } name ? $" on shield '{name}'" : string.Empty;
-        return new NotSupportedException(
+        var exception = new NotSupportedException(
             $"Synchronous execution does not support {hookName} completing asynchronously{shield}. " +
             "Use ExecuteAsync instead of Execute, or make the callback complete synchronously.");
+        exception.Data[RejectionMarker] = true;
+        return exception;
     }
+
+    internal static bool IsRejection(Exception exception) =>
+        exception.Data.Contains(RejectionMarker);
 
     private static void Observe(Task abandoned) =>
         _ = abandoned.ContinueWith(
