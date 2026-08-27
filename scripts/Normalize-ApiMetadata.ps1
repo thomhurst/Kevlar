@@ -89,7 +89,10 @@ foreach ($metadataFile in $metadataFiles)
 
 function Test-IsLocalReferenceUid([string]$uid)
 {
-    return $localReferencePages.ContainsKey($uid)
+    return $uid -eq 'Kevlar' -or
+        $uid.StartsWith('Kevlar.', [StringComparison]::Ordinal) -or
+        $uid.StartsWith('Microsoft.Extensions.DependencyInjection.Kevlar', [StringComparison]::Ordinal) -or
+        $uid.StartsWith('Microsoft.Extensions.DependencyInjection.Shield', [StringComparison]::Ordinal)
 }
 
 foreach ($metadataFile in $metadataFiles)
@@ -164,7 +167,7 @@ foreach ($metadataFile in $metadataFiles)
 
             $indent = $Matches.indent
             $uid = $Matches.uid
-            if (-not (Test-IsLocalReferenceUid $uid))
+            if (-not $localReferencePages.ContainsKey($uid))
             {
                 continue
             }
