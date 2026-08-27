@@ -6,11 +6,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Fixed
-
-- State gauges now aggregate identical shield-name and strategy-index series across partitioned
-  shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
-
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,
@@ -218,6 +213,8 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 
 ### Fixed
 
+- State gauges now aggregate identical shield-name and strategy-index series across partitioned
+  shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
 - Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
   dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
   runtime failures from incompatible internals.
