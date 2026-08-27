@@ -111,6 +111,35 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task Unsafe_Method_Guidance_Survives_Severity_Override()
+    {
+        var logs = new FakeLoggerProvider();
+        var transport = new SequenceHandler(HttpStatusCode.ServiceUnavailable);
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging(options =>
+            options.SeverityProvider = _ => LogLevel.Information);
+        services.AddHttpClient("unsafe-method-override")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("unsafe-method-override");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/unsafe");
+
+        using var response = await client.SendAsync(request);
+
+        var suppression = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1009, "AttemptsSuppressed"));
+        await Assert.That(suppression.Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(suppression.GetStructuredStateValue("SuppressionReason"))
+            .IsEqualTo("unsafe_method");
+        await Assert.That(suppression.Message).Contains("AllowUnsafeMethodReplay");
+        await Assert.That(suppression.Message).Contains("KevlarHttp.GetRequestOptions");
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Applies_To_Named_And_Reloading_Shields()
     {
         var logs = new FakeLoggerProvider();

@@ -321,8 +321,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 _ = telemetryEvent.Context.Properties.TryGet(
                     HttpRequestUriKey,
                     out string? suppressedRequestUri);
-                if (telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
-                    && telemetryEvent.SuppressionReason == "unsafe_method")
+                if (IsFirstUnsafeMethodSuppression(in telemetryEvent))
                 {
                     WarningLoggerMessages.UnsafeMethodAttemptsSuppressed(
                         logger,
@@ -439,13 +438,31 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 _ = telemetryEvent.Context.Properties.TryGet(
                     HttpRequestUriKey,
                     out string? suppressedRequestUri);
-                logger.Log(level, eventId,
-                    "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
-                    telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
-                    suppressedRequestMethod, suppressedRequestUri);
+                if (IsFirstUnsafeMethodSuppression(in telemetryEvent))
+                {
+                    logger.Log(level, eventId,
+                        WarningLoggerMessages.UnsafeMethodAttemptsSuppressedFormat,
+                        telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod, suppressedRequestUri);
+                }
+                else
+                {
+                    logger.Log(level, eventId,
+                        "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
+                        telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod, suppressedRequestUri);
+                }
                 break;
         }
     }
+
+    private static bool IsFirstUnsafeMethodSuppression(
+        in KevlarTelemetryEvent telemetryEvent) =>
+        telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
+        && string.Equals(
+            telemetryEvent.SuppressionReason,
+            "unsafe_method",
+            StringComparison.Ordinal);
 
     private static CircuitState CircuitStateFromRejection(
         in KevlarTelemetryEvent telemetryEvent) =>
