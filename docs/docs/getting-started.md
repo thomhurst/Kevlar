@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Getting Started
 
-For failures raised by strategies and satellite packages, see the [exceptions reference](exceptions.md).
+Build and wire a production-ready shield in about ten minutes.
 
 ## Install
 
@@ -12,12 +12,11 @@ For failures raised by strategies and satellite packages, see the [exceptions re
 dotnet add package Kevlar
 ```
 
-See the canonical [package table](https://github.com/thomhurst/Kevlar#packages) for every optional
-integration and testing package.
-
 The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works), `net8.0`, and `net10.0`.
+See the canonical [package table](https://github.com/thomhurst/Kevlar#packages) for optional
+integrations and testing support.
 
-## Your first shield
+## Protect your first call
 
 ```csharp
 using Kevlar;
@@ -29,199 +28,81 @@ using var response = await shield.ExecuteAsync(
     ct => client.GetAsync("https://example.com", ct));
 ```
 
-`Retry(3)` counts retries, not calls: 4 total attempts at most—the initial call plus three retries.
-Its default backoff is exponential with equal jitter, starting at 250ms and capped at 30s. This
-executable version removes the delays and verifies the count:
+`Retry(3)` means up to 4 total attempts: the initial call plus three retries. Its default backoff is
+exponential with equal jitter, starting at 250 ms and capped at 30 seconds. Always forward the
+cancellation token passed to your delegate; timeout and hedging strategies use it to stop
+abandoned work.
 
 Bundled analyzer conventions: name the execution token `_` only for genuinely uncancellable work;
 otherwise pass it through. Plain `Retry(3)` also raises an informational diagnostic; narrow
 handling or set [`dotnet_diagnostic.KEV011.severity = none`](analyzers.md#kev011-implicit-default-handling)
 when broad default handling is deliberate.
 
-<!-- doc-test-run: getting-started-retry-count -->
-```csharp
-var attempts = 0;
-var retryWithoutDelay = Shield.Retry(3, Backoff.None);
+Shields are immutable and thread-safe. Build one and reuse it. Reuse also preserves state: calls
+through the same shield share circuit-breaker and limiter state.
 
-try
-{
-    await retryWithoutDelay.ExecuteAsync(_ =>
-    {
-        attempts++;
-        return ValueTask.FromException(new HttpRequestException("offline"));
-    });
-}
-catch (HttpRequestException)
-{
-}
+## Compose strategies
 
-if (attempts != 4)
-{
-    throw new InvalidOperationException($"Expected 4 attempts, observed {attempts}.");
-}
-```
-
-When strategies are combined, reading order is execution order: the first strategy is the
-outermost, like ASP.NET middleware. Put a total timeout before retry and a per-attempt timeout after
-it:
+Strategies execute in reading order: the first strategy is the outermost, like ASP.NET middleware:
 
 ```csharp
 var productionShield = Shield
-    .Timeout(TimeSpan.FromSeconds(30))   // total budget for the whole operation
+    .Timeout(TimeSpan.FromSeconds(30))   // total budget for all attempts
+    .When<HttpRequestException>()
+    .Or<TimeoutExceededException>()
     .Retry(3)
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
     .Timeout(TimeSpan.FromSeconds(5));   // budget for each attempt
 ```
 
-This executable check gives the total budget 1.5 seconds and each attempt one second. The first
-attempt reaches its inner timeout; the outer timeout then stops the second attempt before a third
-can start:
+Here, 30-second timeout wraps retry and circuit breaker. Final timeout applies separately to each
+attempt. Handling clause is ambient: retry and circuit breaker both handle listed failures.
+See [Composition](composition.md) and [Handling failures](handling-failures.md) for full rules.
 
-Install the test clock used by this deterministic example:
+## Wire production services
+
+Install Microsoft dependency-injection and `HttpClientFactory` integrations:
 
 ```bash
-dotnet add package Microsoft.Extensions.TimeProvider.Testing
+dotnet add package Kevlar.Extensions.DependencyInjection
+dotnet add package Kevlar.Extensions.Http
 ```
 
-<!-- doc-test-run: getting-started-timeout-order -->
+Add named shields and resilient HTTP clients in `Program.cs`:
+
 ```csharp
-using Microsoft.Extensions.Time.Testing;
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
-var timeProvider = new FakeTimeProvider();
-var attempts = 0;
-var secondAttemptStarted = new TaskCompletionSource(
-    TaskCreationOptions.RunContinuationsAsynchronously);
-var timedRetry = Shield
-    .Timeout(TimeSpan.FromSeconds(1.5))
-    .When<TimeoutExceededException>()
-    .Retry(2, Backoff.None)
-    .Timeout(TimeSpan.FromSeconds(1))
-    .WithTimeProvider(timeProvider);
+var services = new ServiceCollection();
 
-var execution = timedRetry.ExecuteAsync(async token =>
-{
-    attempts++;
-    if (attempts == 2)
-    {
-        secondAttemptStarted.SetResult();
-    }
-
-    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
-}).AsTask();
-
-timeProvider.Advance(TimeSpan.FromSeconds(1));
-await secondAttemptStarted.Task;
-timeProvider.Advance(TimeSpan.FromSeconds(0.5));
-
-try
-{
-    await execution;
-    throw new InvalidOperationException("The total timeout did not fire.");
-}
-catch (TimeoutExceededException exception) when (exception.Timeout == TimeSpan.FromSeconds(1.5))
-{
-}
-
-if (attempts != 2)
-{
-    throw new InvalidOperationException($"Expected 2 attempts, observed {attempts}.");
-}
-```
-
-Two more things to notice:
-
-1. **Timeout placement changes its scope.** The first timeout wraps all retries; the last timeout
-   limits each attempt.
-2. **Your delegate gets a cancellation token.** Always use the token you're handed—it's how
-   timeouts and hedging cancel abandoned work.
-
-## Reuse it everywhere
-
-Shields are immutable and thread-safe. Build one, store it in a `static readonly` field or register it in [DI](dependency-injection.md), and use it for every call to that dependency:
-
-<!-- doc-test-declaration: split-before=// Any result -->
-```csharp
-private static readonly Shield GitHubShield = Shield
+services.AddShield("database", Shield
     .Timeout(TimeSpan.FromSeconds(10))
-    .Retry(3);
+    .Retry(3));
 
-// Any result type, sync or async, through the same instance:
-var repos = await GitHubShield.ExecuteAsync(ct => GetReposAsync(ct), ct);
-var user  = await GitHubShield.ExecuteAsync(ct => GetUserAsync(ct), ct);
+services.AddHttpClient("catalog", client =>
+    client.BaseAddress = new Uri("https://catalog.example.com"))
+    .AddStandardShield();
+
+using var serviceProvider = services.BuildServiceProvider();
 ```
 
-This matters for stateful strategies: a circuit breaker's state lives with the shield instance that created it. Reuse the instance and every call site shares one circuit; build a new instance and you get fresh state. See [Composition](composition.md).
+`AddShield` registers a reusable named shield. `AddStandardShield` installs a production HTTP
+pipeline with total and per-attempt timeouts, retry, and circuit breaker. Continue with
+[Dependency injection](dependency-injection.md) or [HTTP resilience](http.md) to resolve and
+customize them.
 
-## Deciding what counts as a failure
+## How to test it
 
-Reactive strategies (retry, circuit breaker, hedging, fallback) act on failures. By default that
-means ordinary exceptions, excluding cancellation, Kevlar's fail-fast rejections, and fatal
-runtime failures. Narrow it with a handling clause:
-
-```csharp
-var shield = Shield
-    .When<HttpRequestException>()
-    .Or<TimeoutExceededException>()
-    .Retry(5);
-```
-
-`When...` returns a `ShieldBuilder`; each `Or...` adds another condition to that immutable builder.
-The completed clause is ambient: it applies to `Retry` and every later reactive strategy until a
-new clause replaces it, `WhenAnyError()` resets it, or `Wrap`/`Compose` seals it:
-
-```csharp
-ShieldBuilder transient = Shield.When<HttpRequestException>();
-
-var protectedCall = transient
-    .Retry(3)
-    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
-// Both strategies handle only HttpRequestException.
-```
-
-This check proves an unrelated exception does not count toward the inherited breaker threshold:
-
-<!-- doc-test-run: getting-started-ambient-clause -->
-```csharp
-var ambient = Shield
-    .When<HttpRequestException>()
-    .Retry(1, Backoff.None)
-    .CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromMinutes(1));
-
-try
-{
-    await ambient.ExecuteAsync(_ => ValueTask.FromException(new ArgumentException("not transient")));
-}
-catch (ArgumentException)
-{
-}
-
-try
-{
-    await ambient.ExecuteAsync(_ => ValueTask.FromException(new HttpRequestException("offline")));
-}
-catch (HttpRequestException)
-{
-}
-
-await ambient.ExecuteAsync(_ => ValueTask.CompletedTask);
-```
-
-Want to treat certain *results* as failures too (HTTP 500s, say)? Lift into a typed shield with `For<T>`:
-
-```csharp
-var http = Shield.For<HttpResponseMessage>()
-    .When<HttpRequestException>()
-    .OrResult(r => (int)r.StatusCode >= 500)
-    .Retry(3);
-```
-
-Full details in [Handling failures](handling-failures.md).
-
-An untyped `Fallback(...)` still returns `Shield`, but it can recover void executions only. For a
-result, start with `Shield.For<TResult>()` and use its typed fallback overloads.
+Use `FakeTimeProvider` to advance retry and timeout delays instantly, then inspect pipeline shape,
+telemetry, and strategy state with `Kevlar.Testing`. Follow [Testing](testing.md) for executable
+examples instead of waiting on wall-clock timers.
 
 ## Next steps
 
-- Browse the [strategy reference](/docs/category/strategies) — each strategy's options, defaults and semantics.
-- Wire shields into [dependency injection](dependency-injection.md) or [HttpClient](http.md).
-- [Test your shields](testing.md) without real waiting, using `TimeProvider`.
+- Browse the [API reference](pathname:///api/index.html) for every public type and member.
+- Browse the [strategy reference](/docs/category/strategies) for options, defaults, and semantics.
+- Add [logging](logging.md) and [observability](observability.md) before production rollout.
+- See the [exceptions reference](exceptions.md) for strategy and satellite-package failures.

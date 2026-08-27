@@ -78,6 +78,35 @@ Shield
 This is why most chains only need one clause, written once at the top—and why you never repeat a
 `ShouldHandle` predicate per strategy like in Polly v8.
 
+This executable check proves an unrelated exception does not count toward the inherited breaker
+threshold:
+
+<!-- doc-test-run: getting-started-ambient-clause -->
+```csharp
+var ambient = Shield
+    .When<HttpRequestException>()
+    .Retry(1, Backoff.None)
+    .CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromMinutes(1));
+
+try
+{
+    await ambient.ExecuteAsync(_ => ValueTask.FromException(new ArgumentException("not transient")));
+}
+catch (ArgumentException)
+{
+}
+
+try
+{
+    await ambient.ExecuteAsync(_ => ValueTask.FromException(new HttpRequestException("offline")));
+}
+catch (HttpRequestException)
+{
+}
+
+await ambient.ExecuteAsync(_ => ValueTask.CompletedTask);
+```
+
 A clause that never reaches a reactive strategy does nothing at all. The built-in analyzer reports
 that as [`KEV007`](analyzers.md#kev007-dead-handling-clause). It also marks strategies that
 *inherit* a clause as the informational hint

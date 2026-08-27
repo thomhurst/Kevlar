@@ -25,6 +25,56 @@ sleeping.
 `FakeTimeProvider`, `WaitForPendingAsync`, and `AdvanceUntilAsync` require a test project targeting
 .NET 8 or later; they are not included in the `netstandard2.0` compatibility asset.
 
+### Verify timeout placement
+
+This check gives the outer timeout 1.5 seconds and each attempt one second. First attempt reaches
+its inner timeout; outer timeout stops second attempt before a third can start:
+
+<!-- doc-test-run: getting-started-timeout-order -->
+```csharp
+using Microsoft.Extensions.Time.Testing;
+
+var timeProvider = new FakeTimeProvider();
+var attempts = 0;
+var secondAttemptStarted = new TaskCompletionSource(
+    TaskCreationOptions.RunContinuationsAsynchronously);
+var timedRetry = Shield
+    .Timeout(TimeSpan.FromSeconds(1.5))
+    .When<TimeoutExceededException>()
+    .Retry(2, Backoff.None)
+    .Timeout(TimeSpan.FromSeconds(1))
+    .WithTimeProvider(timeProvider);
+
+var execution = timedRetry.ExecuteAsync(async token =>
+{
+    attempts++;
+    if (attempts == 2)
+    {
+        secondAttemptStarted.SetResult();
+    }
+
+    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+}).AsTask();
+
+timeProvider.Advance(TimeSpan.FromSeconds(1));
+await secondAttemptStarted.Task;
+timeProvider.Advance(TimeSpan.FromSeconds(0.5));
+
+try
+{
+    await execution;
+    throw new InvalidOperationException("The total timeout did not fire.");
+}
+catch (TimeoutExceededException exception) when (exception.Timeout == TimeSpan.FromSeconds(1.5))
+{
+}
+
+if (attempts != 2)
+{
+    throw new InvalidOperationException($"Expected 2 attempts, observed {attempts}.");
+}
+```
+
 <!-- doc-test-run: testing-fake-time-retry -->
 ```csharp
 using Kevlar.Testing;
