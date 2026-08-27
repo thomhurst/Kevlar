@@ -245,7 +245,12 @@ internal static class ShieldEngine
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        ValidateSynchronousExecution(head, startedAt, shieldName);
+        ValidateSynchronousExecution(
+            head,
+            startedAt,
+            shieldName,
+            synchronousMethodName: nameof(Shield.ExecuteWithContext),
+            asynchronousMethodName: nameof(Shield.ExecuteWithContextAsync));
 
         var context = KevlarContext.RentChild(parentContext, shieldName, isSynchronous: true);
         try
@@ -347,7 +352,12 @@ internal static class ShieldEngine
 
         try
         {
-            ValidateSynchronousExecution(head, startedAt, shieldName);
+            ValidateSynchronousExecution(
+                head,
+                startedAt,
+                shieldName,
+                synchronousMethodName: nameof(Shield.ExecuteOutcome),
+                asynchronousMethodName: nameof(Shield.ExecuteOutcomeAsync));
         }
         catch (Exception exception)
         {
@@ -392,7 +402,12 @@ internal static class ShieldEngine
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        ValidateSynchronousExecution(head, startedAt, shieldName);
+        ValidateSynchronousExecution(
+            head,
+            startedAt,
+            shieldName,
+            synchronousMethodName: nameof(Shield.ExecuteWithContext),
+            asynchronousMethodName: nameof(Shield.ExecuteWithContextAsync));
 
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
         try
@@ -424,14 +439,16 @@ internal static class ShieldEngine
     private static void ValidateSynchronousExecution(
         StrategyNode? head,
         long startedAt,
-        string? shieldName)
+        string? shieldName,
+        string synchronousMethodName = nameof(Shield.Execute),
+        string asynchronousMethodName = nameof(Shield.ExecuteAsync))
     {
         if (head?.SynchronousExecutionUnsupportedReason is { } reason)
         {
             RecordExecution(startedAt, shieldName, success: false);
             throw new NotSupportedException(
                 $"Synchronous execution does not support {reason}. " +
-                "Use ExecuteAsync instead of Execute.");
+                $"Use {asynchronousMethodName} instead of {synchronousMethodName}.");
         }
     }
 
