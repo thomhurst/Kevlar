@@ -105,6 +105,24 @@ public class TelemetryRecorderTests
     }
 
     [Test]
+    public async Task Records_Synchronously_Completed_Primary_Winner_Before_Hedge_Delay()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var name = $"fast-primary-{Guid.NewGuid():N}";
+        var shield = Shield.Hedge(1, TimeSpan.FromSeconds(1)).WithName(name);
+
+        var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+        var attempt = recorder.Events.Single(item =>
+            item.EventName == "hedge_attempt" && item.ShieldName == name);
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempt.AttemptNumber).IsEqualTo(0);
+        await Assert.That(attempt.IsWinner).IsTrue();
+        await Assert.That(attempt.IsSuccess).IsTrue();
+        await Assert.That(attempt.IsCancelled).IsFalse();
+    }
+
+    [Test]
     public async Task Records_Each_Failed_Hedge_Attempt_Without_Changing_The_Final_Exception()
     {
         using var recorder = new TelemetryRecorder(captureMetrics: false);

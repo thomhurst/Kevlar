@@ -133,13 +133,14 @@ internal sealed class HedgingStrategy : Strategy
         }
 
         var startedAt = HasDelayGenerator ? context.TimeProvider.GetTimestamp() : 0;
+        var primaryStartedAt = GetAttemptStartedAt(context);
         var primary = StartPrimaryAttempt(next, context);
         if (_delay == TimeSpan.Zero || !primary.Execution.IsCompletedSuccessfully)
         {
             return ExecuteCoreAsync(
                 next,
                 context,
-                primary.AsPending(GetAttemptStartedAt(primary.Context)),
+                primary.AsPending(primaryStartedAt),
                 hedgesLaunched: 0,
                 default,
                 startedAt,
@@ -156,16 +157,13 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Context,
                 attempt: 0,
                 strategyIndex);
-            if (shouldHandle)
-            {
-                KevlarMetrics.HedgeAttempt(
-                    primary.Context,
-                    _telemetryName,
-                    primary.Attempt,
-                    in outcome,
-                    isWinner: false,
-                    TimeSpan.Zero);
-            }
+            RecordAttempt(
+                primary.Context,
+                primary.Attempt,
+                primaryStartedAt,
+                in outcome,
+                isWinner: !shouldHandle,
+                _telemetryName);
 
             if (!shouldHandle)
             {
