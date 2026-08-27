@@ -285,6 +285,7 @@
   "Kevlar.Extensions.Http.KevlarHttpKeys.RequestMethod": "Kevlar.Extensions.Http.KevlarHttpKeys.yml",
   "Kevlar.Extensions.Http.KevlarHttpKeys.RequestUri": "Kevlar.Extensions.Http.KevlarHttpKeys.yml",
   "Kevlar.Extensions.Http.KevlarHttpRequestExtensions": "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.yml",
+  "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(System.Net.Http.HttpRequestMessage)": "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.yml",
   "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)": "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.yml",
   "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)": "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.yml",
   "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})": "Kevlar.Extensions.Http.KevlarHttpRequestExtensions.yml",

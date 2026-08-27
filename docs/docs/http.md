@@ -273,8 +273,8 @@ services.AddHttpClient("api")
 
 ## Per-request options
 
-Attach execution properties, select a shield, suppress replay, or link another cancellation token
-without changing the named client's defaults:
+Attach execution properties, select a shield, allow or suppress replay, or link another
+cancellation token without changing the named client's defaults:
 
 ```csharp
 using Kevlar.Extensions.Http;
@@ -292,10 +292,11 @@ using var response = await httpClient.SendAsync(request, cancellationToken);
 The property initializer runs once for the outer request execution and once for each separately
 executed endpoint-local shield. Retries reuse their context, while hedges copy the initialized
 properties into forked contexts instead of rerunning the initializer. Pooled properties are cleared
-after execution, so values do not leak to later requests. `DisableReplay` affects only this request.
-To allow an unsafe method for one known-idempotent request, set
-`KevlarHttp.GetRequestOptions(request).AllowReplay = true`; content must still satisfy the normal
-replay-safety rules.
+after execution, so values do not leak to later requests. `DisableReplay` and `AllowReplay` affect
+only this request, and the last call wins. `DisableReplay` keeps any request, including a GET,
+single-attempt. `AllowReplay` lets one known-idempotent POST, PATCH, or custom-method request retry
+or hedge; content must still satisfy the normal replay-safety rules. See
+[method safety](#method-safety) for the reasoning and the idempotency-key pattern.
 
 Choose one shield per request with the selector overload. Selection happens once, before the
 shield executes. A direct `.WithShield(shield)` request override takes precedence over the
@@ -340,12 +341,25 @@ object. A custom `RequestFactory` creates the complete request and must copy any
 
 ## Safe request replay
 
+Every retry and hedge needs a fresh `HttpRequestMessage`: .NET sends a message once, and one-shot
+content is consumed by the first send. Kevlar rebuilds the message for you. Two independent checks
+then decide whether an additional attempt may be sent:
+
+1. **Can the message be rebuilt?** A mechanical question about the content. Kevlar answers it
+   automatically for most requests.
+2. **Is it safe to send twice?** A semantic question about the operation. Only the caller can
+   answer it for POST, PATCH, and custom methods.
+
+When either check fails, the shield stays single-attempt for that request instead of failing it.
+
+### Rebuilding the message
+
 The first no-routing attempt sends the caller's original request directly. Additional attempts use
 clones that preserve method, URI, HTTP version and version policy, request headers, request options,
 and content headers. The handler owns every clone and every nonselected response; the caller owns
 the original request and the returned response.
 
-Replay behavior depends on the request:
+Content replay depends on `ContentReplayPolicy`:
 
 - `NoBuffer` (default) reuses inherently re-readable content such as `ByteArrayContent`,
   `StringContent`, `FormUrlEncodedContent`, and ordinary `JsonContent`. Positive-length content
@@ -358,20 +372,56 @@ Replay behavior depends on the request:
   generated bodies, signatures, or other request state that cannot be cloned. Factory requests are
   disposed by the handler.
 
-GET, HEAD, OPTIONS, TRACE, PUT, and DELETE can replay automatically. POST, PATCH, and custom methods
-require `AllowUnsafeMethodReplay = true` or a `RequestFactory`; only opt in when the operation is
-actually idempotent. If method or content cannot be replayed safely, retry and hedging remain
-single-attempt: the original response is returned or the original exception is rethrown without a
-retry delay or callback. Other stages, including timeout, circuit breaker, and concurrency limiting,
-still observe that attempt. A multi-attempt shield reports this decision once as the
-`attempts_suppressed` telemetry event and log 1009, with reason `replay_disabled`, `unsafe_method`,
-or `non_replayable_content`. The first `unsafe_method` suppression for a client is a Warning that
+### Method safety
+
+GET, HEAD, OPTIONS, TRACE, PUT, and DELETE are idempotent by definition
+([RFC 9110 §9.2.2](https://www.rfc-editor.org/rfc/rfc9110#section-9.2.2)), so Kevlar replays them
+automatically. POST, PATCH, and custom methods are not, and a perfect clone does not change that:
+the risk is the server executing the operation twice, not the client rebuilding the message. A
+hedged `POST /orders` is two concurrent order creations unless the server deduplicates them, and
+Kevlar cannot know whether it does. These methods therefore stay single-attempt until you opt in:
+
+| Opt-in | Scope | Use when |
+| --- | --- | --- |
+| `request.AllowReplay()` | one request | This request is idempotent, typically because it carries an idempotency key. |
+| `Handler.AllowUnsafeMethodReplay = true` | every request on the client | The API deduplicates every write, or the client only sends idempotent unsafe-method requests. |
+| `Handler.RequestFactory` | every request on the client | Each attempt needs a freshly built request (streams, signatures, generated bodies). Building every attempt yourself counts as opt-in. |
+
+Opting in does not skip the content check: a POST with one-shot content still needs `Buffer`,
+`LoadIntoBufferAsync()`, or a `RequestFactory`. `request.DisableReplay()` forces any request,
+including a GET, to stay single-attempt.
+
+The recommended pattern for a retried or hedged write is an idempotency key that the server
+deduplicates. Clones preserve headers, so every attempt carries the same key, and a duplicate
+delivery becomes a harmless repeat rather than a second order:
+
+```csharp
+using System.Net.Http.Json;
+using Kevlar.Extensions.Http;
+
+using var createOrder = new HttpRequestMessage(HttpMethod.Post, "orders")
+{
+    Content = JsonContent.Create(new { Sku = "sku-1", Quantity = 2 }),
+}.AllowReplay();
+createOrder.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString("N"));
+
+using var created = await httpClient.SendAsync(createOrder, cancellationToken);
+```
+
+### Suppressed attempts
+
+If method or content cannot be replayed safely, retry and hedging remain single-attempt: the
+original response is returned or the original exception is rethrown without a retry delay or
+callback. Other stages, including timeout, circuit breaker, and concurrency limiting, still observe
+that attempt. A multi-attempt shield reports this decision once as the `attempts_suppressed`
+telemetry event and log 1009, with reason `replay_disabled`, `unsafe_method`, or
+`non_replayable_content`. The first `unsafe_method` suppression for a client is a Warning that
 names the handler-wide and per-request opt-ins; later unsafe-method suppressions and other reasons
 are Information. Telemetry uses the matching Warning or Information severity. The
-`kevlar.http.replay_suppressed` counter carries the
-same bounded reason in `kevlar.suppression.reason`. `HttpRequestReplayException` is reserved for
-configuration failures such as a null factory result or content exceeding the requested buffer
-limit. Timeouts and caller cancellation flow to every attempt and request factory.
+`kevlar.http.replay_suppressed` counter carries the same bounded reason in
+`kevlar.suppression.reason`. `HttpRequestReplayException` is reserved for configuration failures
+such as a null factory result or content exceeding the requested buffer limit. Timeouts and caller
+cancellation flow to every attempt and request factory.
 
 ## Standard hedging
 
@@ -418,8 +468,9 @@ defaults through `TotalTimeout.Timeout`, `Hedge`, `CircuitBreaker`, and `Attempt
 Request replay is configured through `Handler` (`ContentReplayPolicy`, `MaxBufferSize`,
 `AllowUnsafeMethodReplay`, and `RequestFactory`); alternate endpoint authorities and ordering are
 configured through `Routing`. An empty endpoint list uses the request's authority. POST, PATCH, and
-custom methods still require the same explicit idempotency opt-in described above; registering the
-standard hedging pipeline does not make an unsafe operation safe to repeat.
+custom methods still require the same explicit [method-safety](#method-safety) opt-in, handler-wide
+or per request with `AllowReplay()`; registering the standard hedging pipeline does not make an
+unsafe operation safe to repeat.
 
 For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
 

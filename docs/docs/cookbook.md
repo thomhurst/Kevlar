@@ -26,8 +26,10 @@ services.AddHttpClient("catalog", client =>
     });
 ```
 
-Keep unsafe HTTP methods single-attempt unless the application has an idempotency contract. For
-dynamic configuration, use the configuration-backed overload described in [HTTP resilience](http.md).
+Keep unsafe HTTP methods single-attempt unless the application has an idempotency contract. When
+it does, send an idempotency key and call `AllowReplay()` on that request; see
+[method safety](http.md#method-safety). For dynamic configuration, use the configuration-backed
+overload described in [HTTP resilience](http.md).
 
 ## Database query with recovery value
 

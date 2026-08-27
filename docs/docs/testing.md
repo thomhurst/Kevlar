@@ -309,8 +309,9 @@ if (response.StatusCode != HttpStatusCode.OK || attempts != 2 ||
 For handler-level replay tests, use a recording `HttpMessageHandler`. Return a transient response,
 then success; assert two sends, distinct request objects, and preserved method, URI, headers,
 options, and content. A POST or one-shot body should remain single-send unless the test explicitly
-sets `AllowUnsafeMethodReplay`, selects bounded buffering, or supplies a `RequestFactory`. See
-[safe request replay](http.md#safe-request-replay) for the ownership rules.
+calls `AllowReplay()` on the request, sets `AllowUnsafeMethodReplay`, selects bounded buffering, or
+supplies a `RequestFactory`. See [safe request replay](http.md#safe-request-replay) for the
+ownership rules.
 
 ## Testing partitioned shields
 

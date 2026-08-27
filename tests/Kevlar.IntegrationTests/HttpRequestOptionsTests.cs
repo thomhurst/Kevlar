@@ -104,13 +104,93 @@ public class HttpRequestOptionsTests
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/orders")
         {
             Content = new StringContent("payload"),
-        };
-        KevlarHttp.GetRequestOptions(request).AllowReplay = true;
+        }.AllowReplay();
 
         using var response = await client.SendAsync(request);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task AllowReplay_Enables_Hedged_Unsafe_Method_With_Same_Headers()
+    {
+        var idempotencyKeys = new ConcurrentQueue<string>();
+        using var client = CreateClient(
+            HttpShield.WhenTransient().Hedge(1, TimeSpan.Zero),
+            (request, _) =>
+            {
+                idempotencyKeys.Enqueue(request.Headers.TryGetValues("Idempotency-Key", out var values)
+                    ? string.Join(",", values)
+                    : "<missing>");
+                return Task.FromResult(new HttpResponseMessage(idempotencyKeys.Count == 1
+                    ? HttpStatusCode.ServiceUnavailable
+                    : HttpStatusCode.OK));
+            });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/orders")
+        {
+            Content = new StringContent("payload"),
+        }.AllowReplay();
+        request.Headers.Add("Idempotency-Key", "order-42");
+
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(idempotencyKeys).IsEquivalentTo(["order-42", "order-42"]);
+    }
+
+    [Test]
+    public async Task AllowReplay_Does_Not_Bypass_Content_Replay_Safety()
+    {
+        var attempts = 0;
+        using var client = CreateClient(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            (_, _) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/orders")
+        {
+            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+        }.AllowReplay();
+
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Last_Replay_Override_Wins()
+    {
+        var attempts = 0;
+        using var client = CreateClient(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            (_, _) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            });
+        using var allowed = new HttpRequestMessage(HttpMethod.Get, "https://example.test/allowed")
+            .DisableReplay()
+            .AllowReplay();
+        using var disabled = new HttpRequestMessage(HttpMethod.Get, "https://example.test/disabled")
+            .AllowReplay()
+            .DisableReplay();
+
+        using (await client.SendAsync(allowed))
+        {
+        }
+
+        var allowedAttempts = attempts;
+        attempts = 0;
+        using (await client.SendAsync(disabled))
+        {
+        }
+
+        await Assert.That(allowedAttempts).IsEqualTo(2);
+        await Assert.That(attempts).IsEqualTo(1);
     }
 
     [Test]

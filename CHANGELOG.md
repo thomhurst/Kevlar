@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `HttpRequestMessage.AllowReplay()` opts one known-idempotent POST, PATCH, or custom-method
+  request into retries and hedges, mirroring `DisableReplay()`. The last call wins, and content
+  replay rules still apply. The HTTP guide now separates rebuilding the message from method safety
+  and documents the idempotency-key pattern for replayed writes.
+
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,

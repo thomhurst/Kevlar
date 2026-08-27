@@ -1,1 +1,2 @@
 #nullable enable
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.AllowReplay(this System.Net.Http.HttpRequestMessage! request) -> System.Net.Http.HttpRequestMessage!
