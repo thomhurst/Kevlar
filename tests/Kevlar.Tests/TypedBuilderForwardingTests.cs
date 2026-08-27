@@ -7,7 +7,7 @@ public class TypedBuilderForwardingTests
     [Test]
     public async Task Typed_Builder_Forwards_Every_Strategy_And_Fallback_Form()
     {
-        var builder = Shield.For<int>().WhenResult(-1);
+        var builder = Shield.For<int>().WhenResultEquals(-1);
         var retryConfigured = false;
         var breakerConfigured = false;
         var hedgeConfigured = false;

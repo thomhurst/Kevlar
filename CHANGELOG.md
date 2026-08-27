@@ -48,6 +48,9 @@ All notable changes to this project are documented here. The format follows
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
   values explicit and avoids ambiguity between value and delegate overloads.
+- **Breaking:** typed constant-result clauses now use `WhenResultEquals(value)` and
+  `OrResultEquals(value)`. The predicate forms remain `WhenResult(predicate)` and
+  `OrResult(predicate)`, so `null` and `default` values no longer conflict with delegate overloads.
 - Named DI registrations now expose symmetric configuration overloads, typed
   `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
 - `IKevlarRegistry` now supports thread-safe late-bound `GetOrAdd`, `TryAdd`, and `Remove`, retries
@@ -177,7 +180,7 @@ All notable changes to this project are documented here. The format follows
 | `OrWhen(predicate)` | `Or(predicate)` |
 | `builder.When<TException>()` / `builder.When<TException>(predicate)` | `builder.Or<TException>()` / `builder.Or<TException>(predicate)` |
 | `builder.When(predicate)` | `builder.Or(predicate)` |
-| `builder.WhenResult(predicate)` / `builder.WhenResult(value)` | `builder.OrResult(predicate)` / `builder.OrResult(value)` |
+| `builder.WhenResult(predicate)` / `builder.WhenResult(value)` | `builder.OrResult(predicate)` / `builder.OrResultEquals(value)` |
 | `builder.WhenDefault()` | `builder.OrResultIsDefault()` |
 | `Shield.For<TResult>().Or<TException>()` / `.Or(predicate)` | `Shield.For<TResult>().When<TException>()` / `.When(predicate)` |
 | `ShieldBuilder<TResult> builder = Shield.For<TResult>()` | `Shield<TResult> shield = Shield.For<TResult>()` |

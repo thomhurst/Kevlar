@@ -20,8 +20,8 @@ items:
   - Kevlar.ShieldBuilder`1.Or(System.Func{System.Exception,System.Boolean})
   - Kevlar.ShieldBuilder`1.OrContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
   - Kevlar.ShieldBuilder`1.OrResult(System.Func{`0,System.Boolean})
-  - Kevlar.ShieldBuilder`1.OrResult(`0)
   - Kevlar.ShieldBuilder`1.OrResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  - Kevlar.ShieldBuilder`1.OrResultEquals(`0)
   - Kevlar.ShieldBuilder`1.OrResultIsDefault
   - Kevlar.ShieldBuilder`1.Or``1
   - Kevlar.ShieldBuilder`1.Or``1(System.Func{``0,System.Boolean})
@@ -281,16 +281,16 @@ items:
   nameWithType.vb: ShieldBuilder(Of TResult).OrResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
   name.vb: OrResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
-- uid: Kevlar.ShieldBuilder`1.OrResult(`0)
-  commentId: M:Kevlar.ShieldBuilder`1.OrResult(`0)
-  id: OrResult(`0)
+- uid: Kevlar.ShieldBuilder`1.OrResultEquals(`0)
+  commentId: M:Kevlar.ShieldBuilder`1.OrResultEquals(`0)
+  id: OrResultEquals(`0)
   parent: Kevlar.ShieldBuilder`1
   langs:
   - csharp
   - vb
-  name: OrResult(TResult)
-  nameWithType: ShieldBuilder<TResult>.OrResult(TResult)
-  fullName: Kevlar.ShieldBuilder<TResult>.OrResult(TResult)
+  name: OrResultEquals(TResult)
+  nameWithType: ShieldBuilder<TResult>.OrResultEquals(TResult)
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultEquals(TResult)
   type: Method
   assemblies:
   - Kevlar
@@ -298,16 +298,16 @@ items:
   summary: Returns a new builder that also handles results equal to <code class="paramref">result</code>.
   example: []
   syntax:
-    content: public ShieldBuilder<TResult> OrResult(TResult result)
+    content: public ShieldBuilder<TResult> OrResultEquals(TResult result)
     parameters:
     - id: result
       type: '{TResult}'
     return:
       type: Kevlar.ShieldBuilder`1
-    content.vb: Public Function OrResult(result As TResult) As ShieldBuilder(Of TResult)
-  overload: Kevlar.ShieldBuilder`1.OrResult*
-  nameWithType.vb: ShieldBuilder(Of TResult).OrResult(TResult)
-  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResult(TResult)
+    content.vb: Public Function OrResultEquals(result As TResult) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrResultEquals*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultEquals(TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultEquals(TResult)
 - uid: Kevlar.ShieldBuilder`1.OrResultIsDefault
   commentId: M:Kevlar.ShieldBuilder`1.OrResultIsDefault
   id: OrResultIsDefault
@@ -1652,6 +1652,15 @@ references:
   fullName: Kevlar.ShieldBuilder<TResult>.OrResultContext
   nameWithType.vb: ShieldBuilder(Of TResult).OrResultContext
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultContext
+- uid: Kevlar.ShieldBuilder`1.OrResultEquals*
+  commentId: Overload:Kevlar.ShieldBuilder`1.OrResultEquals
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultEquals__0_
+  name: OrResultEquals
+  nameWithType: ShieldBuilder<TResult>.OrResultEquals
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultEquals
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultEquals
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultEquals
 - uid: '{TResult}'
   commentId: '!:TResult'
   definition: TResult

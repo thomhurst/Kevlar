@@ -299,7 +299,7 @@ public class FallbackContractTests
         Outcome<int> eventOutcome = default;
         Outcome<int> factoryOutcome = default;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Fallback(
                 (outcome, _) =>
                 {

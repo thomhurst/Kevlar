@@ -516,7 +516,7 @@ public class IgnoredCancellationTokenTests
     public async Task Typed_Shields_Are_Analyzed()
     {
         var diagnostics = await AnalyzeAsync("""
-            var shield = Shield.For<int>().WhenResult(0).Retry(1);
+            var shield = Shield.For<int>().WhenResultEquals(0).Retry(1);
             await shield.ExecuteAsync(ct => new ValueTask<int>(1));
             """);
 

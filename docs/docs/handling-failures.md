@@ -136,7 +136,7 @@ var http = Shield.For<HttpResponseMessage>()
 
 Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` would. The delegate's return value is inspected — nothing is thrown internally, the outcome just counts as a failure.
 
-Typed builders add result alternatives with `OrResult(predicate)` / `OrResult(value)`, and two shorthands for the most common check of all:
+Typed builders add result alternatives with `OrResult(predicate)` / `OrResultEquals(value)`, and two shorthands for the most common check of all:
 
 ```csharp
 Shield.For<User?>().WhenResultIsNull().Retry(2);      // retry when the result is null
@@ -153,7 +153,7 @@ question as the informational hint [`KEV010`](analyzers.md#kev010-default-result
 
 ```csharp
 Shield.For<int>().WhenResultIsDefault().Retry(2);     // Is 0 really the failure?
-Shield.For<int>().WhenResult(-1).Retry(2);            // clean: the failing value, spelled out
+Shield.For<int>().WhenResultEquals(-1).Retry(2);      // clean: the failing value, spelled out
 ```
 
 All four are named after the `WhenResult` / `OrResult` family precisely so they cannot be confused

@@ -61,7 +61,7 @@ public class ShieldBuilderAliasingTests
     public async Task Typed_Branching_One_Builder_Gives_Independent_Clauses()
     {
         var shared = Shield.For<int>().When<ArgumentException>();
-        var left = shared.OrResult(0).Retry(1, Backoff.None);
+        var left = shared.OrResultEquals(0).Retry(1, Backoff.None);
         var right = shared.Or<InvalidOperationException>().Retry(1, Backoff.None);
 
         await Assert.That(left.ToString())
@@ -98,7 +98,7 @@ public class ShieldBuilderAliasingTests
         var builder = Shield.For<int>().When<ArgumentException>();
 
         // Both returned builders are dropped, so the clause stays a single term.
-        builder.OrResult(0);
+        builder.OrResultEquals(0);
         builder.Or<InvalidOperationException>();
 
         var shield = builder.Retry(1, Backoff.None);
@@ -122,7 +122,7 @@ public class ShieldBuilderAliasingTests
     {
         var builder = Shield.For<int>().When<ArgumentException>();
         var first = builder.Retry(1, Backoff.None);
-        var second = builder.OrResult(0).Retry(1, Backoff.None);
+        var second = builder.OrResultEquals(0).Retry(1, Backoff.None);
 
         await Assert.That(first.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
         await Assert.That(second.ToString())

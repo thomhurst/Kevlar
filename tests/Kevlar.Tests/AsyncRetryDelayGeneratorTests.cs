@@ -45,7 +45,7 @@ public class AsyncRetryDelayGeneratorTests
         var seenResult = 0;
         var attempts = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -219,7 +219,7 @@ public class AsyncRetryDelayGeneratorTests
         const int executionCount = 32;
         var events = new List<(int Attempt, int Result)>();
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 1;

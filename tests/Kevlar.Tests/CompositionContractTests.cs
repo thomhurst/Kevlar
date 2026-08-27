@@ -229,8 +229,8 @@ public class CompositionContractTests
     {
         string? nullValue = null;
         var defaultValue = default(int);
-        var nullShield = Shield.For<string?>().WhenResult(nullValue).FallbackTo("null");
-        var defaultShield = Shield.For<int>().WhenResult(defaultValue).FallbackTo(42);
+        var nullShield = Shield.For<string?>().WhenResultEquals(nullValue).FallbackTo("null");
+        var defaultShield = Shield.For<int>().WhenResultEquals(defaultValue).FallbackTo(42);
 
         var nullResult = await nullShield.ExecuteAsync(_ => new ValueTask<string?>((string?)null));
         var defaultResult = await defaultShield.ExecuteAsync(_ => new ValueTask<int>(0));

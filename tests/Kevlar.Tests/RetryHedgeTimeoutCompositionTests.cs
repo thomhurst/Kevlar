@@ -77,7 +77,7 @@ public class RetryHedgeTimeoutCompositionTests
     {
         var invocations = 0;
         var shield = Shield.For<int>()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(1, Backoff.None)
             .Hedge(2, System.Threading.Timeout.InfiniteTimeSpan);
 

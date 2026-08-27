@@ -10,7 +10,7 @@ public class EventStrategyIndexTests
         var observed = new Dictionary<string, int>(StringComparer.Ordinal);
 
         var retry = TypedPrefix()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -65,7 +65,7 @@ public class EventStrategyIndexTests
         _ = await fallback.ExecuteAsync(static _ => throw new InvalidOperationException());
 
         var breaker = TypedPrefix()
-            .WhenResult(-1)
+            .WhenResultEquals(-1)
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 1;

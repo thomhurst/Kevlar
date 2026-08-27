@@ -93,7 +93,7 @@ public class ChainValidationTests
     [Test]
     public async Task Recombining_Strategies_Via_Wrap_Is_Validated_Too()
     {
-        var withClause = Shield.For<int>().WhenResult(0).Timeout(TimeSpan.FromMinutes(1));
+        var withClause = Shield.For<int>().WhenResultEquals(0).Timeout(TimeSpan.FromMinutes(1));
         var retryPart = withClause.Retry(1, Backoff.None);
         var fallbackPart = withClause.FallbackTo(-1);
 

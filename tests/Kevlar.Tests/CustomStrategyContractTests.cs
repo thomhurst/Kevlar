@@ -261,7 +261,7 @@ public class CustomStrategyContractTests
             untyped = clause;
             return PassThroughStrategy.Instance;
         });
-        _ = Shield.For<int>().WhenResult(0).Use(clause =>
+        _ = Shield.For<int>().WhenResultEquals(0).Use(clause =>
         {
             typed = clause;
             return PassThroughStrategy.Instance;
