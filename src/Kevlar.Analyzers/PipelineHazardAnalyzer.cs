@@ -146,11 +146,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor InheritedHandlingClauseRule = new(
         id: "KEV009",
         title: "Strategy inherits a handling clause declared earlier in the chain",
-        messageFormat: "This strategy inherits the handling clause declared earlier in the chain ('{0}'); only those exceptions or results count toward it. Declare a new clause, or call 'WhenAnyError()' first, to give it different handling.",
+        messageFormat: "This strategy inherits the handling clause declared earlier in the chain ('{0}'); only those exceptions or results count toward it. Declare a new clause, or call 'WithDefaultHandling()' first, to give it different handling.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WhenAnyError resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.");
+        description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WithDefaultHandling resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.");
 
     /// <summary>The KEV010 rule.</summary>
     public static readonly DiagnosticDescriptor DefaultResultClauseOnValueTypeRule = new(
@@ -6500,7 +6500,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (method.Name == "WhenAnyError" && StartsHandlingClause(method, knownTypes))
+        if (method.Name == "WithDefaultHandling" && StartsHandlingClause(method, knownTypes))
         {
             return true;
         }
@@ -6603,9 +6603,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             var method = Normalize(link.TargetMethod);
 
-            // WhenAnyError resets the clause and Wrap/Compose seals it, so nothing is inherited
-            // across either. Checked before StartsHandlingClause, which also matches WhenAnyError.
-            if (method.Name == "WhenAnyError" || IsCompositionBoundary(method, knownTypes))
+            // WithDefaultHandling resets the clause and Wrap/Compose seals it, so nothing is inherited
+            // across either. Checked before StartsHandlingClause, which also matches WithDefaultHandling.
+            if (method.Name == "WithDefaultHandling" || IsCompositionBoundary(method, knownTypes))
             {
                 return false;
             }
@@ -6741,7 +6741,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     /// <summary>Whether the method opens a clause carrying predicates, as opposed to resetting one.</summary>
     private static bool DeclaresHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        method.Name != "WhenAnyError" && StartsHandlingClause(method, knownTypes);
+        method.Name != "WithDefaultHandling" && StartsHandlingClause(method, knownTypes);
 
     /// <summary>Whether a reactive strategy reads the ambient clause this method seals.</summary>
     private static bool ConsumesHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
@@ -7203,7 +7203,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         var method = Normalize(invocation.TargetMethod);
         if (stopAtHandlingClause
-            && method.Name == "WhenAnyError")
+            && method.Name == "WithDefaultHandling")
         {
             return FindInDefaultHandlingSegments(
                 GetReceiver(invocation),
@@ -7656,7 +7656,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         var method = Normalize(invocation.TargetMethod);
-        if (method.Name == "WhenAnyError" && StartsHandlingClause(method, knownTypes))
+        if (method.Name == "WithDefaultHandling" && StartsHandlingClause(method, knownTypes))
         {
             ambientClause = null;
             return true;
@@ -9201,7 +9201,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "When" or "WhenContext" or "WhenResult" or "WhenResultEquals" or "WhenResultContext"
-            or "WhenResultIsDefault" or "WhenResultIsNull" or "WhenAnyError")
+            or "WhenResultIsDefault" or "WhenResultIsNull" or "WithDefaultHandling")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 

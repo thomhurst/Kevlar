@@ -5,8 +5,6 @@ items:
   id: KevlarKeys
   parent: Kevlar
   children:
-  - Kevlar.KevlarKeys.HttpRequestMethod
-  - Kevlar.KevlarKeys.HttpRequestUri
   - Kevlar.KevlarKeys.OperationKey
   langs:
   - csharp
@@ -60,52 +58,6 @@ items:
       type: Kevlar.KevlarKey{System.String}
     content.vb: Public Shared ReadOnly Property OperationKey As KevlarKey(Of String)
   overload: Kevlar.KevlarKeys.OperationKey*
-- uid: Kevlar.KevlarKeys.HttpRequestMethod
-  commentId: P:Kevlar.KevlarKeys.HttpRequestMethod
-  id: HttpRequestMethod
-  parent: Kevlar.KevlarKeys
-  langs:
-  - csharp
-  - vb
-  name: HttpRequestMethod
-  nameWithType: KevlarKeys.HttpRequestMethod
-  fullName: Kevlar.KevlarKeys.HttpRequestMethod
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: The HTTP request method supplied by the Kevlar HTTP integration.
-  example: []
-  syntax:
-    content: public static KevlarKey<string> HttpRequestMethod { get; }
-    parameters: []
-    return:
-      type: Kevlar.KevlarKey{System.String}
-    content.vb: Public Shared ReadOnly Property HttpRequestMethod As KevlarKey(Of String)
-  overload: Kevlar.KevlarKeys.HttpRequestMethod*
-- uid: Kevlar.KevlarKeys.HttpRequestUri
-  commentId: P:Kevlar.KevlarKeys.HttpRequestUri
-  id: HttpRequestUri
-  parent: Kevlar.KevlarKeys
-  langs:
-  - csharp
-  - vb
-  name: HttpRequestUri
-  nameWithType: KevlarKeys.HttpRequestUri
-  fullName: Kevlar.KevlarKeys.HttpRequestUri
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: The HTTP request URI without its query string or fragment.
-  example: []
-  syntax:
-    content: public static KevlarKey<string> HttpRequestUri { get; }
-    parameters: []
-    return:
-      type: Kevlar.KevlarKey{System.String}
-    content.vb: Public Shared ReadOnly Property HttpRequestUri As KevlarKey(Of String)
-  overload: Kevlar.KevlarKeys.HttpRequestUri*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -422,17 +374,3 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.KevlarKeys.HttpRequestMethod*
-  commentId: Overload:Kevlar.KevlarKeys.HttpRequestMethod
-  isExternal: true
-  href: Kevlar.KevlarKeys.html#Kevlar_KevlarKeys_HttpRequestMethod
-  name: HttpRequestMethod
-  nameWithType: KevlarKeys.HttpRequestMethod
-  fullName: Kevlar.KevlarKeys.HttpRequestMethod
-- uid: Kevlar.KevlarKeys.HttpRequestUri*
-  commentId: Overload:Kevlar.KevlarKeys.HttpRequestUri
-  isExternal: true
-  href: Kevlar.KevlarKeys.html#Kevlar_KevlarKeys_HttpRequestUri
-  name: HttpRequestUri
-  nameWithType: KevlarKeys.HttpRequestUri
-  fullName: Kevlar.KevlarKeys.HttpRequestUri

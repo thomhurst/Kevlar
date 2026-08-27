@@ -7,7 +7,6 @@ items:
   children:
   - Kevlar.Testing.PartitionedShieldStateSnapshot.CapacityEvictionCount
   - Kevlar.Testing.PartitionedShieldStateSnapshot.ClearedEvictionCount
-  - Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
   - Kevlar.Testing.PartitionedShieldStateSnapshot.Count
   - Kevlar.Testing.PartitionedShieldStateSnapshot.CreatedCount
   - Kevlar.Testing.PartitionedShieldStateSnapshot.EvictionCount
@@ -36,29 +35,6 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
-  commentId: P:Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
-  id: ContractVersion
-  parent: Kevlar.Testing.PartitionedShieldStateSnapshot
-  langs:
-  - csharp
-  - vb
-  name: ContractVersion
-  nameWithType: PartitionedShieldStateSnapshot.ContractVersion
-  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
-  type: Property
-  assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Gets the snapshot contract version.
-  example: []
-  syntax:
-    content: public int ContractVersion { get; }
-    parameters: []
-    return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property ContractVersion As Integer
-  overload: Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion*
 - uid: Kevlar.Testing.PartitionedShieldStateSnapshot.Count
   commentId: P:Kevlar.Testing.PartitionedShieldStateSnapshot.Count
   id: Count
@@ -438,13 +414,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion*
-  commentId: Overload:Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
+- uid: Kevlar.Testing.PartitionedShieldStateSnapshot.Count*
+  commentId: Overload:Kevlar.Testing.PartitionedShieldStateSnapshot.Count
   isExternal: true
-  href: Kevlar.Testing.PartitionedShieldStateSnapshot.html#Kevlar_Testing_PartitionedShieldStateSnapshot_ContractVersion
-  name: ContractVersion
-  nameWithType: PartitionedShieldStateSnapshot.ContractVersion
-  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion
+  href: Kevlar.Testing.PartitionedShieldStateSnapshot.html#Kevlar_Testing_PartitionedShieldStateSnapshot_Count
+  name: Count
+  nameWithType: PartitionedShieldStateSnapshot.Count
+  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot.Count
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -456,13 +432,6 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Testing.PartitionedShieldStateSnapshot.Count*
-  commentId: Overload:Kevlar.Testing.PartitionedShieldStateSnapshot.Count
-  isExternal: true
-  href: Kevlar.Testing.PartitionedShieldStateSnapshot.html#Kevlar_Testing_PartitionedShieldStateSnapshot_Count
-  name: Count
-  nameWithType: PartitionedShieldStateSnapshot.Count
-  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot.Count
 - uid: Kevlar.Testing.PartitionedShieldStateSnapshot.CreatedCount*
   commentId: Overload:Kevlar.Testing.PartitionedShieldStateSnapshot.CreatedCount
   isExternal: true

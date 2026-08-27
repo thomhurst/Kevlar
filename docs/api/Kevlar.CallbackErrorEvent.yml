@@ -8,6 +8,7 @@ items:
   - Kevlar.CallbackErrorEvent.Exception
   - Kevlar.CallbackErrorEvent.Kind
   - Kevlar.CallbackErrorEvent.ShieldName
+  - Kevlar.CallbackErrorEvent.Source
   - Kevlar.CallbackErrorEvent.StrategyIndex
   langs:
   - csharp
@@ -54,6 +55,29 @@ items:
       type: Kevlar.CallbackErrorKind
     content.vb: Public ReadOnly Property Kind As CallbackErrorKind
   overload: Kevlar.CallbackErrorEvent.Kind*
+- uid: Kevlar.CallbackErrorEvent.Source
+  commentId: P:Kevlar.CallbackErrorEvent.Source
+  id: Source
+  parent: Kevlar.CallbackErrorEvent
+  langs:
+  - csharp
+  - vb
+  name: Source
+  nameWithType: CallbackErrorEvent.Source
+  fullName: Kevlar.CallbackErrorEvent.Source
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the stable callback or integration identifier.
+  example: []
+  syntax:
+    content: public string Source { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property Source As String
+  overload: Kevlar.CallbackErrorEvent.Source*
 - uid: Kevlar.CallbackErrorEvent.ShieldName
   commentId: P:Kevlar.CallbackErrorEvent.ShieldName
   id: ShieldName
@@ -363,13 +387,13 @@ references:
   name: CallbackErrorKind
   nameWithType: CallbackErrorKind
   fullName: Kevlar.CallbackErrorKind
-- uid: Kevlar.CallbackErrorEvent.ShieldName*
-  commentId: Overload:Kevlar.CallbackErrorEvent.ShieldName
+- uid: Kevlar.CallbackErrorEvent.Source*
+  commentId: Overload:Kevlar.CallbackErrorEvent.Source
   isExternal: true
-  href: Kevlar.CallbackErrorEvent.html#Kevlar_CallbackErrorEvent_ShieldName
-  name: ShieldName
-  nameWithType: CallbackErrorEvent.ShieldName
-  fullName: Kevlar.CallbackErrorEvent.ShieldName
+  href: Kevlar.CallbackErrorEvent.html#Kevlar_CallbackErrorEvent_Source
+  name: Source
+  nameWithType: CallbackErrorEvent.Source
+  fullName: Kevlar.CallbackErrorEvent.Source
 - uid: System.String
   commentId: T:System.String
   parent: System
@@ -381,6 +405,13 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
+- uid: Kevlar.CallbackErrorEvent.ShieldName*
+  commentId: Overload:Kevlar.CallbackErrorEvent.ShieldName
+  isExternal: true
+  href: Kevlar.CallbackErrorEvent.html#Kevlar_CallbackErrorEvent_ShieldName
+  name: ShieldName
+  nameWithType: CallbackErrorEvent.ShieldName
+  fullName: Kevlar.CallbackErrorEvent.ShieldName
 - uid: Kevlar.CallbackErrorEvent.StrategyIndex*
   commentId: Overload:Kevlar.CallbackErrorEvent.StrategyIndex
   isExternal: true

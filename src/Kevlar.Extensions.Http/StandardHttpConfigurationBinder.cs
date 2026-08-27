@@ -170,7 +170,7 @@ internal static class StandardHttpConfigurationBinder
         ShieldHttpHandlerOptions options)
     {
         SetEnum<HttpContentReplayPolicy>(section, nameof(options.ContentReplayPolicy), value => options.ContentReplayPolicy = value);
-        SetLong(section, nameof(options.MaximumBufferSize), value => options.MaximumBufferSize = value);
+        SetLong(section, nameof(options.MaxBufferSize), value => options.MaxBufferSize = value);
         SetBool(section, nameof(options.AllowUnsafeMethodReplay), value => options.AllowUnsafeMethodReplay = value);
 
         var routingSection = section.GetSection(nameof(options.Routing));
@@ -267,7 +267,7 @@ internal static class StandardHttpConfigurationBinder
                 || options.AttemptTimeout.Timeout <= options.TotalTimeout.Timeout,
             TimeoutSection(configuration, nameof(options.AttemptTimeout)),
             "must not exceed TotalTimeout");
-        Ensure(options.Handler.MaximumBufferSize > 0, configuration.GetSection("Handler:MaximumBufferSize"), "must be positive");
+        Ensure(options.Handler.MaxBufferSize > 0, configuration.GetSection("Handler:MaxBufferSize"), "must be positive");
         if (options.Handler.Routing is { } routing)
         {
             Ensure(
@@ -297,7 +297,7 @@ internal static class StandardHttpConfigurationBinder
         Ensure(options.ConcurrencyLimit.MaxConcurrency > 0, configuration.GetSection("ConcurrencyLimit:MaxConcurrency"), "must be positive");
         Ensure(options.ConcurrencyLimit.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
         ValidateCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
-        Ensure(options.Handler.MaximumBufferSize > 0, configuration.GetSection("Handler:MaximumBufferSize"), "must be positive");
+        Ensure(options.Handler.MaxBufferSize > 0, configuration.GetSection("Handler:MaxBufferSize"), "must be positive");
         Ensure(
             options.Routing.Endpoints.Count > 0,
             configuration.GetSection("Routing:Endpoints"),

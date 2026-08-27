@@ -11,7 +11,7 @@ public class CallbackFailureTests
         var callbackFailure = new IOException("callback");
         var shieldName = $"callback-{Guid.NewGuid():N}";
         var reported = new List<CallbackErrorEvent>();
-        var measurements = new List<string>();
+        var measurements = new List<(string Kind, string Source)>();
         Action<CallbackErrorEvent> throwingHandler = _ => throw new ApplicationException("diagnostics");
         Action<CallbackErrorEvent> recordingHandler = reported.Add;
         using var listener = CreateCallbackErrorListener(shieldName, measurements);
@@ -34,10 +34,11 @@ public class CallbackFailureTests
             await Assert.That(result).IsEqualTo(42);
             await Assert.That(reported.Count).IsEqualTo(1);
             await Assert.That(reported[0].Kind).IsEqualTo(CallbackErrorKind.Retry);
+            await Assert.That(reported[0].Source).IsEqualTo("RetryOptions.OnRetry");
             await Assert.That(reported[0].ShieldName).IsEqualTo(shieldName);
             await Assert.That(reported[0].StrategyIndex).IsEqualTo(0);
             await Assert.That(ReferenceEquals(reported[0].Exception, callbackFailure)).IsTrue();
-            await Assert.That(measurements).IsEquivalentTo(["retry"]);
+            await Assert.That(measurements).IsEquivalentTo([("retry", "RetryOptions.OnRetry")]);
         }
         finally
         {
@@ -158,7 +159,8 @@ public class CallbackFailureTests
             KevlarDiagnostics.ReportCallbackError(
                 CallbackErrorKind.Retry,
                 context,
-                new IOException("callback"));
+                new IOException("callback"),
+                "test.callback");
             return 42;
         });
 
@@ -190,7 +192,7 @@ public class CallbackFailureTests
 
     private static MeterListener CreateCallbackErrorListener(
         string shieldName,
-        List<string> measurements)
+        List<(string Kind, string Source)> measurements)
     {
         var listener = new MeterListener
         {
@@ -207,6 +209,7 @@ public class CallbackFailureTests
         {
             string? observedShield = null;
             string? kind = null;
+            string? source = null;
             foreach (var tag in tags)
             {
                 if (tag.Key == "kevlar.shield.name")
@@ -217,12 +220,17 @@ public class CallbackFailureTests
                 {
                     kind = tag.Value?.ToString();
                 }
+                else if (tag.Key == "kevlar.callback.source")
+                {
+                    source = tag.Value?.ToString();
+                }
             }
 
             if (string.Equals(observedShield, shieldName, StringComparison.Ordinal)
-                && kind is not null)
+                && kind is not null
+                && source is not null)
             {
-                measurements.Add(kind);
+                measurements.Add((kind, source));
             }
         });
         listener.Start();

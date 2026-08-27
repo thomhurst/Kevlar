@@ -246,6 +246,7 @@ public class ResultDisposalTests
 
             await Assert.That(ReferenceEquals(result, final)).IsTrue();
             await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.ResultDisposal);
+            await Assert.That(reported?.Source).IsEqualTo("OutcomeDisposer");
             await Assert.That(ReferenceEquals(reported?.Exception, failure)).IsTrue();
         }
         finally

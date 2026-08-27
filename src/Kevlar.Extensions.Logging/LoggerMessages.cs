@@ -108,13 +108,14 @@ internal static partial class LoggerMessages
         Exception? exception);
 
     [LoggerMessage(EventId = 1008, EventName = "CallbackError", Level = LogLevel.Error,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} callback {CallbackKind} failed; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} callback {CallbackKind} ({CallbackSource}) failed; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void CallbackError(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
         CallbackErrorKind? callbackKind,
+        string? callbackSource,
         string outcome,
         Exception? exception);
 

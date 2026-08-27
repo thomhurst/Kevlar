@@ -7,7 +7,7 @@ namespace Kevlar;
 /// Selects and retains an independent untyped <see cref="Shield"/> for each partition key.
 /// </summary>
 /// <remarks>
-/// Retention is bounded by <see cref="PartitionedShieldOptions.MaximumPartitions"/>. Eviction
+/// Retention is bounded by <see cref="PartitionedShieldOptions.MaxPartitions"/>. Eviction
 /// removes only the provider's reference: callers that already hold the old shield, including
 /// active executions, continue normally. A later lookup creates a fresh partition with fresh
 /// strategy state. Partition keys are never added to metric tags or shield names automatically.
@@ -46,9 +46,6 @@ public sealed class PartitionedShield<TKey>
     /// <summary>Gets a retained shield without creating one.</summary>
     public bool TryGetShield(TKey key, [NotNullWhen(true)] out Shield? shield) =>
         _cache.TryGet(key, out shield);
-
-    /// <summary>Removes a retained partition. Existing users of its shield are unaffected.</summary>
-    public bool Remove(TKey key) => TryRemove(key);
 
     /// <summary>Removes a retained partition. Existing users of its shield are unaffected.</summary>
     public bool TryRemove(TKey key) => _cache.TryRemove(key);

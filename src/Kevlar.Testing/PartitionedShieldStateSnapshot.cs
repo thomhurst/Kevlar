@@ -17,9 +17,6 @@ public sealed class PartitionedShieldStateSnapshot
         ClearedEvictionCount = clearedEvictionCount;
     }
 
-    /// <summary>Gets the snapshot contract version.</summary>
-    public int ContractVersion => 1;
-
     /// <summary>Gets the number of retained partitions.</summary>
     public int Count { get; }
 

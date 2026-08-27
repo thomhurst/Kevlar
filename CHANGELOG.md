@@ -129,6 +129,12 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
   with status badges.
 - Queue capacity uses `QueueLimit` consistently across core strategies, adapters, dependency
   injection, and testing descriptors; shorthand parameters use `queueLimit`.
+- Pre-freeze API naming is consistent: partition and HTTP limits use `MaxPartitions` and
+  `MaxBufferSize`; backoffs use `BaseDelay`; handling resets use `WithDefaultHandling()`; and
+  `Kevlar.Testing` exposes `ShieldExecution.WaitForPendingAsync(task, ...)` as a static helper.
+  The redundant partition `Remove` aliases and snapshot `ContractVersion` constants were removed.
+  Satellite callback failures use `CallbackErrorKind.Custom` plus a stable `Source`, and HTTP
+  execution-property keys live under `KevlarHttpKeys` in `Kevlar.Extensions.Http`.
 - `Outcome<T>.Exception` recognizes `KevlarProxyException` by type instead of reading
   `Exception.Data` on ordinary exception access.
 
@@ -171,6 +177,13 @@ Remove any direct `Kevlar.Analyzers` package reference; analyzers ship inside `K
 | adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
 | `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 | `Hedge(maxAttempts: n, ...)` / `options.MaxAttempts` | `Hedge(maxHedgedAttempts: n, ...)` / `options.MaxHedgedAttempts` |
+| `MaximumPartitions` | `MaxPartitions` |
+| `MaximumBufferSize` | `MaxBufferSize` |
+| `Backoff.InitialDelay` / `Backoff.Exponential(initialDelay, ...)` | `Backoff.BaseDelay` / `Backoff.Exponential(baseDelay, ...)` |
+| `PartitionedShield.Remove(key)` | `PartitionedShield.TryRemove(key)` |
+| `task.WaitForPendingAsync(...)` | `ShieldExecution.WaitForPendingAsync(task, ...)` |
+| `WhenAnyError()` | `WithDefaultHandling()` |
+| `KevlarKeys.HttpRequestMethod` / `HttpRequestUri` | `KevlarHttpKeys.RequestMethod` / `RequestUri` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:

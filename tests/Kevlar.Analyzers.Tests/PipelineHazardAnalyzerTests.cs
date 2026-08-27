@@ -5747,7 +5747,7 @@ public class PipelineHazardAnalyzerTests
                         .When<TimeoutException>()
                         .Or<InvalidOperationException>()
                         .Retry(1, Backoff.None)
-                        .WhenAnyError()
+                        .WithDefaultHandling()
                         .WithName("void")
                         .WithTimeProvider(TimeProvider.System);
                     Shield outer = Shield.Timeout(TimeSpan.FromSeconds(1)).Wrap(chained);
@@ -6093,8 +6093,8 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
-            "_ = Shield.When<InvalidOperationException>().Timeout(static options => options.Timeout = TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WithDefaultHandling().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Timeout(static options => options.Timeout = TimeSpan.FromSeconds(1)).WithDefaultHandling().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().RateLimit(1, TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Use((Strategy)null!).When<TimeoutException>().Retry(1);",
@@ -6123,7 +6123,7 @@ public class PipelineHazardAnalyzerTests
             "var clause = Shield.When<InvalidOperationException>(); _ = clause.Or<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Wrap(Shield.Empty).When<TimeoutException>().Retry(1);",
             "_ = Clause().Retry(1);",
-            "_ = Shield.Empty.WhenAnyError().Retry(1);",
+            "_ = Shield.Empty.WithDefaultHandling().Retry(1);",
         };
 
         foreach (var body in cases)
@@ -6276,9 +6276,9 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().WhenResultEquals(0).Retry(1).FallbackTo(0);",
             "_ = Shield.For<int>().Retry(1).FallbackTo(0, static options => options.OnFallback = static _ => default);",
             "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => default);",
-            "_ = Shield.For<int>().Retry(1).WhenAnyError().FallbackTo(0);",
-            "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WhenAnyError().FallbackTo(0);",
-            "_ = Shield.For<int>().Retry(1).When<ArgumentException>().Timeout(TimeSpan.Zero).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WhenAnyError().FallbackTo(0);",
+            "_ = Shield.For<int>().Retry(1).WithDefaultHandling().FallbackTo(0);",
+            "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WithDefaultHandling().FallbackTo(0);",
+            "_ = Shield.For<int>().Retry(1).When<ArgumentException>().Timeout(TimeSpan.Zero).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WithDefaultHandling().FallbackTo(0);",
             "var shield = Shield.For<int>().Retry(1); var alias = shield; _ = alias.FallbackTo(0);",
             "Shield<int>? shield = Shield.For<int>().Retry(1); _ = shield?.FallbackTo(0);",
             "_ = ShieldExtensions.Fallback(ShieldExtensions.Retry(Shield.Empty, 1), static _ => ValueTask.CompletedTask);",
@@ -6436,8 +6436,8 @@ public class PipelineHazardAnalyzerTests
         {
             "_ = Shield.For<int>().FallbackTo(0).Retry(1);",
             "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().FallbackTo(0);",
-            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).WhenAnyError().FallbackTo(0);",
-            "_ = Shield.For<int>().When<ArgumentException>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).CircuitBreaker(2, TimeSpan.FromSeconds(1)).WhenAnyError().FallbackTo(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).WithDefaultHandling().FallbackTo(0);",
+            "_ = Shield.For<int>().When<ArgumentException>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).CircuitBreaker(2, TimeSpan.FromSeconds(1)).WithDefaultHandling().FallbackTo(0);",
             "_ = Shield.For<int>().Timeout(TimeSpan.FromSeconds(1)).FallbackTo(0);",
             "var shield = CreateShield(); _ = shield.FallbackTo(0);",
             "var shield = Shield.For<int>().Retry(1); shield = Shield<int>.Empty; _ = shield.FallbackTo(0);",
@@ -6511,7 +6511,7 @@ public class PipelineHazardAnalyzerTests
         {
             "_ = Shield.When<InvalidOperationException>().Retry(1);",
             "_ = Shield.Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
-            "_ = Shield.When<InvalidOperationException>().Retry(1).WhenAnyError().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).WithDefaultHandling().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Retry(1).When<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).RateLimit(10, TimeSpan.FromSeconds(1)).ConcurrencyLimit(2).Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Retry(1).Wrap(Shield.Empty).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
@@ -6549,7 +6549,7 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(diagnostic.GetMessage()).IsEqualTo(
             "This strategy inherits the handling clause declared earlier in the chain "
             + "('When<InvalidOperationException>…'); only those exceptions or results count toward "
-            + "it. Declare a new clause, or call 'WhenAnyError()' first, to give it different "
+            + "it. Declare a new clause, or call 'WithDefaultHandling()' first, to give it different "
             + "handling.");
 
         // The hint marks only the inheriting strategy's name, not the whole chain.
@@ -6633,8 +6633,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Hedge(1, TimeSpan.Zero);",
             "_ = Shield.For<int>().FallbackTo(0);",
             "var baseline = Shield.Empty; _ = baseline.RetryForever();",
-            "_ = Shield.Empty.WhenAnyError().Wrap(Shield.Empty).Retry(1);",
-            "_ = Shield.Compose(Shield.Empty.WhenAnyError(), Shield.Empty).Retry(1);",
+            "_ = Shield.Empty.WithDefaultHandling().Wrap(Shield.Empty).Retry(1);",
+            "_ = Shield.Compose(Shield.Empty.WithDefaultHandling(), Shield.Empty).Retry(1);",
         };
 
         foreach (var body in cases)
@@ -6653,7 +6653,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().WhenResultEquals(-1).FallbackTo(0);",
             "_ = Shield.Retry(options => options.HandlesException = exception => exception is InvalidOperationException);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesResult = value => value < 0);",
-            "_ = Shield.When<InvalidOperationException>().Retry(1).WhenAnyError().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).WithDefaultHandling().Retry(1);",
             "_ = Shield.Timeout(TimeSpan.FromSeconds(1));",
         };
 

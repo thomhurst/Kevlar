@@ -11,7 +11,7 @@ public sealed class ShieldHttpHandlerOptions
     public HttpContentReplayPolicy ContentReplayPolicy { get; set; }
 
     /// <summary>The maximum buffered request-content size. Defaults to 1 MiB.</summary>
-    public long MaximumBufferSize { get; set; } = 1024 * 1024;
+    public long MaxBufferSize { get; set; } = 1024 * 1024;
 
     /// <summary>
     /// Explicitly permits another attempt for methods other than GET, HEAD, OPTIONS, TRACE, PUT,

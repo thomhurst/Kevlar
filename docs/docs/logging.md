@@ -78,4 +78,4 @@ the URI omits query and fragment data.
 
 Logger, formatter, severity-policy, and scope-disposal exceptions never change shield outcomes.
 They are reported through `KevlarDiagnostics.ReportCallbackError` with
-`CallbackErrorKind.Logging`.
+`CallbackErrorKind.Custom` with source `Kevlar.Extensions.Logging`.

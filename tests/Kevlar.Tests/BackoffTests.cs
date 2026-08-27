@@ -126,20 +126,20 @@ public class BackoffTests
     [Test]
     public async Task Exponential_Jitter_Decorrelated_Depends_On_Previous_Delay()
     {
-        var initialDelay = TimeSpan.FromMilliseconds(100);
+        var baseDelay = TimeSpan.FromMilliseconds(100);
         var maxDelay = TimeSpan.FromSeconds(5);
         var backoff = Backoff.Exponential(
-            initialDelay,
+            baseDelay,
             maxDelay: maxDelay,
             jitter: Jitter.Decorrelated);
-        var previousDelay = initialDelay;
+        var previousDelay = baseDelay;
         var inRange = true;
 
         for (var attempt = 1; attempt <= 10_000; attempt++)
         {
             var delay = backoff.GetDelay(attempt, previousDelay);
             var upperBound = previousDelay * 3 > maxDelay ? maxDelay : previousDelay * 3;
-            inRange &= delay >= initialDelay && delay <= upperBound;
+            inRange &= delay >= baseDelay && delay <= upperBound;
             previousDelay = delay;
         }
 

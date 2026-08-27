@@ -12,7 +12,7 @@ internal static class StressRunner
     private const int MeasurementRounds = 4;
     private const int PartitionExecutions = 1_000_000;
     private const int PartitionKeys = 10_000;
-    private const int MaximumPartitions = 1_000;
+    private const int MaxPartitions = 1_000;
 
     private static readonly Shield KevlarShield = Shield
         .Timeout(TimeSpan.FromSeconds(10))
@@ -207,10 +207,10 @@ internal static class StressRunner
     {
         Console.WriteLine(
             $"Stress-testing {PartitionExecutions:N0} partition executions across " +
-            $"{PartitionKeys:N0} keys with a {MaximumPartitions:N0}-partition bound...");
+            $"{PartitionKeys:N0} keys with a {MaxPartitions:N0}-partition bound...");
         var partitions = PartitionedShield<int>.CreateAsync(
             static key => new ValueTask<Shield>(Shield.Retry(key & 1, Backoff.None)),
-            new PartitionedShieldOptions { MaximumPartitions = MaximumPartitions });
+            new PartitionedShieldOptions { MaxPartitions = MaxPartitions });
 
         for (var operation = 0; operation < PartitionExecutions; operation++)
         {
@@ -222,10 +222,10 @@ internal static class StressRunner
             }
         }
 
-        if (partitions.Count > MaximumPartitions)
+        if (partitions.Count > MaxPartitions)
         {
             throw new InvalidOperationException(
-                $"Partition retention exceeded its bound: {partitions.Count} > {MaximumPartitions}.");
+                $"Partition retention exceeded its bound: {partitions.Count} > {MaxPartitions}.");
         }
 
         Console.WriteLine(

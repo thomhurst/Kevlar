@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.KevlarTelemetryEvent.AttemptNumber
   - Kevlar.KevlarTelemetryEvent.CallbackKind
+  - Kevlar.KevlarTelemetryEvent.CallbackSource
   - Kevlar.KevlarTelemetryEvent.Context
   - Kevlar.KevlarTelemetryEvent.Delay
   - Kevlar.KevlarTelemetryEvent.Duration
@@ -436,6 +437,29 @@ items:
       type: System.Nullable{Kevlar.CallbackErrorKind}
     content.vb: Public ReadOnly Property CallbackKind As CallbackErrorKind?
   overload: Kevlar.KevlarTelemetryEvent.CallbackKind*
+- uid: Kevlar.KevlarTelemetryEvent.CallbackSource
+  commentId: P:Kevlar.KevlarTelemetryEvent.CallbackSource
+  id: CallbackSource
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: CallbackSource
+  nameWithType: KevlarTelemetryEvent.CallbackSource
+  fullName: Kevlar.KevlarTelemetryEvent.CallbackSource
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The stable callback or integration identifier, when this is a callback-error event.
+  example: []
+  syntax:
+    content: public string? CallbackSource { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property CallbackSource As String
+  overload: Kevlar.KevlarTelemetryEvent.CallbackSource*
 - uid: Kevlar.KevlarTelemetryEvent.Context
   commentId: P:Kevlar.KevlarTelemetryEvent.Context
   id: Context
@@ -962,6 +986,13 @@ references:
     isExternal: true
     href: Kevlar.CallbackErrorKind.html
   - name: '?'
+- uid: Kevlar.KevlarTelemetryEvent.CallbackSource*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.CallbackSource
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_CallbackSource
+  name: CallbackSource
+  nameWithType: KevlarTelemetryEvent.CallbackSource
+  fullName: Kevlar.KevlarTelemetryEvent.CallbackSource
 - uid: Kevlar.KevlarTelemetryEvent.Context*
   commentId: Overload:Kevlar.KevlarTelemetryEvent.Context
   isExternal: true

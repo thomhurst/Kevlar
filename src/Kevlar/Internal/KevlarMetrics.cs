@@ -341,13 +341,14 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void CallbackError(string? shieldName, CallbackErrorKind kind)
+    public static void CallbackError(string? shieldName, CallbackErrorKind kind, string source)
     {
 #if NET8_0_OR_GREATER
         if (CallbackErrors.Enabled)
         {
             var tags = NameTags(shieldName);
             tags.Add("kevlar.callback.kind", CallbackKindName(kind));
+            tags.Add("kevlar.callback.source", source);
             CallbackErrors.Add(1, tags);
         }
 #endif
@@ -792,9 +793,7 @@ internal static class KevlarMetrics
         CallbackErrorKind.Fallback => "fallback",
         CallbackErrorKind.ConcurrencyLimitRejected => "concurrency_limit_rejected",
         CallbackErrorKind.RateLimitRejected => "rate_limit_rejected",
-        CallbackErrorKind.RateLimiterAdapterRejected => "rate_limiter_adapter_rejected",
-        CallbackErrorKind.ChaosInjected => "chaos_injected",
-        CallbackErrorKind.Logging => "logging",
+        CallbackErrorKind.Custom => "custom",
         CallbackErrorKind.ResultDisposal => "result_disposal",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };

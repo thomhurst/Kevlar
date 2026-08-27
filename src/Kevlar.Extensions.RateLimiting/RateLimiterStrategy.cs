@@ -197,7 +197,7 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
         var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
             rejectedEvent,
-            CallbackErrorKind.RateLimiterAdapterRejected,
+            CallbackErrorKind.Custom,
             context,
             "RateLimiterAdapterOptions.OnRejected");
         if (notification.IsCompletedSuccessfully)

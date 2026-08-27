@@ -5,7 +5,6 @@ items:
   id: ShieldStateSnapshot
   parent: Kevlar.Testing
   children:
-  - Kevlar.Testing.ShieldStateSnapshot.ContractVersion
   - Kevlar.Testing.ShieldStateSnapshot.Strategies
   langs:
   - csharp
@@ -31,29 +30,6 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.ShieldStateSnapshot.ContractVersion
-  commentId: P:Kevlar.Testing.ShieldStateSnapshot.ContractVersion
-  id: ContractVersion
-  parent: Kevlar.Testing.ShieldStateSnapshot
-  langs:
-  - csharp
-  - vb
-  name: ContractVersion
-  nameWithType: ShieldStateSnapshot.ContractVersion
-  fullName: Kevlar.Testing.ShieldStateSnapshot.ContractVersion
-  type: Property
-  assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Gets the snapshot contract version.
-  example: []
-  syntax:
-    content: public int ContractVersion { get; }
-    parameters: []
-    return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property ContractVersion As Integer
-  overload: Kevlar.Testing.ShieldStateSnapshot.ContractVersion*
 - uid: Kevlar.Testing.ShieldStateSnapshot.Strategies
   commentId: P:Kevlar.Testing.ShieldStateSnapshot.Strategies
   id: Strategies
@@ -318,24 +294,6 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Testing.ShieldStateSnapshot.ContractVersion*
-  commentId: Overload:Kevlar.Testing.ShieldStateSnapshot.ContractVersion
-  isExternal: true
-  href: Kevlar.Testing.ShieldStateSnapshot.html#Kevlar_Testing_ShieldStateSnapshot_ContractVersion
-  name: ContractVersion
-  nameWithType: ShieldStateSnapshot.ContractVersion
-  fullName: Kevlar.Testing.ShieldStateSnapshot.ContractVersion
-- uid: System.Int32
-  commentId: T:System.Int32
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.int32
-  name: int
-  nameWithType: int
-  fullName: int
-  nameWithType.vb: Integer
-  fullName.vb: Integer
-  name.vb: Integer
 - uid: Kevlar.Testing.ShieldStateSnapshot.Strategies*
   commentId: Overload:Kevlar.Testing.ShieldStateSnapshot.Strategies
   isExternal: true

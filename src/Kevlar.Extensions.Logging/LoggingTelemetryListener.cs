@@ -5,6 +5,11 @@ namespace Kevlar.Extensions.Logging;
 internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
     : IKevlarTelemetryListener, IKevlarResultTelemetryListener
 {
+    private static readonly KevlarKey<string> HttpRequestMethodKey =
+        new("kevlar.http.request.method");
+    private static readonly KevlarKey<string> HttpRequestUriKey =
+        new("kevlar.http.request.uri");
+
     void IKevlarResultTelemetryListener.OnResultEvent<T>(
         in KevlarTelemetryEvent telemetryEvent,
         in T result)
@@ -177,12 +182,16 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         in KevlarTelemetryEvent telemetryEvent,
         Exception exception)
     {
-        if (telemetryEvent.CallbackKind != CallbackErrorKind.Logging)
+        if (!string.Equals(
+                telemetryEvent.CallbackSource,
+                "Kevlar.Extensions.Logging",
+                StringComparison.Ordinal))
         {
             KevlarDiagnostics.ReportCallbackError(
-                CallbackErrorKind.Logging,
+                CallbackErrorKind.Custom,
                 telemetryEvent.Context,
-                exception);
+                exception,
+                "Kevlar.Extensions.Logging");
         }
     }
 
@@ -218,9 +227,10 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         catch (Exception formatterException)
         {
             KevlarDiagnostics.ReportCallbackError(
-                CallbackErrorKind.Logging,
+                CallbackErrorKind.Custom,
                 telemetryEvent.Context,
-                formatterException);
+                formatterException,
+                "Kevlar.Extensions.Logging");
             return "<formatter-error>";
         }
     }
@@ -235,10 +245,10 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         {
             case KevlarLogEventKind.Retry:
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestMethod,
+                    HttpRequestMethodKey,
                     out string? requestMethod);
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestUri,
+                    HttpRequestUriKey,
                     out string? requestUri);
                 LoggerMessages.Retry(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome, requestMethod, requestUri,
@@ -296,15 +306,15 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 break;
             case KevlarLogEventKind.CallbackError:
                 LoggerMessages.CallbackError(logger, telemetryEvent.ShieldName,
-                    telemetryEvent.StrategyIndex, telemetryEvent.CallbackKind, outcome,
-                    telemetryEvent.Exception);
+                    telemetryEvent.StrategyIndex, telemetryEvent.CallbackKind,
+                    telemetryEvent.CallbackSource, outcome, telemetryEvent.Exception);
                 break;
             case KevlarLogEventKind.AttemptsSuppressed:
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestMethod,
+                    HttpRequestMethodKey,
                     out string? suppressedRequestMethod);
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestUri,
+                    HttpRequestUriKey,
                     out string? suppressedRequestUri);
                 LoggerMessages.AttemptsSuppressed(
                     logger,
@@ -328,10 +338,10 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         {
             case KevlarLogEventKind.Retry:
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestMethod,
+                    HttpRequestMethodKey,
                     out string? requestMethod);
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestUri,
+                    HttpRequestUriKey,
                     out string? requestUri);
                 logger.Log(level, eventId, telemetryEvent.Exception,
                     "Shield {ShieldName} strategy {StrategyIndex} retry attempt {Attempt} after {Delay}; outcome {Outcome}; request {RequestMethod} {RequestUri}",
@@ -394,16 +404,16 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 break;
             case KevlarLogEventKind.CallbackError:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} callback {CallbackKind} failed; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} callback {CallbackKind} ({CallbackSource}) failed; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
-                    telemetryEvent.CallbackKind, outcome);
+                    telemetryEvent.CallbackKind, telemetryEvent.CallbackSource, outcome);
                 break;
             case KevlarLogEventKind.AttemptsSuppressed:
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestMethod,
+                    HttpRequestMethodKey,
                     out string? suppressedRequestMethod);
                 _ = telemetryEvent.Context.Properties.TryGet(
-                    KevlarKeys.HttpRequestUri,
+                    HttpRequestUriKey,
                     out string? suppressedRequestUri);
                 logger.Log(level, eventId,
                     "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",

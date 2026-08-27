@@ -12,6 +12,81 @@ namespace Kevlar.Tests;
 public class ApiShapeTests
 {
     [Test]
+    public async Task PreFreeze_Surface_Uses_Consistent_Names()
+    {
+        var assemblies = new[]
+        {
+            typeof(Shield).Assembly,
+            typeof(ShieldDefinition).Assembly,
+            typeof(StandardHedgeShieldOptions).Assembly,
+            typeof(ShieldDescriptor).Assembly,
+        };
+        var maximumMembers = assemblies
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .SelectMany(static type => type.GetMembers(
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            .Where(static member => member.Name.StartsWith("Maximum", StringComparison.Ordinal))
+            .Select(static member => $"{member.DeclaringType!.FullName}.{member.Name}")
+            .ToArray();
+
+        await Assert.That(maximumMembers).IsEmpty();
+        await Assert.That(typeof(Backoff).GetProperty("InitialDelay")).IsNull();
+        await Assert.That(typeof(Backoff).GetProperty("BaseDelay")).IsNotNull();
+        await Assert.That(typeof(PartitionedShield<string>).GetMethod("Remove")).IsNull();
+        await Assert.That(typeof(PartitionedShield<string, int>).GetMethod("Remove")).IsNull();
+        await Assert.That(typeof(ExecutionProbeSnapshot).GetProperty("ContractVersion")).IsNull();
+        await Assert.That(typeof(PartitionedShieldStateSnapshot).GetProperty("ContractVersion")).IsNull();
+        await Assert.That(typeof(ShieldStateSnapshot).GetProperty("ContractVersion")).IsNull();
+    }
+
+    [Test]
+    public async Task Testing_Wait_Helper_Does_Not_Extend_Every_Task()
+    {
+        var testingAssembly = typeof(ShieldDescriptor).Assembly;
+        var helper = testingAssembly.GetType("Kevlar.Testing.ShieldExecution");
+
+        await Assert.That(testingAssembly.GetType("Kevlar.Testing.ShieldExecutionExtensions")).IsNull();
+        await Assert.That(helper).IsNotNull();
+        var wait = helper!.GetMethod("WaitForPendingAsync", BindingFlags.Public | BindingFlags.Static);
+        await Assert.That(wait).IsNotNull();
+        await Assert.That(wait!.IsDefined(
+            typeof(System.Runtime.CompilerServices.ExtensionAttribute),
+            inherit: false)).IsFalse();
+    }
+
+    [Test]
+    public async Task Core_Does_Not_Enumerate_Satellite_Callbacks_Or_Keys()
+    {
+        var enumNames = Enum.GetNames<CallbackErrorKind>();
+
+        await Assert.That(enumNames).Contains("Custom");
+        await Assert.That(enumNames).DoesNotContain("ChaosInjected");
+        await Assert.That(enumNames).DoesNotContain("Logging");
+        await Assert.That(enumNames).DoesNotContain("RateLimiterAdapterRejected");
+        await Assert.That(typeof(CallbackErrorEvent).GetProperty("Source")?.PropertyType)
+            .IsEqualTo(typeof(string));
+        await Assert.That(typeof(KevlarKeys).GetProperty("HttpRequestMethod")).IsNull();
+        await Assert.That(typeof(KevlarKeys).GetProperty("HttpRequestUri")).IsNull();
+
+        var httpKeys = typeof(StandardHedgeShieldOptions).Assembly
+            .GetType("Kevlar.Extensions.Http.KevlarHttpKeys");
+        await Assert.That(httpKeys).IsNotNull();
+        await Assert.That(httpKeys!.GetProperty("RequestMethod")).IsNotNull();
+        await Assert.That(httpKeys.GetProperty("RequestUri")).IsNotNull();
+    }
+
+    [Test]
+    public async Task Default_Handling_Reset_Has_Explicit_Name()
+    {
+        await Assert.That(typeof(Shield<int>).GetMethod("WhenAnyError")).IsNull();
+        await Assert.That(typeof(Shield<int>).GetMethod("WithDefaultHandling")?.ReturnType)
+            .IsEqualTo(typeof(Shield<int>));
+        await Assert.That(typeof(ShieldExtensions).GetMethod("WhenAnyError")).IsNull();
+        await Assert.That(typeof(ShieldExtensions).GetMethod("WithDefaultHandling")?.ReturnType)
+            .IsEqualTo(typeof(Shield));
+    }
+
+    [Test]
     public async Task AddShield_Overloads_Are_Symmetric_After_VoidShield_Fold()
     {
         static string Shape(MethodInfo method) =>

@@ -9,9 +9,6 @@ public sealed class ExecutionProbeSnapshot
         CancellationCount = cancellationCount;
     }
 
-    /// <summary>Gets the snapshot contract version.</summary>
-    public int ContractVersion => 1;
-
     /// <summary>Gets the number of delegate invocations.</summary>
     public int AttemptCount { get; }
 

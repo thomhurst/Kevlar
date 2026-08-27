@@ -52,7 +52,7 @@ services.AddHttpClient("api")
         };
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
         options.Handler.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
-        options.Handler.MaximumBufferSize = 256 * 1024;
+        options.Handler.MaxBufferSize = 256 * 1024;
     });
 ```
 
@@ -106,7 +106,7 @@ var configuration = new ConfigurationBuilder()
         ["Http:Api:Retry:BaseDelay"] = "00:00:00.100",
         ["Http:Api:Retry:Jitter"] = "Equal",
         ["Http:Api:AttemptTimeout"] = "00:00:05",
-        ["Http:Api:Handler:MaximumBufferSize"] = "262144",
+        ["Http:Api:Handler:MaxBufferSize"] = "262144",
     })
     .Build();
 
@@ -198,7 +198,7 @@ services.AddHttpClient("api")
         new ShieldHttpHandlerOptions
         {
             ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
-            MaximumBufferSize = 1024 * 1024,
+            MaxBufferSize = 1024 * 1024,
         });
 ```
 
@@ -339,7 +339,7 @@ Replay behavior depends on the request:
   already loaded into its HTTP buffer is also reusable. `JsonContent` declared as
   `IAsyncEnumerable<T>` and one-shot content such as `StreamContent` are sent once; call
   `LoadIntoBufferAsync()` first, select `Buffer`, or provide a `RequestFactory` to replay them.
-- `Buffer` serializes content once before sending, bounded by `MaximumBufferSize`, then gives each
+- `Buffer` serializes content once before sending, bounded by `MaxBufferSize`, then gives each
   attempt its own `ByteArrayContent`. Oversize or partial serialization fails before attempt 1.
 - `RequestFactory` creates a complete fresh request per attempt. Use it for one-shot streams,
   generated bodies, signatures, or other request state that cannot be cloned. Factory requests are
@@ -384,7 +384,8 @@ gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (min
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout.Timeout`,
 `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`, and `AttemptTimeout.Timeout`.
 
-Request replay is configured through `Handler`; endpoint authorities and ordering are configured
+Request replay is configured through `Handler` (`ContentReplayPolicy`, `MaxBufferSize`,
+`AllowUnsafeMethodReplay`, and `RequestFactory`); endpoint authorities and ordering are configured
 through `Routing`. POST, PATCH, and custom methods still require the same explicit idempotency
 opt-in described above; registering the standard hedging pipeline does not make an unsafe operation
 safe to repeat.

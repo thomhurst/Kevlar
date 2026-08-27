@@ -5,6 +5,7 @@ items:
   id: Backoff
   parent: Kevlar
   children:
+  - Kevlar.Backoff.BaseDelay
   - Kevlar.Backoff.Constant(System.TimeSpan,Kevlar.Jitter)
   - Kevlar.Backoff.Custom(System.Func{System.Int32,System.TimeSpan})
   - Kevlar.Backoff.Default
@@ -12,7 +13,6 @@ items:
   - Kevlar.Backoff.Factor
   - Kevlar.Backoff.GetDelay(System.Int32)
   - Kevlar.Backoff.GetDelay(System.Int32,System.TimeSpan)
-  - Kevlar.Backoff.InitialDelay
   - Kevlar.Backoff.Jitter
   - Kevlar.Backoff.Kind
   - Kevlar.Backoff.Linear(System.TimeSpan,System.Nullable{System.TimeSpan},Kevlar.Jitter)
@@ -114,18 +114,18 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Exponentially increasing delay: <code class="paramref">initialDelay</code>, then multiplied by
+    Exponentially increasing delay: <code class="paramref">baseDelay</code>, then multiplied by
 
     <code class="paramref">factor</code> after each attempt. The default equal jitter scales each delay
 
     by a random factor in [0.5, 1.5) to avoid synchronized retry storms. Decorrelated jitter
 
-    instead selects each delay between the initial delay and three times the preceding delay.
+    instead selects each delay between the base delay and three times the preceding delay.
   example: []
   syntax:
-    content: public static Backoff Exponential(TimeSpan initialDelay, double factor = 2, TimeSpan? maxDelay = null, Jitter jitter = Jitter.Equal)
+    content: public static Backoff Exponential(TimeSpan baseDelay, double factor = 2, TimeSpan? maxDelay = null, Jitter jitter = Jitter.Equal)
     parameters:
-    - id: initialDelay
+    - id: baseDelay
       type: System.TimeSpan
     - id: factor
       type: System.Double
@@ -135,7 +135,7 @@ items:
       type: Kevlar.Jitter
     return:
       type: Kevlar.Backoff
-    content.vb: Public Shared Function Exponential(initialDelay As TimeSpan, factor As Double = 2, maxDelay As TimeSpan? = Nothing, jitter As Jitter = Jitter.Equal) As Backoff
+    content.vb: Public Shared Function Exponential(baseDelay As TimeSpan, factor As Double = 2, maxDelay As TimeSpan? = Nothing, jitter As Jitter = Jitter.Equal) As Backoff
   overload: Kevlar.Backoff.Exponential*
   nameWithType.vb: Backoff.Exponential(TimeSpan, Double, TimeSpan?, Jitter)
   fullName.vb: Kevlar.Backoff.Exponential(System.TimeSpan, Double, System.TimeSpan?, Kevlar.Jitter)
@@ -311,29 +311,29 @@ items:
       type: Kevlar.BackoffKind
     content.vb: Public MustOverride ReadOnly Property Kind As BackoffKind
   overload: Kevlar.Backoff.Kind*
-- uid: Kevlar.Backoff.InitialDelay
-  commentId: P:Kevlar.Backoff.InitialDelay
-  id: InitialDelay
+- uid: Kevlar.Backoff.BaseDelay
+  commentId: P:Kevlar.Backoff.BaseDelay
+  id: BaseDelay
   parent: Kevlar.Backoff
   langs:
   - csharp
   - vb
-  name: InitialDelay
-  nameWithType: Backoff.InitialDelay
-  fullName: Kevlar.Backoff.InitialDelay
+  name: BaseDelay
+  nameWithType: Backoff.BaseDelay
+  fullName: Kevlar.Backoff.BaseDelay
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The constant delay, linear step, or exponential initial delay, when applicable.
+  summary: The constant delay, linear step, or exponential base delay, when applicable.
   example: []
   syntax:
-    content: public virtual TimeSpan? InitialDelay { get; }
+    content: public virtual TimeSpan? BaseDelay { get; }
     parameters: []
     return:
       type: System.Nullable{System.TimeSpan}
-    content.vb: Public Overridable ReadOnly Property InitialDelay As TimeSpan?
-  overload: Kevlar.Backoff.InitialDelay*
+    content.vb: Public Overridable ReadOnly Property BaseDelay As TimeSpan?
+  overload: Kevlar.Backoff.BaseDelay*
 - uid: Kevlar.Backoff.Factor
   commentId: P:Kevlar.Backoff.Factor
   id: Factor
@@ -901,13 +901,13 @@ references:
   name: BackoffKind
   nameWithType: BackoffKind
   fullName: Kevlar.BackoffKind
-- uid: Kevlar.Backoff.InitialDelay*
-  commentId: Overload:Kevlar.Backoff.InitialDelay
+- uid: Kevlar.Backoff.BaseDelay*
+  commentId: Overload:Kevlar.Backoff.BaseDelay
   isExternal: true
-  href: Kevlar.Backoff.html#Kevlar_Backoff_InitialDelay
-  name: InitialDelay
-  nameWithType: Backoff.InitialDelay
-  fullName: Kevlar.Backoff.InitialDelay
+  href: Kevlar.Backoff.html#Kevlar_Backoff_BaseDelay
+  name: BaseDelay
+  nameWithType: Backoff.BaseDelay
+  fullName: Kevlar.Backoff.BaseDelay
 - uid: Kevlar.Backoff.Factor*
   commentId: Overload:Kevlar.Backoff.Factor
   isExternal: true

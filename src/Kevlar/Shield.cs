@@ -197,17 +197,17 @@ public sealed class Shield : IShieldLifecycle
     /// </summary>
     public static Shield Use(Func<HandlingClause, Strategy> factory) => ShieldExtensions.Use(Empty, factory);
 
-    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="ShieldExtensions.WhenAnyError(Shield)"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
     public static ShieldBuilder When<TException>()
         where TException : Exception
         => ShieldExtensions.When<TException>(Empty);
 
-    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WhenAnyError(Shield)"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
     public static ShieldBuilder When<TException>(Func<TException, bool> predicate)
         where TException : Exception
         => ShieldExtensions.When(Empty, predicate);
 
-    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WhenAnyError(Shield)"/> to return to default handling.</summary>
+    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
     public static ShieldBuilder When(Func<Exception, bool> predicate) => ShieldExtensions.When(Empty, predicate);
 
     /// <summary>Starts a handling clause using the active execution and strategy context.</summary>

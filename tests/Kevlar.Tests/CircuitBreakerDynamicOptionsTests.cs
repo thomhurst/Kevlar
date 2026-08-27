@@ -99,10 +99,11 @@ public class CircuitBreakerDynamicOptionsTests
                 _ = generator.Invoke(in outcome, in statistics, context).Result;
             }
 
-            // TUnit may materialize one assertion object on this thread; a boxed int would add
-            // roughly 24 bytes for every invocation instead of this fixed allowance.
+            // Coverage probes and TUnit may allocate a small fixed amount on this thread. A boxed
+            // int would add roughly 24 bytes for every invocation (about 240 KB), well above this
+            // allowance.
             await Assert.That(GC.GetAllocatedBytesForCurrentThread() - before)
-                .IsLessThanOrEqualTo(64);
+                .IsLessThanOrEqualTo(16 * 1024);
         }
         finally
         {

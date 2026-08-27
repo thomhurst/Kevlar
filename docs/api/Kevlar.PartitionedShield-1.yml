@@ -19,7 +19,6 @@ items:
   - Kevlar.PartitionedShield`1.GetShieldAsync(`0)
   - Kevlar.PartitionedShield`1.PruneExpired
   - Kevlar.PartitionedShield`1.PruneExpiredAsync
-  - Kevlar.PartitionedShield`1.Remove(`0)
   - Kevlar.PartitionedShield`1.TryGetShield(`0,Kevlar.Shield@)
   - Kevlar.PartitionedShield`1.TryRemove(`0)
   - Kevlar.PartitionedShield`1.TryRemoveAsync(`0)
@@ -35,7 +34,7 @@ items:
   namespace: Kevlar
   summary: Selects and retains an independent untyped <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> for each partition key.
   remarks: >-
-    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions.MaximumPartitions" data-throw-if-not-resolved="false"></xref>. Eviction
+    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions.MaxPartitions" data-throw-if-not-resolved="false"></xref>. Eviction
 
     removes only the provider's reference: callers that already hold the old shield, including
 
@@ -212,33 +211,6 @@ items:
   nameWithType.vb: PartitionedShield(Of TKey).TryGetShield(TKey, Shield)
   fullName.vb: Kevlar.PartitionedShield(Of TKey).TryGetShield(TKey, Kevlar.Shield)
   name.vb: TryGetShield(TKey, Shield)
-- uid: Kevlar.PartitionedShield`1.Remove(`0)
-  commentId: M:Kevlar.PartitionedShield`1.Remove(`0)
-  id: Remove(`0)
-  parent: Kevlar.PartitionedShield`1
-  langs:
-  - csharp
-  - vb
-  name: Remove(TKey)
-  nameWithType: PartitionedShield<TKey>.Remove(TKey)
-  fullName: Kevlar.PartitionedShield<TKey>.Remove(TKey)
-  type: Method
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Removes a retained partition. Existing users of its shield are unaffected.
-  example: []
-  syntax:
-    content: public bool Remove(TKey key)
-    parameters:
-    - id: key
-      type: '{TKey}'
-    return:
-      type: System.Boolean
-    content.vb: Public Function Remove(key As TKey) As Boolean
-  overload: Kevlar.PartitionedShield`1.Remove*
-  nameWithType.vb: PartitionedShield(Of TKey).Remove(TKey)
-  fullName.vb: Kevlar.PartitionedShield(Of TKey).Remove(TKey)
 - uid: Kevlar.PartitionedShield`1.TryRemove(`0)
   commentId: M:Kevlar.PartitionedShield`1.TryRemove(`0)
   id: TryRemove(`0)
@@ -547,13 +519,13 @@ references:
   name: Shield
   nameWithType: Shield
   fullName: Kevlar.Shield
-- uid: Kevlar.PartitionedShieldOptions.MaximumPartitions
-  commentId: P:Kevlar.PartitionedShieldOptions.MaximumPartitions
+- uid: Kevlar.PartitionedShieldOptions.MaxPartitions
+  commentId: P:Kevlar.PartitionedShieldOptions.MaxPartitions
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaximumPartitions
-  name: MaximumPartitions
-  nameWithType: PartitionedShieldOptions.MaximumPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaximumPartitions
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaxPartitions
+  name: MaxPartitions
+  nameWithType: PartitionedShieldOptions.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
@@ -1202,15 +1174,6 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
-- uid: Kevlar.PartitionedShield`1.Remove*
-  commentId: Overload:Kevlar.PartitionedShield`1.Remove
-  isExternal: true
-  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_Remove__0_
-  name: Remove
-  nameWithType: PartitionedShield<TKey>.Remove
-  fullName: Kevlar.PartitionedShield<TKey>.Remove
-  nameWithType.vb: PartitionedShield(Of TKey).Remove
-  fullName.vb: Kevlar.PartitionedShield(Of TKey).Remove
 - uid: Kevlar.PartitionedShield`1.TryRemove*
   commentId: Overload:Kevlar.PartitionedShield`1.TryRemove
   isExternal: true

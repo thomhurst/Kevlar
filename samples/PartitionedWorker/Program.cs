@@ -6,7 +6,7 @@ var tenants = new PartitionedShield<string>(
     _ => Shield.When<InvalidOperationException>()
         .Retry(1, Backoff.None)
         .WithName("tenant-worker"),
-    new PartitionedShieldOptions { MaximumPartitions = 16 },
+    new PartitionedShieldOptions { MaxPartitions = 16 },
     StringComparer.Ordinal);
 
 foreach (var tenant in new[] { "alpha", "beta" })

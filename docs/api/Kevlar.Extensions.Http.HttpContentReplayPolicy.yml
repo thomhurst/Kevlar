@@ -56,7 +56,7 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Buffer content once, up to <xref href="Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize" data-throw-if-not-resolved="false"></xref>.
+  summary: Buffer content once, up to <xref href="Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
     content: Buffer = 1
@@ -106,10 +106,10 @@ references:
   name: HttpContentReplayPolicy
   nameWithType: HttpContentReplayPolicy
   fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy
-- uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize
-  commentId: P:Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize
+- uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize
+  commentId: P:Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html#Kevlar_Extensions_Http_ShieldHttpHandlerOptions_MaximumBufferSize
-  name: MaximumBufferSize
-  nameWithType: ShieldHttpHandlerOptions.MaximumBufferSize
-  fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize
+  href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html#Kevlar_Extensions_Http_ShieldHttpHandlerOptions_MaxBufferSize
+  name: MaxBufferSize
+  nameWithType: ShieldHttpHandlerOptions.MaxBufferSize
+  fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaxBufferSize

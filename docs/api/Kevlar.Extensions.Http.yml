@@ -11,6 +11,7 @@ items:
   - Kevlar.Extensions.Http.HttpRequestReplayException
   - Kevlar.Extensions.Http.HttpShield
   - Kevlar.Extensions.Http.KevlarHttp
+  - Kevlar.Extensions.Http.KevlarHttpKeys
   - Kevlar.Extensions.Http.KevlarHttpRequestExtensions
   - Kevlar.Extensions.Http.KevlarRequestOptions
   - Kevlar.Extensions.Http.ShieldDelegatingHandler
@@ -80,6 +81,13 @@ references:
   name: KevlarHttp
   nameWithType: KevlarHttp
   fullName: Kevlar.Extensions.Http.KevlarHttp
+- uid: Kevlar.Extensions.Http.KevlarHttpKeys
+  commentId: T:Kevlar.Extensions.Http.KevlarHttpKeys
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpKeys.html
+  name: KevlarHttpKeys
+  nameWithType: KevlarHttpKeys
+  fullName: Kevlar.Extensions.Http.KevlarHttpKeys
 - uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
   commentId: T:Kevlar.Extensions.Http.KevlarHttpRequestExtensions
   isExternal: true

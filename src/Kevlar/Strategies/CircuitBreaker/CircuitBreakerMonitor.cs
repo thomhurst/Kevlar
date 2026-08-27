@@ -132,7 +132,8 @@ public sealed class CircuitBreakerMonitor
                 KevlarDiagnostics.ReportCallbackError(
                     CallbackErrorKind.CircuitMonitor,
                     stateChangedEvent.Context,
-                    exception);
+                    exception,
+                    "CircuitBreakerMonitor.OnStateChanged");
             }
         }
     }

@@ -27,14 +27,8 @@ public enum CallbackErrorKind
     /// <summary>A built-in rate-limit rejection notification.</summary>
     RateLimitRejected,
 
-    /// <summary>A System.Threading.RateLimiting adapter rejection notification.</summary>
-    RateLimiterAdapterRejected,
-
-    /// <summary>A chaos-injection notification.</summary>
-    ChaosInjected,
-
-    /// <summary>A logging formatter or severity callback.</summary>
-    Logging,
+    /// <summary>A callback owned by a custom strategy or integration.</summary>
+    Custom,
 
     /// <summary>Disposal of a superseded result.</summary>
     ResultDisposal,

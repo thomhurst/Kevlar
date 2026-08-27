@@ -9,7 +9,7 @@ public class PartitionWrapperLifecycleTests
     {
         var provider = new PartitionedShield<string, int>(
             static _ => Shield.For<int>().FallbackTo(42),
-            new PartitionedShieldOptions { MaximumPartitions = 2 });
+            new PartitionedShieldOptions { MaxPartitions = 2 });
 
         var first = provider.GetShield("first");
         _ = provider.GetShield("second");
@@ -19,8 +19,8 @@ public class PartitionWrapperLifecycleTests
         await Assert.That(provider.CapacityEvictionCount).IsEqualTo(0);
         await Assert.That(provider.ExpirationEvictionCount).IsEqualTo(0);
         await Assert.That(provider.PruneExpired()).IsEqualTo(0);
-        await Assert.That(provider.Remove("missing")).IsFalse();
-        await Assert.That(provider.Remove("first")).IsTrue();
+        await Assert.That(provider.TryRemove("missing")).IsFalse();
+        await Assert.That(provider.TryRemove("first")).IsTrue();
         await Assert.That(provider.TryGetShield("first", out _)).IsFalse();
 
         var heldResult = await first.ExecuteAsync(static _ => new ValueTask<int>(1));
@@ -40,7 +40,7 @@ public class PartitionWrapperLifecycleTests
             static _ => Shield.Fallback(static _ => ValueTask.CompletedTask),
             new PartitionedShieldOptions
             {
-                MaximumPartitions = 2,
+                MaxPartitions = 2,
                 IdleExpiration = TimeSpan.FromMinutes(1),
                 TimeProvider = timeProvider,
             });
@@ -61,7 +61,7 @@ public class PartitionWrapperLifecycleTests
         await Assert.That(provider.PruneExpired()).IsEqualTo(2);
         await Assert.That(provider.ExpirationEvictionCount).IsEqualTo(2);
         await Assert.That(provider.Count).IsEqualTo(0);
-        await Assert.That(provider.Remove("third")).IsFalse();
+        await Assert.That(provider.TryRemove("third")).IsFalse();
 
         await held!.ExecuteAsync(static _ => ValueTask.CompletedTask);
         _ = provider.GetShield("fourth");
@@ -76,13 +76,13 @@ public class PartitionWrapperLifecycleTests
     {
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaximumPartitions = 4 });
+            new PartitionedShieldOptions { MaxPartitions = 4 });
         _ = provider.GetShield("a");
         _ = provider.GetShield("b");
         _ = provider.GetShield("c");
         _ = provider.GetShield("d");
 
-        await Assert.That(provider.Remove("b")).IsTrue();
+        await Assert.That(provider.TryRemove("b")).IsTrue();
         _ = provider.GetShield("a");
         _ = provider.GetShield("e");
         _ = provider.GetShield("f");

@@ -24,7 +24,8 @@ namespace Kevlar;
 /// <c>kevlar.suppression.reason</c></item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
 /// <item><c>kevlar.callback_errors</c> — exceptions thrown by callbacks or cleanup operations;
-/// attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
+/// attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c>,
+/// <c>kevlar.callback.source</c></item>
 /// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
 /// <item><c>kevlar.strategy.events</c> — strategy and custom events; attributes include shield,
 /// strategy, event, severity, attempt, exception type, and an optional bounded operation key</item>
@@ -54,10 +55,15 @@ public static class KevlarDiagnostics
     /// Reports a callback or cleanup failure without allowing diagnostics subscribers to affect
     /// execution. Custom strategies can use this method to follow Kevlar's isolation contract.
     /// </summary>
+    /// <param name="kind">The callback family that failed.</param>
+    /// <param name="context">The active execution context.</param>
+    /// <param name="exception">The exception thrown by the callback.</param>
+    /// <param name="source">A stable callback or integration identifier.</param>
     public static void ReportCallbackError(
         CallbackErrorKind kind,
         KevlarContext context,
-        Exception exception)
+        Exception exception,
+        string source)
     {
         if (context is null)
         {
@@ -69,9 +75,14 @@ public static class KevlarDiagnostics
             throw new ArgumentNullException(nameof(exception));
         }
 
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw new ArgumentException("A callback source is required.", nameof(source));
+        }
+
         try
         {
-            KevlarMetrics.CallbackError(context.ShieldName, kind);
+            KevlarMetrics.CallbackError(context.ShieldName, kind, source);
         }
         catch
         {
@@ -89,7 +100,8 @@ public static class KevlarDiagnostics
                 context.AttemptNumber,
                 isSuccess: false,
                 exception,
-                callbackKind: kind);
+                callbackKind: kind,
+                callbackSource: source);
         }
         catch
         {
@@ -98,6 +110,7 @@ public static class KevlarDiagnostics
 
         var callbackError = new CallbackErrorEvent(
             kind,
+            source,
             context.ShieldName,
             context.StrategyIndex,
             exception);

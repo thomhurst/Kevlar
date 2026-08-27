@@ -53,7 +53,6 @@ public class StateProbeTests
         monitor.Isolate();
         var snapshot = shield.GetStateSnapshot();
 
-        await Assert.That(snapshot.ContractVersion).IsEqualTo(1);
         await Assert.That(snapshot.Strategies).Count().IsEqualTo(3);
 
         var circuit = snapshot.Strategies.OfType<CircuitBreakerStateSnapshot>().Single();
@@ -193,7 +192,6 @@ public class StateProbeTests
         await probe.WaitForCancellationCountAsync(1).WaitAsync(TimeSpan.FromSeconds(5));
 
         var snapshot = probe.GetSnapshot();
-        await Assert.That(snapshot.ContractVersion).IsEqualTo(1);
         await Assert.That(snapshot.AttemptCount).IsEqualTo(1);
         await Assert.That(snapshot.CancellationCount).IsEqualTo(1);
     }

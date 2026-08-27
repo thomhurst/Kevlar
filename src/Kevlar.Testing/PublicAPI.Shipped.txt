@@ -47,7 +47,7 @@ Kevlar.Testing.ShieldAssertionException.ShieldAssertionException() -> void
 Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message, System.Exception! innerException) -> void
 Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message) -> void
 Kevlar.Testing.ShieldDescriptor
-Kevlar.Testing.ShieldExecutionExtensions
+Kevlar.Testing.ShieldExecution
 Kevlar.Testing.ShieldDescriptor.Name.get -> string?
 Kevlar.Testing.ShieldDescriptor.ResultType.get -> System.Type?
 Kevlar.Testing.ShieldDescriptor.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyDescriptor!>!
@@ -100,20 +100,17 @@ Kevlar.Testing.ExecutionProbe.Wrap<TResult>(System.Func<System.Threading.Cancell
 Kevlar.Testing.ExecutionProbeSnapshot
 Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount.get -> int
 Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount.get -> int
-Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion.get -> int
 Kevlar.Testing.RateLimitStateSnapshot
 Kevlar.Testing.RateLimitStateSnapshot.AvailablePermits.get -> long
 Kevlar.Testing.RateLimitStateSnapshot.QueuedExecutions.get -> int
 Kevlar.Testing.PartitionedShieldStateSnapshot
 Kevlar.Testing.PartitionedShieldStateSnapshot.CapacityEvictionCount.get -> long
 Kevlar.Testing.PartitionedShieldStateSnapshot.ClearedEvictionCount.get -> long
-Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion.get -> int
 Kevlar.Testing.PartitionedShieldStateSnapshot.Count.get -> int
 Kevlar.Testing.PartitionedShieldStateSnapshot.CreatedCount.get -> long
 Kevlar.Testing.PartitionedShieldStateSnapshot.EvictionCount.get -> long
 Kevlar.Testing.PartitionedShieldStateSnapshot.ExpirationEvictionCount.get -> long
 Kevlar.Testing.ShieldStateSnapshot
-Kevlar.Testing.ShieldStateSnapshot.ContractVersion.get -> int
 Kevlar.Testing.ShieldStateSnapshot.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyStateSnapshot!>!
 Kevlar.Testing.ShieldStateSnapshotExtensions
 Kevlar.Testing.StrategyStateSnapshot
@@ -181,7 +178,7 @@ Kevlar.Testing.TelemetryEventRecord.Severity.get -> Kevlar.KevlarTelemetrySeveri
 Kevlar.Testing.TelemetryEventRecord.ShieldName.get -> string?
 Kevlar.Testing.TelemetryEventRecord.StrategyIndex.get -> int
 Kevlar.Testing.TelemetryEventRecord.StrategyName.get -> string!
-static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.Testing.ShieldExecution.WaitForPendingAsync(System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.RateLimitStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.HandlingClauseDescriptor

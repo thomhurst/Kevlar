@@ -9,7 +9,7 @@ public class PartitionedShieldContractTests
     {
         var provider = new PartitionedShield<string>(
             _ => Shield.Empty,
-            new PartitionedShieldOptions { MaximumPartitions = 2 });
+            new PartitionedShieldOptions { MaxPartitions = 2 });
         var first = provider.GetShield("first");
         _ = provider.GetShield("second");
 
@@ -72,7 +72,7 @@ public class PartitionedShieldContractTests
         await Assert.That(provider.Count).IsEqualTo(1);
         await Assert.That(provider.CreatedCount).IsEqualTo(1);
         await Assert.That(factoryKeys).IsEquivalentTo(["Tenant"]);
-        await Assert.That(provider.Remove("tenant")).IsTrue();
+        await Assert.That(provider.TryRemove("tenant")).IsTrue();
         await Assert.That(provider.Count).IsEqualTo(0);
     }
 

@@ -47,7 +47,8 @@ internal static class OutcomeDisposer
                 KevlarDiagnostics.ReportCallbackError(
                     CallbackErrorKind.ResultDisposal,
                     context,
-                    exception);
+                    exception,
+                    nameof(OutcomeDisposer));
             }
         }
 
@@ -66,7 +67,8 @@ internal static class OutcomeDisposer
             KevlarDiagnostics.ReportCallbackError(
                 CallbackErrorKind.ResultDisposal,
                 context,
-                exception);
+                exception,
+                nameof(OutcomeDisposer));
             return default;
         }
 
@@ -90,7 +92,8 @@ internal static class OutcomeDisposer
             KevlarDiagnostics.ReportCallbackError(
                 CallbackErrorKind.ResultDisposal,
                 context,
-                exception);
+                exception,
+                nameof(OutcomeDisposer));
         }
     }
 

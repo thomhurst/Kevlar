@@ -8,7 +8,7 @@ items:
   - Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
   - Kevlar.KevlarDiagnostics.MeterName
   - Kevlar.KevlarDiagnostics.OnCallbackError
-  - Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception)
+  - Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
   langs:
   - csharp
   - vb
@@ -41,7 +41,9 @@ items:
 
     <code>kevlar.suppression.reason</code></li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by callbacks or cleanup operations;
 
-    attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
+    attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code>,
+
+    <code>kevlar.callback.source</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
 
     strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
 
@@ -88,16 +90,16 @@ items:
     return:
       type: System.String
     content.vb: Public Const MeterName As String = "Kevlar"
-- uid: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception)
-  commentId: M:Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception)
-  id: ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception)
+- uid: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
+  commentId: M:Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
+  id: ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception,System.String)
   parent: Kevlar.KevlarDiagnostics
   langs:
   - csharp
   - vb
-  name: ReportCallbackError(CallbackErrorKind, KevlarContext, Exception)
-  nameWithType: KevlarDiagnostics.ReportCallbackError(CallbackErrorKind, KevlarContext, Exception)
-  fullName: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind, Kevlar.KevlarContext, System.Exception)
+  name: ReportCallbackError(CallbackErrorKind, KevlarContext, Exception, string)
+  nameWithType: KevlarDiagnostics.ReportCallbackError(CallbackErrorKind, KevlarContext, Exception, string)
+  fullName: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind, Kevlar.KevlarContext, System.Exception, string)
   type: Method
   assemblies:
   - Kevlar
@@ -108,16 +110,25 @@ items:
     execution. Custom strategies can use this method to follow Kevlar's isolation contract.
   example: []
   syntax:
-    content: public static void ReportCallbackError(CallbackErrorKind kind, KevlarContext context, Exception exception)
+    content: public static void ReportCallbackError(CallbackErrorKind kind, KevlarContext context, Exception exception, string source)
     parameters:
     - id: kind
       type: Kevlar.CallbackErrorKind
+      description: The callback family that failed.
     - id: context
       type: Kevlar.KevlarContext
+      description: The active execution context.
     - id: exception
       type: System.Exception
-    content.vb: Public Shared Sub ReportCallbackError(kind As CallbackErrorKind, context As KevlarContext, exception As Exception)
+      description: The exception thrown by the callback.
+    - id: source
+      type: System.String
+      description: A stable callback or integration identifier.
+    content.vb: Public Shared Sub ReportCallbackError(kind As CallbackErrorKind, context As KevlarContext, exception As Exception, source As String)
   overload: Kevlar.KevlarDiagnostics.ReportCallbackError*
+  nameWithType.vb: KevlarDiagnostics.ReportCallbackError(CallbackErrorKind, KevlarContext, Exception, String)
+  fullName.vb: Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind, Kevlar.KevlarContext, System.Exception, String)
+  name.vb: ReportCallbackError(CallbackErrorKind, KevlarContext, Exception, String)
 - uid: Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
   commentId: M:Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
   id: Listen(Kevlar.IKevlarTelemetryListener)
@@ -436,7 +447,7 @@ references:
 - uid: Kevlar.KevlarDiagnostics.ReportCallbackError*
   commentId: Overload:Kevlar.KevlarDiagnostics.ReportCallbackError
   isExternal: true
-  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_ReportCallbackError_Kevlar_CallbackErrorKind_Kevlar_KevlarContext_System_Exception_
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_ReportCallbackError_Kevlar_CallbackErrorKind_Kevlar_KevlarContext_System_Exception_System_String_
   name: ReportCallbackError
   nameWithType: KevlarDiagnostics.ReportCallbackError
   fullName: Kevlar.KevlarDiagnostics.ReportCallbackError

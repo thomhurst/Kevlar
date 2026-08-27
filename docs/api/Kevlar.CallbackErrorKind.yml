@@ -5,15 +5,13 @@ items:
   id: CallbackErrorKind
   parent: Kevlar
   children:
-  - Kevlar.CallbackErrorKind.ChaosInjected
   - Kevlar.CallbackErrorKind.CircuitMonitor
   - Kevlar.CallbackErrorKind.CircuitStateChanged
   - Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
+  - Kevlar.CallbackErrorKind.Custom
   - Kevlar.CallbackErrorKind.Fallback
   - Kevlar.CallbackErrorKind.Hedge
-  - Kevlar.CallbackErrorKind.Logging
   - Kevlar.CallbackErrorKind.RateLimitRejected
-  - Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
   - Kevlar.CallbackErrorKind.ResultDisposal
   - Kevlar.CallbackErrorKind.Retry
   - Kevlar.CallbackErrorKind.Timeout
@@ -192,64 +190,24 @@ items:
     content: RateLimitRejected = 7
     return:
       type: Kevlar.CallbackErrorKind
-- uid: Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
-  commentId: F:Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
-  id: RateLimiterAdapterRejected
+- uid: Kevlar.CallbackErrorKind.Custom
+  commentId: F:Kevlar.CallbackErrorKind.Custom
+  id: Custom
   parent: Kevlar.CallbackErrorKind
   langs:
   - csharp
   - vb
-  name: RateLimiterAdapterRejected
-  nameWithType: CallbackErrorKind.RateLimiterAdapterRejected
-  fullName: Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  name: Custom
+  nameWithType: CallbackErrorKind.Custom
+  fullName: Kevlar.CallbackErrorKind.Custom
   type: Field
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: A System.Threading.RateLimiting adapter rejection notification.
+  summary: A callback owned by a custom strategy or integration.
   example: []
   syntax:
-    content: RateLimiterAdapterRejected = 8
-    return:
-      type: Kevlar.CallbackErrorKind
-- uid: Kevlar.CallbackErrorKind.ChaosInjected
-  commentId: F:Kevlar.CallbackErrorKind.ChaosInjected
-  id: ChaosInjected
-  parent: Kevlar.CallbackErrorKind
-  langs:
-  - csharp
-  - vb
-  name: ChaosInjected
-  nameWithType: CallbackErrorKind.ChaosInjected
-  fullName: Kevlar.CallbackErrorKind.ChaosInjected
-  type: Field
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: A chaos-injection notification.
-  example: []
-  syntax:
-    content: ChaosInjected = 9
-    return:
-      type: Kevlar.CallbackErrorKind
-- uid: Kevlar.CallbackErrorKind.Logging
-  commentId: F:Kevlar.CallbackErrorKind.Logging
-  id: Logging
-  parent: Kevlar.CallbackErrorKind
-  langs:
-  - csharp
-  - vb
-  name: Logging
-  nameWithType: CallbackErrorKind.Logging
-  fullName: Kevlar.CallbackErrorKind.Logging
-  type: Field
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: A logging formatter or severity callback.
-  example: []
-  syntax:
-    content: Logging = 10
+    content: Custom = 8
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.ResultDisposal
@@ -269,7 +227,7 @@ items:
   summary: Disposal of a superseded result.
   example: []
   syntax:
-    content: ResultDisposal = 11
+    content: ResultDisposal = 9
     return:
       type: Kevlar.CallbackErrorKind
 references:

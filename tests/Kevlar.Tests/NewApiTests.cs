@@ -165,14 +165,14 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenAnyError_Resets_Untyped_Handling_To_The_Default()
+    public async Task WithDefaultHandling_Resets_Untyped_Handling_To_The_Default()
     {
         var timeProvider = new FakeTimeProvider();
         var original = Shield.When<ArgumentException>()
             .Retry(1, Backoff.None)
             .WithName("reset-test")
             .WithTimeProvider(timeProvider);
-        var reset = original.WhenAnyError();
+        var reset = original.WithDefaultHandling();
 
         await Assert.That(reset.Name).IsEqualTo(original.Name);
         await Assert.That(ReferenceEquals(reset.Time, original.Time)).IsTrue();
@@ -202,7 +202,7 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenAnyError_Resets_Typed_Handling_And_Preserves_Shield_State()
+    public async Task WithDefaultHandling_Resets_Typed_Handling_And_Preserves_Shield_State()
     {
         var timeProvider = new FakeTimeProvider();
         var original = Shield.For<int>()
@@ -211,7 +211,7 @@ public class NewApiTests
             .WithName("reset-test")
             .WithTimeProvider(timeProvider);
 
-        var reset = original.WhenAnyError();
+        var reset = original.WithDefaultHandling();
 
         await Assert.That(reset.Name).IsEqualTo(original.Name);
         await Assert.That(ReferenceEquals(reset.Time, original.Time)).IsTrue();
@@ -232,12 +232,12 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenAnyError_Reset_Survives_Compose()
+    public async Task WithDefaultHandling_Reset_Survives_Compose()
     {
         var outer = Shield.When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
         var reset = Shield.When<ArgumentException>()
             .Timeout(TimeSpan.FromMinutes(1))
-            .WhenAnyError();
+            .WithDefaultHandling();
         var shield = Shield.Compose(outer, reset).Retry(1, Backoff.None);
         var attempts = 0;
 
@@ -254,13 +254,13 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenAnyError_Reset_Survives_Typed_Wrap()
+    public async Task WithDefaultHandling_Reset_Survives_Typed_Wrap()
     {
         var outer = Shield.For<int>().When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
         var reset = Shield.For<int>()
             .When<ArgumentException>()
             .Timeout(TimeSpan.FromMinutes(1))
-            .WhenAnyError();
+            .WithDefaultHandling();
         var shield = outer.Wrap(reset).Retry(1, Backoff.None);
         var attempts = 0;
 

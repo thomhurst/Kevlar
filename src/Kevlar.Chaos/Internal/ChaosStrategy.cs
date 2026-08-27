@@ -140,9 +140,10 @@ internal abstract class ChaosStrategy : Strategy
         catch (Exception callbackException)
         {
             KevlarDiagnostics.ReportCallbackError(
-                CallbackErrorKind.ChaosInjected,
+                CallbackErrorKind.Custom,
                 context,
-                callbackException);
+                callbackException,
+                "ChaosOptions.OnInjected");
             return default;
         }
 
@@ -190,9 +191,10 @@ internal abstract class ChaosStrategy : Strategy
         catch (Exception callbackException)
         {
             KevlarDiagnostics.ReportCallbackError(
-                CallbackErrorKind.ChaosInjected,
+                CallbackErrorKind.Custom,
                 context,
-                callbackException);
+                callbackException,
+                "ChaosOptions.OnInjected");
         }
     }
 

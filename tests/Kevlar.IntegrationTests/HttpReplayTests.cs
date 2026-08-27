@@ -56,7 +56,7 @@ public class HttpReplayTests
             new ShieldHttpHandlerOptions
             {
                 ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
-                MaximumBufferSize = 1024,
+                MaxBufferSize = 1024,
                 AllowUnsafeMethodReplay = true,
             },
             transport);
@@ -558,7 +558,7 @@ public class HttpReplayTests
             new ShieldHttpHandlerOptions
             {
                 ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
-                MaximumBufferSize = 4,
+                MaxBufferSize = 4,
             },
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
@@ -584,7 +584,7 @@ public class HttpReplayTests
             new ShieldHttpHandlerOptions
             {
                 ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
-                MaximumBufferSize = 4,
+                MaxBufferSize = 4,
             },
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")

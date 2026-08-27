@@ -331,10 +331,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public void InitializeProperties(KevlarProperties properties)
         {
             _requestOptions?.ConfigureProperties?.Invoke(properties);
-            properties.Set(KevlarKeys.HttpRequestMethod, _original.Method.Method);
+            properties.Set(KevlarHttpKeys.RequestMethod, _original.Method.Method);
             if (_original.RequestUri is { } requestUri)
             {
-                properties.Set(KevlarKeys.HttpRequestUri, WithoutQueryOrFragment(requestUri));
+                properties.Set(KevlarHttpKeys.RequestUri, WithoutQueryOrFragment(requestUri));
             }
             if (!_canReplay)
             {
@@ -578,7 +578,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 var template = await HttpRequestTemplate.CreateAsync(
                     _original,
                     Options.ContentReplayPolicy,
-                    Options.MaximumBufferSize,
+                    Options.MaxBufferSize,
                     _canReplay,
                     _hadInitialContent,
                     creationCancellation.Token).ConfigureAwait(false);

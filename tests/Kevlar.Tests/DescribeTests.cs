@@ -162,7 +162,7 @@ public class DescribeTests
         var reset = Shield
             .When<InvalidOperationException>()
             .Retry(1, Backoff.None)
-            .WhenAnyError()
+            .WithDefaultHandling()
             .Retry(2, Backoff.None)
             .When<InvalidOperationException>()
             .Retry(3, Backoff.None);

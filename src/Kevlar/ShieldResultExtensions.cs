@@ -15,7 +15,7 @@ public static class ShieldResultExtensions
 
     /// <summary>
     /// Starts a handling clause for <see langword="null"/> results. Use
-    /// <see cref="Shield{TResult}.WhenAnyError"/> to return to default handling.
+    /// <see cref="Shield{TResult}.WithDefaultHandling"/> to return to default handling.
     /// </summary>
     /// <remarks>
     /// Prefer this to <see cref="Shield{TResult}.WhenResultIsDefault"/> whenever the result is a
