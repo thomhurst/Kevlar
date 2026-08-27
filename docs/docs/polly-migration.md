@@ -250,7 +250,7 @@ using Kevlar.Extensions.Http;
 var kevlarHedgeServices = new ServiceCollection();
 kevlarHedgeServices.AddHttpClient("hedged-catalog")
     .AddStandardHedgeShield(options =>
-        options.Endpoints.Add(new HttpEndpoint(new Uri("https://catalog.example"))));
+        options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://catalog.example"))));
 ```
 
 For hedging against the request's own authority without explicit endpoint configuration, track
