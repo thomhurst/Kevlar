@@ -53,8 +53,10 @@ await migrationShield.ExecuteAsync(static _ => ValueTask.CompletedTask, cancella
 | `ExecuteOutcomeAsync` / `Outcome<T>` | same names; void work returns non-generic `Outcome` |
 | `ResiliencePipelineBuilder.TimeProvider` | `WithTimeProvider(timeProvider)` |
 
-Kevlar accepts both `Task`- and `ValueTask`-returning delegates. One `Shield` supports synchronous,
-asynchronous, result-returning, and void executions; there is no separate sync or async type.
+Kevlar accepts both `Task`- and `ValueTask`-returning delegates. A non-hedging `Shield` supports
+synchronous, asynchronous, result-returning, and void executions; there is no separate sync or
+async type. Hedging requires asynchronous execution: calling synchronous `Execute` or
+`ExecuteOutcome` on a hedge shield throws `NotSupportedException`.
 
 ## Handling
 
@@ -95,7 +97,12 @@ var attemptAware = Shield
     .Retry(3, Backoff.None);
 ```
 
-`HandlingEvent.Attempt` is the direct zero-based counterpart to Polly's `AttemptNumber`.
+`HandlingEvent.Attempt` is the direct zero-based counterpart to the attempt number supplied to a
+Polly handling predicate. Retry callback counters differ:
+
+| Polly v8 | Kevlar |
+|---|---|
+| `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.RetryNumber` is one-based (`1` before the first retry) |
 
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar also
 lets execution-rejection exceptions and fatal runtime exceptions propagate by default. Use an
@@ -122,19 +129,24 @@ finally
 }
 ```
 
-Kevlar pools `KevlarContext` automatically. Use `ExecuteWithContextAsync`, a `KevlarKey<T>`, and
-`WithName`:
+Kevlar pools `KevlarContext` automatically. Use `ExecuteWithContextAsync` and a `KevlarKey<T>` for
+properties. `WithName` separately names the shield instance:
 
 ```csharp
 var tenantKey = new KevlarKey<string>("tenant");
 var contextShield = Shield.Empty.WithName("catalog");
 await contextShield.ExecuteWithContextAsync(
-    (tenantKey, tenant: "north"),
-    static (state, properties) => properties.Set(state.tenantKey, state.tenant),
+    (tenantKey, tenant: "north", operation: "catalog-read"),
+    static (state, properties) =>
+    {
+        properties.Set(state.tenantKey, state.tenant);
+        properties.Set(KevlarKeys.OperationKey, state.operation);
+    },
     static (state, context) =>
     {
         if (context.ShieldName != "catalog"
-            || context.Properties.GetOrDefault(state.tenantKey, "missing") != state.tenant)
+            || context.Properties.GetOrDefault(state.tenantKey, "missing") != state.tenant
+            || context.Properties.GetOrDefault(KevlarKeys.OperationKey, "missing") != state.operation)
         {
             throw new InvalidOperationException("Context mapping failed.");
         }
@@ -149,7 +161,8 @@ await contextShield.ExecuteWithContextAsync(
 | `ResilienceContext` | `KevlarContext` |
 | `ResilienceProperties` | `KevlarProperties` |
 | `ResiliencePropertyKey<T>` | `KevlarKey<T>` |
-| `OperationKey` | `WithName` / `KevlarContext.ShieldName` |
+| `ResilienceContext.OperationKey` | `KevlarKeys.OperationKey` in `KevlarProperties` |
+| `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName` / `KevlarContext.ShieldName` |
 | `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
 | `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
 
@@ -221,12 +234,27 @@ kevlarHttpServices.AddHttpClient("catalog")
 | Polly HTTP | Kevlar HTTP |
 |---|---|
 | `AddStandardResilienceHandler()` | `AddStandardShield()` |
-| `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
+| `AddStandardHedgingHandler()` | `AddStandardHedgeShield(options => configure endpoints)` |
 | `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)` |
 | `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
 | `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
 | `HttpClientResiliencePredicates.IsTransient` | `HttpShield.IsTransient` |
 | named gRPC resilience pipeline | `AddShieldUnaryInterceptor` / `AddShieldStreamingInterceptor` |
+
+Kevlar's standard hedge is endpoint-aware and has no parameterless overload. Supply at least one
+endpoint:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+var kevlarHedgeServices = new ServiceCollection();
+kevlarHedgeServices.AddHttpClient("hedged-catalog")
+    .AddStandardHedgeShield(options =>
+        options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://catalog.example"))));
+```
+
+For hedging against the request's own authority without explicit endpoint configuration, track
+[issue #346](https://github.com/thomhurst/Kevlar/issues/346).
 
 Kevlar buffers only bounded content and does not replay unsafe methods by default. Enable
 `AllowUnsafeMethodReplay`, choose a bounded buffering policy, or supply a `RequestFactory` when a
@@ -345,6 +373,40 @@ required.
 | Circuit breaker | failure ratio 0.1; minimum throughput 100; sampling 30 s; break 5 s | 5 consecutive failures; break 15 s; ratio mode uses minimum throughput 10 and sampling window 30 s |
 | Hedging | 1 additional attempt (2 total); delay 2 s | 1 additional attempt (2 total); delay 1 s |
 | Concurrency | permit limit 1,000; queue limit 0 | maximum concurrency 10; queue limit 0 |
+| Standard HTTP retry | 3 retries; exponential from 2 s; decorrelated jitter; no delay cap | 3 retries; exponential from 250 ms; equal jitter; 10 s cap; honours `Retry-After` |
+| Standard HTTP circuit breaker | failure ratio 0.1; minimum throughput 100; sampling 30 s; break 5 s | failure ratio 0.5; minimum throughput 10; sampling 30 s; break 15 s |
+| Standard HTTP concurrency | permit limit 1,000; queue limit 0 | no limiter unless `ConcurrencyLimit` is configured |
+| Chaos | enabled; injection rate 0.001 | disabled; injection rate 1 |
+
+The standard HTTP and chaos differences are executable contracts:
+
+<!-- doc-test-run: migration-http-chaos-defaults -->
+```csharp
+using Kevlar.Chaos;
+using Kevlar.Extensions.Http;
+
+var pollyHttpDefaults = new HttpStandardResilienceOptions();
+var kevlarHttpDefaults = new StandardHttpShieldOptions();
+var pollyChaosDefaults = new Polly.Simmy.Fault.ChaosFaultStrategyOptions();
+var kevlarChaosDefaults = new ChaosFaultOptions();
+
+if (pollyHttpDefaults.Retry.MaxDelay is not null
+    || pollyHttpDefaults.RateLimiter.DefaultRateLimiterOptions.PermitLimit != 1000
+    || pollyHttpDefaults.RateLimiter.DefaultRateLimiterOptions.QueueLimit != 0
+    || kevlarHttpDefaults.Retry.MaxDelay != TimeSpan.FromSeconds(10)
+    || kevlarHttpDefaults.CircuitBreaker.FailureRatio != 0.5
+    || kevlarHttpDefaults.CircuitBreaker.MinimumThroughput != 10
+    || kevlarHttpDefaults.CircuitBreaker.SamplingWindow != TimeSpan.FromSeconds(30)
+    || kevlarHttpDefaults.CircuitBreaker.BreakDuration != TimeSpan.FromSeconds(15)
+    || kevlarHttpDefaults.ConcurrencyLimit is not null
+    || !pollyChaosDefaults.Enabled
+    || pollyChaosDefaults.InjectionRate != 0.001
+    || kevlarChaosDefaults.Enabled
+    || kevlarChaosDefaults.InjectionRate != 1)
+{
+    throw new InvalidOperationException("HTTP or chaos defaults changed.");
+}
+```
 
 The retry timing contract is executable. Polly waits exactly six seconds for three default retries;
 Kevlar's equal jitter keeps each default exponential delay between half and one-and-a-half times its
@@ -562,7 +624,8 @@ yields requires `ExecuteAsync`.
 Polly's `CircuitBreakerManualControl` and `CircuitBreakerStateProvider` are separately shareable.
 Kevlar combines both roles in `CircuitBreakerMonitor`. One monitor can bind to multiple breaker
 strategies: manual controls fan out, `State` reports the worst bound state, and `StateChanged`
-fires for each breaker's transitions.
+fires for each breaker's transitions. Multi-breaker fan-out was delivered in
+[issue #350](https://github.com/thomhurst/Kevlar/issues/350).
 
 ## Rate limiting
 
@@ -597,11 +660,59 @@ Classic Polly v7 concepts translate as follows:
 | Polly v7 | Kevlar |
 |---|---|
 | `Policy.Handle<T>().WaitAndRetryAsync(...)` | `Shield.When<T>().Retry(...)` |
+| `AddPolicyHandler(policy)` | build a shield, then `AddShield(shield)` |
+| `AddTransientHttpErrorPolicy(...)` / `HandleTransientHttpError()` | `HttpShield.WhenTransient()` followed by strategies |
+| `CircuitBreakerAsync(n, duration)` | `CircuitBreaker(consecutiveFailures: n, breakDuration: duration)` |
+| `AdvancedCircuitBreakerAsync(ratio, sampling, throughput, duration)` | configure `CircuitBreakerOptions.FailureRatio`, `SamplingWindow`, `MinimumThroughput`, and `BreakDuration` |
+| `ExecuteAndCaptureAsync(...)` | `ExecuteOutcomeAsync(...)` |
+| `RateLimitAsync(permits, period)` | `Shield.RateLimit(permits, perWindow: period)` |
+| `Policy.CacheAsync(...)` | no equivalent; keep caching outside the shield |
 | `PolicyWrap` | `Wrap` / `Compose` |
 | `Policy.BulkheadAsync(max, queue)` | `Shield.ConcurrencyLimit(max, queueLimit: queue)` |
 | `TimeoutStrategy.Optimistic` | Kevlar timeouts; delegates must observe the supplied token |
 | `TimeoutStrategy.Pessimistic` | no equivalent; Kevlar never abandons a still-running delegate |
-| `Polly.Contrib.WaitAndRetry` helpers | `Backoff.Constant`, `Linear`, `Exponential`, or `Custom` |
+| `Polly.Contrib.WaitAndRetry` helpers | `Backoff.Constant`, `Linear`, `Exponential`, or `Custom`; no built-in exactly matches `DecorrelatedJitterBackoffV2` |
+
+`HttpShield.WhenTransient()` handles 429 Too Many Requests in addition to `HttpRequestException`,
+408, and 5xx responses. Polly v7's `HandleTransientHttpError()` does not include 429.
+
+The Kevlar targets in the table compile as normal shield code:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+var v7HttpEquivalent = HttpShield.WhenTransient()
+    .Retry(3, Backoff.None);
+var v7CircuitEquivalent = Shield.CircuitBreaker(
+    consecutiveFailures: 5,
+    breakDuration: TimeSpan.FromSeconds(30));
+var v7AdvancedCircuitEquivalent = Shield.CircuitBreaker(options =>
+{
+    options.FailureRatio = 0.5;
+    options.MinimumThroughput = 20;
+    options.SamplingWindow = TimeSpan.FromSeconds(10);
+    options.BreakDuration = TimeSpan.FromSeconds(30);
+});
+var v7RateLimitEquivalent = Shield.RateLimit(10, perWindow: TimeSpan.FromSeconds(1));
+var capturedOutcome = await Shield.Empty.ExecuteOutcomeAsync(
+    static _ => new ValueTask<int>(42));
+```
+
+Jitter formulas are not interchangeable. Polly v8 `UseJitter` adds ±25% for constant and linear
+backoff, but uses `DecorrelatedJitterBackoffV2` for exponential backoff. Kevlar `Jitter.Equal`
+draws 50–150% of the calculated delay, while `Jitter.Decorrelated` uses the AWS-style
+`random(base, previous × 3)` formula. For an exact port, precompute the Polly delays and index them
+from Kevlar's one-based retry number:
+
+```csharp
+var pollyDelays = new[]
+{
+    TimeSpan.FromMilliseconds(125),
+    TimeSpan.FromMilliseconds(310),
+    TimeSpan.FromMilliseconds(480),
+};
+var exactPollyBackoff = Backoff.Custom(retryNumber => pollyDelays[retryNumber - 1]);
+```
 
 For example, this v7 shape:
 
