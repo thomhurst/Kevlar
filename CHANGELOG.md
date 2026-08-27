@@ -230,8 +230,8 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 - State gauges now aggregate identical shield-name and strategy-index series across partitioned
   shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
 - Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
-  dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
-  runtime failures from incompatible internals.
+  dependency injection, logging, and gRPC packages raise `NU1608`; treat that warning as an error
+  to prevent runtime failures from incompatible internals.
 - Retry and hedging dispose superseded result values. `IAsyncDisposable` is preferred over
   `IDisposable`; disposal failures are isolated through `CallbackErrorKind.ResultDisposal`, while
   the selected terminal result remains caller-owned. The `netstandard2.0` package carries the
