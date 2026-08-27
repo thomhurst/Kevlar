@@ -1,6 +1,6 @@
 namespace Kevlar.Extensions.Http;
 
-/// <summary>Configures the standard endpoint-aware HTTP hedging pipeline.</summary>
+/// <summary>Configures the standard HTTP hedging pipeline.</summary>
 public sealed class StandardHedgeShieldOptions
 {
     /// <summary>
@@ -36,6 +36,9 @@ public sealed class StandardHedgeShieldOptions
     /// <summary>Configures request replay.</summary>
     public ShieldHttpHandlerOptions Handler { get; set; } = new();
 
-    /// <summary>Configures the endpoint authorities and their ordering.</summary>
+    /// <summary>
+    /// Optionally configures endpoint authorities and their ordering. When empty, hedged attempts
+    /// use the request's own authority.
+    /// </summary>
     public HttpEndpointRoutingOptions Routing { get; set; } = new();
 }

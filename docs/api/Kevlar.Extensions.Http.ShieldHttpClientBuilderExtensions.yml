@@ -11,6 +11,7 @@ items:
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
@@ -411,6 +412,35 @@ items:
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
   fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions), System.Action(Of System.Exception))
   name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardHedgeShield(IHttpClientBuilder)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a standard pipeline that hedges against the request's authority: total timeout,
+
+    hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
 - uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
@@ -427,9 +457,9 @@ items:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
   summary: >-
-    Adds a standard endpoint-aware pipeline: total timeout, hedging, per-endpoint concurrency
+    Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
 
-    limit and circuit breaker, then per-attempt timeout.
+    per-authority concurrency limit and circuit breaker, then per-attempt timeout.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, Action<StandardHedgeShieldOptions> configure)
@@ -1559,7 +1589,7 @@ references:
 - uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
   commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_System_Action_Kevlar_Extensions_Http_StandardHedgeShieldOptions__
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
   name: AddStandardHedgeShield
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
   fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield

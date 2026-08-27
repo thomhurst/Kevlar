@@ -267,6 +267,20 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_Hedge_Parameterless_Overload_Allows_Empty_Routing()
+    {
+        using var services = new ServiceCollection()
+            .AddHttpClient("standard-hedge-default")
+            .AddStandardHedgeShield()
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-hedge-default");
+
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
+    }
+
+    [Test]
     public async Task Standard_Hedge_Nested_Options_Preserve_Pipeline_Descriptors()
     {
         var decorator = new DescriptorCapturingDecorator();
@@ -1384,7 +1398,7 @@ public class HttpContractTests
         await Assert.That(() => builder.AddStandardHedgeShield(null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddStandardHedgeShield(_ => { }))
-            .Throws<ArgumentException>();
+            .ThrowsNothing();
     }
 
     private static HttpClient CreateClient(HttpMessageHandler inner, Shield<HttpResponseMessage> shield) =>
