@@ -43,7 +43,7 @@ internal static class ShieldEngine
             }
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
@@ -94,7 +94,7 @@ internal static class ShieldEngine
             return AwaitDirectOutcomeAsync(execution, shieldName, startedAt);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
@@ -166,7 +166,7 @@ internal static class ShieldEngine
             {
                 var cancelledContext = KevlarContext.Rent(
                     cancellationToken,
-                    isSynchronous: false,
+                    SynchronousExecutionKind.None,
                     timeProvider,
                     shieldName);
                 NotifyCompleted(onCompleted, state, cancelledContext.PropertiesForCompletion);
@@ -176,7 +176,7 @@ internal static class ShieldEngine
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var context = KevlarContext.Rent(cancellationToken, SynchronousExecutionKind.None, timeProvider, shieldName);
         try
         {
             initializeProperties(state, context.Properties);
@@ -217,7 +217,7 @@ internal static class ShieldEngine
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.RentChild(parentContext, shieldName);
+        var context = KevlarContext.RentChild(parentContext, shieldName, SynchronousExecutionKind.None);
         var pipeline = RunWithContextAsync(head, state, action, context);
         if (pipeline.IsCompletedSuccessfully)
         {
@@ -228,6 +228,47 @@ internal static class ShieldEngine
         }
 
         return AwaitWithParentContextAsync(pipeline, context, parentContext, startedAt);
+    }
+
+    public static T ExecuteWithParentContextSync<T, TState>(
+        StrategyNode? head,
+        string? shieldName,
+        TState state,
+        Func<TState, KevlarContext, T> action,
+        KevlarContext parentContext)
+    {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var cancellationToken = parentContext.CancellationToken;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            RecordExecution(startedAt, shieldName, success: false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        ValidateSynchronousExecution(
+            head,
+            startedAt,
+            shieldName,
+            SynchronousExecutionKind.ExecuteWithContext);
+
+        var context = KevlarContext.RentChild(
+            parentContext,
+            shieldName,
+            SynchronousExecutionKind.ExecuteWithContext);
+        try
+        {
+            var pipeline = RunWithContextSync(head, state, action, context);
+            var outcome = pipeline.IsCompletedSuccessfully
+                ? pipeline.Result
+                : pipeline.AsTask().GetAwaiter().GetResult();
+
+            RecordExecution(startedAt, context, outcome.IsSuccess);
+            return outcome.GetResultOrRethrow();
+        }
+        finally
+        {
+            ReturnChildContext(context, parentContext);
+        }
     }
 
     public static T ExecuteSync<T, TState>(
@@ -260,9 +301,13 @@ internal static class ShieldEngine
             }
         }
 
-        ValidateSynchronousExecution(head, startedAt, shieldName);
+        ValidateSynchronousExecution(head, startedAt, shieldName, SynchronousExecutionKind.Execute);
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.Execute,
+            timeProvider,
+            shieldName);
 
         try
         {
@@ -313,14 +358,22 @@ internal static class ShieldEngine
 
         try
         {
-            ValidateSynchronousExecution(head, startedAt, shieldName);
+            ValidateSynchronousExecution(
+                head,
+                startedAt,
+                shieldName,
+                SynchronousExecutionKind.ExecuteOutcome);
         }
         catch (Exception exception)
         {
             return Outcome<T>.FromException(exception);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.ExecuteOutcome,
+            timeProvider,
+            shieldName);
         try
         {
             var pipeline = RunSync(head, state, action, context);
@@ -358,9 +411,17 @@ internal static class ShieldEngine
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        ValidateSynchronousExecution(head, startedAt, shieldName);
+        ValidateSynchronousExecution(
+            head,
+            startedAt,
+            shieldName,
+            SynchronousExecutionKind.ExecuteWithContext);
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var context = KevlarContext.Rent(
+            cancellationToken,
+            SynchronousExecutionKind.ExecuteWithContext,
+            timeProvider,
+            shieldName);
         try
         {
             try
@@ -390,14 +451,15 @@ internal static class ShieldEngine
     private static void ValidateSynchronousExecution(
         StrategyNode? head,
         long startedAt,
-        string? shieldName)
+        string? shieldName,
+        SynchronousExecutionKind kind)
     {
         if (head?.SynchronousExecutionUnsupportedReason is { } reason)
         {
             RecordExecution(startedAt, shieldName, success: false);
             throw new NotSupportedException(
                 $"Synchronous execution does not support {reason}. " +
-                "Use ExecuteAsync instead of Execute.");
+                $"{SynchronousExecutionGuard.GetAdvice(kind)}.");
         }
     }
 

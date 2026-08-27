@@ -76,7 +76,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor SynchronousHedgeRule = new(
         id: "KEV002",
         title: "Multi-attempt hedging requires asynchronous execution",
-        messageFormat: "This shield contains multi-attempt hedging, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or remove hedging.",
+        messageFormat: "This shield contains multi-attempt hedging, which cannot run through synchronous '{0}'. Use '{1}' or remove hedging.",
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -185,8 +185,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <summary>The KEV012 rule.</summary>
     public static readonly DiagnosticDescriptor AsyncConfigurationWithSynchronousExecuteRule = new(
         id: "KEV012",
-        title: "Asynchronous strategy configuration requires ExecuteAsync",
-        messageFormat: "This shield configures '{0}' with a delegate that completes asynchronously, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or make the delegate complete synchronously.",
+        title: "Asynchronous strategy configuration requires asynchronous execution",
+        messageFormat: "This shield configures '{0}' with a delegate that completes asynchronously, which cannot run through synchronous '{1}'. Use '{2}' or make the delegate complete synchronously.",
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -3017,7 +3017,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Diagnostic.Create(
                     AsyncConfigurationWithSynchronousExecuteRule,
                     invocation.Syntax.GetLocation(),
-                    asyncMember!));
+                    asyncMember!,
+                    invocation.TargetMethod.Name,
+                    GetAsynchronousExecutionName(invocation.TargetMethod)));
             }
         }
 
@@ -3033,7 +3035,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 SynchronousHedgeRule,
-                invocation.Syntax.GetLocation()));
+                invocation.Syntax.GetLocation(),
+                invocation.TargetMethod.Name,
+                GetAsynchronousExecutionName(invocation.TargetMethod)));
         }
 
         if (IsFallbackMethod(invocation.TargetMethod, knownTypes)
@@ -8255,6 +8259,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return method.Name is "Execute" or "ExecuteOutcome" or "ExecuteWithContext"
             && knownTypes.IsShield(method.ContainingType);
     }
+
+    private static string GetAsynchronousExecutionName(IMethodSymbol method) => method.Name switch
+    {
+        "ExecuteWithContext" => "ExecuteWithContextAsync",
+        "ExecuteOutcome" => "ExecuteOutcomeAsync",
+        _ => "ExecuteAsync",
+    };
 
     private static bool TryFindAsyncConfiguration(
         IInvocationOperation invocation,

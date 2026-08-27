@@ -549,9 +549,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// Executes a context-aware delegate through the pipeline using the properties, cancellation
     /// token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
-    public ValueTask<TResult> ExecuteAsync(
-        Func<KevlarContext, ValueTask<TResult>> action,
-        KevlarContext parentContext)
+    public ValueTask<TResult> ExecuteWithContextAsync(
+        KevlarContext parentContext,
+        Func<KevlarContext, ValueTask<TResult>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -563,10 +563,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// token, and time provider from <paramref name="parentContext"/>, threading
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
-    public ValueTask<TResult> ExecuteAsync<TState>(
+    public ValueTask<TResult> ExecuteWithContextAsync<TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, ValueTask<TResult>> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, ValueTask<TResult>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -696,6 +696,39 @@ public sealed class Shield<TResult> : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a context-aware delegate synchronously through the pipeline using the properties,
+    /// cancellation token, and time provider from <paramref name="parentContext"/>.
+    /// </summary>
+    public TResult ExecuteWithContext(
+        KevlarContext parentContext,
+        Func<KevlarContext, TResult> action)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        return ShieldEngine.ExecuteWithParentContextSync(
+            Head,
+            Name,
+            action,
+            static (a, context) => a(context),
+            parentContext);
+    }
+
+    /// <summary>
+    /// Executes a context-aware delegate synchronously through the pipeline using the properties,
+    /// cancellation token, and time provider from <paramref name="parentContext"/>, threading
+    /// <paramref name="state"/> to avoid closure allocations.
+    /// </summary>
+    public TResult ExecuteWithContext<TState>(
+        KevlarContext parentContext,
+        TState state,
+        Func<TState, KevlarContext, TResult> action)
+    {
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(parentContext, nameof(parentContext));
+        return ShieldEngine.ExecuteWithParentContextSync(Head, Name, state, action, parentContext);
     }
 
     /// <summary>

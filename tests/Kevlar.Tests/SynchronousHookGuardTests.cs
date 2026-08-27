@@ -9,6 +9,7 @@ namespace Kevlar.Tests;
 public class SynchronousHookGuardTests
 {
     private const string UseExecuteAsync = "Use ExecuteAsync";
+    private const string UseExecuteOutcomeAsync = "Use ExecuteOutcomeAsync instead of ExecuteOutcome";
 
     // ---- RetryOptions.OnRetry ----
 
@@ -640,7 +641,7 @@ public class SynchronousHookGuardTests
         await Assert.That(outcome.IsSuccess).IsFalse();
         await Assert.That(outcome.Exception).IsTypeOf<NotSupportedException>();
         await Assert.That(outcome.Exception!.Message).Contains(hookName);
-        await Assert.That(outcome.Exception.Message).Contains(UseExecuteAsync);
+        await Assert.That(outcome.Exception.Message).Contains(UseExecuteOutcomeAsync);
     }
 
     private static Func<CancellationToken, int> FailOnce()

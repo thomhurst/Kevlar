@@ -63,4 +63,16 @@ public class OverheadBenchmarks
 
     [BenchmarkCategory("EmptySync"), Benchmark]
     public int Polly_EmptySync() => PollyEmpty.Execute(static _ => 42);
+
+    [BenchmarkCategory("NestedEmptyAsync"), Benchmark]
+    public ValueTask<int> Kevlar_NestedEmptyAsync() =>
+        KevlarEmpty.ExecuteWithContextAsync(
+            static parentContext => KevlarEmpty.ExecuteWithContextAsync(
+                parentContext,
+                static _ => new ValueTask<int>(42)));
+
+    [BenchmarkCategory("NestedEmptySync"), Benchmark]
+    public int Kevlar_NestedEmptySync() =>
+        KevlarEmpty.ExecuteWithContext(
+            static parentContext => KevlarEmpty.ExecuteWithContext(parentContext, static _ => 42));
 }

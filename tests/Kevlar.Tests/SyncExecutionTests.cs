@@ -160,6 +160,8 @@ public class SyncExecutionTests
 
         await Assert.That(outcome.Exception).IsTypeOf<NotSupportedException>();
         await Assert.That(outcome.Exception!.Message).Contains("RetryOptions.OnRetry");
+        await Assert.That(outcome.Exception.Message)
+            .Contains("Use ExecuteOutcomeAsync instead of ExecuteOutcome");
         await Assert.That(attempts).IsEqualTo(1);
         gate.SetResult();
     }
