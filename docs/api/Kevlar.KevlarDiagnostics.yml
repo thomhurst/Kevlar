@@ -39,7 +39,9 @@ items:
 
     were disabled for replay safety; attributes <code>kevlar.shield.name</code> and
 
-    <code>kevlar.suppression.reason</code></li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by callbacks or cleanup operations; attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
+    <code>kevlar.suppression.reason</code></li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by callbacks or cleanup operations;
+
+    attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
 
     strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
 
