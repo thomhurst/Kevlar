@@ -369,7 +369,7 @@ public class MetricsTests
         using var listener = new KevlarMeterListener();
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 1 });
         _ = provider.GetShield("sensitive-tenant-key");
 
         _ = provider.GetShield("replacement");
@@ -402,7 +402,7 @@ public class MetricsTests
         });
         provider = new PartitionedShield<string>(
             key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 1 });
         _ = provider.GetShield("first");
 
         var replacement = await Task.Run(() => provider.GetShield("replacement"))

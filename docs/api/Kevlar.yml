@@ -52,10 +52,13 @@ items:
   - Kevlar.KevlarTelemetrySeverity
   - Kevlar.Outcome
   - Kevlar.Outcome`1
-  - Kevlar.PartitionCreatedNotification
-  - Kevlar.PartitionEvictionNotification
+  - Kevlar.PartitionCreatedEvent`1
+  - Kevlar.PartitionCreatedEvent`2
+  - Kevlar.PartitionEvictedEvent`1
+  - Kevlar.PartitionEvictedEvent`2
   - Kevlar.PartitionEvictionReason
-  - Kevlar.PartitionedShieldOptions
+  - Kevlar.PartitionedShieldOptions`1
+  - Kevlar.PartitionedShieldOptions`2
   - Kevlar.PartitionedShield`1
   - Kevlar.PartitionedShield`2
   - Kevlar.RateLimitExceededException
@@ -370,13 +373,68 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.PartitionCreatedNotification
-  commentId: T:Kevlar.PartitionCreatedNotification
+- uid: Kevlar.PartitionCreatedEvent`1
+  commentId: T:Kevlar.PartitionCreatedEvent`1
   isExternal: true
-  href: Kevlar.PartitionCreatedNotification.html
-  name: PartitionCreatedNotification
-  nameWithType: PartitionCreatedNotification
-  fullName: Kevlar.PartitionCreatedNotification
+  href: Kevlar.PartitionCreatedEvent-1.html
+  name: PartitionCreatedEvent<TKey>
+  nameWithType: PartitionCreatedEvent<TKey>
+  fullName: Kevlar.PartitionCreatedEvent<TKey>
+  nameWithType.vb: PartitionCreatedEvent(Of TKey)
+  fullName.vb: Kevlar.PartitionCreatedEvent(Of TKey)
+  name.vb: PartitionCreatedEvent(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionCreatedEvent`1
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionCreatedEvent`1
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.PartitionCreatedEvent`2
+  commentId: T:Kevlar.PartitionCreatedEvent`2
+  isExternal: true
+  href: Kevlar.PartitionCreatedEvent-2.html
+  name: PartitionCreatedEvent<TKey, TResult>
+  nameWithType: PartitionCreatedEvent<TKey, TResult>
+  fullName: Kevlar.PartitionCreatedEvent<TKey, TResult>
+  nameWithType.vb: PartitionCreatedEvent(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionCreatedEvent(Of TKey, TResult)
+  name.vb: PartitionCreatedEvent(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionCreatedEvent`2
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionCreatedEvent`2
+    name: PartitionCreatedEvent
+    isExternal: true
+    href: Kevlar.PartitionCreatedEvent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.PartitionedShield`1
   commentId: T:Kevlar.PartitionedShield`1
   parent: Kevlar
@@ -441,21 +499,130 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.PartitionedShieldOptions
-  commentId: T:Kevlar.PartitionedShieldOptions
-  parent: Kevlar
+- uid: Kevlar.PartitionedShieldOptions`1
+  commentId: T:Kevlar.PartitionedShieldOptions`1
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html
-  name: PartitionedShieldOptions
-  nameWithType: PartitionedShieldOptions
-  fullName: Kevlar.PartitionedShieldOptions
-- uid: Kevlar.PartitionEvictionNotification
-  commentId: T:Kevlar.PartitionEvictionNotification
+  href: Kevlar.PartitionedShieldOptions-1.html
+  name: PartitionedShieldOptions<TKey>
+  nameWithType: PartitionedShieldOptions<TKey>
+  fullName: Kevlar.PartitionedShieldOptions<TKey>
+  nameWithType.vb: PartitionedShieldOptions(Of TKey)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey)
+  name.vb: PartitionedShieldOptions(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShieldOptions`1
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShieldOptions`1
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions`2
+  commentId: T:Kevlar.PartitionedShieldOptions`2
   isExternal: true
-  href: Kevlar.PartitionEvictionNotification.html
-  name: PartitionEvictionNotification
-  nameWithType: PartitionEvictionNotification
-  fullName: Kevlar.PartitionEvictionNotification
+  href: Kevlar.PartitionedShieldOptions-2.html
+  name: PartitionedShieldOptions<TKey, TResult>
+  nameWithType: PartitionedShieldOptions<TKey, TResult>
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult)
+  name.vb: PartitionedShieldOptions(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShieldOptions`2
+    name: PartitionedShieldOptions
+    isExternal: true
+    href: Kevlar.PartitionedShieldOptions-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionEvictedEvent`1
+  commentId: T:Kevlar.PartitionEvictedEvent`1
+  isExternal: true
+  href: Kevlar.PartitionEvictedEvent-1.html
+  name: PartitionEvictedEvent<TKey>
+  nameWithType: PartitionEvictedEvent<TKey>
+  fullName: Kevlar.PartitionEvictedEvent<TKey>
+  nameWithType.vb: PartitionEvictedEvent(Of TKey)
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey)
+  name.vb: PartitionEvictedEvent(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionEvictedEvent`1
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionEvictedEvent`1
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.PartitionEvictedEvent`2
+  commentId: T:Kevlar.PartitionEvictedEvent`2
+  isExternal: true
+  href: Kevlar.PartitionEvictedEvent-2.html
+  name: PartitionEvictedEvent<TKey, TResult>
+  nameWithType: PartitionEvictedEvent<TKey, TResult>
+  fullName: Kevlar.PartitionEvictedEvent<TKey, TResult>
+  nameWithType.vb: PartitionEvictedEvent(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionEvictedEvent(Of TKey, TResult)
+  name.vb: PartitionEvictedEvent(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionEvictedEvent`2
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionEvictedEvent`2
+    name: PartitionEvictedEvent
+    isExternal: true
+    href: Kevlar.PartitionEvictedEvent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.PartitionEvictionReason
   commentId: T:Kevlar.PartitionEvictionReason
   parent: Kevlar

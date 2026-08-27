@@ -8,3 +8,50 @@ Kevlar.KevlarMetricEnrichmentContext.InstrumentName.get -> string!
 Kevlar.KevlarMetricEnrichmentContext.KevlarMetricEnrichmentContext() -> void
 Kevlar.KevlarMetricEnrichmentContext.Tags.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object?>>!
 static Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher! enricher) -> System.IDisposable!
+Kevlar.PartitionCreatedEvent<TKey, TResult>
+Kevlar.PartitionCreatedEvent<TKey, TResult>.Key.get -> TKey
+Kevlar.PartitionCreatedEvent<TKey, TResult>.PartitionCreatedEvent() -> void
+Kevlar.PartitionCreatedEvent<TKey, TResult>.Shield.get -> Kevlar.Shield<TResult>!
+Kevlar.PartitionCreatedEvent<TKey>
+Kevlar.PartitionCreatedEvent<TKey>.Key.get -> TKey
+Kevlar.PartitionCreatedEvent<TKey>.PartitionCreatedEvent() -> void
+Kevlar.PartitionCreatedEvent<TKey>.Shield.get -> Kevlar.Shield!
+Kevlar.PartitionEvictedEvent<TKey, TResult>
+Kevlar.PartitionEvictedEvent<TKey, TResult>.Key.get -> TKey
+Kevlar.PartitionEvictedEvent<TKey, TResult>.PartitionEvictedEvent() -> void
+Kevlar.PartitionEvictedEvent<TKey, TResult>.Reason.get -> Kevlar.PartitionEvictionReason
+Kevlar.PartitionEvictedEvent<TKey, TResult>.Shield.get -> Kevlar.Shield<TResult>!
+Kevlar.PartitionEvictedEvent<TKey>
+Kevlar.PartitionEvictedEvent<TKey>.Key.get -> TKey
+Kevlar.PartitionEvictedEvent<TKey>.PartitionEvictedEvent() -> void
+Kevlar.PartitionEvictedEvent<TKey>.Reason.get -> Kevlar.PartitionEvictionReason
+Kevlar.PartitionEvictedEvent<TKey>.Shield.get -> Kevlar.Shield!
+Kevlar.PartitionEvictionReason.Expiration = 1 -> Kevlar.PartitionEvictionReason
+Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield(System.Func<TKey, Kevlar.Shield<TResult>!>! factory, Kevlar.PartitionedShieldOptions<TKey, TResult>? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
+Kevlar.PartitionedShield<TKey>.PartitionedShield(System.Func<TKey, Kevlar.Shield!>! factory, Kevlar.PartitionedShieldOptions<TKey>? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>
+Kevlar.PartitionedShieldOptions<TKey, TResult>.IdleExpiration.get -> System.TimeSpan?
+Kevlar.PartitionedShieldOptions<TKey, TResult>.IdleExpiration.set -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions.get -> int
+Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions.set -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>.OnCreated.get -> System.Func<Kevlar.PartitionCreatedEvent<TKey, TResult>, System.Threading.Tasks.ValueTask>?
+Kevlar.PartitionedShieldOptions<TKey, TResult>.OnCreated.set -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>.OnEvicted.get -> System.Func<Kevlar.PartitionEvictedEvent<TKey, TResult>, System.Threading.Tasks.ValueTask>?
+Kevlar.PartitionedShieldOptions<TKey, TResult>.OnEvicted.set -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>.PartitionedShieldOptions() -> void
+Kevlar.PartitionedShieldOptions<TKey, TResult>.TimeProvider.get -> System.TimeProvider!
+Kevlar.PartitionedShieldOptions<TKey, TResult>.TimeProvider.set -> void
+Kevlar.PartitionedShieldOptions<TKey>
+Kevlar.PartitionedShieldOptions<TKey>.IdleExpiration.get -> System.TimeSpan?
+Kevlar.PartitionedShieldOptions<TKey>.IdleExpiration.set -> void
+Kevlar.PartitionedShieldOptions<TKey>.MaxPartitions.get -> int
+Kevlar.PartitionedShieldOptions<TKey>.MaxPartitions.set -> void
+Kevlar.PartitionedShieldOptions<TKey>.OnCreated.get -> System.Func<Kevlar.PartitionCreatedEvent<TKey>, System.Threading.Tasks.ValueTask>?
+Kevlar.PartitionedShieldOptions<TKey>.OnCreated.set -> void
+Kevlar.PartitionedShieldOptions<TKey>.OnEvicted.get -> System.Func<Kevlar.PartitionEvictedEvent<TKey>, System.Threading.Tasks.ValueTask>?
+Kevlar.PartitionedShieldOptions<TKey>.OnEvicted.set -> void
+Kevlar.PartitionedShieldOptions<TKey>.PartitionedShieldOptions() -> void
+Kevlar.PartitionedShieldOptions<TKey>.TimeProvider.get -> System.TimeProvider!
+Kevlar.PartitionedShieldOptions<TKey>.TimeProvider.set -> void
+static Kevlar.PartitionedShield<TKey, TResult>.CreateAsync(System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield<TResult>!>>! factory, Kevlar.PartitionedShieldOptions<TKey, TResult>? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Kevlar.PartitionedShield<TKey, TResult>!
+static Kevlar.PartitionedShield<TKey>.CreateAsync(System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield!>>! factory, Kevlar.PartitionedShieldOptions<TKey>? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Kevlar.PartitionedShield<TKey>!

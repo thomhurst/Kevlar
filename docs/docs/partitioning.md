@@ -12,7 +12,7 @@ tenant, shard, authority, or operation while placing an explicit bound on retain
 var endpoints = new PartitionedShield<string>(
     endpoint => Shield.When<TimeoutExceededException>()
         .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)),
-    new PartitionedShieldOptions
+    new PartitionedShieldOptions<string>
     {
         MaxPartitions = 500,
         IdleExpiration = TimeSpan.FromMinutes(20),
@@ -57,12 +57,12 @@ synchronous work. Callback failures are swallowed so telemetry or cleanup cannot
 eviction callback is awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
 lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
-`Cleared` reason.
+`Cleared` reason; idle expiry uses `Expiration`.
 
 ```csharp
 var observed = new PartitionedShield<string>(
     static _ => Shield.Empty,
-    new PartitionedShieldOptions
+    new PartitionedShieldOptions<string>
     {
         MaxPartitions = 2,
         OnCreated = item =>

@@ -9,7 +9,7 @@ public class PartitionWrapperLifecycleTests
     {
         var provider = new PartitionedShield<string, int>(
             static _ => Shield.For<int>().FallbackTo(42),
-            new PartitionedShieldOptions { MaxPartitions = 2 });
+            new PartitionedShieldOptions<string, int> { MaxPartitions = 2 });
 
         var first = provider.GetShield("first");
         _ = provider.GetShield("second");
@@ -38,7 +38,7 @@ public class PartitionWrapperLifecycleTests
         var timeProvider = new FakeTimeProvider();
         var provider = new PartitionedShield<string>(
             static _ => Shield.Fallback(static _ => ValueTask.CompletedTask),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 2,
                 IdleExpiration = TimeSpan.FromMinutes(1),
@@ -76,7 +76,7 @@ public class PartitionWrapperLifecycleTests
     {
         var provider = new PartitionedShield<string>(
             static _ => Shield.Empty,
-            new PartitionedShieldOptions { MaxPartitions = 4 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 4 });
         _ = provider.GetShield("a");
         _ = provider.GetShield("b");
         _ = provider.GetShield("c");

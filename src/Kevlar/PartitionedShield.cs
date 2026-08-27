@@ -7,7 +7,7 @@ namespace Kevlar;
 /// Selects and retains an independent untyped <see cref="Shield"/> for each partition key.
 /// </summary>
 /// <remarks>
-/// Retention is bounded by <see cref="PartitionedShieldOptions.MaxPartitions"/>. Eviction
+/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey}.MaxPartitions"/>. Eviction
 /// removes only the provider's reference: callers that already hold the old shield, including
 /// active executions, continue normally. A later lookup creates a fresh partition with fresh
 /// strategy state. Partition keys are never added to metric tags or shield names automatically.
@@ -20,20 +20,26 @@ public sealed class PartitionedShield<TKey>
     /// <summary>Creates a bounded partition provider.</summary>
     public PartitionedShield(
         Func<TKey, Shield> factory,
-        PartitionedShieldOptions? options = null,
+        PartitionedShieldOptions<TKey>? options = null,
         IEqualityComparer<TKey>? comparer = null) =>
-        _cache = new PartitionCache<TKey, Shield>(Wrap(factory), options, comparer);
+        _cache = new PartitionCache<TKey, Shield>(
+            Wrap(factory),
+            (options ?? new PartitionedShieldOptions<TKey>()).Snapshot(),
+            comparer);
 
     private PartitionedShield(
         Func<TKey, ValueTask<Shield>> factory,
-        PartitionedShieldOptions? options,
+        PartitionedShieldOptions<TKey>? options,
         IEqualityComparer<TKey>? comparer) =>
-        _cache = new PartitionCache<TKey, Shield>(factory, options, comparer);
+        _cache = new PartitionCache<TKey, Shield>(
+            factory,
+            (options ?? new PartitionedShieldOptions<TKey>()).Snapshot(),
+            comparer);
 
     /// <summary>Creates a bounded partition provider with an asynchronous factory.</summary>
     public static PartitionedShield<TKey> CreateAsync(
         Func<TKey, ValueTask<Shield>> factory,
-        PartitionedShieldOptions? options = null,
+        PartitionedShieldOptions<TKey>? options = null,
         IEqualityComparer<TKey>? comparer = null) =>
         new(factory, options, comparer);
 

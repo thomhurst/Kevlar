@@ -57,7 +57,7 @@ public class PartitionedShieldTests
     {
         var provider = new PartitionedShield<string>(
             _ => Shield.CircuitBreaker(1, TimeSpan.FromHours(1)),
-            new PartitionedShieldOptions { MaxPartitions = 2 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 2 });
         var firstA = provider.GetShield("a");
         var firstB = provider.GetShield("b");
         _ = provider.GetShield("a");
@@ -82,7 +82,7 @@ public class PartitionedShieldTests
         var timeProvider = new FakeTimeProvider();
         var provider = new PartitionedShield<string>(
             _ => Shield.Retry(0, Backoff.None),
-            new PartitionedShieldOptions
+            new PartitionedShieldOptions<string>
             {
                 MaxPartitions = 10,
                 IdleExpiration = TimeSpan.FromMinutes(1),
@@ -167,7 +167,7 @@ public class PartitionedShieldTests
     {
         var provider = new PartitionedShield<string>(
             _ => Shield.Retry(0, Backoff.None),
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 1 });
         var first = provider.GetShield("first");
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var cancellation = new CancellationTokenSource();
@@ -193,7 +193,7 @@ public class PartitionedShieldTests
     {
         var provider = new PartitionedShield<string>(
             key => key == "bad" ? throw new InvalidOperationException("factory") : Shield.Empty,
-            new PartitionedShieldOptions { MaxPartitions = 1 });
+            new PartitionedShieldOptions<string> { MaxPartitions = 1 });
         var retained = provider.GetShield("good");
 
         _ = await Assert.That(() => provider.GetShield("bad")).Throws<InvalidOperationException>();
@@ -224,11 +224,11 @@ public class PartitionedShieldTests
     {
         _ = await Assert.That(() => new PartitionedShield<string>(
                 _ => Shield.Empty,
-                new PartitionedShieldOptions { MaxPartitions = 0 }))
+                new PartitionedShieldOptions<string> { MaxPartitions = 0 }))
             .Throws<ArgumentOutOfRangeException>();
         _ = await Assert.That(() => new PartitionedShield<string>(
                 _ => Shield.Empty,
-                new PartitionedShieldOptions { IdleExpiration = TimeSpan.Zero }))
+                new PartitionedShieldOptions<string> { IdleExpiration = TimeSpan.Zero }))
             .Throws<ArgumentOutOfRangeException>();
         _ = await Assert.That(() => new PartitionedShield<string>(null!))
             .Throws<ArgumentNullException>();

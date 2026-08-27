@@ -51,6 +51,9 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 
 ### Changed
 
+- **Breaking:** partition lifecycle callbacks now use typed `PartitionCreatedEvent` and
+  `PartitionEvictedEvent` payloads through `PartitionedShieldOptions<TKey>` and
+  `PartitionedShieldOptions<TKey, TResult>`. The idle eviction reason is now `Expiration`.
 - The support policy commits target-framework removals to major releases, gives obsolete APIs at
   least one minor release before removal, provides six months of previous-major security overlap,
   and documents dependency floors, package lockstep, cadence, maintenance, and roadmap ownership.
@@ -94,7 +97,7 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
   twins were merged: `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`,
   `TimeoutGeneratorSync`, `OnStateChangedAsync`, `BreakDurationGeneratorSync`, `OnHedgeAsync`,
   `HedgeOptions.DelayGeneratorAsync`, `OnFallbackAsync`, every `OnRejectedAsync`,
-  `PartitionedShieldOptions.OnCreatedAsync` / `OnEvictedAsync`, and
+  the partition lifecycle `OnCreatedAsync` / `OnEvictedAsync` hooks, and
   `StandardHedgeShieldOptions.HedgeDelayGeneratorAsync` were removed. Rewrite
   `OnRetry = e => Log(e)` as `OnRetry = e => { Log(e); return default; }` and
   `DelayGenerator = e => delay` as `DelayGenerator = e => new(delay)`; `async` lambdas are

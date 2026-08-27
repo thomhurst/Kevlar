@@ -919,7 +919,7 @@ internal static class KevlarMetrics
     private static string PartitionReasonName(PartitionEvictionReason reason) => reason switch
     {
         PartitionEvictionReason.Capacity => "capacity",
-        PartitionEvictionReason.Idle => "idle",
+        PartitionEvictionReason.Expiration => "expiration",
         PartitionEvictionReason.Cleared => "cleared",
         _ => throw new ArgumentOutOfRangeException(nameof(reason)),
     };

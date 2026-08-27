@@ -1,31 +1,34 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.PartitionedShieldOptions
-  commentId: T:Kevlar.PartitionedShieldOptions
-  id: PartitionedShieldOptions
+- uid: Kevlar.PartitionedShieldOptions`2
+  commentId: T:Kevlar.PartitionedShieldOptions`2
+  id: PartitionedShieldOptions`2
   parent: Kevlar
   children:
-  - Kevlar.PartitionedShieldOptions.#ctor
-  - Kevlar.PartitionedShieldOptions.IdleExpiration
-  - Kevlar.PartitionedShieldOptions.MaxPartitions
-  - Kevlar.PartitionedShieldOptions.OnCreated
-  - Kevlar.PartitionedShieldOptions.OnEvicted
-  - Kevlar.PartitionedShieldOptions.TimeProvider
+  - Kevlar.PartitionedShieldOptions`2.#ctor
+  - Kevlar.PartitionedShieldOptions`2.IdleExpiration
+  - Kevlar.PartitionedShieldOptions`2.MaxPartitions
+  - Kevlar.PartitionedShieldOptions`2.OnCreated
+  - Kevlar.PartitionedShieldOptions`2.OnEvicted
+  - Kevlar.PartitionedShieldOptions`2.TimeProvider
   langs:
   - csharp
   - vb
-  name: PartitionedShieldOptions
-  nameWithType: PartitionedShieldOptions
-  fullName: Kevlar.PartitionedShieldOptions
+  name: PartitionedShieldOptions<TKey, TResult>
+  nameWithType: PartitionedShieldOptions<TKey, TResult>
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>
   type: Class
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Controls retention for a partitioned shield provider.
+  summary: Controls retention for a result-aware partitioned shield provider.
   example: []
   syntax:
-    content: public sealed class PartitionedShieldOptions
-    content.vb: Public NotInheritable Class PartitionedShieldOptions
+    content: 'public sealed class PartitionedShieldOptions<TKey, TResult> where TKey : notnull'
+    typeParameters:
+    - id: TKey
+    - id: TResult
+    content.vb: Public NotInheritable Class PartitionedShieldOptions(Of TKey, TResult)
   inheritance:
   - System.Object
   inheritedMembers:
@@ -35,16 +38,19 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.PartitionedShieldOptions.#ctor
-  commentId: M:Kevlar.PartitionedShieldOptions.#ctor
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult)
+  name.vb: PartitionedShieldOptions(Of TKey, TResult)
+- uid: Kevlar.PartitionedShieldOptions`2.#ctor
+  commentId: M:Kevlar.PartitionedShieldOptions`2.#ctor
   id: '#ctor'
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: PartitionedShieldOptions()
-  nameWithType: PartitionedShieldOptions.PartitionedShieldOptions()
-  fullName: Kevlar.PartitionedShieldOptions.PartitionedShieldOptions()
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.PartitionedShieldOptions()
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.PartitionedShieldOptions()
   type: Constructor
   assemblies:
   - Kevlar
@@ -52,20 +58,20 @@ items:
   syntax:
     content: public PartitionedShieldOptions()
     content.vb: Public Sub New()
-  overload: Kevlar.PartitionedShieldOptions.#ctor*
-  nameWithType.vb: PartitionedShieldOptions.New()
-  fullName.vb: Kevlar.PartitionedShieldOptions.New()
+  overload: Kevlar.PartitionedShieldOptions`2.#ctor*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).New()
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).New()
   name.vb: New()
-- uid: Kevlar.PartitionedShieldOptions.MaxPartitions
-  commentId: P:Kevlar.PartitionedShieldOptions.MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`2.MaxPartitions
+  commentId: P:Kevlar.PartitionedShieldOptions`2.MaxPartitions
   id: MaxPartitions
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: MaxPartitions
-  nameWithType: PartitionedShieldOptions.MaxPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions
   type: Property
   assemblies:
   - Kevlar
@@ -81,17 +87,19 @@ items:
     return:
       type: System.Int32
     content.vb: Public Property MaxPartitions As Integer
-  overload: Kevlar.PartitionedShieldOptions.MaxPartitions*
-- uid: Kevlar.PartitionedShieldOptions.IdleExpiration
-  commentId: P:Kevlar.PartitionedShieldOptions.IdleExpiration
+  overload: Kevlar.PartitionedShieldOptions`2.MaxPartitions*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`2.IdleExpiration
+  commentId: P:Kevlar.PartitionedShieldOptions`2.IdleExpiration
   id: IdleExpiration
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: IdleExpiration
-  nameWithType: PartitionedShieldOptions.IdleExpiration
-  fullName: Kevlar.PartitionedShieldOptions.IdleExpiration
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.IdleExpiration
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.IdleExpiration
   type: Property
   assemblies:
   - Kevlar
@@ -107,17 +115,19 @@ items:
     return:
       type: System.Nullable{System.TimeSpan}
     content.vb: Public Property IdleExpiration As TimeSpan?
-  overload: Kevlar.PartitionedShieldOptions.IdleExpiration*
-- uid: Kevlar.PartitionedShieldOptions.TimeProvider
-  commentId: P:Kevlar.PartitionedShieldOptions.TimeProvider
+  overload: Kevlar.PartitionedShieldOptions`2.IdleExpiration*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).IdleExpiration
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).IdleExpiration
+- uid: Kevlar.PartitionedShieldOptions`2.TimeProvider
+  commentId: P:Kevlar.PartitionedShieldOptions`2.TimeProvider
   id: TimeProvider
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: TimeProvider
-  nameWithType: PartitionedShieldOptions.TimeProvider
-  fullName: Kevlar.PartitionedShieldOptions.TimeProvider
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.TimeProvider
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.TimeProvider
   type: Property
   assemblies:
   - Kevlar
@@ -130,17 +140,19 @@ items:
     return:
       type: System.TimeProvider
     content.vb: Public Property TimeProvider As TimeProvider
-  overload: Kevlar.PartitionedShieldOptions.TimeProvider*
-- uid: Kevlar.PartitionedShieldOptions.OnCreated
-  commentId: P:Kevlar.PartitionedShieldOptions.OnCreated
+  overload: Kevlar.PartitionedShieldOptions`2.TimeProvider*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).TimeProvider
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`2.OnCreated
+  commentId: P:Kevlar.PartitionedShieldOptions`2.OnCreated
   id: OnCreated
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: OnCreated
-  nameWithType: PartitionedShieldOptions.OnCreated
-  fullName: Kevlar.PartitionedShieldOptions.OnCreated
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OnCreated
   type: Property
   assemblies:
   - Kevlar
@@ -151,22 +163,24 @@ items:
     <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
-    content: public Func<PartitionCreatedNotification, ValueTask>? OnCreated { get; set; }
+    content: public Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>? OnCreated { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnCreated As Func(Of PartitionCreatedNotification, ValueTask)
-  overload: Kevlar.PartitionedShieldOptions.OnCreated*
-- uid: Kevlar.PartitionedShieldOptions.OnEvicted
-  commentId: P:Kevlar.PartitionedShieldOptions.OnEvicted
+      type: System.Func{Kevlar.PartitionCreatedEvent{{TKey},{TResult}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnCreated As Func(Of PartitionCreatedEvent(Of TKey, TResult), ValueTask)
+  overload: Kevlar.PartitionedShieldOptions`2.OnCreated*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OnCreated
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OnCreated
+- uid: Kevlar.PartitionedShieldOptions`2.OnEvicted
+  commentId: P:Kevlar.PartitionedShieldOptions`2.OnEvicted
   id: OnEvicted
-  parent: Kevlar.PartitionedShieldOptions
+  parent: Kevlar.PartitionedShieldOptions`2
   langs:
   - csharp
   - vb
   name: OnEvicted
-  nameWithType: PartitionedShieldOptions.OnEvicted
-  fullName: Kevlar.PartitionedShieldOptions.OnEvicted
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OnEvicted
   type: Property
   assemblies:
   - Kevlar
@@ -181,12 +195,14 @@ items:
     capacity. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
-    content: public Func<PartitionEvictionNotification, ValueTask>? OnEvicted { get; set; }
+    content: public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnEvicted As Func(Of PartitionEvictionNotification, ValueTask)
-  overload: Kevlar.PartitionedShieldOptions.OnEvicted*
+      type: System.Func{Kevlar.PartitionEvictedEvent{{TKey},{TResult}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnEvicted As Func(Of PartitionEvictedEvent(Of TKey, TResult), ValueTask)
+  overload: Kevlar.PartitionedShieldOptions`2.OnEvicted*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OnEvicted
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OnEvicted
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -408,23 +424,25 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.PartitionedShieldOptions.#ctor*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.#ctor
+- uid: Kevlar.PartitionedShieldOptions`2.#ctor*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.#ctor
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions__ctor
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2__ctor
   name: PartitionedShieldOptions
-  nameWithType: PartitionedShieldOptions.PartitionedShieldOptions
-  fullName: Kevlar.PartitionedShieldOptions.PartitionedShieldOptions
-  nameWithType.vb: PartitionedShieldOptions.New
-  fullName.vb: Kevlar.PartitionedShieldOptions.New
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.PartitionedShieldOptions
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.PartitionedShieldOptions
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).New
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).New
   name.vb: New
-- uid: Kevlar.PartitionedShieldOptions.MaxPartitions*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`2.MaxPartitions*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.MaxPartitions
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_MaxPartitions
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_MaxPartitions
   name: MaxPartitions
-  nameWithType: PartitionedShieldOptions.MaxPartitions
-  fullName: Kevlar.PartitionedShieldOptions.MaxPartitions
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.MaxPartitions
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -436,13 +454,15 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.PartitionedShieldOptions.IdleExpiration*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.IdleExpiration
+- uid: Kevlar.PartitionedShieldOptions`2.IdleExpiration*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.IdleExpiration
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_IdleExpiration
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_IdleExpiration
   name: IdleExpiration
-  nameWithType: PartitionedShieldOptions.IdleExpiration
-  fullName: Kevlar.PartitionedShieldOptions.IdleExpiration
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.IdleExpiration
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.IdleExpiration
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).IdleExpiration
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).IdleExpiration
 - uid: System.Nullable{System.TimeSpan}
   commentId: T:System.Nullable{System.TimeSpan}
   parent: System
@@ -491,13 +511,15 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.PartitionedShieldOptions.TimeProvider*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`2.TimeProvider*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.TimeProvider
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_TimeProvider
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_TimeProvider
   name: TimeProvider
-  nameWithType: PartitionedShieldOptions.TimeProvider
-  fullName: Kevlar.PartitionedShieldOptions.TimeProvider
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.TimeProvider
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.TimeProvider
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).TimeProvider
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).TimeProvider
 - uid: System.TimeProvider
   commentId: T:System.TimeProvider
   parent: System
@@ -506,34 +528,42 @@ references:
   name: TimeProvider
   nameWithType: TimeProvider
   fullName: System.TimeProvider
-- uid: Kevlar.PartitionedShieldOptions.OnCreated*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.OnCreated
+- uid: Kevlar.PartitionedShieldOptions`2.OnCreated*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.OnCreated
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnCreated
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_OnCreated
   name: OnCreated
-  nameWithType: PartitionedShieldOptions.OnCreated
-  fullName: Kevlar.PartitionedShieldOptions.OnCreated
-- uid: System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
-  commentId: T:System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OnCreated
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OnCreated
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OnCreated
+- uid: System.Func{Kevlar.PartitionCreatedEvent{{TKey},{TResult}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionCreatedEvent{`0,`1},System.Threading.Tasks.ValueTask}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<PartitionCreatedNotification, ValueTask>
-  nameWithType: Func<PartitionCreatedNotification, ValueTask>
-  fullName: System.Func<Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask>
-  nameWithType.vb: Func(Of PartitionCreatedNotification, ValueTask)
-  fullName.vb: System.Func(Of Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask)
-  name.vb: Func(Of PartitionCreatedNotification, ValueTask)
+  name: Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>
+  nameWithType: Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>
+  fullName: System.Func<Kevlar.PartitionCreatedEvent<TKey, TResult>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionCreatedEvent(Of TKey, TResult), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionCreatedEvent(Of TKey, TResult), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionCreatedEvent(Of TKey, TResult), ValueTask)
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.PartitionCreatedNotification
-    name: PartitionCreatedNotification
+  - uid: Kevlar.PartitionCreatedEvent`2
+    name: PartitionCreatedEvent
     isExternal: true
-    href: Kevlar.PartitionCreatedNotification.html
+    href: Kevlar.PartitionCreatedEvent-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask
@@ -549,10 +579,18 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.PartitionCreatedNotification
-    name: PartitionCreatedNotification
+  - uid: Kevlar.PartitionCreatedEvent`2
+    name: PartitionCreatedEvent
     isExternal: true
-    href: Kevlar.PartitionCreatedNotification.html
+    href: Kevlar.PartitionCreatedEvent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask
@@ -594,34 +632,42 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.PartitionedShieldOptions.OnEvicted*
-  commentId: Overload:Kevlar.PartitionedShieldOptions.OnEvicted
+- uid: Kevlar.PartitionedShieldOptions`2.OnEvicted*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.OnEvicted
   isExternal: true
-  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnEvicted
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_OnEvicted
   name: OnEvicted
-  nameWithType: PartitionedShieldOptions.OnEvicted
-  fullName: Kevlar.PartitionedShieldOptions.OnEvicted
-- uid: System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
-  commentId: T:System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OnEvicted
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OnEvicted
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OnEvicted
+- uid: System.Func{Kevlar.PartitionEvictedEvent{{TKey},{TResult}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionEvictedEvent{`0,`1},System.Threading.Tasks.ValueTask}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<PartitionEvictionNotification, ValueTask>
-  nameWithType: Func<PartitionEvictionNotification, ValueTask>
-  fullName: System.Func<Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask>
-  nameWithType.vb: Func(Of PartitionEvictionNotification, ValueTask)
-  fullName.vb: System.Func(Of Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask)
-  name.vb: Func(Of PartitionEvictionNotification, ValueTask)
+  name: Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>
+  nameWithType: Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>
+  fullName: System.Func<Kevlar.PartitionEvictedEvent<TKey, TResult>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionEvictedEvent(Of TKey, TResult), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionEvictedEvent(Of TKey, TResult), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionEvictedEvent(Of TKey, TResult), ValueTask)
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.PartitionEvictionNotification
-    name: PartitionEvictionNotification
+  - uid: Kevlar.PartitionEvictedEvent`2
+    name: PartitionEvictedEvent
     isExternal: true
-    href: Kevlar.PartitionEvictionNotification.html
+    href: Kevlar.PartitionEvictedEvent-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask
@@ -637,10 +683,18 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.PartitionEvictionNotification
-    name: PartitionEvictionNotification
+  - uid: Kevlar.PartitionEvictedEvent`2
+    name: PartitionEvictedEvent
     isExternal: true
-    href: Kevlar.PartitionEvictionNotification.html
+    href: Kevlar.PartitionEvictedEvent-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask

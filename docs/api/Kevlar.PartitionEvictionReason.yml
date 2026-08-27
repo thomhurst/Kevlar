@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.PartitionEvictionReason.Capacity
   - Kevlar.PartitionEvictionReason.Cleared
-  - Kevlar.PartitionEvictionReason.Idle
+  - Kevlar.PartitionEvictionReason.Expiration
   langs:
   - csharp
   - vb
@@ -43,24 +43,24 @@ items:
     content: Capacity = 0
     return:
       type: Kevlar.PartitionEvictionReason
-- uid: Kevlar.PartitionEvictionReason.Idle
-  commentId: F:Kevlar.PartitionEvictionReason.Idle
-  id: Idle
+- uid: Kevlar.PartitionEvictionReason.Expiration
+  commentId: F:Kevlar.PartitionEvictionReason.Expiration
+  id: Expiration
   parent: Kevlar.PartitionEvictionReason
   langs:
   - csharp
   - vb
-  name: Idle
-  nameWithType: PartitionEvictionReason.Idle
-  fullName: Kevlar.PartitionEvictionReason.Idle
+  name: Expiration
+  nameWithType: PartitionEvictionReason.Expiration
+  fullName: Kevlar.PartitionEvictionReason.Expiration
   type: Field
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The partition exceeded its configured idle duration.
+  summary: The partition exceeded its configured idle expiration.
   example: []
   syntax:
-    content: Idle = 1
+    content: Expiration = 1
     return:
       type: Kevlar.PartitionEvictionReason
 - uid: Kevlar.PartitionEvictionReason.Cleared
