@@ -37,6 +37,8 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
   result-aware pipelines.
 - Context-only synchronous and asynchronous execution overloads expose `KevlarContext` without
   requiring seeded state.
+- Nested `ExecuteAsync` overloads accept a parent `KevlarContext`, carrying properties, operation
+  keys, effective cancellation, and time-provider state across independently pooled pipelines.
 - Handling-clause builders match their shield counterparts for configured timeouts, direct custom
   strategies, and void fallbacks that do not need the handled exception.
 - Circuit-open, rate-limit, concurrency-limit, and timeout failures expose conventional public

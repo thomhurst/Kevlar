@@ -202,6 +202,34 @@ internal static class ShieldEngine
         return AwaitWithContextAsync(pipeline, context, state, onCompleted, startedAt);
     }
 
+    public static ValueTask<T> ExecuteWithParentContextAsync<T, TState>(
+        StrategyNode? head,
+        string? shieldName,
+        TState state,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        KevlarContext parentContext)
+    {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var cancellationToken = parentContext.CancellationToken;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            RecordExecution(startedAt, shieldName, success: false);
+            return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
+        }
+
+        var context = KevlarContext.RentChild(parentContext, shieldName);
+        var pipeline = RunWithContextAsync(head, state, action, context);
+        if (pipeline.IsCompletedSuccessfully)
+        {
+            var outcome = pipeline.Result;
+            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+            ReturnChildContext(context, parentContext);
+            return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
+        }
+
+        return AwaitWithParentContextAsync(pipeline, context, parentContext, startedAt);
+    }
+
     public static T ExecuteSync<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
@@ -505,6 +533,36 @@ internal static class ShieldEngine
         finally
         {
             NotifyCompleted(onCompleted, state, context.PropertiesForCompletion);
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static async ValueTask<T> AwaitWithParentContextAsync<T>(
+        ValueTask<Outcome<T>> pipeline,
+        KevlarContext context,
+        KevlarContext parentContext,
+        long startedAt)
+    {
+        try
+        {
+            var outcome = await pipeline.ConfigureAwait(false);
+            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
+            return outcome.GetResultOrRethrowInternal();
+        }
+        finally
+        {
+            ReturnChildContext(context, parentContext);
+        }
+    }
+
+    private static void ReturnChildContext(KevlarContext context, KevlarContext parentContext)
+    {
+        try
+        {
+            context.CopyChangesToParent(parentContext);
+        }
+        finally
+        {
             KevlarContext.Return(context);
         }
     }

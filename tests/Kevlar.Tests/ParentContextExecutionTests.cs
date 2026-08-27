@@ -1,0 +1,140 @@
+using Microsoft.Extensions.Time.Testing;
+
+namespace Kevlar.Tests;
+
+[NotInParallel]
+public class ParentContextExecutionTests
+{
+    private static readonly KevlarKey<string> RequestId = new("request-id");
+    private static readonly KevlarKey<int> ChildValue = new("child-value");
+
+    [Test]
+    public async Task Nested_Execution_Carries_Parent_State_And_Child_Mutations_Back()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var timeProvider = new FakeTimeProvider();
+        var outer = Shield.Empty.WithTimeProvider(timeProvider).WithName("outer");
+        var inner = Shield.Retry(0, Backoff.None).WithName("inner");
+
+        var result = await outer.ExecuteWithContextAsync(
+            "request-42",
+            static (operationKey, properties) =>
+            {
+                properties.Set(RequestId, operationKey);
+                properties.Set(KevlarKeys.OperationKey, operationKey);
+            },
+            async (_, parent) =>
+            {
+                var childResult = await inner.ExecuteAsync(
+                    static context =>
+                    {
+                        if (context.Properties.GetOrDefault(RequestId, string.Empty) != "request-42"
+                            || context.Properties.GetOrDefault(KevlarKeys.OperationKey, string.Empty) != "request-42")
+                        {
+                            throw new InvalidOperationException("Parent properties were not carried into the child.");
+                        }
+
+                        context.Properties.Set(ChildValue, 42);
+                        return new ValueTask<int>(42);
+                    },
+                    parent);
+
+                await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
+                return childResult;
+            },
+            cancellation.Token);
+
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Nested_Execution_Uses_Parent_Token_And_TimeProvider()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var timeProvider = new FakeTimeProvider();
+        var observedToken = default(CancellationToken);
+        TimeProvider? observedTimeProvider = null;
+
+        await Shield.Empty.WithTimeProvider(timeProvider).ExecuteWithContextAsync(async parent =>
+        {
+            await Shield.Empty.ExecuteAsync(
+                context =>
+                {
+                    observedToken = context.CancellationToken;
+                    observedTimeProvider = context.TimeProvider;
+                    return ValueTask.CompletedTask;
+                },
+                parent);
+        }, cancellation.Token);
+
+        await Assert.That(observedToken).IsEqualTo(cancellation.Token);
+        await Assert.That(ReferenceEquals(observedTimeProvider, timeProvider)).IsTrue();
+    }
+
+    [Test]
+    public async Task Parent_Cancellation_Cancels_Nested_Execution()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var execution = Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            await Shield.Empty.ExecuteAsync(
+                async context =>
+                {
+                    entered.TrySetResult();
+                    await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                },
+                parent);
+        }, cancellation.Token).AsTask();
+
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        var exception = await Assert.That(async () => await execution).Throws<OperationCanceledException>();
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task Child_Context_Returns_Independently_While_Parent_Remains_Valid()
+    {
+        KevlarContext? child = null;
+
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            await Shield.Empty.ExecuteAsync(
+                context =>
+                {
+                    child = context;
+                    return ValueTask.CompletedTask;
+                },
+                parent);
+
+            await Assert.That(ReferenceEquals(parent, child)).IsFalse();
+            await Assert.That(parent.Properties.Count).IsEqualTo(0);
+#if DEBUG
+            await Assert.That(() => child!.Properties).Throws<InvalidOperationException>();
+#endif
+        });
+    }
+
+    [Test]
+    public async Task Parent_Context_Has_An_Exact_Null_Guard_Across_Overload_Families()
+    {
+        var failures = new Action[]
+        {
+            () => Shield.Empty.ExecuteAsync(static _ => new ValueTask<int>(42), null!),
+            () => Shield.Empty.ExecuteAsync(static _ => ValueTask.CompletedTask, null!),
+            () => Shield<int>.Empty.ExecuteAsync(static _ => new ValueTask<int>(42), null!),
+            () => Shield.Empty.ExecuteAsync(static _ => Task.FromResult(42), null!),
+            () => Shield.Empty.ExecuteAsync(static _ => Task.CompletedTask, null!),
+            () => Shield<int>.Empty.ExecuteAsync(static _ => Task.FromResult(42), null!),
+        };
+
+        foreach (var failure in failures)
+        {
+            var exception = await Assert.That(failure).Throws<ArgumentNullException>();
+            await Assert.That(exception!.ParamName).IsEqualTo("parentContext");
+        }
+    }
+}
