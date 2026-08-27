@@ -21,6 +21,7 @@
   "Kevlar.BackoffKind.Linear": "Kevlar.BackoffKind.yml",
   "Kevlar.BackoffKind.None": "Kevlar.BackoffKind.yml",
   "Kevlar.CallbackErrorEvent": "Kevlar.CallbackErrorEvent.yml",
+  "Kevlar.CallbackErrorEvent.AttemptNumber": "Kevlar.CallbackErrorEvent.yml",
   "Kevlar.CallbackErrorEvent.Exception": "Kevlar.CallbackErrorEvent.yml",
   "Kevlar.CallbackErrorEvent.Kind": "Kevlar.CallbackErrorEvent.yml",
   "Kevlar.CallbackErrorEvent.ShieldName": "Kevlar.CallbackErrorEvent.yml",

@@ -1,9 +1,38 @@
 using System.Diagnostics.Metrics;
+using Kevlar.Testing;
 
 namespace Kevlar.Tests;
 
 public class CallbackFailureTests
 {
+    [Test]
+    [NotInParallel]
+    public async Task Public_HandlingClause_Reports_Explicit_Evaluation_Metadata()
+    {
+        const int attemptNumber = 3;
+        const int strategyIndex = 7;
+        using var recorder = new TelemetryRecorder(
+            captureMetrics: false,
+            captureCallbackErrors: true);
+        var predicateFailure = new IOException("predicate");
+        var shield = Shield.WhenContext((HandlingEvent _) => throw predicateFailure)
+            .Use(clause => new HandlingClauseProbeStrategy(
+                clause,
+                attemptNumber,
+                strategyIndex));
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        var callback = recorder.Callbacks.Single();
+        await Assert.That(callback.ErrorKind).IsEqualTo(CallbackErrorKind.HandlingPredicate);
+        await Assert.That(callback.AttemptNumber).IsEqualTo(attemptNumber);
+        await Assert.That(callback.StrategyIndex).IsEqualTo(strategyIndex);
+        var telemetry = recorder.Events.Single(item => item.EventName == "callback_error");
+        await Assert.That(telemetry.AttemptNumber).IsEqualTo(attemptNumber);
+        await Assert.That(telemetry.StrategyIndex).IsEqualTo(strategyIndex);
+    }
+
     [Test]
     [NotInParallel]
     [Arguments(false)]
@@ -319,5 +348,20 @@ public class CallbackFailureTests
         });
         listener.Start();
         return listener;
+    }
+
+    private sealed class HandlingClauseProbeStrategy(
+        HandlingClause clause,
+        int attemptNumber,
+        int strategyIndex) : Strategy
+    {
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var failed = Outcome<T>.FromException(new InvalidOperationException("probe"));
+            _ = clause.ShouldHandle(in failed, context, attemptNumber, strategyIndex);
+            return next.InvokeAsync(context);
+        }
     }
 }

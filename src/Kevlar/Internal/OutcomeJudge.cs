@@ -46,7 +46,9 @@ internal abstract class OutcomeJudge
 
     private static void ReportPredicateFailure(
         Exception exception,
-        KevlarContext? context)
+        KevlarContext? context,
+        int attempt,
+        int strategyIndex)
     {
         if (context is not null)
         {
@@ -54,14 +56,18 @@ internal abstract class OutcomeJudge
                 CallbackErrorKind.HandlingPredicate,
                 context,
                 exception,
-                "HandlingPredicate");
+                "HandlingPredicate",
+                attemptNumber: attempt,
+                strategyIndex: strategyIndex);
         }
     }
 
     protected static bool EvaluatePredicates<T>(
         Func<T, bool>[] predicates,
         T value,
-        KevlarContext? context)
+        KevlarContext? context,
+        int attempt,
+        int strategyIndex)
     {
         foreach (var predicate in predicates)
         {
@@ -74,7 +80,7 @@ internal abstract class OutcomeJudge
             }
             catch (Exception exception)
             {
-                ReportPredicateFailure(exception, context);
+                ReportPredicateFailure(exception, context, attempt, strategyIndex);
             }
         }
 
@@ -119,7 +125,7 @@ internal sealed class ExceptionJudge : OutcomeJudge
 
     protected override bool ShouldHandleCore<T>(in Outcome<T> outcome, KevlarContext? context, int attempt, int strategyIndex) =>
         outcome.Exception is { } exception
-        && EvaluatePredicates(_predicates, exception, context);
+        && EvaluatePredicates(_predicates, exception, context, attempt, strategyIndex);
 }
 
 /// <summary>Handles exceptions using the active execution and strategy context.</summary>
@@ -160,12 +166,19 @@ internal sealed class ContextExceptionJudge : OutcomeJudge
         int attempt,
         int strategyIndex) =>
         outcome.Exception is { } exception
-        && (EvaluatePredicates(_exceptionPredicates, exception, context)
+        && (EvaluatePredicates(
+                _exceptionPredicates,
+                exception,
+                context,
+                attempt,
+                strategyIndex)
             || context is not null
             && EvaluatePredicates(
                 _contextPredicates,
                 new HandlingEvent(exception, context, attempt, strategyIndex),
-                context));
+                context,
+                attempt,
+                strategyIndex));
 }
 
 /// <summary>
@@ -221,7 +234,9 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
             if (EvaluatePredicates(
                 _contextPredicates,
                 new HandlingEvent<TResult>(typedOutcome, context, attempt, strategyIndex),
-                context))
+                context,
+                attempt,
+                strategyIndex))
             {
                 return true;
             }
@@ -229,7 +244,12 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
 
         if (outcome.Exception is { } exception)
         {
-            return EvaluatePredicates(_exceptionPredicates, exception, context);
+            return EvaluatePredicates(
+                _exceptionPredicates,
+                exception,
+                context,
+                attempt,
+                strategyIndex);
         }
 
         if (_resultPredicates.Length == 0 || typeof(T) != typeof(TResult))
@@ -238,6 +258,11 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
         }
 
         var predicates = (Func<T, bool>[])(object)_resultPredicates;
-        return EvaluatePredicates(predicates, outcome.Result!, context);
+        return EvaluatePredicates(
+            predicates,
+            outcome.Result!,
+            context,
+            attempt,
+            strategyIndex);
     }
 }

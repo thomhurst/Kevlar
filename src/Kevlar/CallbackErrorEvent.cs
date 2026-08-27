@@ -8,12 +8,14 @@ public readonly struct CallbackErrorEvent
         string source,
         string? shieldName,
         int strategyIndex,
+        int attemptNumber,
         Exception exception)
     {
         Kind = kind;
         Source = source;
         ShieldName = shieldName;
         StrategyIndex = strategyIndex;
+        AttemptNumber = attemptNumber;
         Exception = exception;
     }
 
@@ -28,6 +30,9 @@ public readonly struct CallbackErrorEvent
 
     /// <summary>Gets the zero-based strategy position in the shield.</summary>
     public int StrategyIndex { get; }
+
+    /// <summary>Gets the zero-based execution attempt number.</summary>
+    public int AttemptNumber { get; }
 
     /// <summary>Gets the isolated exception.</summary>
     public Exception Exception { get; }

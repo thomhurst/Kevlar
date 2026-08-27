@@ -85,7 +85,37 @@ public static class KevlarDiagnostics
         CallbackErrorKind kind,
         KevlarContext context,
         Exception exception,
-        string source)
+        string source) =>
+        ReportCallbackErrorCore(
+            kind,
+            context,
+            exception,
+            source,
+            context?.AttemptNumber ?? 0,
+            context?.StrategyIndex ?? -1);
+
+    internal static void ReportCallbackError(
+        CallbackErrorKind kind,
+        KevlarContext context,
+        Exception exception,
+        string source,
+        int attemptNumber,
+        int strategyIndex) =>
+        ReportCallbackErrorCore(
+            kind,
+            context,
+            exception,
+            source,
+            attemptNumber,
+            strategyIndex);
+
+    private static void ReportCallbackErrorCore(
+        CallbackErrorKind kind,
+        KevlarContext context,
+        Exception exception,
+        string source,
+        int attemptNumber,
+        int strategyIndex)
     {
         if (context is null)
         {
@@ -118,8 +148,8 @@ public static class KevlarDiagnostics
                 strategyName: "Callback",
                 eventName: "callback_error",
                 KevlarTelemetrySeverity.Error,
-                context.StrategyIndex,
-                context.AttemptNumber,
+                strategyIndex,
+                attemptNumber,
                 isSuccess: false,
                 exception,
                 callbackKind: kind,
@@ -134,7 +164,8 @@ public static class KevlarDiagnostics
             kind,
             source,
             context.ShieldName,
-            context.StrategyIndex,
+            strategyIndex,
+            attemptNumber,
             exception);
         var handlers = OnCallbackError;
         if (handlers is null)

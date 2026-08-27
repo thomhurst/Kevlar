@@ -198,6 +198,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
         CallbackKind.CallbackError,
         item.ShieldName,
         strategyIndex: item.StrategyIndex,
+        attemptNumber: item.AttemptNumber,
         exception: item.Exception,
         errorKind: item.Kind));
 
