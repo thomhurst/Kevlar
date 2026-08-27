@@ -129,6 +129,7 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: |
+            7.0.x
             8.0.x
             10.0.x
 
@@ -236,6 +237,13 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
+
+      - name: Verify analyzer compatibility with .NET 7 SDK
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: ./scripts/Verify-AnalyzerCompatibility.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
       - name: Validate Renovate configuration
         if: matrix.os == 'ubuntu-latest'
