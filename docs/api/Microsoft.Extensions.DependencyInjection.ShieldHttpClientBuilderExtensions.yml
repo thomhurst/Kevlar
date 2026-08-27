@@ -430,7 +430,7 @@ items:
   summary: >-
     Adds one shared standard pipeline that hedges against the request's authority: total timeout,
 
-    hedging, per-authority circuit breaker, then per-attempt timeout.
+    hedging, optional per-authority concurrency limit, circuit breaker, then per-attempt timeout.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder)
