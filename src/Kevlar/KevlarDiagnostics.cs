@@ -20,7 +20,8 @@ namespace Kevlar;
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
-/// <item><c>kevlar.callback_errors</c> — exceptions thrown by notifications or observers; attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
+/// <item><c>kevlar.callback_errors</c> — exceptions thrown by callbacks or cleanup operations;
+/// attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
 /// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
 /// <item><c>kevlar.strategy.events</c> — strategy and custom events; attributes include shield,
 /// strategy, event, severity, attempt, exception type, and an optional bounded operation key</item>
@@ -40,14 +41,15 @@ public static class KevlarDiagnostics
     public const string MeterName = "Kevlar";
 
     /// <summary>
-    /// Raised when a strategy notification or observer throws. Each subscriber is isolated:
-    /// subscriber failures are swallowed and do not prevent later subscribers from running.
+    /// Raised when a strategy notification, observer, or superseded-result disposal throws. Each
+    /// subscriber is isolated: subscriber failures are swallowed and do not prevent later
+    /// subscribers from running.
     /// </summary>
     public static event Action<CallbackErrorEvent>? OnCallbackError;
 
     /// <summary>
-    /// Reports a callback failure without allowing diagnostics subscribers to affect execution.
-    /// Custom strategies can use this method to follow Kevlar's callback-isolation contract.
+    /// Reports a callback or cleanup failure without allowing diagnostics subscribers to affect
+    /// execution. Custom strategies can use this method to follow Kevlar's isolation contract.
     /// </summary>
     public static void ReportCallbackError(
         CallbackErrorKind kind,

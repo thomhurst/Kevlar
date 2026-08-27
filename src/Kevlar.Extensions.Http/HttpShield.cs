@@ -220,7 +220,6 @@ public static class HttpShield
         RetryOptions<HttpResponseMessage> target,
         bool useRetryAfterHeader)
     {
-        var onRetry = source.OnRetry;
         target.MaxRetries = source.MaxRetries;
         target.Backoff = source.Backoff;
         target.MaxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
@@ -229,11 +228,7 @@ public static class HttpShield
             useRetryAfterHeader);
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
-        target.OnRetry = retry =>
-        {
-            retry.Outcome.Result?.Dispose();
-            return onRetry?.Invoke(retry) ?? default;
-        };
+        target.OnRetry = source.OnRetry;
     }
 
     private static Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? ComposeRetryDelayGenerator(

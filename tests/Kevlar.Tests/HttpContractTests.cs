@@ -386,6 +386,45 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_OnRetry_Observes_Live_Response_Before_Core_Disposal()
+    {
+        var handledContent = new TrackingContent();
+        var callbackSawLiveResponse = false;
+        var calls = 0;
+        var options = new StandardHttpShieldOptions
+        {
+            UseRetryAfterHeader = false,
+        };
+        options.Retry.MaxRetries = 1;
+        options.Retry.Backoff = Backoff.None;
+        options.Retry.OnRetry = retry =>
+        {
+            callbackSawLiveResponse = retry.Outcome.Result?.Content == handledContent
+                && !handledContent.IsDisposed;
+            return default;
+        };
+
+        using var result = await HttpShield.Standard(options).ExecuteAsync(_ =>
+        {
+            var attempt = Interlocked.Increment(ref calls);
+            var response = new HttpResponseMessage(
+                attempt == 1
+                    ? HttpStatusCode.ServiceUnavailable
+                    : HttpStatusCode.OK);
+            if (attempt == 1)
+            {
+                response.Content = handledContent;
+            }
+
+            return new ValueTask<HttpResponseMessage>(response);
+        });
+
+        await Assert.That(result.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(callbackSawLiveResponse).IsTrue();
+        await Assert.That(handledContent.IsDisposed).IsTrue();
+    }
+
+    [Test]
     public async Task Replacing_Retry_Options_Keeps_RetryAfter()
     {
         var options = new StandardHttpShieldOptions

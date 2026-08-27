@@ -126,7 +126,13 @@ flags untyped `Hedge(...)` for exactly this reason.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
 - Callback contexts are pooled. Do not retain them after the returned `ValueTask` completes; a generated action's isolated context remains valid until that attempt completes.
 - Callbacks and generators run without a strategy lock. They may re-enter the same shield, and concurrent shield executions may invoke them concurrently; keep captured state thread-safe.
-- Losing operations are cancelled first, then their isolated contexts are returned to the pool after those operations complete.
+- Losing operations are cancelled first. After each operation completes, any non-selected result
+  is disposed and its isolated context is returned to the pool. This also covers handled results
+  superseded by a later attempt and non-selected `OriginalAction` results produced inside an
+  `ActionGenerator`. Kevlar prefers `IAsyncDisposable` when both disposal interfaces are present;
+  the selected result remains caller-owned. Disposal failures are reported through
+  `KevlarDiagnostics.OnCallbackError` as `CallbackErrorKind.ResultDisposal` without changing the
+  selected outcome.
 - What counts as a failure is the ambient [handling clause](../handling-failures.md), unless the
   options set `HandlesException` or `HandlesResult` as a
   [per-strategy override](../handling-failures.md#per-strategy-overrides).

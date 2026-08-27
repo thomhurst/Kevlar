@@ -35,6 +35,7 @@
   "Kevlar.CallbackErrorKind.Logging": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.RateLimitRejected": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.RateLimiterAdapterRejected": "Kevlar.CallbackErrorKind.yml",
+  "Kevlar.CallbackErrorKind.ResultDisposal": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.Retry": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.CallbackErrorKind.Timeout": "Kevlar.CallbackErrorKind.yml",
   "Kevlar.Chaos": "Kevlar.Chaos.yml",

@@ -1,6 +1,6 @@
 namespace Kevlar;
 
-/// <summary>Identifies a strategy notification whose failure was reported by Kevlar.</summary>
+/// <summary>Identifies an isolated callback or cleanup failure reported by Kevlar.</summary>
 public enum CallbackErrorKind
 {
     /// <summary>A retry notification.</summary>
@@ -35,4 +35,7 @@ public enum CallbackErrorKind
 
     /// <summary>A logging formatter or severity callback.</summary>
     Logging,
+
+    /// <summary>Disposal of a superseded result.</summary>
+    ResultDisposal,
 }

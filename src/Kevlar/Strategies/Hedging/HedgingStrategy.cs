@@ -161,6 +161,7 @@ internal sealed class HedgingStrategy : Strategy
         int strategyIndex)
     {
         var pending = ListPool<HedgeAttempt<T>>.Shared.Rent();
+        Outcome<T>? terminalOutcome = null;
 
         try
         {
@@ -242,7 +243,9 @@ internal sealed class HedgingStrategy : Strategy
                 bool shouldHandle;
                 try
                 {
-                    var judgingContext = completedAttempt.FreezeContext(in outcome);
+                    var judgingContext = await completedAttempt
+                        .FreezeContextAsync(in outcome)
+                        .ConfigureAwait(false);
                     shouldHandle = _judge.ShouldHandle(
                         in outcome,
                         judgingContext,
@@ -261,12 +264,30 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 finally
                 {
-                    completedAttempt.Dispose();
+                    await completedAttempt.DisposeAsync().ConfigureAwait(false);
                 }
 
                 if (!shouldHandle)
                 {
+                    if (lastOutcome is { } superseded)
+                    {
+                        if (!OutcomeDisposer.IsSameResult(in superseded, in outcome))
+                        {
+                            await OutcomeDisposer.DisposeResultAsync(
+                                in superseded,
+                                context).ConfigureAwait(false);
+                        }
+
+                        lastOutcome = null;
+                    }
+
+                    terminalOutcome = outcome;
                     return outcome;
+                }
+
+                if (lastOutcome is { } previous)
+                {
+                    await OutcomeDisposer.DisposeResultAsync(in previous, context).ConfigureAwait(false);
                 }
 
                 lastOutcome = outcome;
@@ -283,7 +304,10 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 else if (pending.Count == 0)
                 {
-                    return lastOutcome!.Value;
+                    var terminal = lastOutcome!.Value;
+                    lastOutcome = null;
+                    terminalOutcome = terminal;
+                    return terminal;
                 }
             }
         }
@@ -292,7 +316,12 @@ internal sealed class HedgingStrategy : Strategy
             foreach (var attempt in pending)
             {
                 attempt.Cancellation.Cancel();
-                Cleanup(attempt);
+                Cleanup(attempt, terminalOutcome);
+            }
+
+            if (lastOutcome is { } superseded)
+            {
+                await OutcomeDisposer.DisposeResultAsync(in superseded, context).ConfigureAwait(false);
             }
 
             ListPool<HedgeAttempt<T>>.Shared.Return(pending);
@@ -469,7 +498,12 @@ internal sealed class HedgingStrategy : Strategy
         }
         catch
         {
-            ReleaseAttemptResources(fork, cancellation, contextCapture);
+            var release = ReleaseAttemptResourcesAsync(fork, cancellation, contextCapture);
+            if (!release.IsCompletedSuccessfully)
+            {
+                _ = release.AsTask();
+            }
+
             throw;
         }
     }
@@ -559,36 +593,55 @@ internal sealed class HedgingStrategy : Strategy
         KevlarContext invocationContext,
         in Outcome<T> outcome)
     {
-        var retained = false;
-        try
+        if (contextCapture.Capture(invocationContext, in outcome))
         {
-            retained = contextCapture.Capture(invocationContext, in outcome);
+            contextCapture.ReleaseInvocation();
+            return;
         }
-        finally
+
+        var disposal = OutcomeDisposer.DisposeResultAsync(in outcome, invocationContext);
+        if (disposal.IsCompletedSuccessfully)
         {
             try
             {
-                if (!retained)
-                {
-                    KevlarContext.Return(invocationContext);
-                }
+                disposal.GetAwaiter().GetResult();
+                KevlarContext.Return(invocationContext);
             }
             finally
             {
                 contextCapture.ReleaseInvocation();
             }
+
+            return;
+        }
+
+        _ = DisposeAndReleaseInvocationAsync(disposal, invocationContext, contextCapture);
+    }
+
+    private static async Task DisposeAndReleaseInvocationAsync<T>(
+        ValueTask disposal,
+        KevlarContext invocationContext,
+        OriginalActionContextCapture<T> contextCapture)
+    {
+        try
+        {
+            await disposal.ConfigureAwait(false);
+            KevlarContext.Return(invocationContext);
+        }
+        finally
+        {
+            contextCapture.ReleaseInvocation();
         }
     }
 
-    private static void ReleaseAttemptResources<T>(
+    private static ValueTask ReleaseAttemptResourcesAsync<T>(
         KevlarContext context,
         CancellationTokenSource cancellation,
         OriginalActionContextCapture<T>? contextCapture)
     {
         if (contextCapture is not null)
         {
-            contextCapture.ReleaseAttempt();
-            return;
+            return contextCapture.ReleaseAttemptAsync();
         }
 
         try
@@ -599,6 +652,8 @@ internal sealed class HedgingStrategy : Strategy
         {
             cancellation.Dispose();
         }
+
+        return default;
     }
 
     private sealed class OriginalActionContextCapture<T>
@@ -683,36 +738,47 @@ internal sealed class HedgingStrategy : Strategy
             }
         }
 
-        public void ReleaseInvocation() => ReleaseReference(stopAcceptingInvocations: false);
+        public void ReleaseInvocation() => ReleaseReference();
 
-        public KevlarContext Freeze(in Outcome<T> selectedOutcome)
+        public ValueTask<KevlarContext> FreezeAsync(in Outcome<T> selectedOutcome)
         {
             List<CapturedOriginalAction>? completions = null;
-            try
+            CapturedOriginalAction? selected = null;
+            lock (_sync)
             {
-                lock (_sync)
+                _frozen = true;
+                completions = _completions;
+                _completions = null;
+                if (completions is null)
                 {
-                    _frozen = true;
-                    completions = _completions;
-                    _completions = null;
-                    if (completions is null)
-                    {
-                        return _context!;
-                    }
-
-                    var selectedIndex = FindSelectedIndex(completions, in selectedOutcome);
-
-                    var selected = completions[selectedIndex];
-                    completions.RemoveAt(selectedIndex);
-                    _selectedContext = selected.Context;
-                    MergeContext(selected.Context, _context!);
-                    return selected.Context;
+                    return new ValueTask<KevlarContext>(_context!);
                 }
+
+                var selectedIndex = FindSelectedIndex(completions, in selectedOutcome);
+                selected = completions[selectedIndex];
+                completions.RemoveAt(selectedIndex);
+                _selectedContext = selected.Value.Context;
+                MergeContext(selected.Value.Context, _context!);
             }
-            finally
+
+            return CompleteFreezeAsync(selected.Value, selectedOutcome, completions);
+        }
+
+        private static async ValueTask<KevlarContext> CompleteFreezeAsync(
+            CapturedOriginalAction selected,
+            Outcome<T> selectedOutcome,
+            List<CapturedOriginalAction> completions)
+        {
+            var selectedOriginalOutcome = selected.Outcome;
+            if (!OutcomeDisposer.IsSameResult(in selectedOriginalOutcome, in selectedOutcome))
             {
-                ReturnContexts(completions);
+                await OutcomeDisposer.DisposeResultAsync(
+                    in selectedOriginalOutcome,
+                    selected.Context).ConfigureAwait(false);
             }
+
+            await DisposeAndReturnContextsAsync(completions).ConfigureAwait(false);
+            return selected.Context;
         }
 
         private static int FindSelectedIndex(
@@ -743,25 +809,20 @@ internal sealed class HedgingStrategy : Strategy
             return completions.Count - 1;
         }
 
-        public void ReleaseAttempt() => ReleaseReference(stopAcceptingInvocations: true);
-
-        private void ReleaseReference(bool stopAcceptingInvocations)
+        public ValueTask ReleaseAttemptAsync()
         {
             KevlarContext? context = null;
-            KevlarContext? selectedContext = null;
+            KevlarContext? selectedContext;
             CancellationTokenSource? cancellation = null;
-            List<CapturedOriginalAction>? completions = null;
+            List<CapturedOriginalAction>? completions;
             lock (_sync)
             {
-                if (stopAcceptingInvocations)
-                {
-                    _acceptingInvocations = false;
-                    _frozen = true;
-                    completions = _completions;
-                    _completions = null;
-                    selectedContext = _selectedContext;
-                    _selectedContext = null;
-                }
+                _acceptingInvocations = false;
+                _frozen = true;
+                completions = _completions;
+                _completions = null;
+                selectedContext = _selectedContext;
+                _selectedContext = null;
 
                 _references--;
                 if (_references == 0)
@@ -773,10 +834,49 @@ internal sealed class HedgingStrategy : Strategy
                 }
             }
 
-            ReturnContexts(completions);
+            return ReleaseAttemptCoreAsync(
+                completions,
+                selectedContext,
+                context,
+                cancellation);
+        }
+
+        private async ValueTask ReleaseAttemptCoreAsync(
+            List<CapturedOriginalAction>? completions,
+            KevlarContext? selectedContext,
+            KevlarContext? context,
+            CancellationTokenSource? cancellation)
+        {
+            if (completions is not null)
+            {
+                await DisposeAndReturnContextsAsync(completions).ConfigureAwait(false);
+            }
+
             if (selectedContext is not null)
             {
                 KevlarContext.Return(selectedContext);
+            }
+
+            if (context is not null)
+            {
+                ReturnCapture(context, cancellation!);
+            }
+        }
+
+        private void ReleaseReference()
+        {
+            KevlarContext? context = null;
+            CancellationTokenSource? cancellation = null;
+            lock (_sync)
+            {
+                _references--;
+                if (_references == 0)
+                {
+                    context = _context;
+                    cancellation = _cancellation;
+                    _context = null;
+                    _cancellation = null;
+                }
             }
 
             if (context is null)
@@ -784,13 +884,20 @@ internal sealed class HedgingStrategy : Strategy
                 return;
             }
 
+            ReturnCapture(context, cancellation!);
+        }
+
+        private void ReturnCapture(
+            KevlarContext context,
+            CancellationTokenSource cancellation)
+        {
             try
             {
                 KevlarContext.Return(context);
             }
             finally
             {
-                cancellation!.Dispose();
+                cancellation.Dispose();
                 Pool.Return(this);
             }
         }
@@ -830,16 +937,22 @@ internal sealed class HedgingStrategy : Strategy
             source.CopyCompletionPropertiesTo(target);
         }
 
-        private static void ReturnContexts(List<CapturedOriginalAction>? completions)
+        private static async ValueTask DisposeAndReturnContextsAsync(
+            List<CapturedOriginalAction> completions)
         {
-            if (completions is null)
-            {
-                return;
-            }
-
             foreach (var completion in completions)
             {
-                KevlarContext.Return(completion.Context);
+                try
+                {
+                    var outcome = completion.Outcome;
+                    await OutcomeDisposer.DisposeResultAsync(
+                        in outcome,
+                        completion.Context).ConfigureAwait(false);
+                }
+                finally
+                {
+                    KevlarContext.Return(completion.Context);
+                }
             }
         }
 
@@ -949,20 +1062,70 @@ internal sealed class HedgingStrategy : Strategy
         throw new InvalidOperationException("The completed hedge attempt was not pending.");
     }
 
-    private static void Cleanup<T>(HedgeAttempt<T> attempt)
+    private static void Cleanup<T>(HedgeAttempt<T> attempt, Outcome<T>? terminalOutcome)
     {
-        if (attempt.Task.IsCompleted)
+        if (attempt.Task.Status != TaskStatus.RanToCompletion)
         {
-            attempt.Dispose();
+            _ = CleanupAsync(attempt, terminalOutcome);
             return;
         }
 
-        _ = attempt.Task.ContinueWith(
-            static (_, state) => ((HedgeAttempt<T>)state!).Dispose(),
-            attempt,
-            CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+        var outcome = attempt.Task.Result;
+        var disposal = terminalOutcome is { } terminal
+            && OutcomeDisposer.IsSameResult(in outcome, in terminal)
+                ? default
+                : OutcomeDisposer.DisposeResultAsync(in outcome, attempt.Context);
+        if (disposal.IsCompletedSuccessfully)
+        {
+            disposal.GetAwaiter().GetResult();
+            var release = attempt.DisposeAsync();
+            if (!release.IsCompletedSuccessfully)
+            {
+                _ = release.AsTask();
+            }
+            return;
+        }
+
+        _ = FinishCleanupAsync(disposal, attempt);
+    }
+
+    private static async Task CleanupAsync<T>(
+        HedgeAttempt<T> attempt,
+        Outcome<T>? terminalOutcome)
+    {
+        try
+        {
+            var outcome = await attempt.Task.ConfigureAwait(false);
+            if (terminalOutcome is not { } terminal
+                || !OutcomeDisposer.IsSameResult(in outcome, in terminal))
+            {
+                await OutcomeDisposer.DisposeResultAsync(
+                    in outcome,
+                    attempt.Context).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            // Attempt failures are already represented by the selected pipeline outcome.
+        }
+        finally
+        {
+            await attempt.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    private static async Task FinishCleanupAsync<T>(
+        ValueTask disposal,
+        HedgeAttempt<T> attempt)
+    {
+        try
+        {
+            await disposal.ConfigureAwait(false);
+        }
+        finally
+        {
+            await attempt.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     private static Outcome<T> NormalizeCancellation<T>(Outcome<T> outcome, KevlarContext context)
@@ -1006,10 +1169,11 @@ internal sealed class HedgingStrategy : Strategy
 
         private OriginalActionContextCapture<T>? ContextCapture { get; }
 
-        public KevlarContext FreezeContext(in Outcome<T> outcome) =>
-            ContextCapture?.Freeze(in outcome) ?? Context;
+        public ValueTask<KevlarContext> FreezeContextAsync(in Outcome<T> outcome) =>
+            ContextCapture?.FreezeAsync(in outcome) ?? new ValueTask<KevlarContext>(Context);
 
-        public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
+        public ValueTask DisposeAsync() =>
+            ReleaseAttemptResourcesAsync(Context, Cancellation, ContextCapture);
     }
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
@@ -1043,6 +1207,17 @@ internal sealed class HedgingStrategy : Strategy
 
         public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context, Attempt, ContextCapture);
 
-        public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
+        public void Dispose()
+        {
+            var release = ReleaseAttemptResourcesAsync(Context, Cancellation, ContextCapture);
+            if (release.IsCompletedSuccessfully)
+            {
+                release.GetAwaiter().GetResult();
+            }
+            else
+            {
+                _ = release.AsTask();
+            }
+        }
     }
 }

@@ -415,7 +415,11 @@ shield so every additional send goes through safe replay and routing.
 
 ## Behaviour notes
 
-- **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
+- **Superseded responses are pipeline-owned.** Retry and hedging dispose failed or losing responses,
+  including a loser that completes after the winner; the handler retains an idempotent safety net
+  for custom strategies. A custom `OnRetry` disposal hook is unnecessary. `OnRetry` observes the
+  live response, disposal completes before the next attempt starts, and the selected response
+  remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
 - **Configuration-backed state is replaced, not mutated.** Reload and handler rotation publish fresh complete pipelines. Requests already executing retain the snapshot they captured at send start.

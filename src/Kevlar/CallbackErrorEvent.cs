@@ -1,6 +1,6 @@
 namespace Kevlar;
 
-/// <summary>Describes an exception thrown by a strategy notification or observer.</summary>
+/// <summary>Describes an exception thrown by an isolated callback or cleanup operation.</summary>
 public readonly struct CallbackErrorEvent
 {
     internal CallbackErrorEvent(
@@ -15,7 +15,7 @@ public readonly struct CallbackErrorEvent
         Exception = exception;
     }
 
-    /// <summary>Gets the callback family that failed.</summary>
+    /// <summary>Gets the callback or cleanup family that failed.</summary>
     public CallbackErrorKind Kind { get; }
 
     /// <summary>Gets the shield name, or <see langword="null"/> for an unnamed shield.</summary>
@@ -24,6 +24,6 @@ public readonly struct CallbackErrorEvent
     /// <summary>Gets the zero-based strategy position in the shield.</summary>
     public int StrategyIndex { get; }
 
-    /// <summary>Gets the exception thrown by the callback.</summary>
+    /// <summary>Gets the isolated exception.</summary>
     public Exception Exception { get; }
 }

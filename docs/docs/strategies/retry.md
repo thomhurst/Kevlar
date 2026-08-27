@@ -104,7 +104,14 @@ Shield.Retry(o =>
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
 
-Order per retry: retry metrics are recorded → backoff computes the delay → effective cap (`MaxDelay ?? Backoff.MaxDelay`) clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay → sleep. The generator's `null` and negative results are ignored, and the effective cap clamps its override.
+Order per retry: retry metrics are recorded → backoff computes the delay → effective cap (`MaxDelay ?? Backoff.MaxDelay`) clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay and handled outcome → a superseded disposable result is disposed → sleep. The generator's `null` and negative results are ignored, and the effective cap clamps its override.
+
+When result handling triggers another attempt, Kevlar disposes the handled result before the next
+attempt starts. It prefers `IAsyncDisposable.DisposeAsync()` when a result implements both disposal
+interfaces. `OnRetry` runs first so it can inspect the live result. The final result returned to the
+caller is never disposed by the retry strategy. Disposal failures are reported through
+`KevlarDiagnostics.OnCallbackError` as `CallbackErrorKind.ResultDisposal` and do not replace the
+pipeline outcome.
 
 Both hooks return `ValueTask`. A hook that completes synchronously (`return default;`, `new(value)`)
 costs nothing extra and works with synchronous `Execute`. A hook that yields is awaited by

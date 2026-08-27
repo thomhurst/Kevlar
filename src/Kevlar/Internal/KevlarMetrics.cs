@@ -65,7 +65,7 @@ internal static class KevlarMetrics
     private static readonly Counter<long> CallbackErrors = Meter.CreateCounter<long>(
         "kevlar.callback_errors",
         "{error}",
-        "Exceptions thrown by strategy notifications or observers.");
+        "Exceptions thrown by isolated callbacks or cleanup operations.");
     private static readonly Histogram<double> ExecutionDuration = Meter.CreateHistogram<double>(
         "kevlar.execution.duration",
         "s",
@@ -760,6 +760,7 @@ internal static class KevlarMetrics
         CallbackErrorKind.RateLimiterAdapterRejected => "rate_limiter_adapter_rejected",
         CallbackErrorKind.ChaosInjected => "chaos_injected",
         CallbackErrorKind.Logging => "logging",
+        CallbackErrorKind.ResultDisposal => "result_disposal",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
