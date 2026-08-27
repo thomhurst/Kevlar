@@ -213,6 +213,8 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 
 ### Fixed
 
+- State gauges now aggregate identical shield-name and strategy-index series across partitioned
+  shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
 - Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
   dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
   runtime failures from incompatible internals.

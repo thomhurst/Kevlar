@@ -47,7 +47,9 @@ items:
 
     strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
 
-    the strategy-event attributes</li><li><code>kevlar.circuit_breaker.state</code> — current state gauge (<code>closed=0</code>, <code>open=1</code>, <code>half_open=2</code>, <code>isolated=3</code>)</li><li><code>kevlar.concurrency_limit.inflight</code>, <code>kevlar.concurrency_limit.queued</code>, and <code>kevlar.concurrency_limit.capacity</code> — concurrency-limit state gauges</li><li><code>kevlar.rate_limit.available</code> and <code>kevlar.rate_limit.queued</code> — rate-limit state gauges</li></ul>
+    the strategy-event attributes</li><li><code>kevlar.circuit_breaker.state</code> — current state gauge (<code>closed=0</code>, <code>open=1</code>, <code>half_open=2</code>, <code>isolated=3</code>)</li><li><code>kevlar.circuit_breaker.instances</code> — circuit-breaker instance count grouped by
+
+    current state</li><li><code>kevlar.concurrency_limit.inflight</code>, <code>kevlar.concurrency_limit.queued</code>, and <code>kevlar.concurrency_limit.capacity</code> — concurrency-limit state gauges</li><li><code>kevlar.rate_limit.available</code> and <code>kevlar.rate_limit.queued</code> — rate-limit state gauges</li></ul>
 
 
     The <code>kevlar.shield.name</code> attribute is present only for shields named via <code>WithName</code>; an explicitly
@@ -55,6 +57,10 @@ items:
     empty name is emitted as an empty tag value. State gauges also carry the bounded
 
     <code>kevlar.strategy.index</code> attribute so multiple stateful strategies in one pipeline remain distinct.
+
+    Concurrency and rate measurements with the same name and strategy index are aggregated. Use
+
+    <code>kevlar.circuit_breaker.instances</code> when several breakers share those attributes.
   example: []
   syntax:
     content: public static class KevlarDiagnostics
