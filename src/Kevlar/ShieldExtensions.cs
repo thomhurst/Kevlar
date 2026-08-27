@@ -362,8 +362,7 @@ public static class ShieldExtensions
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             shield.JudgeOrDefault,
-            null,
-            fallbackIsAsync: true));
+            null));
     }
 
     /// <summary>
@@ -389,7 +388,6 @@ public static class ShieldExtensions
             fallback,
             judge,
             options.OnFallback,
-            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
     }
@@ -407,8 +405,7 @@ public static class ShieldExtensions
         return shield.Append(new VoidFallbackStrategy(
             (_, token) => fallback(token),
             shield.JudgeOrDefault,
-            null,
-            fallbackIsAsync: true));
+            null));
     }
 
     /// <summary>
@@ -434,7 +431,6 @@ public static class ShieldExtensions
             (_, token) => fallback(token),
             judge,
             options.OnFallback,
-            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
     }

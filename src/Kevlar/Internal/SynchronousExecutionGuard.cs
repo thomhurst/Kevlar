@@ -39,10 +39,13 @@ internal static class SynchronousExecutionGuard
     internal static NotSupportedException CreateException(KevlarContext context, string hookName)
     {
         var shield = context.ShieldName is { Length: > 0 } name ? $" on shield '{name}'" : string.Empty;
-        return new NotSupportedException(
+        return new SynchronousExecutionRejectionException(
             $"Synchronous execution does not support {hookName} completing asynchronously{shield}. " +
             "Use ExecuteAsync instead of Execute, or make the callback complete synchronously.");
     }
+
+    internal static bool IsRejection(Exception exception) =>
+        exception is SynchronousExecutionRejectionException;
 
     private static void Observe(Task abandoned) =>
         _ = abandoned.ContinueWith(
@@ -50,4 +53,7 @@ internal static class SynchronousExecutionGuard
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+
+    private sealed class SynchronousExecutionRejectionException(string message)
+        : NotSupportedException(message);
 }

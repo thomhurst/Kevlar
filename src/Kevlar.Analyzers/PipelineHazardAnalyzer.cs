@@ -8271,8 +8271,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         if (method.Name == "Fallback")
         {
-            memberName = "Fallback recovery delegate";
-            return true;
+            foreach (var argument in invocation.Arguments)
+            {
+                if (argument.Parameter?.Name == "fallback"
+                    && IsAsynchronousDelegateValue(argument.Value))
+                {
+                    memberName = "Fallback recovery delegate";
+                    return true;
+                }
+            }
         }
 
         if (method.Name == "UseRateLimiter")

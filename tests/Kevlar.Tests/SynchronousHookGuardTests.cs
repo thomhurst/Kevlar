@@ -422,10 +422,8 @@ public class SynchronousHookGuardTests
     // ---- FallbackOptions.OnFallback (void fallback) ----
 
     [Test]
-    public async Task Void_Fallback_Recovery_Is_Rejected_Statically_Before_OnFallback_Runs()
+    public async Task Void_Fallback_Recovery_And_OnFallback_Complete_Synchronously_Under_Execute()
     {
-        // Every void fallback recovery delegate is ValueTask-shaped and stays statically rejected
-        // under synchronous execution, so FallbackOptions.OnFallback never gets a chance to run there.
         var observed = 0;
         var shield = Shield.Fallback(
             static _ => default,
@@ -435,12 +433,9 @@ public class SynchronousHookGuardTests
                 return default;
             });
 
-        var exception = await Assert.That(() => shield.Execute(_ => throw new InvalidOperationException()))
-            .Throws<NotSupportedException>();
+        shield.Execute(_ => throw new InvalidOperationException());
 
-        await Assert.That(exception!.Message).Contains("Fallback recovery delegate");
-        await Assert.That(exception.Message).DoesNotContain("FallbackOptions.OnFallback");
-        await Assert.That(observed).IsEqualTo(0);
+        await Assert.That(observed).IsEqualTo(1);
     }
 
     // ---- FallbackOptions<TResult>.OnFallback ----
