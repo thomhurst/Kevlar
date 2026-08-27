@@ -252,6 +252,30 @@ public class TelemetryRecorderTests
     }
 
     [Test]
+    public async Task Records_Typed_Hedge_Outcome()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var attempts = 0;
+        var shield = Shield.For<string>()
+            .WhenResult(static result => result == "retry")
+            .Hedge(options =>
+            {
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.OnHedge = recorder.Record;
+            });
+
+        var result = await shield.ExecuteAsync(_ =>
+            new ValueTask<string>(Interlocked.Increment(ref attempts) == 1 ? "retry" : "success"));
+
+        var record = recorder.Callbacks.Single();
+        await Assert.That(result).IsEqualTo("success");
+        await Assert.That(record.Kind).IsEqualTo(CallbackKind.Hedge);
+        await Assert.That(record.AttemptNumber).IsEqualTo(1);
+        await Assert.That(record.Result).IsEqualTo("retry");
+        await Assert.That(record.Exception).IsNull();
+    }
+
+    [Test]
     public async Task Records_Circuit_Break_Duration_Statistics_And_Strategy_Index()
     {
         using var recorder = new TelemetryRecorder(captureMetrics: false);

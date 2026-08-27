@@ -35,13 +35,17 @@ API reference: [`HedgeOptions`](pathname:///api/Kevlar.HedgeOptions.html) and [`
 | `MaxHedgedAttempts` | `1` | Maximum additional attempts after the original |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
 | `DelayGenerator` | — | Awaited selector returning `ValueTask<TimeSpan>`: a delay for each pending hedge from its attempt number, context, and elapsed execution time |
-| `OnHedge` | — | Awaited callback when a hedge launches, before the attempt starts — `e.AttemptNumber` is zero-based, so `1` = first hedge after the initial attempt |
+| `OnHedge` | — | Awaited callback when a hedge launches, before the attempt starts — `e.AttemptNumber` is zero-based, so `1` = first hedge after the initial attempt; typed shields also expose the latest handled `Outcome<T>` |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
 | `HandlesResult` (`HedgeOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
+
+On `Shield<T>`, `OnHedge` receives `HedgeEvent<T>`. Its nullable `Outcome` contains the handled
+result or exception that triggered an immediate hedge. It is `null` when elapsed delay launches a
+hedge while earlier attempts remain pending. Untyped shields continue to receive `HedgeEvent`.
 
 ### Selecting another target
 

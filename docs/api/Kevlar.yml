@@ -33,6 +33,7 @@ items:
   - Kevlar.HedgeActionGeneratorEvent`1
   - Kevlar.HedgeDelayEvent
   - Kevlar.HedgeEvent
+  - Kevlar.HedgeEvent`1
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
   - Kevlar.IKevlarTelemetryListener
@@ -959,6 +960,42 @@ references:
   name: HedgeDelayEvent
   nameWithType: HedgeDelayEvent
   fullName: Kevlar.HedgeDelayEvent
+- uid: Kevlar.HedgeEvent`1
+  commentId: T:Kevlar.HedgeEvent`1
+  isExternal: true
+  href: Kevlar.HedgeEvent-1.html
+  name: HedgeEvent<TResult>
+  nameWithType: HedgeEvent<TResult>
+  fullName: Kevlar.HedgeEvent<TResult>
+  nameWithType.vb: HedgeEvent(Of TResult)
+  fullName.vb: Kevlar.HedgeEvent(Of TResult)
+  name.vb: HedgeEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeEvent
+  commentId: T:Kevlar.HedgeEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HedgeEvent.html
+  name: HedgeEvent
+  nameWithType: HedgeEvent
+  fullName: Kevlar.HedgeEvent
 - uid: Kevlar.HedgeOptions
   commentId: T:Kevlar.HedgeOptions
   isExternal: true
@@ -994,14 +1031,6 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.HedgeEvent
-  commentId: T:Kevlar.HedgeEvent
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.HedgeEvent.html
-  name: HedgeEvent
-  nameWithType: HedgeEvent
-  fullName: Kevlar.HedgeEvent
 - uid: Kevlar.RateLimitOptions
   commentId: T:Kevlar.RateLimitOptions
   isExternal: true

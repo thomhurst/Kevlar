@@ -91,6 +91,9 @@ items:
   - uid: Kevlar.HedgeEvent
     name: HedgeEvent
     type: Struct
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent<TResult>
+    type: Struct
   - uid: Kevlar.HedgeOptions
     name: HedgeOptions
     type: Class

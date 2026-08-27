@@ -329,16 +329,18 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Invoked and awaited before an additional hedged attempt starts. Return
+    Invoked and awaited before an additional hedged attempt starts, with the latest handled
 
-    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    outcome when one triggered the hedge. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous
+
+    callback.
   example: []
   syntax:
-    content: public Func<HedgeEvent, ValueTask>? OnHedge { get; set; }
+    content: public Func<HedgeEvent<TResult>, ValueTask>? OnHedge { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnHedge As Func(Of HedgeEvent, ValueTask)
+      type: System.Func{Kevlar.HedgeEvent{{TResult}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnHedge As Func(Of HedgeEvent(Of TResult), ValueTask)
   overload: Kevlar.HedgeOptions`1.OnHedge*
   nameWithType.vb: HedgeOptions(Of TResult).OnHedge
   fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedge
@@ -1052,27 +1054,30 @@ references:
   fullName: Kevlar.HedgeOptions<TResult>.OnHedge
   nameWithType.vb: HedgeOptions(Of TResult).OnHedge
   fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedge
-- uid: System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
-  commentId: T:System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
+- uid: System.Func{Kevlar.HedgeEvent{{TResult}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.HedgeEvent{`0},System.Threading.Tasks.ValueTask}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<HedgeEvent, ValueTask>
-  nameWithType: Func<HedgeEvent, ValueTask>
-  fullName: System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>
-  nameWithType.vb: Func(Of HedgeEvent, ValueTask)
-  fullName.vb: System.Func(Of Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask)
-  name.vb: Func(Of HedgeEvent, ValueTask)
+  name: Func<HedgeEvent<TResult>, ValueTask>
+  nameWithType: Func<HedgeEvent<TResult>, ValueTask>
+  fullName: System.Func<Kevlar.HedgeEvent<TResult>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of HedgeEvent(Of TResult), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.HedgeEvent(Of TResult), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of HedgeEvent(Of TResult), ValueTask)
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.HedgeEvent
+  - uid: Kevlar.HedgeEvent`1
     name: HedgeEvent
     isExternal: true
-    href: Kevlar.HedgeEvent.html
+    href: Kevlar.HedgeEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask
@@ -1088,10 +1093,15 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.HedgeEvent
+  - uid: Kevlar.HedgeEvent`1
     name: HedgeEvent
     isExternal: true
-    href: Kevlar.HedgeEvent.html
+    href: Kevlar.HedgeEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask

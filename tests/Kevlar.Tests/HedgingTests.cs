@@ -124,6 +124,64 @@ public class HedgingTests
     }
 
     [Test]
+    public async Task Typed_OnHedge_Receives_The_Handled_Outcome()
+    {
+        HedgeEvent<string>? observed = null;
+        var attempts = 0;
+        var shield = Shield.For<string>()
+            .WhenResult(static result => result == "retry")
+            .Hedge(options =>
+            {
+                options.MaxHedgedAttempts = 1;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.OnHedge = hedge =>
+                {
+                    observed = hedge;
+                    return default;
+                };
+            });
+
+        var result = await shield.ExecuteAsync(_ =>
+            new ValueTask<string>(Interlocked.Increment(ref attempts) == 1 ? "retry" : "success"));
+
+        await Assert.That(result).IsEqualTo("success");
+        await Assert.That(observed).IsNotNull();
+        await Assert.That(observed!.Value.AttemptNumber).IsEqualTo(1);
+        await Assert.That(observed.Value.Outcome).IsNotNull();
+        await Assert.That(observed.Value.Outcome!.Value.Result).IsEqualTo("retry");
+    }
+
+    [Test]
+    public async Task Typed_OnHedge_Receives_No_Outcome_When_Delay_Launches_Hedge()
+    {
+        HedgeEvent<int>? observed = null;
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = hedge =>
+            {
+                observed = hedge;
+                return default;
+            };
+        });
+
+        var result = await shield.ExecuteAsync(async token =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            }
+
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observed).IsNotNull();
+        await Assert.That(observed!.Value.Outcome).IsNull();
+    }
+
+    [Test]
     public async Task All_Attempts_Failing_Surfaces_The_Last_Failure()
     {
         var attempts = 0;

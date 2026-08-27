@@ -11,12 +11,20 @@ internal sealed class HedgingStrategy : Strategy
     private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
     private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGenerator;
-    private readonly Func<HedgeEvent, ValueTask>? _onHedge;
+    private readonly Delegate? _onHedge;
     private readonly HedgeActionGenerator? _actionGenerator;
+    private readonly Type? _callbackResultType;
     private readonly string _telemetryName;
+    private readonly string _onHedgeHookName;
 
     public HedgingStrategy(HedgeOptions options, OutcomeJudge judge)
-        : this(options, judge, options.HasHandlingOverride, options.GetType())
+        : this(
+            options,
+            judge,
+            options.HasHandlingOverride,
+            options.GetType(),
+            options.OnHedge,
+            callbackResultType: null)
     {
     }
 
@@ -24,7 +32,9 @@ internal sealed class HedgingStrategy : Strategy
         HedgeOptions options,
         OutcomeJudge judge,
         bool hasHandlingOverride,
-        Type optionsType)
+        Type optionsType,
+        Delegate? onHedge,
+        Type? callbackResultType)
     {
         ConfigurationValidation.ThrowIf(
             options.MaxHedgedAttempts < 0,
@@ -49,23 +59,41 @@ internal sealed class HedgingStrategy : Strategy
         _maxHedgedAttempts = options.MaxHedgedAttempts;
         _delay = options.Delay;
         _delayGenerator = options.DelayGenerator;
-        _onHedge = options.OnHedge;
+        _onHedge = onHedge;
         _actionGenerator = options.ActionGenerator;
+        _callbackResultType = callbackResultType;
         _telemetryName = options.Name ?? "Hedge";
+        _onHedgeHookName = callbackResultType is null
+            ? "HedgeOptions.OnHedge"
+            : "HedgeOptions<TResult>.OnHedge";
         HasHandlingOverride = hasHandlingOverride;
     }
 
-    internal static HedgingStrategy Create<TResult>(HedgeOptions<TResult> options, OutcomeJudge judge) =>
-        new(
-            options.ToUntyped(
-                options.ActionGenerator is null
-                    ? null
-                    : HedgeActionGenerator.Create(options.ActionGenerator)),
+    internal static HedgingStrategy Create<TResult>(HedgeOptions<TResult> options, OutcomeJudge judge)
+    {
+        var untyped = options.ToUntyped(
+            options.ActionGenerator is null
+                ? null
+                : HedgeActionGenerator.Create(options.ActionGenerator));
+        return new(
+            untyped,
             judge,
             options.HasHandlingOverride,
-            options.GetType());
+            options.GetType(),
+            options.OnHedge,
+            typeof(TResult));
+    }
 
-    internal void ValidateResultType(Type resultType) => _actionGenerator?.ValidateResultType(resultType);
+    internal void ValidateResultType(Type resultType)
+    {
+        _actionGenerator?.ValidateResultType(resultType);
+        if (_callbackResultType is not null && _callbackResultType != resultType)
+        {
+            throw new InvalidOperationException(
+                $"The hedge callback was created for '{_callbackResultType}', " +
+                $"but this shield returns '{resultType}'.");
+        }
+    }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
@@ -385,13 +413,9 @@ internal sealed class HedgingStrategy : Strategy
         TimeSpan delay)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-        var hedgeEvent = new HedgeEvent(attemptNumber, context);
-        var notification = CallbackInvoker.InvokeAsync(
-            _onHedge,
-            hedgeEvent,
-            CallbackErrorKind.Hedge,
-            context,
-            "HedgeOptions.OnHedge");
+        var notification = _onHedge is null
+            ? default
+            : InvokeOnHedgeAsync(_onHedge, attemptNumber, outcome, context);
         if (!notification.IsCompletedSuccessfully)
         {
             return AwaitHedgeNotificationAsync(
@@ -406,6 +430,30 @@ internal sealed class HedgingStrategy : Strategy
         context.CancellationToken.ThrowIfCancellationRequested();
         return new ValueTask<HedgeAttempt<T>>(
             StartHedgeAttempt(next, context, attemptNumber, outcome, delay).AsPending());
+    }
+
+    private ValueTask InvokeOnHedgeAsync<T>(
+        Delegate callback,
+        int attemptNumber,
+        Outcome<T>? outcome,
+        KevlarContext context)
+    {
+        if (_callbackResultType is null)
+        {
+            return CallbackInvoker.InvokeAsync(
+                (Func<HedgeEvent, ValueTask>)callback,
+                new HedgeEvent(attemptNumber, context),
+                CallbackErrorKind.Hedge,
+                context,
+                _onHedgeHookName);
+        }
+
+        return CallbackInvoker.InvokeAsync(
+            (Func<HedgeEvent<T>, ValueTask>)callback,
+            new HedgeEvent<T>(attemptNumber, outcome, context),
+            CallbackErrorKind.Hedge,
+            context,
+            _onHedgeHookName);
     }
 
     private async ValueTask<HedgeAttempt<T>> AwaitHedgeNotificationAsync<T, TState>(
