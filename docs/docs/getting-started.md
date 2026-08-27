@@ -33,11 +33,6 @@ exponential with equal jitter, starting at 250 ms and capped at 30 seconds. Alwa
 cancellation token passed to your delegate; timeout and hedging strategies use it to stop
 abandoned work.
 
-Bundled analyzer conventions: name the execution token `_` only for genuinely uncancellable work;
-otherwise pass it through. Plain `Retry(3)` also raises an informational diagnostic; narrow
-handling or set [`dotnet_diagnostic.KEV011.severity = none`](analyzers.md#kev011-implicit-default-handling)
-when broad default handling is deliberate.
-
 Shields are immutable and thread-safe. Build one and reuse it. Reuse also preserves state: calls
 through the same shield share circuit-breaker and limiter state.
 
