@@ -357,10 +357,19 @@ same bounded reason in `kevlar.suppression.reason`. `HttpRequestReplayException`
 configuration failures such as a null factory result or content exceeding the requested buffer
 limit. Timeouts and caller cancellation flow to every attempt and request factory.
 
-## Endpoint-aware hedging
+## Standard hedging
 
-Route attempt 1, attempt 2, and so on across alternate authorities while preserving the original
-path and query:
+Hedge against the request's own authority without registration-time routing configuration:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+services.AddHttpClient("hedged")
+    .AddStandardHedgeShield();
+```
+
+The request path, query, and authority are preserved for every attempt. To route attempt 1,
+attempt 2, and so on across alternate authorities instead, configure endpoints explicitly:
 
 ```csharp
 using Kevlar.Extensions.Http;
@@ -379,16 +388,17 @@ services.AddHttpClient("routed")
     });
 ```
 
-`AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total). Each endpoint
-gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
-15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout.Timeout`,
-`Hedge`, `ConcurrencyLimit`, `CircuitBreaker`, and `AttemptTimeout.Timeout`.
+`AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total).
+Each authority gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum
+10 attempts, 15s break), and 10s attempt timeout. Configure those defaults through
+`TotalTimeout.Timeout`, `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`, and
+`AttemptTimeout.Timeout`.
 
 Request replay is configured through `Handler` (`ContentReplayPolicy`, `MaxBufferSize`,
-`AllowUnsafeMethodReplay`, and `RequestFactory`); endpoint authorities and ordering are configured
-through `Routing`. POST, PATCH, and custom methods still require the same explicit idempotency
-opt-in described above; registering the standard hedging pipeline does not make an unsafe operation
-safe to repeat.
+`AllowUnsafeMethodReplay`, and `RequestFactory`); alternate endpoint authorities and ordering are
+configured through `Routing`. An empty endpoint list uses the request's authority. POST, PATCH, and
+custom methods still require the same explicit idempotency opt-in described above; registering the
+standard hedging pipeline does not make an unsafe operation safe to repeat.
 
 For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
 
@@ -432,7 +442,7 @@ runtime changes are required; each valid reload publishes a fresh complete pipel
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
 - **Configuration-backed state is replaced, not mutated.** Reload and handler rotation publish fresh complete pipelines. Requests already executing retain the snapshot they captured at send start.
-- **Standard hedging state is endpoint-local.** `AddStandardHedgeShield` creates one limiter and breaker per authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
+- **Standard hedging state is authority-local.** `AddStandardHedgeShield` creates one limiter and breaker per request authority or configured endpoint authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done

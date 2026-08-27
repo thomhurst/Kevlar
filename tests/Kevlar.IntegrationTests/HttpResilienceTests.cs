@@ -246,6 +246,63 @@ public class HttpResilienceTests
     }
 
     [Test]
+    public async Task HttpClientFactory_Standard_Hedge_Reuses_The_Request_Authority()
+    {
+        var releaseFirst = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var server = FlakyHttpServer.Start(async (call, context) =>
+        {
+            if (call == 1)
+            {
+                await releaseFirst.Task;
+                await FlakyHttpServer.Respond(context, 200, "slow");
+                return;
+            }
+
+            await FlakyHttpServer.Respond(context, 200, "same authority");
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            releaseFirst.TrySetResult();
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("same-authority-hedge")
+            .AddStandardHedgeShield(options => options.Hedge.Delay = TimeSpan.Zero)
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("same-authority-hedge");
+
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await client.GetAsync($"{server.Url}same-authority?q=1");
+        stopwatch.Stop();
+
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("same authority");
+        await Assert.That(server.CallCount).IsEqualTo(2);
+        await Assert.That(stopwatch.Elapsed).IsLessThan(TimeSpan.FromSeconds(2.5));
+    }
+
+    [Test]
+    public async Task HttpClientFactory_Same_Authority_Hedge_Cancels_And_Disposes_The_Loser()
+    {
+        var transport = new SameAuthorityHedgeHandler();
+        using var services = new ServiceCollection()
+            .AddHttpClient("same-authority-cleanup")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddStandardHedgeShield(options => options.Hedge.Delay = TimeSpan.Zero)
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("same-authority-cleanup");
+
+        using var response = await client.GetAsync("https://origin.example/path?q=1");
+
+        await transport.LoserCancelled.WaitAsync(TimeSpan.FromSeconds(5));
+        await transport.LoserDisposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("winner");
+        await Assert.That(transport.Authorities).IsEquivalentTo(
+            ["https://origin.example", "https://origin.example"]);
+    }
+
+    [Test]
     public async Task HttpClientFactory_Standard_Hedge_Uses_Adaptive_Delay()
     {
         await using var slow = FlakyHttpServer.Start(async (_, context) =>
@@ -377,6 +434,83 @@ public class HttpResilienceTests
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    private sealed class SameAuthorityHedgeHandler : HttpMessageHandler
+    {
+        private readonly TaskCompletionSource _firstStarted = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _loserCancelled = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TrackingContent _loserContent = new();
+        private int _attempts;
+
+        public List<string> Authorities { get; } = [];
+
+        public Task LoserCancelled => _loserCancelled.Task;
+
+        public Task LoserDisposed => _loserContent.Disposed;
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            lock (Authorities)
+            {
+                Authorities.Add(request.RequestUri!.GetLeftPart(UriPartial.Authority));
+            }
+
+            if (Interlocked.Increment(ref _attempts) == 1)
+            {
+                _firstStarted.TrySetResult();
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    _loserCancelled.TrySetResult();
+                }
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = _loserContent,
+                };
+            }
+
+            await _firstStarted.Task;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("winner"),
+            };
+        }
+    }
+
+    private sealed class TrackingContent : HttpContent
+    {
+        private readonly TaskCompletionSource _disposed = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Disposed => _disposed.Task;
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _disposed.TrySetResult();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

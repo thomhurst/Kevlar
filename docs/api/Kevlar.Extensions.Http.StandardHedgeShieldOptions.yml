@@ -23,7 +23,7 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures the standard endpoint-aware HTTP hedging pipeline.
+  summary: Configures the standard HTTP hedging pipeline.
   example: []
   syntax:
     content: public sealed class StandardHedgeShieldOptions
@@ -219,7 +219,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures the endpoint authorities and their ordering.
+  summary: >-
+    Optionally configures endpoint authorities and their ordering. When empty, hedged attempts
+
+    use the request's own authority.
   example: []
   syntax:
     content: public HttpEndpointRoutingOptions Routing { get; set; }

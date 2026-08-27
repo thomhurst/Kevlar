@@ -71,12 +71,17 @@ internal sealed class HttpShieldPipeline
         }
     }
 
-    public Uri[]? CreateEndpointOrder()
+    public Uri[]? CreateEndpointOrder(Uri? requestUri)
     {
         var routing = Options.Routing;
         if (routing is null)
         {
             return null;
+        }
+
+        if (routing.Endpoints.Length == 0)
+        {
+            return requestUri is { IsAbsoluteUri: true } ? [requestUri] : null;
         }
 
         if (routing.SelectionMode == HttpEndpointSelectionMode.Ordered)
@@ -118,7 +123,7 @@ internal sealed class HttpShieldPipeline
             throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
         }
 
-        if (routing.Endpoints.Length == 0)
+        if (routing.Endpoints.Length == 0 && routing.ShieldFactory is null)
         {
             throw new ArgumentException("Routing requires at least one endpoint.", nameof(options));
         }

@@ -323,7 +323,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             _reportSuppression = reportSuppression;
             _hadInitialContent = original.Content is not null;
             _executionCancellationToken = executionCancellationToken;
-            _endpointOrder = pipeline.CreateEndpointOrder();
+            _endpointOrder = pipeline.CreateEndpointOrder(original.RequestUri);
         }
 
         private HttpShieldPipelineOptions Options => _pipeline.Options;

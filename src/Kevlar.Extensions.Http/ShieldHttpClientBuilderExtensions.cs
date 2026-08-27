@@ -323,8 +323,15 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     /// <summary>
-    /// Adds a standard endpoint-aware pipeline: total timeout, hedging, per-endpoint concurrency
-    /// limit and circuit breaker, then per-attempt timeout.
+    /// Adds a standard pipeline that hedges against the request's authority: total timeout,
+    /// hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder) =>
+        AddStandardHedgeShield(builder, static _ => { });
+
+    /// <summary>
+    /// Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
+    /// per-authority concurrency limit and circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(
         this IHttpClientBuilder builder,
@@ -477,11 +484,6 @@ public static class ShieldHttpClientBuilderExtensions
         if (options.Handler.MaxBufferSize <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(options), "MaxBufferSize must be positive.");
-        }
-
-        if (options.Routing.Endpoints.Count == 0)
-        {
-            throw new ArgumentException("Standard hedging requires at least one endpoint.", nameof(options));
         }
 
         if (options.Routing.Endpoints.Any(static endpoint => endpoint is null))

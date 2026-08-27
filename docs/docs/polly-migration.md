@@ -269,27 +269,24 @@ kevlarHttpServices.AddHttpClient("catalog")
 | Polly HTTP | Kevlar HTTP |
 |---|---|
 | `AddStandardResilienceHandler()` | `AddStandardShield()` |
-| `AddStandardHedgingHandler()` | `AddStandardHedgeShield(options => configure endpoints)` |
+| `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
 | `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)` |
 | `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
 | `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
 | `HttpClientResiliencePredicates.IsTransient` | `HttpShield.IsTransient` |
 | named gRPC resilience pipeline | `AddShieldUnaryInterceptor` / `AddShieldStreamingInterceptor` |
 
-Kevlar's standard hedge is endpoint-aware and has no parameterless overload. Supply at least one
-endpoint:
+Like Polly's standard handler, Kevlar hedges against the request's own authority by default:
 
 ```csharp
 using Kevlar.Extensions.Http;
 
 var kevlarHedgeServices = new ServiceCollection();
 kevlarHedgeServices.AddHttpClient("hedged-catalog")
-    .AddStandardHedgeShield(options =>
-        options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://catalog.example"))));
+    .AddStandardHedgeShield();
 ```
 
-For hedging against the request's own authority without explicit endpoint configuration, track
-[issue #346](https://github.com/thomhurst/Kevlar/issues/346).
+Configure `Routing.Endpoints` only when attempts should use alternate authorities.
 
 Kevlar buffers only bounded content and does not replay unsafe methods by default. Enable
 `AllowUnsafeMethodReplay`, choose a bounded buffering policy, or supply a `RequestFactory` when a
