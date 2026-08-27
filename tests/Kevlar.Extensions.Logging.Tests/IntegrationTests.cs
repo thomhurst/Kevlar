@@ -98,6 +98,8 @@ public class IntegrationTests
         await Assert.That(transport.Attempts).IsEqualTo(2);
         await Assert.That(suppressions.Length).IsEqualTo(2);
         await Assert.That(suppressions[0].Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(suppressions[0].GetStructuredStateValue("SuppressionReason"))
+            .IsEqualTo("unsafe_method");
         await Assert.That(suppressions[0].Message).Contains("AllowUnsafeMethodReplay");
         await Assert.That(suppressions[0].Message).Contains("KevlarHttp.GetRequestOptions");
         await Assert.That(suppressions[1].Level).IsEqualTo(LogLevel.Information);

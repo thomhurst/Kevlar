@@ -327,6 +327,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     WarningLoggerMessages.UnsafeMethodAttemptsSuppressed(
                         logger,
                         telemetryEvent.ShieldName,
+                        telemetryEvent.SuppressionReason,
                         suppressedRequestMethod,
                         suppressedRequestUri);
                 }
