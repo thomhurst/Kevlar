@@ -12,8 +12,11 @@ public sealed class StandardHedgeShieldOptions
     /// <summary>Configures hedged attempts. Defaults to one additional attempt after one second.</summary>
     public HedgeOptions<HttpResponseMessage> Hedge { get; set; } = new();
 
-    /// <summary>Configures the concurrency limiter applied independently to each endpoint.</summary>
-    public ConcurrencyLimitOptions ConcurrencyLimit { get; set; } = new();
+    /// <summary>
+    /// Optionally configures a concurrency limiter applied independently to each endpoint. The
+    /// limiter is disabled when this property is <see langword="null"/>.
+    /// </summary>
+    public ConcurrencyLimitOptions? ConcurrencyLimit { get; set; }
 
     /// <summary>
     /// Configures the circuit breaker applied independently to each endpoint. Defaults to a 50%
@@ -37,8 +40,8 @@ public sealed class StandardHedgeShieldOptions
     public ShieldHttpHandlerOptions Handler { get; set; } = new();
 
     /// <summary>
-    /// Optionally configures endpoint authorities and their ordering. When empty, hedged attempts
-    /// use the request's own authority.
+    /// Optionally configures endpoint authorities and their ordering. When <see langword="null"/>,
+    /// hedged attempts use the request's own authority in their natural order.
     /// </summary>
-    public HttpEndpointRoutingOptions Routing { get; set; } = new();
+    public HttpEndpointRoutingOptions? Routing { get; set; }
 }

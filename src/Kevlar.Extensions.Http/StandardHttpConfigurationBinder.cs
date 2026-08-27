@@ -32,11 +32,11 @@ internal static class StandardHttpConfigurationBinder
         RejectLegacyKey(configuration, "MaxAttempts", "Hedge:MaxHedgedAttempts");
         BindTimeout(configuration, nameof(options.TotalTimeout), options.TotalTimeout);
         BindHedge(configuration.GetSection(nameof(options.Hedge)), options.Hedge);
-        BindConcurrencyLimit(configuration.GetSection(nameof(options.ConcurrencyLimit)), options.ConcurrencyLimit);
+        BindConcurrencyLimit(configuration.GetSection(nameof(options.ConcurrencyLimit)), options);
         BindCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
         BindTimeout(configuration, nameof(options.AttemptTimeout), options.AttemptTimeout);
         BindHandler(configuration.GetSection(nameof(options.Handler)), options.Handler);
-        BindRouting(configuration.GetSection(nameof(options.Routing)), options.Routing);
+        BindRouting(configuration.GetSection(nameof(options.Routing)), options);
 
         ValidateHedge(configuration, options);
         return options;
@@ -158,11 +158,18 @@ internal static class StandardHttpConfigurationBinder
 
     private static void BindConcurrencyLimit(
         IConfiguration section,
-        ConcurrencyLimitOptions options)
+        StandardHedgeShieldOptions standard)
     {
+        if (!section.GetChildren().Any())
+        {
+            return;
+        }
+
+        var options = standard.ConcurrencyLimit ?? new ConcurrencyLimitOptions();
         RejectLegacyKey(section, "MaxQueue", nameof(options.QueueLimit));
         SetInt(section, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
         SetInt(section, nameof(options.QueueLimit), value => options.QueueLimit = value);
+        standard.ConcurrencyLimit = options;
     }
 
     private static void BindHandler(
@@ -191,6 +198,20 @@ internal static class StandardHttpConfigurationBinder
         SetEnum<HttpEndpointSelectionMode>(section, nameof(options.SelectionMode), value => options.SelectionMode = value);
         SetInt(section, nameof(options.Seed), value => options.Seed = value);
         BindEndpoints(section.GetSection(nameof(options.Endpoints)), options.Endpoints);
+    }
+
+    private static void BindRouting(
+        IConfiguration section,
+        StandardHedgeShieldOptions standard)
+    {
+        if (!section.GetChildren().Any())
+        {
+            return;
+        }
+
+        var options = standard.Routing ?? new HttpEndpointRoutingOptions();
+        BindRouting(section, options);
+        standard.Routing = options;
     }
 
     private static void BindEndpoints(IConfiguration section, IList<HttpEndpoint> endpoints)
@@ -294,14 +315,21 @@ internal static class StandardHttpConfigurationBinder
             IsValidStandardTimeout(options.AttemptTimeout),
             TimeoutSection(configuration, nameof(options.AttemptTimeout)),
             "must be positive or Timeout.InfiniteTimeSpan");
-        Ensure(options.ConcurrencyLimit.MaxConcurrency > 0, configuration.GetSection("ConcurrencyLimit:MaxConcurrency"), "must be positive");
-        Ensure(options.ConcurrencyLimit.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
+        if (options.ConcurrencyLimit is { } concurrency)
+        {
+            Ensure(concurrency.MaxConcurrency > 0, configuration.GetSection("ConcurrencyLimit:MaxConcurrency"), "must be positive");
+            Ensure(concurrency.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
+        }
+
         ValidateCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
         Ensure(options.Handler.MaxBufferSize > 0, configuration.GetSection("Handler:MaxBufferSize"), "must be positive");
-        Ensure(
-            options.Routing.Endpoints.Count > 0,
-            configuration.GetSection("Routing:Endpoints"),
-            "must contain at least one endpoint");
+        if (options.Routing is { } routing)
+        {
+            Ensure(
+                routing.Endpoints.Count > 0,
+                configuration.GetSection("Routing:Endpoints"),
+                "must contain at least one endpoint");
+        }
     }
 
     private static void ValidateCircuitBreaker(

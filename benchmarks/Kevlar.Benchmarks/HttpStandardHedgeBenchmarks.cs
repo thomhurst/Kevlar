@@ -27,6 +27,7 @@ public class HttpStandardHedgeBenchmarks
             .ConfigurePrimaryHttpMessageHandler(static () => new SuccessHandler())
             .AddStandardHedgeShield(static options =>
             {
+                options.Routing = new HttpEndpointRoutingOptions();
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://first.invalid")));
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://second.invalid")));
             });
@@ -71,7 +72,6 @@ public class HttpStandardHedgeBenchmarks
         var routing = new HttpEndpointRoutingOptions
         {
             ShieldFactory = static _ => HttpShield.WhenTransient()
-                .ConcurrencyLimit(10)
                 .CircuitBreaker(options =>
                 {
                     options.FailureRatio = 0.5;

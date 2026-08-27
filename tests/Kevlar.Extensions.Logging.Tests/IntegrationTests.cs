@@ -370,6 +370,7 @@ public class IntegrationTests
                 options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(1);
                 options.CircuitBreaker.ConsecutiveFailures = 1;
                 options.CircuitBreaker.FailureRatio = null;
+                options.Routing = new HttpEndpointRoutingOptions();
                 options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://endpoint.test")));
             });
         using var provider = services.BuildServiceProvider();

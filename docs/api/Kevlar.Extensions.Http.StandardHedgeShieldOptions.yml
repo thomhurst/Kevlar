@@ -121,10 +121,13 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures the concurrency limiter applied independently to each endpoint.
+  summary: >-
+    Optionally configures a concurrency limiter applied independently to each endpoint. The
+
+    limiter is disabled when this property is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
   example: []
   syntax:
-    content: public ConcurrencyLimitOptions ConcurrencyLimit { get; set; }
+    content: public ConcurrencyLimitOptions? ConcurrencyLimit { get; set; }
     parameters: []
     return:
       type: Kevlar.ConcurrencyLimitOptions
@@ -220,12 +223,12 @@ items:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
   summary: >-
-    Optionally configures endpoint authorities and their ordering. When empty, hedged attempts
+    Optionally configures endpoint authorities and their ordering. When <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>,
 
-    use the request's own authority.
+    hedged attempts use the request's own authority in their natural order.
   example: []
   syntax:
-    content: public HttpEndpointRoutingOptions Routing { get; set; }
+    content: public HttpEndpointRoutingOptions? Routing { get; set; }
     parameters: []
     return:
       type: Kevlar.Extensions.Http.HttpEndpointRoutingOptions
