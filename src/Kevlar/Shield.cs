@@ -282,7 +282,7 @@ public sealed class Shield : IShieldLifecycle
     /// Executes a context-aware delegate through the pipeline using the properties, cancellation
     /// token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
-    public ValueTask<T> ExecuteWithContextAsync<T>(Func<KevlarContext, ValueTask<T>> action, KevlarContext parentContext)
+    public ValueTask<T> ExecuteWithContextAsync<T>(KevlarContext parentContext, Func<KevlarContext, ValueTask<T>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -296,9 +296,9 @@ public sealed class Shield : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, ValueTask<T>> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, ValueTask<T>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -409,7 +409,7 @@ public sealed class Shield : IShieldLifecycle
     /// Executes a context-aware void delegate through the pipeline using the properties,
     /// cancellation token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
-    public ValueTask ExecuteWithContextAsync(Func<KevlarContext, ValueTask> action, KevlarContext parentContext)
+    public ValueTask ExecuteWithContextAsync(KevlarContext parentContext, Func<KevlarContext, ValueTask> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -431,9 +431,9 @@ public sealed class Shield : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public ValueTask ExecuteWithContextAsync<TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, ValueTask> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, ValueTask> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -666,7 +666,7 @@ public sealed class Shield : IShieldLifecycle
     /// Executes a context-aware delegate synchronously through the pipeline using the properties,
     /// cancellation token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
-    public T ExecuteWithContext<T>(Func<KevlarContext, T> action, KevlarContext parentContext)
+    public T ExecuteWithContext<T>(KevlarContext parentContext, Func<KevlarContext, T> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -685,9 +685,9 @@ public sealed class Shield : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public T ExecuteWithContext<T, TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, T> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, T> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -759,7 +759,7 @@ public sealed class Shield : IShieldLifecycle
     /// Executes a context-aware void delegate synchronously through the pipeline using the properties,
     /// cancellation token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
-    public void ExecuteWithContext(Action<KevlarContext> action, KevlarContext parentContext)
+    public void ExecuteWithContext(KevlarContext parentContext, Action<KevlarContext> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -781,9 +781,9 @@ public sealed class Shield : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public void ExecuteWithContext<TState>(
+        KevlarContext parentContext,
         TState state,
-        Action<TState, KevlarContext> action,
-        KevlarContext parentContext)
+        Action<TState, KevlarContext> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));

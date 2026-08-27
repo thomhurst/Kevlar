@@ -550,8 +550,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
     public ValueTask<TResult> ExecuteWithContextAsync(
-        Func<KevlarContext, ValueTask<TResult>> action,
-        KevlarContext parentContext)
+        KevlarContext parentContext,
+        Func<KevlarContext, ValueTask<TResult>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -564,9 +564,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public ValueTask<TResult> ExecuteWithContextAsync<TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, ValueTask<TResult>> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, ValueTask<TResult>> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -703,8 +703,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// cancellation token, and time provider from <paramref name="parentContext"/>.
     /// </summary>
     public TResult ExecuteWithContext(
-        Func<KevlarContext, TResult> action,
-        KevlarContext parentContext)
+        KevlarContext parentContext,
+        Func<KevlarContext, TResult> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
@@ -722,9 +722,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// <paramref name="state"/> to avoid closure allocations.
     /// </summary>
     public TResult ExecuteWithContext<TState>(
+        KevlarContext parentContext,
         TState state,
-        Func<TState, KevlarContext, TResult> action,
-        KevlarContext parentContext)
+        Func<TState, KevlarContext, TResult> action)
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));

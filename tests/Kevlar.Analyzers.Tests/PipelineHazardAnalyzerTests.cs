@@ -5936,6 +5936,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task Synchronous_Context_Diagnostics_Recommend_Matching_Async_Overload()
+    {
+        var hedgeDiagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().Hedge(1, TimeSpan.Zero).ExecuteWithContext(static _ => 1);");
+        var asyncHookDiagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteWithContext(static _ => 1);");
+
+        var hedge = hedgeDiagnostics.Single(static diagnostic => diagnostic.Id == "KEV002");
+        var asyncHook = asyncHookDiagnostics.Single(static diagnostic => diagnostic.Id == "KEV012");
+
+        await Assert.That(hedge.GetMessage()).IsEqualTo(
+            "This shield contains multi-attempt hedging, which cannot run through synchronous "
+            + "'ExecuteWithContext'. Use 'ExecuteWithContextAsync' or remove hedging.");
+        await Assert.That(asyncHook.GetMessage()).IsEqualTo(
+            "This shield configures 'RetryOptions.OnRetry' with a delegate that completes asynchronously, "
+            + "which cannot run through synchronous 'ExecuteWithContext'. Use 'ExecuteWithContextAsync' "
+            + "or make the delegate complete synchronously.");
+    }
+
+    [Test]
     public async Task KEV002_Skips_Async_Unknown_And_Reassigned_Shields()
     {
         var cases = new[]

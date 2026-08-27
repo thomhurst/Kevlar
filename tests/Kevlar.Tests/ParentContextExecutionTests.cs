@@ -26,6 +26,7 @@ public class ParentContextExecutionTests
             async (_, parent) =>
             {
                 var childResult = await inner.ExecuteWithContextAsync(
+                    parent,
                     static context =>
                     {
                         if (context.Properties.GetOrDefault(RequestId, string.Empty) != "request-42"
@@ -36,8 +37,7 @@ public class ParentContextExecutionTests
 
                         context.Properties.Set(ChildValue, 42);
                         return new ValueTask<int>(42);
-                    },
-                    parent);
+                    });
 
                 await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
                 return childResult;
@@ -58,17 +58,34 @@ public class ParentContextExecutionTests
         await Shield.Empty.WithTimeProvider(timeProvider).ExecuteWithContextAsync(async parent =>
         {
             await Shield.Empty.ExecuteWithContextAsync(
+                parent,
                 context =>
                 {
                     observedToken = context.CancellationToken;
                     observedTimeProvider = context.TimeProvider;
                     return ValueTask.CompletedTask;
-                },
-                parent);
+                });
         }, cancellation.Token);
 
         await Assert.That(observedToken).IsEqualTo(cancellation.Token);
         await Assert.That(ReferenceEquals(observedTimeProvider, timeProvider)).IsTrue();
+    }
+
+    [Test]
+    public async Task Synchronous_Nested_Execution_Recommends_Context_Async_Overload()
+    {
+        NotSupportedException? rejection = null;
+
+        await Shield.Empty.ExecuteWithContextAsync(async parentContext =>
+        {
+            rejection = await Assert.That(() => Shield.For<int>()
+                    .Hedge(1, TimeSpan.Zero)
+                    .ExecuteWithContext(parentContext, static _ => 42))
+                .Throws<NotSupportedException>();
+        });
+
+        await Assert.That(rejection!.Message)
+            .Contains("Use ExecuteWithContextAsync instead of ExecuteWithContext.");
     }
 
     [Test]
@@ -80,12 +97,12 @@ public class ParentContextExecutionTests
         var execution = Shield.Empty.ExecuteWithContextAsync(async parent =>
         {
             await Shield.Empty.ExecuteWithContextAsync(
+                parent,
                 async context =>
                 {
                     entered.TrySetResult();
                     await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
-                },
-                parent);
+                });
         }, cancellation.Token).AsTask();
 
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -103,12 +120,12 @@ public class ParentContextExecutionTests
         await Shield.Empty.ExecuteWithContextAsync(async parent =>
         {
             await Shield.Empty.ExecuteWithContextAsync(
+                parent,
                 context =>
                 {
                     child = context;
                     return ValueTask.CompletedTask;
-                },
-                parent);
+                });
 
             await Assert.That(ReferenceEquals(parent, child)).IsFalse();
             await Assert.That(parent.Properties.Count).IsEqualTo(0);
@@ -123,15 +140,15 @@ public class ParentContextExecutionTests
     {
         var failures = new Action[]
         {
-            () => Shield.Empty.ExecuteWithContextAsync(static _ => new ValueTask<int>(42), null!),
-            () => Shield.Empty.ExecuteWithContextAsync(static _ => ValueTask.CompletedTask, null!),
-            () => Shield<int>.Empty.ExecuteWithContextAsync(static _ => new ValueTask<int>(42), null!),
-            () => Shield.Empty.ExecuteWithContextAsync(static _ => Task.FromResult(42), null!),
-            () => Shield.Empty.ExecuteWithContextAsync(static _ => Task.CompletedTask, null!),
-            () => Shield<int>.Empty.ExecuteWithContextAsync(static _ => Task.FromResult(42), null!),
-            () => Shield.Empty.ExecuteWithContext(static _ => 42, null!),
-            () => Shield.Empty.ExecuteWithContext(static _ => { }, null!),
-            () => Shield<int>.Empty.ExecuteWithContext(static _ => 42, null!),
+            () => Shield.Empty.ExecuteWithContextAsync(null!, static _ => new ValueTask<int>(42)),
+            () => Shield.Empty.ExecuteWithContextAsync(null!, static _ => ValueTask.CompletedTask),
+            () => Shield<int>.Empty.ExecuteWithContextAsync(null!, static _ => new ValueTask<int>(42)),
+            () => Shield.Empty.ExecuteWithContextAsync(null!, static _ => Task.FromResult(42)),
+            () => Shield.Empty.ExecuteWithContextAsync(null!, static _ => Task.CompletedTask),
+            () => Shield<int>.Empty.ExecuteWithContextAsync(null!, static _ => Task.FromResult(42)),
+            () => Shield.Empty.ExecuteWithContext(null!, static _ => 42),
+            () => Shield.Empty.ExecuteWithContext(null!, static _ => { }),
+            () => Shield<int>.Empty.ExecuteWithContext(null!, static _ => 42),
         };
 
         foreach (var failure in failures)
@@ -139,6 +156,39 @@ public class ParentContextExecutionTests
             var exception = await Assert.That(failure).Throws<ArgumentNullException>();
             await Assert.That(exception!.ParamName).IsEqualTo("parentContext");
         }
+    }
+
+    [Test]
+    public async Task Explicit_Default_Selects_Top_Level_Cancellation_Overloads()
+    {
+        var valueTaskResult = await Shield.Empty.ExecuteWithContextAsync(
+            static context => new ValueTask<int>(context.CancellationToken.CanBeCanceled ? 0 : 1),
+            default);
+        await Shield.Empty.ExecuteWithContextAsync(static _ => ValueTask.CompletedTask, default);
+        var taskResult = await Shield.Empty.ExecuteWithContextAsync(
+            static context => Task.FromResult(context.CancellationToken.CanBeCanceled ? 0 : 1),
+            default);
+        await Shield.Empty.ExecuteWithContextAsync(static _ => Task.CompletedTask, default);
+        var typedResult = await Shield<int>.Empty.ExecuteWithContextAsync(
+            static context => new ValueTask<int>(context.CancellationToken.CanBeCanceled ? 0 : 1),
+            default);
+        var typedTaskResult = await Shield<int>.Empty.ExecuteWithContextAsync(
+            static context => Task.FromResult(context.CancellationToken.CanBeCanceled ? 0 : 1),
+            default);
+        var syncResult = Shield.Empty.ExecuteWithContext(
+            static context => context.CancellationToken.CanBeCanceled ? 0 : 1,
+            default);
+        Shield.Empty.ExecuteWithContext(static _ => { }, default);
+        var typedSyncResult = Shield<int>.Empty.ExecuteWithContext(
+            static context => context.CancellationToken.CanBeCanceled ? 0 : 1,
+            default);
+
+        await Assert.That(valueTaskResult).IsEqualTo(1);
+        await Assert.That(taskResult).IsEqualTo(1);
+        await Assert.That(typedResult).IsEqualTo(1);
+        await Assert.That(typedTaskResult).IsEqualTo(1);
+        await Assert.That(syncResult).IsEqualTo(1);
+        await Assert.That(typedSyncResult).IsEqualTo(1);
     }
 
     [Test]
@@ -151,6 +201,7 @@ public class ParentContextExecutionTests
             parent.Properties.Set(RequestId, "request-42");
 
             var result = Shield.Retry(0, Backoff.None).ExecuteWithContext(
+                parent,
                 (value: 40, timeProvider),
                 static (state, child) =>
                 {
@@ -159,8 +210,7 @@ public class ParentContextExecutionTests
                         + child.Properties.GetOrDefault(ChildValue)
                         + (child.Properties.GetOrDefault(RequestId, string.Empty) == "request-42" ? 0 : 100)
                         + (ReferenceEquals(child.TimeProvider, state.timeProvider) ? 0 : 1000);
-                },
-                parent);
+                });
 
             await Assert.That(result).IsEqualTo(42);
             await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(2);

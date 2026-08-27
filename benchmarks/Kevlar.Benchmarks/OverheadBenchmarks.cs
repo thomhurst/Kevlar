@@ -68,11 +68,11 @@ public class OverheadBenchmarks
     public ValueTask<int> Kevlar_NestedEmptyAsync() =>
         KevlarEmpty.ExecuteWithContextAsync(
             static parentContext => KevlarEmpty.ExecuteWithContextAsync(
-                static _ => new ValueTask<int>(42),
-                parentContext));
+                parentContext,
+                static _ => new ValueTask<int>(42)));
 
     [BenchmarkCategory("NestedEmptySync"), Benchmark]
     public int Kevlar_NestedEmptySync() =>
         KevlarEmpty.ExecuteWithContext(
-            static parentContext => KevlarEmpty.ExecuteWithContext(static _ => 42, parentContext));
+            static parentContext => KevlarEmpty.ExecuteWithContext(parentContext, static _ => 42));
 }

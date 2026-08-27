@@ -24,24 +24,24 @@ items:
   - Kevlar.Shield.ExecuteOutcome``1(System.Func{System.Threading.CancellationToken,``0},System.Threading.CancellationToken)
   - Kevlar.Shield.ExecuteOutcome``1(``0,System.Action{``0,System.Threading.CancellationToken},System.Threading.CancellationToken)
   - Kevlar.Shield.ExecuteOutcome``2(``1,System.Func{``1,System.Threading.CancellationToken,``0},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContext(System.Action{Kevlar.KevlarContext},Kevlar.KevlarContext)
+  - Kevlar.Shield.ExecuteWithContext(Kevlar.KevlarContext,System.Action{Kevlar.KevlarContext})
   - Kevlar.Shield.ExecuteWithContext(System.Action{Kevlar.KevlarContext},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
+  - Kevlar.Shield.ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
   - Kevlar.Shield.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
+  - Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
+  - Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
   - Kevlar.Shield.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
   - Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Action{``0,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
+  - Kevlar.Shield.ExecuteWithContextAsync``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
   - Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
-  - Kevlar.Shield.ExecuteWithContext``1(System.Func{Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
+  - Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,``0})
+  - Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,``0,System.Action{``0,Kevlar.KevlarContext})
   - Kevlar.Shield.ExecuteWithContext``1(System.Func{Kevlar.KevlarContext,``0},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarContext},Kevlar.KevlarContext)
   - Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Action{``0,Kevlar.KevlarContext},System.Threading.CancellationToken)
+  - Kevlar.Shield.ExecuteWithContext``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,``0})
   - Kevlar.Shield.ExecuteWithContext``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,``0},System.Threading.CancellationToken)
-  - Kevlar.Shield.ExecuteWithContext``2(``1,System.Func{``1,Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
   - Kevlar.Shield.Execute``1(System.Func{System.Threading.CancellationToken,``0},System.Threading.CancellationToken)
   - Kevlar.Shield.Execute``1(``0,System.Action{``0,System.Threading.CancellationToken},System.Threading.CancellationToken)
   - Kevlar.Shield.Execute``2(``1,System.Func{``1,System.Threading.CancellationToken,``0},System.Threading.CancellationToken)
@@ -146,16 +146,16 @@ items:
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1({TState},System.Func{{TState},System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2({TState},System.Func{{TState},System.Threading.CancellationToken,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
-  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
-  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},Kevlar.KevlarContext)
+  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}})
+  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.KevlarContext,{TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task})
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1({TState},System.Action{{TState},Kevlar.KevlarProperties},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Action{{TState},Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1({TState},System.Action{{TState},Kevlar.KevlarProperties},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
-  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1({TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.KevlarContext,{TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}})
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2({TState},System.Action{{TState},Kevlar.KevlarProperties},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},System.Action{{TState},Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2({TState},System.Action{{TState},Kevlar.KevlarProperties},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
-  - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2({TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},Kevlar.KevlarContext)
 - uid: Kevlar.Shield.Retry(System.Int32)
   commentId: M:Kevlar.Shield.Retry(System.Int32)
   id: Retry(System.Int32)
@@ -1048,16 +1048,16 @@ items:
   nameWithType.vb: Shield.ExecuteAsync(Of T, TState)(TState, Func(Of TState, CancellationToken, ValueTask(Of T)), CancellationToken)
   fullName.vb: Kevlar.Shield.ExecuteAsync(Of T, TState)(TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of T, TState)(TState, Func(Of TState, CancellationToken, ValueTask(Of T)), CancellationToken)
-- uid: Kevlar.Shield.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}},Kevlar.KevlarContext)
-  id: ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
+  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}})
+  id: ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContextAsync<T>(Func<KevlarContext, ValueTask<T>>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContextAsync<T>(Func<KevlarContext, ValueTask<T>>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContextAsync<T>(System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<T>>, Kevlar.KevlarContext)
+  name: ExecuteWithContextAsync<T>(KevlarContext, Func<KevlarContext, ValueTask<T>>)
+  nameWithType: Shield.ExecuteWithContextAsync<T>(KevlarContext, Func<KevlarContext, ValueTask<T>>)
+  fullName: Kevlar.Shield.ExecuteWithContextAsync<T>(Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<T>>)
   type: Method
   assemblies:
   - Kevlar
@@ -1068,31 +1068,31 @@ items:
     token, and time provider from <code class="paramref">parentContext</code>.
   example: []
   syntax:
-    content: public ValueTask<T> ExecuteWithContextAsync<T>(Func<KevlarContext, ValueTask<T>> action, KevlarContext parentContext)
+    content: public ValueTask<T> ExecuteWithContextAsync<T>(KevlarContext parentContext, Func<KevlarContext, ValueTask<T>> action)
     parameters:
-    - id: action
-      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{T}}}
     - id: parentContext
       type: Kevlar.KevlarContext
+    - id: action
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{T}}}
     typeParameters:
     - id: T
     return:
       type: System.Threading.Tasks.ValueTask{{T}}
-    content.vb: Public Function ExecuteWithContextAsync(Of T)(action As Func(Of KevlarContext, ValueTask(Of T)), parentContext As KevlarContext) As ValueTask(Of T)
+    content.vb: Public Function ExecuteWithContextAsync(Of T)(parentContext As KevlarContext, action As Func(Of KevlarContext, ValueTask(Of T))) As ValueTask(Of T)
   overload: Kevlar.Shield.ExecuteWithContextAsync*
-  nameWithType.vb: Shield.ExecuteWithContextAsync(Of T)(Func(Of KevlarContext, ValueTask(Of T)), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of T)(System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T)(Func(Of KevlarContext, ValueTask(Of T)), KevlarContext)
-- uid: Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}},Kevlar.KevlarContext)
-  id: ExecuteWithContextAsync``2(``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},Kevlar.KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContextAsync(Of T)(KevlarContext, Func(Of KevlarContext, ValueTask(Of T)))
+  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of T)(Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T)(KevlarContext, Func(Of KevlarContext, ValueTask(Of T)))
+- uid: Kevlar.Shield.ExecuteWithContextAsync``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
+  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}})
+  id: ExecuteWithContextAsync``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContextAsync<T, TState>(TState, Func<TState, KevlarContext, ValueTask<T>>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContextAsync<T, TState>(TState, Func<TState, KevlarContext, ValueTask<T>>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContextAsync<T, TState>(TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<T>>, Kevlar.KevlarContext)
+  name: ExecuteWithContextAsync<T, TState>(KevlarContext, TState, Func<TState, KevlarContext, ValueTask<T>>)
+  nameWithType: Shield.ExecuteWithContextAsync<T, TState>(KevlarContext, TState, Func<TState, KevlarContext, ValueTask<T>>)
+  fullName: Kevlar.Shield.ExecuteWithContextAsync<T, TState>(Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<T>>)
   type: Method
   assemblies:
   - Kevlar
@@ -1105,24 +1105,24 @@ items:
     <code class="paramref">state</code> to avoid closure allocations.
   example: []
   syntax:
-    content: public ValueTask<T> ExecuteWithContextAsync<T, TState>(TState state, Func<TState, KevlarContext, ValueTask<T>> action, KevlarContext parentContext)
+    content: public ValueTask<T> ExecuteWithContextAsync<T, TState>(KevlarContext parentContext, TState state, Func<TState, KevlarContext, ValueTask<T>> action)
     parameters:
+    - id: parentContext
+      type: Kevlar.KevlarContext
     - id: state
       type: '{TState}'
     - id: action
       type: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{T}}}
-    - id: parentContext
-      type: Kevlar.KevlarContext
     typeParameters:
     - id: T
     - id: TState
     return:
       type: System.Threading.Tasks.ValueTask{{T}}
-    content.vb: Public Function ExecuteWithContextAsync(Of T, TState)(state As TState, action As Func(Of TState, KevlarContext, ValueTask(Of T)), parentContext As KevlarContext) As ValueTask(Of T)
+    content.vb: Public Function ExecuteWithContextAsync(Of T, TState)(parentContext As KevlarContext, state As TState, action As Func(Of TState, KevlarContext, ValueTask(Of T))) As ValueTask(Of T)
   overload: Kevlar.Shield.ExecuteWithContextAsync*
-  nameWithType.vb: Shield.ExecuteWithContextAsync(Of T, TState)(TState, Func(Of TState, KevlarContext, ValueTask(Of T)), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of T, TState)(TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T, TState)(TState, Func(Of TState, KevlarContext, ValueTask(Of T)), KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContextAsync(Of T, TState)(KevlarContext, TState, Func(Of TState, KevlarContext, ValueTask(Of T)))
+  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of T, TState)(Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T, TState)(KevlarContext, TState, Func(Of TState, KevlarContext, ValueTask(Of T)))
 - uid: Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
   commentId: M:Kevlar.Shield.ExecuteWithContextAsync``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{``0}},System.Threading.CancellationToken)
@@ -1304,16 +1304,16 @@ items:
   nameWithType.vb: Shield.ExecuteAsync(Of TState)(TState, Func(Of TState, CancellationToken, ValueTask), CancellationToken)
   fullName.vb: Kevlar.Shield.ExecuteAsync(Of TState)(TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of TState)(TState, Func(Of TState, CancellationToken, ValueTask), CancellationToken)
-- uid: Kevlar.Shield.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
-  id: ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
+  commentId: M:Kevlar.Shield.ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
+  id: ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContextAsync(Func<KevlarContext, ValueTask>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContextAsync(Func<KevlarContext, ValueTask>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContextAsync(System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask>, Kevlar.KevlarContext)
+  name: ExecuteWithContextAsync(KevlarContext, Func<KevlarContext, ValueTask>)
+  nameWithType: Shield.ExecuteWithContextAsync(KevlarContext, Func<KevlarContext, ValueTask>)
+  fullName: Kevlar.Shield.ExecuteWithContextAsync(Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask>)
   type: Method
   assemblies:
   - Kevlar
@@ -1324,29 +1324,29 @@ items:
     cancellation token, and time provider from <code class="paramref">parentContext</code>.
   example: []
   syntax:
-    content: public ValueTask ExecuteWithContextAsync(Func<KevlarContext, ValueTask> action, KevlarContext parentContext)
+    content: public ValueTask ExecuteWithContextAsync(KevlarContext parentContext, Func<KevlarContext, ValueTask> action)
     parameters:
-    - id: action
-      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask}
     - id: parentContext
       type: Kevlar.KevlarContext
+    - id: action
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask}
     return:
       type: System.Threading.Tasks.ValueTask
-    content.vb: Public Function ExecuteWithContextAsync(action As Func(Of KevlarContext, ValueTask), parentContext As KevlarContext) As ValueTask
+    content.vb: Public Function ExecuteWithContextAsync(parentContext As KevlarContext, action As Func(Of KevlarContext, ValueTask)) As ValueTask
   overload: Kevlar.Shield.ExecuteWithContextAsync*
-  nameWithType.vb: Shield.ExecuteWithContextAsync(Func(Of KevlarContext, ValueTask), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Func(Of KevlarContext, ValueTask), KevlarContext)
-- uid: Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
-  id: ExecuteWithContextAsync``1(``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},Kevlar.KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContextAsync(KevlarContext, Func(Of KevlarContext, ValueTask))
+  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask))
+  name.vb: ExecuteWithContextAsync(KevlarContext, Func(Of KevlarContext, ValueTask))
+- uid: Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
+  commentId: M:Kevlar.Shield.ExecuteWithContextAsync``1(Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
+  id: ExecuteWithContextAsync``1(Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContextAsync<TState>(TState, Func<TState, KevlarContext, ValueTask>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContextAsync<TState>(TState, Func<TState, KevlarContext, ValueTask>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContextAsync<TState>(TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask>, Kevlar.KevlarContext)
+  name: ExecuteWithContextAsync<TState>(KevlarContext, TState, Func<TState, KevlarContext, ValueTask>)
+  nameWithType: Shield.ExecuteWithContextAsync<TState>(KevlarContext, TState, Func<TState, KevlarContext, ValueTask>)
+  fullName: Kevlar.Shield.ExecuteWithContextAsync<TState>(Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask>)
   type: Method
   assemblies:
   - Kevlar
@@ -1359,23 +1359,23 @@ items:
     <code class="paramref">state</code> to avoid closure allocations.
   example: []
   syntax:
-    content: public ValueTask ExecuteWithContextAsync<TState>(TState state, Func<TState, KevlarContext, ValueTask> action, KevlarContext parentContext)
+    content: public ValueTask ExecuteWithContextAsync<TState>(KevlarContext parentContext, TState state, Func<TState, KevlarContext, ValueTask> action)
     parameters:
+    - id: parentContext
+      type: Kevlar.KevlarContext
     - id: state
       type: '{TState}'
     - id: action
       type: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.ValueTask}
-    - id: parentContext
-      type: Kevlar.KevlarContext
     typeParameters:
     - id: TState
     return:
       type: System.Threading.Tasks.ValueTask
-    content.vb: Public Function ExecuteWithContextAsync(Of TState)(state As TState, action As Func(Of TState, KevlarContext, ValueTask), parentContext As KevlarContext) As ValueTask
+    content.vb: Public Function ExecuteWithContextAsync(Of TState)(parentContext As KevlarContext, state As TState, action As Func(Of TState, KevlarContext, ValueTask)) As ValueTask
   overload: Kevlar.Shield.ExecuteWithContextAsync*
-  nameWithType.vb: Shield.ExecuteWithContextAsync(Of TState)(TState, Func(Of TState, KevlarContext, ValueTask), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of TState)(TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of TState)(TState, Func(Of TState, KevlarContext, ValueTask), KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContextAsync(Of TState)(KevlarContext, TState, Func(Of TState, KevlarContext, ValueTask))
+  fullName.vb: Kevlar.Shield.ExecuteWithContextAsync(Of TState)(Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.ValueTask))
+  name.vb: ExecuteWithContextAsync(Of TState)(KevlarContext, TState, Func(Of TState, KevlarContext, ValueTask))
 - uid: Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)
   commentId: M:Kevlar.Shield.ExecuteWithContextAsync``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask},System.Threading.CancellationToken)
@@ -1833,16 +1833,16 @@ items:
   nameWithType.vb: Shield.Execute(Of T, TState)(TState, Func(Of TState, CancellationToken, T), CancellationToken)
   fullName.vb: Kevlar.Shield.Execute(Of T, TState)(TState, System.Func(Of TState, System.Threading.CancellationToken, T), System.Threading.CancellationToken)
   name.vb: Execute(Of T, TState)(TState, Func(Of TState, CancellationToken, T), CancellationToken)
-- uid: Kevlar.Shield.ExecuteWithContext``1(System.Func{Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContext``1(System.Func{Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
-  id: ExecuteWithContext``1(System.Func{Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,``0})
+  commentId: M:Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,``0})
+  id: ExecuteWithContext``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,``0})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContext<T>(Func<KevlarContext, T>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContext<T>(Func<KevlarContext, T>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContext<T>(System.Func<Kevlar.KevlarContext, T>, Kevlar.KevlarContext)
+  name: ExecuteWithContext<T>(KevlarContext, Func<KevlarContext, T>)
+  nameWithType: Shield.ExecuteWithContext<T>(KevlarContext, Func<KevlarContext, T>)
+  fullName: Kevlar.Shield.ExecuteWithContext<T>(Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, T>)
   type: Method
   assemblies:
   - Kevlar
@@ -1853,31 +1853,31 @@ items:
     cancellation token, and time provider from <code class="paramref">parentContext</code>.
   example: []
   syntax:
-    content: public T ExecuteWithContext<T>(Func<KevlarContext, T> action, KevlarContext parentContext)
+    content: public T ExecuteWithContext<T>(KevlarContext parentContext, Func<KevlarContext, T> action)
     parameters:
-    - id: action
-      type: System.Func{Kevlar.KevlarContext,{T}}
     - id: parentContext
       type: Kevlar.KevlarContext
+    - id: action
+      type: System.Func{Kevlar.KevlarContext,{T}}
     typeParameters:
     - id: T
     return:
       type: '{T}'
-    content.vb: Public Function ExecuteWithContext(Of T)(action As Func(Of KevlarContext, T), parentContext As KevlarContext) As T
+    content.vb: Public Function ExecuteWithContext(Of T)(parentContext As KevlarContext, action As Func(Of KevlarContext, T)) As T
   overload: Kevlar.Shield.ExecuteWithContext*
-  nameWithType.vb: Shield.ExecuteWithContext(Of T)(Func(Of KevlarContext, T), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of T)(System.Func(Of Kevlar.KevlarContext, T), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContext(Of T)(Func(Of KevlarContext, T), KevlarContext)
-- uid: Kevlar.Shield.ExecuteWithContext``2(``1,System.Func{``1,Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContext``2(``1,System.Func{``1,Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
-  id: ExecuteWithContext``2(``1,System.Func{``1,Kevlar.KevlarContext,``0},Kevlar.KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContext(Of T)(KevlarContext, Func(Of KevlarContext, T))
+  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of T)(Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, T))
+  name.vb: ExecuteWithContext(Of T)(KevlarContext, Func(Of KevlarContext, T))
+- uid: Kevlar.Shield.ExecuteWithContext``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,``0})
+  commentId: M:Kevlar.Shield.ExecuteWithContext``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,``0})
+  id: ExecuteWithContext``2(Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,``0})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContext<T, TState>(TState, Func<TState, KevlarContext, T>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContext<T, TState>(TState, Func<TState, KevlarContext, T>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContext<T, TState>(TState, System.Func<TState, Kevlar.KevlarContext, T>, Kevlar.KevlarContext)
+  name: ExecuteWithContext<T, TState>(KevlarContext, TState, Func<TState, KevlarContext, T>)
+  nameWithType: Shield.ExecuteWithContext<T, TState>(KevlarContext, TState, Func<TState, KevlarContext, T>)
+  fullName: Kevlar.Shield.ExecuteWithContext<T, TState>(Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, T>)
   type: Method
   assemblies:
   - Kevlar
@@ -1890,24 +1890,24 @@ items:
     <code class="paramref">state</code> to avoid closure allocations.
   example: []
   syntax:
-    content: public T ExecuteWithContext<T, TState>(TState state, Func<TState, KevlarContext, T> action, KevlarContext parentContext)
+    content: public T ExecuteWithContext<T, TState>(KevlarContext parentContext, TState state, Func<TState, KevlarContext, T> action)
     parameters:
+    - id: parentContext
+      type: Kevlar.KevlarContext
     - id: state
       type: '{TState}'
     - id: action
       type: System.Func{{TState},Kevlar.KevlarContext,{T}}
-    - id: parentContext
-      type: Kevlar.KevlarContext
     typeParameters:
     - id: T
     - id: TState
     return:
       type: '{T}'
-    content.vb: Public Function ExecuteWithContext(Of T, TState)(state As TState, action As Func(Of TState, KevlarContext, T), parentContext As KevlarContext) As T
+    content.vb: Public Function ExecuteWithContext(Of T, TState)(parentContext As KevlarContext, state As TState, action As Func(Of TState, KevlarContext, T)) As T
   overload: Kevlar.Shield.ExecuteWithContext*
-  nameWithType.vb: Shield.ExecuteWithContext(Of T, TState)(TState, Func(Of TState, KevlarContext, T), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of T, TState)(TState, System.Func(Of TState, Kevlar.KevlarContext, T), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContext(Of T, TState)(TState, Func(Of TState, KevlarContext, T), KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContext(Of T, TState)(KevlarContext, TState, Func(Of TState, KevlarContext, T))
+  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of T, TState)(Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, T))
+  name.vb: ExecuteWithContext(Of T, TState)(KevlarContext, TState, Func(Of TState, KevlarContext, T))
 - uid: Kevlar.Shield.ExecuteWithContext``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,``0},System.Threading.CancellationToken)
   commentId: M:Kevlar.Shield.ExecuteWithContext``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,``0},System.Threading.CancellationToken)
   id: ExecuteWithContext``2(``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,``0},System.Threading.CancellationToken)
@@ -2045,16 +2045,16 @@ items:
   nameWithType.vb: Shield.Execute(Of TState)(TState, Action(Of TState, CancellationToken), CancellationToken)
   fullName.vb: Kevlar.Shield.Execute(Of TState)(TState, System.Action(Of TState, System.Threading.CancellationToken), System.Threading.CancellationToken)
   name.vb: Execute(Of TState)(TState, Action(Of TState, CancellationToken), CancellationToken)
-- uid: Kevlar.Shield.ExecuteWithContext(System.Action{Kevlar.KevlarContext},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContext(System.Action{Kevlar.KevlarContext},Kevlar.KevlarContext)
-  id: ExecuteWithContext(System.Action{Kevlar.KevlarContext},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.ExecuteWithContext(Kevlar.KevlarContext,System.Action{Kevlar.KevlarContext})
+  commentId: M:Kevlar.Shield.ExecuteWithContext(Kevlar.KevlarContext,System.Action{Kevlar.KevlarContext})
+  id: ExecuteWithContext(Kevlar.KevlarContext,System.Action{Kevlar.KevlarContext})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContext(Action<KevlarContext>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContext(Action<KevlarContext>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContext(System.Action<Kevlar.KevlarContext>, Kevlar.KevlarContext)
+  name: ExecuteWithContext(KevlarContext, Action<KevlarContext>)
+  nameWithType: Shield.ExecuteWithContext(KevlarContext, Action<KevlarContext>)
+  fullName: Kevlar.Shield.ExecuteWithContext(Kevlar.KevlarContext, System.Action<Kevlar.KevlarContext>)
   type: Method
   assemblies:
   - Kevlar
@@ -2065,27 +2065,27 @@ items:
     cancellation token, and time provider from <code class="paramref">parentContext</code>.
   example: []
   syntax:
-    content: public void ExecuteWithContext(Action<KevlarContext> action, KevlarContext parentContext)
+    content: public void ExecuteWithContext(KevlarContext parentContext, Action<KevlarContext> action)
     parameters:
-    - id: action
-      type: System.Action{Kevlar.KevlarContext}
     - id: parentContext
       type: Kevlar.KevlarContext
-    content.vb: Public Sub ExecuteWithContext(action As Action(Of KevlarContext), parentContext As KevlarContext)
+    - id: action
+      type: System.Action{Kevlar.KevlarContext}
+    content.vb: Public Sub ExecuteWithContext(parentContext As KevlarContext, action As Action(Of KevlarContext))
   overload: Kevlar.Shield.ExecuteWithContext*
-  nameWithType.vb: Shield.ExecuteWithContext(Action(Of KevlarContext), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContext(System.Action(Of Kevlar.KevlarContext), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContext(Action(Of KevlarContext), KevlarContext)
-- uid: Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarContext},Kevlar.KevlarContext)
-  commentId: M:Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarContext},Kevlar.KevlarContext)
-  id: ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarContext},Kevlar.KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContext(KevlarContext, Action(Of KevlarContext))
+  fullName.vb: Kevlar.Shield.ExecuteWithContext(Kevlar.KevlarContext, System.Action(Of Kevlar.KevlarContext))
+  name.vb: ExecuteWithContext(KevlarContext, Action(Of KevlarContext))
+- uid: Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,``0,System.Action{``0,Kevlar.KevlarContext})
+  commentId: M:Kevlar.Shield.ExecuteWithContext``1(Kevlar.KevlarContext,``0,System.Action{``0,Kevlar.KevlarContext})
+  id: ExecuteWithContext``1(Kevlar.KevlarContext,``0,System.Action{``0,Kevlar.KevlarContext})
   parent: Kevlar.Shield
   langs:
   - csharp
   - vb
-  name: ExecuteWithContext<TState>(TState, Action<TState, KevlarContext>, KevlarContext)
-  nameWithType: Shield.ExecuteWithContext<TState>(TState, Action<TState, KevlarContext>, KevlarContext)
-  fullName: Kevlar.Shield.ExecuteWithContext<TState>(TState, System.Action<TState, Kevlar.KevlarContext>, Kevlar.KevlarContext)
+  name: ExecuteWithContext<TState>(KevlarContext, TState, Action<TState, KevlarContext>)
+  nameWithType: Shield.ExecuteWithContext<TState>(KevlarContext, TState, Action<TState, KevlarContext>)
+  fullName: Kevlar.Shield.ExecuteWithContext<TState>(Kevlar.KevlarContext, TState, System.Action<TState, Kevlar.KevlarContext>)
   type: Method
   assemblies:
   - Kevlar
@@ -2098,21 +2098,21 @@ items:
     <code class="paramref">state</code> to avoid closure allocations.
   example: []
   syntax:
-    content: public void ExecuteWithContext<TState>(TState state, Action<TState, KevlarContext> action, KevlarContext parentContext)
+    content: public void ExecuteWithContext<TState>(KevlarContext parentContext, TState state, Action<TState, KevlarContext> action)
     parameters:
+    - id: parentContext
+      type: Kevlar.KevlarContext
     - id: state
       type: '{TState}'
     - id: action
       type: System.Action{{TState},Kevlar.KevlarContext}
-    - id: parentContext
-      type: Kevlar.KevlarContext
     typeParameters:
     - id: TState
-    content.vb: Public Sub ExecuteWithContext(Of TState)(state As TState, action As Action(Of TState, KevlarContext), parentContext As KevlarContext)
+    content.vb: Public Sub ExecuteWithContext(Of TState)(parentContext As KevlarContext, state As TState, action As Action(Of TState, KevlarContext))
   overload: Kevlar.Shield.ExecuteWithContext*
-  nameWithType.vb: Shield.ExecuteWithContext(Of TState)(TState, Action(Of TState, KevlarContext), KevlarContext)
-  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of TState)(TState, System.Action(Of TState, Kevlar.KevlarContext), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContext(Of TState)(TState, Action(Of TState, KevlarContext), KevlarContext)
+  nameWithType.vb: Shield.ExecuteWithContext(Of TState)(KevlarContext, TState, Action(Of TState, KevlarContext))
+  fullName.vb: Kevlar.Shield.ExecuteWithContext(Of TState)(Kevlar.KevlarContext, TState, System.Action(Of TState, Kevlar.KevlarContext))
+  name.vb: ExecuteWithContext(Of TState)(KevlarContext, TState, Action(Of TState, KevlarContext))
 - uid: Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Action{``0,Kevlar.KevlarContext},System.Threading.CancellationToken)
   commentId: M:Kevlar.Shield.ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Action{``0,Kevlar.KevlarContext},System.Threading.CancellationToken)
   id: ExecuteWithContext``1(``0,System.Action{``0,Kevlar.KevlarProperties},System.Action{``0,Kevlar.KevlarContext},System.Threading.CancellationToken)
@@ -5063,27 +5063,33 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
   parent: Kevlar.ShieldTaskExtensions
-  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync(Shield, Func<KevlarContext, Task>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, Func<KevlarContext, Task>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, Func(Of KevlarContext, Task), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Shield, Func(Of KevlarContext, Task), KevlarContext)
+  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  name: ExecuteWithContextAsync(Shield, KevlarContext, Func<KevlarContext, Task>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, KevlarContext, Func<KevlarContext, Task>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, KevlarContext, Func(Of KevlarContext, Task))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task))
+  name.vb: ExecuteWithContextAsync(Shield, KevlarContext, Func(Of KevlarContext, Task))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
   - name: (
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -5102,23 +5108,23 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
   - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
     href: Kevlar.KevlarContext.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -5139,12 +5145,6 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
   - name: )
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
@@ -5229,22 +5229,22 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}})
   parent: Kevlar.ShieldTaskExtensions
-  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<T>(Shield, Func<KevlarContext, Task<T>>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T>(Shield, Func<KevlarContext, Task<T>>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T>(Kevlar.Shield, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Shield, Func(Of KevlarContext, Task(Of T)), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Kevlar.Shield, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T)(Shield, Func(Of KevlarContext, Task(Of T)), KevlarContext)
+  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
+  name: ExecuteWithContextAsync<T>(Shield, KevlarContext, Func<KevlarContext, Task<T>>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T>(Shield, KevlarContext, Func<KevlarContext, Task<T>>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T>(Kevlar.Shield, Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Shield, KevlarContext, Func(Of KevlarContext, Task(Of T)))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Kevlar.Shield, Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T)(Shield, KevlarContext, Func(Of KevlarContext, Task(Of T)))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: <
   - name: T
   - name: '>'
@@ -5253,6 +5253,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -5274,18 +5280,12 @@ references:
   - name: T
   - name: '>'
   - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
   spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: (
   - name: Of
   - name: " "
@@ -5296,6 +5296,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -5321,12 +5327,109 @@ references:
   - name: T
   - name: )
   - name: )
+  - name: )
+- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.KevlarContext,{TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  parent: Kevlar.ShieldTaskExtensions
+  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  name: ExecuteWithContextAsync<TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task))
+  name.vb: ExecuteWithContextAsync(Of TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task))
+  spec.csharp:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: <
+  - name: TState
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
     href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.Task
+    name: Task
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TState
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.Task
+    name: Task
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+  - name: )
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
@@ -5729,23 +5832,26 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1({TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.KevlarContext,{TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}})
   parent: Kevlar.ShieldTaskExtensions
-  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<TState>(Shield, TState, Func<TState, KevlarContext, Task>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Shield, TState, Func<TState, KevlarContext, Task>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Kevlar.Shield, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, TState, Func(Of TState, KevlarContext, Task), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of TState)(Shield, TState, Func(Of TState, KevlarContext, Task), KevlarContext)
+  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
+  name: ExecuteWithContextAsync<T, TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task<T>>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task<T>>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task(Of T)))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task(Of T)))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: <
+  - name: T
+  - name: ','
+  - name: " "
   - name: TState
   - name: '>'
   - name: (
@@ -5753,6 +5859,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - name: TState
@@ -5772,25 +5884,25 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
-  - uid: System.Threading.Tasks.Task
+  - uid: System.Threading.Tasks.Task`1
     name: Task
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
+  - name: <
+  - name: T
   - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
+  - name: '>'
   - name: )
   spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: (
   - name: Of
+  - name: " "
+  - name: T
+  - name: ','
   - name: " "
   - name: TState
   - name: )
@@ -5799,6 +5911,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - name: TState
@@ -5820,17 +5938,16 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
-  - uid: System.Threading.Tasks.Task
+  - uid: System.Threading.Tasks.Task`1
     name: Task
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
-  - name: )
-  - name: ','
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
+  - name: (
+  - name: Of
   - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
+  - name: T
+  - name: )
+  - name: )
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2({TState},System.Action{{TState},Kevlar.KevlarProperties},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},System.Action{{TState},Kevlar.KevlarProperties},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
@@ -6161,123 +6278,6 @@ references:
     name: CancellationToken
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
-  - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2({TState},System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},Kevlar.KevlarContext)
-  parent: Kevlar.ShieldTaskExtensions
-  definition: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<T, TState>(Shield, TState, Func<TState, KevlarContext, Task<T>>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Shield, TState, Func<TState, KevlarContext, Task<T>>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Kevlar.Shield, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, TState, Func(Of TState, KevlarContext, Task(Of T)), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, TState, Func(Of TState, KevlarContext, Task(Of T)), KevlarContext)
-  spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  - name: <
-  - name: T
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: '>'
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: <
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: ','
-  - name: " "
-  - uid: System.Threading.Tasks.Task`1
-    name: Task
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
-  - name: <
-  - name: T
-  - name: '>'
-  - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: )
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: ','
-  - name: " "
-  - uid: System.Threading.Tasks.Task`1
-    name: Task
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-  - name: )
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
 - uid: System
   commentId: N:System
@@ -8855,26 +8855,32 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
   isExternal: true
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync(Shield, Func<KevlarContext, Task>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, Func<KevlarContext, Task>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, Func(Of KevlarContext, Task), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Shield, Func(Of KevlarContext, Task), KevlarContext)
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  name: ExecuteWithContextAsync(Shield, KevlarContext, Func<KevlarContext, Task>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, KevlarContext, Func<KevlarContext, Task>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Shield, KevlarContext, Func(Of KevlarContext, Task))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task))
+  name.vb: ExecuteWithContextAsync(Shield, KevlarContext, Func(Of KevlarContext, Task))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
   - name: (
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -8893,23 +8899,23 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
   - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
     href: Kevlar.KevlarContext.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -8930,12 +8936,6 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
   - name: )
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
@@ -9019,21 +9019,21 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},Kevlar.KevlarContext)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}})
   isExternal: true
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<T>(Shield, Func<KevlarContext, Task<T>>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T>(Shield, Func<KevlarContext, Task<T>>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T>(Kevlar.Shield, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Shield, Func(Of KevlarContext, Task(Of T)), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Kevlar.Shield, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T)(Shield, Func(Of KevlarContext, Task(Of T)), KevlarContext)
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
+  name: ExecuteWithContextAsync<T>(Shield, KevlarContext, Func<KevlarContext, Task<T>>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T>(Shield, KevlarContext, Func<KevlarContext, Task<T>>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T>(Kevlar.Shield, Kevlar.KevlarContext, System.Func<Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Shield, KevlarContext, Func(Of KevlarContext, Task(Of T)))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T)(Kevlar.Shield, Kevlar.KevlarContext, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T)(Shield, KevlarContext, Func(Of KevlarContext, Task(Of T)))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: <
   - name: T
   - name: '>'
@@ -9042,6 +9042,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -9063,18 +9069,12 @@ references:
   - name: T
   - name: '>'
   - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
   spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: (
   - name: Of
   - name: " "
@@ -9085,6 +9085,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Func`2
@@ -9110,12 +9116,108 @@ references:
   - name: T
   - name: )
   - name: )
+  - name: )
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+  isExternal: true
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  name: ExecuteWithContextAsync<TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task))
+  name.vb: ExecuteWithContextAsync(Of TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task))
+  spec.csharp:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: <
+  - name: TState
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
   - name: ','
   - name: " "
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
     href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.Task
+    name: Task
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,Kevlar.KevlarContext,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task})
+    name: ExecuteWithContextAsync
+    isExternal: true
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield_Kevlar_KevlarContext___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TState
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TState
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.Task
+    name: Task
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+  - name: )
   - name: )
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
@@ -9515,22 +9617,25 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
-- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}})
   isExternal: true
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<TState>(Shield, TState, Func<TState, KevlarContext, Task>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Shield, TState, Func<TState, KevlarContext, Task>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Kevlar.Shield, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, TState, Func(Of TState, KevlarContext, Task), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of TState)(Shield, TState, Func(Of TState, KevlarContext, Task), KevlarContext)
+  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
+  name: ExecuteWithContextAsync<T, TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task<T>>)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Shield, KevlarContext, TState, Func<TState, KevlarContext, Task<T>>)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>)
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task(Of T)))
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, Kevlar.KevlarContext, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)))
+  name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, KevlarContext, TState, Func(Of TState, KevlarContext, Task(Of T)))
   spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: <
+  - name: T
+  - name: ','
+  - name: " "
   - name: TState
   - name: '>'
   - name: (
@@ -9538,6 +9643,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - name: TState
@@ -9557,25 +9668,25 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
-  - uid: System.Threading.Tasks.Task
+  - uid: System.Threading.Tasks.Task`1
     name: Task
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
+  - name: <
+  - name: T
   - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
+  - name: '>'
   - name: )
   spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},Kevlar.KevlarContext)
+  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,Kevlar.KevlarContext,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}})
     name: ExecuteWithContextAsync
     isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__1_Kevlar_Shield___0_System_Func___0_Kevlar_KevlarContext_System_Threading_Tasks_Task__Kevlar_KevlarContext_
+    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield_Kevlar_KevlarContext___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___
   - name: (
   - name: Of
+  - name: " "
+  - name: T
+  - name: ','
   - name: " "
   - name: TState
   - name: )
@@ -9584,6 +9695,12 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - name: TState
@@ -9605,17 +9722,16 @@ references:
     href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
-  - uid: System.Threading.Tasks.Task
+  - uid: System.Threading.Tasks.Task`1
     name: Task
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
-  - name: )
-  - name: ','
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
+  - name: (
+  - name: Of
   - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
+  - name: T
+  - name: )
+  - name: )
   - name: )
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
@@ -9944,122 +10060,6 @@ references:
     name: CancellationToken
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
-  - name: )
-- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},Kevlar.KevlarContext)
-  isExternal: true
-  href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  name: ExecuteWithContextAsync<T, TState>(Shield, TState, Func<TState, KevlarContext, Task<T>>, KevlarContext)
-  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Shield, TState, Func<TState, KevlarContext, Task<T>>, KevlarContext)
-  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Kevlar.Shield, TState, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>, Kevlar.KevlarContext)
-  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, TState, Func(Of TState, KevlarContext, Task(Of T)), KevlarContext)
-  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, TState, System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), Kevlar.KevlarContext)
-  name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, TState, Func(Of TState, KevlarContext, Task(Of T)), KevlarContext)
-  spec.csharp:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  - name: <
-  - name: T
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: '>'
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: <
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: ','
-  - name: " "
-  - uid: System.Threading.Tasks.Task`1
-    name: Task
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
-  - name: <
-  - name: T
-  - name: '>'
-  - name: '>'
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},Kevlar.KevlarContext)
-    name: ExecuteWithContextAsync
-    isExternal: true
-    href: Kevlar.ShieldTaskExtensions.html#Kevlar_ShieldTaskExtensions_ExecuteWithContextAsync__2_Kevlar_Shield___1_System_Func___1_Kevlar_KevlarContext_System_Threading_Tasks_Task___0___Kevlar_KevlarContext_
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: )
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TState
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
-  - name: ','
-  - name: " "
-  - uid: System.Threading.Tasks.Task`1
-    name: Task
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-  - name: )
-  - name: ','
-  - name: " "
-  - uid: Kevlar.KevlarContext
-    name: KevlarContext
-    isExternal: true
-    href: Kevlar.KevlarContext.html
   - name: )
 - uid: Kevlar.Shield.Retry*
   commentId: Overload:Kevlar.Shield.Retry
@@ -11260,10 +11260,18 @@ references:
 - uid: Kevlar.Shield.ExecuteWithContextAsync*
   commentId: Overload:Kevlar.Shield.ExecuteWithContextAsync
   isExternal: true
-  href: Kevlar.Shield.html#Kevlar_Shield_ExecuteWithContextAsync__1_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_ValueTask___0___Kevlar_KevlarContext_
+  href: Kevlar.Shield.html#Kevlar_Shield_ExecuteWithContextAsync__1_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext_System_Threading_Tasks_ValueTask___0___
   name: ExecuteWithContextAsync
   nameWithType: Shield.ExecuteWithContextAsync
   fullName: Kevlar.Shield.ExecuteWithContextAsync
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
 - uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{T}}}
   commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}}
   parent: System
@@ -11319,14 +11327,6 @@ references:
   - name: T
   - name: )
   - name: )
-- uid: Kevlar.KevlarContext
-  commentId: T:Kevlar.KevlarContext
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.KevlarContext.html
-  name: KevlarContext
-  nameWithType: KevlarContext
-  fullName: Kevlar.KevlarContext
 - uid: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{{T}}}
   commentId: T:System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{`0}}
   parent: System
@@ -11966,7 +11966,7 @@ references:
 - uid: Kevlar.Shield.ExecuteWithContext*
   commentId: Overload:Kevlar.Shield.ExecuteWithContext
   isExternal: true
-  href: Kevlar.Shield.html#Kevlar_Shield_ExecuteWithContext__1_System_Func_Kevlar_KevlarContext___0__Kevlar_KevlarContext_
+  href: Kevlar.Shield.html#Kevlar_Shield_ExecuteWithContext__1_Kevlar_KevlarContext_System_Func_Kevlar_KevlarContext___0__
   name: ExecuteWithContext
   nameWithType: Shield.ExecuteWithContext
   fullName: Kevlar.Shield.ExecuteWithContext
