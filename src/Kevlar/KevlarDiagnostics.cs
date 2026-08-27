@@ -32,12 +32,16 @@ namespace Kevlar;
 /// <item><c>kevlar.attempt.duration</c> — retry-attempt duration histogram in milliseconds with
 /// the strategy-event attributes</item>
 /// <item><c>kevlar.circuit_breaker.state</c> — current state gauge (<c>closed=0</c>, <c>open=1</c>, <c>half_open=2</c>, <c>isolated=3</c>)</item>
+/// <item><c>kevlar.circuit_breaker.instances</c> — circuit-breaker instance count grouped by
+/// current state</item>
 /// <item><c>kevlar.concurrency_limit.inflight</c>, <c>kevlar.concurrency_limit.queued</c>, and <c>kevlar.concurrency_limit.capacity</c> — concurrency-limit state gauges</item>
 /// <item><c>kevlar.rate_limit.available</c> and <c>kevlar.rate_limit.queued</c> — rate-limit state gauges</item>
 /// </list>
 /// The <c>kevlar.shield.name</c> attribute is present only for shields named via <c>WithName</c>; an explicitly
 /// empty name is emitted as an empty tag value. State gauges also carry the bounded
 /// <c>kevlar.strategy.index</c> attribute so multiple stateful strategies in one pipeline remain distinct.
+/// Concurrency and rate measurements with the same name and strategy index are aggregated. Use
+/// <c>kevlar.circuit_breaker.instances</c> when several breakers share those attributes.
 /// </remarks>
 public static class KevlarDiagnostics
 {

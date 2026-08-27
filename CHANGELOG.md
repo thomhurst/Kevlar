@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- State gauges now aggregate identical shield-name and strategy-index series across partitioned
+  shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
+
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,

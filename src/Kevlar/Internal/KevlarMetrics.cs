@@ -90,6 +90,11 @@ internal static class KevlarMetrics
         ObserveCircuitStates,
         "{state}",
         "Current circuit-breaker state: closed=0, open=1, half-open=2, isolated=3.");
+    private static readonly ObservableGauge<long> CircuitInstances = Meter.CreateObservableGauge(
+        "kevlar.circuit_breaker.instances",
+        ObserveCircuitInstances,
+        "{circuit}",
+        "Circuit-breaker instances grouped by current state.");
     private static readonly ObservableGauge<long> ConcurrencyInflight = Meter.CreateObservableGauge(
         "kevlar.concurrency_limit.inflight",
         ObserveConcurrencyInflight,
@@ -138,7 +143,7 @@ internal static class KevlarMetrics
 #endif
 
 #if NET9_0_OR_GREATER
-    public static bool CircuitStateEnabled => CircuitStateGauge.Enabled;
+    public static bool CircuitStateEnabled => CircuitStateGauge.Enabled || CircuitInstances.Enabled;
     public static bool ConcurrencyStateEnabled =>
         ConcurrencyInflight.Enabled || ConcurrencyQueued.Enabled || ConcurrencyCapacity.Enabled;
     public static bool RateStateEnabled => RateAvailable.Enabled || RateQueued.Enabled;
@@ -447,7 +452,12 @@ internal static class KevlarMetrics
 
 #if NET9_0_OR_GREATER
     private static IEnumerable<Measurement<long>> ObserveCircuitStates() =>
-        CircuitStates.Observe(static (strategy, _) => StateValue(strategy.Core.State));
+        CircuitStates.ObserveEach(static (strategy, _) => StateValue(strategy.Core.State));
+
+    private static IEnumerable<Measurement<long>> ObserveCircuitInstances() =>
+        CircuitStates.ObserveCountsByGroup(
+            static (strategy, _) => StateName(strategy.Core.State),
+            "kevlar.circuit_breaker.state");
 
     private static IEnumerable<Measurement<long>> ObserveConcurrencyInflight() =>
         ConcurrencyStates.Observe(static (strategy, _) => strategy.CaptureState().Running);
@@ -698,6 +708,55 @@ internal static class KevlarMetrics
 
         public IEnumerable<Measurement<long>> Observe(Func<TStrategy, TimeProvider?, long> observe)
         {
+            var aggregated = new Dictionary<StrategyMetricAlias, long>();
+            foreach (var sample in ObserveValues(observe))
+            {
+                aggregated.TryGetValue(sample.Alias, out var value);
+                aggregated[sample.Alias] = value + sample.Value;
+            }
+
+            foreach (var sample in aggregated)
+            {
+                yield return new Measurement<long>(
+                    sample.Value,
+                    StateTags(sample.Key.ShieldName, sample.Key.StrategyIndex));
+            }
+        }
+
+        public IEnumerable<Measurement<long>> ObserveEach(
+            Func<TStrategy, TimeProvider?, long> observe)
+        {
+            foreach (var sample in ObserveValues(observe))
+            {
+                yield return new Measurement<long>(
+                    sample.Value,
+                    StateTags(sample.Alias.ShieldName, sample.Alias.StrategyIndex));
+            }
+        }
+
+        public IEnumerable<Measurement<long>> ObserveCountsByGroup(
+            Func<TStrategy, TimeProvider?, string> group,
+            string groupTagName)
+        {
+            var counts = new Dictionary<(StrategyMetricAlias Alias, string Group), long>();
+            foreach (var sample in ObserveValues(group))
+            {
+                var key = (sample.Alias, sample.Value);
+                counts.TryGetValue(key, out var count);
+                counts[key] = count + 1;
+            }
+
+            foreach (var count in counts)
+            {
+                var tags = StateTags(count.Key.Alias.ShieldName, count.Key.Alias.StrategyIndex);
+                tags.Add(groupTagName, count.Key.Group);
+                yield return new Measurement<long>(count.Value, tags);
+            }
+        }
+
+        private IEnumerable<(StrategyMetricAlias Alias, TValue Value)> ObserveValues<TValue>(
+            Func<TStrategy, TimeProvider?, TValue> observe)
+        {
             var registrations = Volatile.Read(ref _registrations);
             var hasCollectedRegistration = false;
             foreach (var reference in registrations)
@@ -719,9 +778,7 @@ internal static class KevlarMetrics
                         continue;
                     }
 
-                    yield return new Measurement<long>(
-                        observe(strategy!, timeProvider),
-                        StateTags(observation.Alias.ShieldName, observation.Alias.StrategyIndex));
+                    yield return (observation.Alias, observe(strategy!, timeProvider));
                 }
 
                 if (hasCollectedObservation)

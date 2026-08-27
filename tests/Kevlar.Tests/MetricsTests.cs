@@ -259,6 +259,7 @@ public class MetricsTests
             ["kevlar.attempt.duration"] = "ms",
 #if NET9_0_OR_GREATER
             ["kevlar.circuit_breaker.state"] = "{state}",
+            ["kevlar.circuit_breaker.instances"] = "{circuit}",
             ["kevlar.concurrency_limit.inflight"] = "{execution}",
             ["kevlar.concurrency_limit.queued"] = "{execution}",
             ["kevlar.concurrency_limit.capacity"] = "{execution}",
@@ -1224,6 +1225,53 @@ public class MetricsTests
     }
 
 #if NET9_0_OR_GREATER
+    [Test]
+    public async Task Partitioned_Circuit_Gauge_Counts_Instances_By_State()
+    {
+        using var listener = new KevlarMeterListener();
+        var monitors = new Dictionary<string, CircuitBreakerMonitor>();
+        const string name = "metrics-partitioned-circuit-state";
+        var partitions = new PartitionedShield<string>(key =>
+        {
+            var monitor = new CircuitBreakerMonitor();
+            monitors.Add(key, monitor);
+            return Shield.CircuitBreaker(options => options.Monitor = monitor).WithName(name);
+        });
+
+        await partitions.GetShield("closed").ExecuteAsync(_ => ValueTask.CompletedTask);
+        await partitions.GetShield("isolated").ExecuteAsync(_ => ValueTask.CompletedTask);
+        monitors["isolated"].Isolate();
+
+        listener.RecordObservableInstruments();
+
+        var measurements = listener.LongMeasurements("kevlar.circuit_breaker.instances", name);
+        await Assert.That(measurements.Select(measurement =>
+                (State: (string)measurement.Tags["kevlar.circuit_breaker.state"]!, measurement.Value)))
+            .IsEquivalentTo([
+                (State: "closed", Value: 1L),
+                (State: "isolated", Value: 1L),
+            ]);
+        GC.KeepAlive(partitions);
+    }
+
+    [Test]
+    public async Task Partitioned_Concurrency_Gauges_Aggregate_Identical_Series()
+    {
+        using var listener = new KevlarMeterListener();
+        const string name = "metrics-partitioned-concurrency-state";
+        var partitions = new PartitionedShield<int>(capacity =>
+            Shield.ConcurrencyLimit(capacity).WithName(name));
+
+        await partitions.GetShield(1).ExecuteAsync(_ => ValueTask.CompletedTask);
+        await partitions.GetShield(2).ExecuteAsync(_ => ValueTask.CompletedTask);
+
+        listener.RecordObservableInstruments();
+
+        await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", name))
+            .IsEquivalentTo([3L]);
+        GC.KeepAlive(partitions);
+    }
+
     [Test]
     public async Task Circuit_State_Gauge_Reports_Every_State()
     {

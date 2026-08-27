@@ -132,7 +132,9 @@ services.AddPartitionedShield<string, TenantResult>(
 reason is `capacity`, `idle`, or `cleared`; the partition key is deliberately omitted.
 
 Partition keys are not copied into `Shield.Name`, `KevlarContext`, or metric tags. Give partitions
-one shared low-cardinality name when aggregate telemetry is useful. If a controlled key dimension
+one shared low-cardinality name when aggregate telemetry is useful. State gauges aggregate matching
+name/index series: concurrency and rate values are summed, while
+`kevlar.circuit_breaker.instances` reports a count for each circuit state. If a controlled key dimension
 is required, add it in application-owned instrumentation after applying your own cardinality bound;
 do not use unrestricted tenant IDs or URLs as metric labels.
 
