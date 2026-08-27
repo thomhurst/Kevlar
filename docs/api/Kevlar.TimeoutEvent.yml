@@ -17,7 +17,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Describes an execution that exceeded its timeout.
+  summary: Provides execution context and duration for timeout callbacks.
   example: []
   syntax:
     content: public readonly struct TimeoutEvent
@@ -43,7 +43,10 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The timeout that was exceeded.
+  summary: >-
+    The configured timeout before generation, or the timeout that was exceeded for a timeout
+
+    notification.
   example: []
   syntax:
     content: public TimeSpan Timeout { get; }

@@ -16,12 +16,12 @@ public sealed class TimeoutOptions
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Produces the timeout for each execution and is awaited before the timer is armed. The
-    /// returned value must be positive and no greater than the runtime timer limit. Return
-    /// <c>new(timeout)</c> from a synchronous generator. The context is valid only until the
-    /// returned task completes.
+    /// Produces the timeout for each execution and is awaited before the timer is armed. The event
+    /// carries the configured <see cref="Timeout"/> and execution context. The returned value must
+    /// be positive and no greater than the runtime timer limit. Return <c>new(timeout)</c> from a
+    /// synchronous generator. The event context is valid only until the returned task completes.
     /// </summary>
-    public Func<KevlarContext, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+    public Func<TimeoutEvent, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
 
     /// <summary>
     /// Invoked and awaited when an execution is cancelled because it exceeded the timeout. Return
@@ -31,7 +31,7 @@ public sealed class TimeoutOptions
     public Func<TimeoutEvent, ValueTask>? OnTimeout { get; set; }
 }
 
-/// <summary>Describes an execution that exceeded its timeout.</summary>
+/// <summary>Provides execution context and duration for timeout callbacks.</summary>
 public readonly struct TimeoutEvent
 {
     private readonly KevlarContext? _context;
@@ -42,7 +42,10 @@ public readonly struct TimeoutEvent
         _context = context;
     }
 
-    /// <summary>The timeout that was exceeded.</summary>
+    /// <summary>
+    /// The configured timeout before generation, or the timeout that was exceeded for a timeout
+    /// notification.
+    /// </summary>
     public TimeSpan Timeout { get; }
 
     /// <summary>The ambient execution context.</summary>

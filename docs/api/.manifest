@@ -1118,6 +1118,7 @@
   "Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent)": "Kevlar.Testing.TelemetryRecorder.yml",
+  "Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent,System.TimeSpan)": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})": "Kevlar.Testing.TelemetryRecorder.yml",

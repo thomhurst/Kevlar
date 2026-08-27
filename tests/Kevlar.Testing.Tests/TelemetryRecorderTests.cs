@@ -4,6 +4,29 @@ namespace Kevlar.Testing.Tests;
 public class TelemetryRecorderTests
 {
     [Test]
+    public async Task Exposes_Timeout_Generator_Recorder_Overload()
+    {
+        var overload = typeof(TelemetryRecorder).GetMethod(
+            nameof(TelemetryRecorder.Record),
+            [typeof(TimeoutEvent), typeof(TimeSpan)]);
+
+        await Assert.That(overload).IsNotNull();
+        await Assert.That(overload!.ReturnType).IsEqualTo(typeof(ValueTask<TimeSpan>));
+
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var shield = Shield.Timeout(options =>
+            options.TimeoutGenerator = timeout =>
+                recorder.Record(timeout, TimeSpan.FromMinutes(1)))
+            .WithName("generated-timeout");
+
+        await Assert.That(shield.Execute(static _ => 42)).IsEqualTo(42);
+        var record = recorder.Callbacks.Single();
+        await Assert.That(record.Kind).IsEqualTo(CallbackKind.Timeout);
+        await Assert.That(record.ShieldName).IsEqualTo("generated-timeout");
+        await Assert.That(record.Timeout).IsEqualTo(TimeSpan.FromMinutes(1));
+    }
+
+    [Test]
     public async Task Records_Typed_Telemetry_Events_Without_Retaining_Context()
     {
         using var recorder = new TelemetryRecorder(captureMetrics: false);

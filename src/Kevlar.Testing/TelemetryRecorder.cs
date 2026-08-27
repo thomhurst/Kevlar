@@ -132,6 +132,15 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
         return default;
     }
 
+    /// <summary>Records a timeout-generator callback and returns its selected timeout.</summary>
+    public ValueTask<TimeSpan> Record(TimeoutEvent item, TimeSpan timeout)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Timeout, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, timeout: timeout));
+        return new ValueTask<TimeSpan>(timeout);
+    }
+
     /// <summary>Records a hedge callback.</summary>
     public ValueTask Record(HedgeEvent item)
     {

@@ -17,6 +17,7 @@ items:
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent)
+  - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent,System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
@@ -165,6 +166,33 @@ items:
     return:
       type: System.Threading.Tasks.ValueTask
     content.vb: Public Function Record(item As TimeoutEvent) As ValueTask
+  overload: Kevlar.Testing.TelemetryRecorder.Record*
+- uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent,System.TimeSpan)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent,System.TimeSpan)
+  id: Record(Kevlar.TimeoutEvent,System.TimeSpan)
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Record(TimeoutEvent, TimeSpan)
+  nameWithType: TelemetryRecorder.Record(TimeoutEvent, TimeSpan)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Records a timeout-generator callback and returns its selected timeout.
+  example: []
+  syntax:
+    content: public ValueTask<TimeSpan> Record(TimeoutEvent item, TimeSpan timeout)
+    parameters:
+    - id: item
+      type: Kevlar.TimeoutEvent
+    - id: timeout
+      type: System.TimeSpan
+    return:
+      type: System.Threading.Tasks.ValueTask{System.TimeSpan}
+    content.vb: Public Function Record(item As TimeoutEvent, timeout As TimeSpan) As ValueTask(Of TimeSpan)
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
@@ -975,6 +1003,77 @@ references:
   name: TimeoutEvent
   nameWithType: TimeoutEvent
   fullName: Kevlar.TimeoutEvent
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: System.Threading.Tasks.ValueTask{System.TimeSpan}
+  commentId: T:System.Threading.Tasks.ValueTask{System.TimeSpan}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TimeSpan>
+  nameWithType: ValueTask<TimeSpan>
+  fullName: System.Threading.Tasks.ValueTask<System.TimeSpan>
+  nameWithType.vb: ValueTask(Of TimeSpan)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of System.TimeSpan)
+  name.vb: ValueTask(Of TimeSpan)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.HedgeEvent
   commentId: T:Kevlar.HedgeEvent
   parent: Kevlar
@@ -1072,77 +1171,6 @@ references:
   name: CircuitBreakerBreakDurationEvent
   nameWithType: CircuitBreakerBreakDurationEvent
   fullName: Kevlar.CircuitBreakerBreakDurationEvent
-- uid: System.TimeSpan
-  commentId: T:System.TimeSpan
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.timespan
-  name: TimeSpan
-  nameWithType: TimeSpan
-  fullName: System.TimeSpan
-- uid: System.Threading.Tasks.ValueTask{System.TimeSpan}
-  commentId: T:System.Threading.Tasks.ValueTask{System.TimeSpan}
-  parent: System.Threading.Tasks
-  definition: System.Threading.Tasks.ValueTask`1
-  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  name: ValueTask<TimeSpan>
-  nameWithType: ValueTask<TimeSpan>
-  fullName: System.Threading.Tasks.ValueTask<System.TimeSpan>
-  nameWithType.vb: ValueTask(Of TimeSpan)
-  fullName.vb: System.Threading.Tasks.ValueTask(Of System.TimeSpan)
-  name.vb: ValueTask(Of TimeSpan)
-  spec.csharp:
-  - uid: System.Threading.Tasks.ValueTask`1
-    name: ValueTask
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  - name: <
-  - uid: System.TimeSpan
-    name: TimeSpan
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.timespan
-  - name: '>'
-  spec.vb:
-  - uid: System.Threading.Tasks.ValueTask`1
-    name: ValueTask
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: System.TimeSpan
-    name: TimeSpan
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.timespan
-  - name: )
-- uid: System.Threading.Tasks.ValueTask`1
-  commentId: T:System.Threading.Tasks.ValueTask`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  name: ValueTask<TResult>
-  nameWithType: ValueTask<TResult>
-  fullName: System.Threading.Tasks.ValueTask<TResult>
-  nameWithType.vb: ValueTask(Of TResult)
-  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
-  name.vb: ValueTask(Of TResult)
-  spec.csharp:
-  - uid: System.Threading.Tasks.ValueTask`1
-    name: ValueTask
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  - name: <
-  - name: TResult
-  - name: '>'
-  spec.vb:
-  - uid: System.Threading.Tasks.ValueTask`1
-    name: ValueTask
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TResult
-  - name: )
 - uid: Kevlar.CircuitBreakerBreakDurationEvent{{TResult}}
   commentId: T:Kevlar.CircuitBreakerBreakDurationEvent{`0}
   parent: Kevlar
