@@ -6,12 +6,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- **Breaking:** `StandardHedgeShieldOptions` now groups strategy, request-handler, and endpoint
-  routing settings under `TotalTimeout`, `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`,
-  `AttemptTimeout`, `Handler`, and `Routing`; configuration binding uses the same nested paths.
-
 ## [1.0.0] - 2026-08-27
 
 Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,
@@ -53,6 +47,9 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 - HTTP handler replay and routing options are snapshotted when a pipeline is registered or created.
   Later mutations no longer alter live handlers; configuration reload remains the explicit update
   path and publishes a fresh complete snapshot.
+- **Breaking:** `StandardHedgeShieldOptions` now groups strategy, request-handler, and endpoint
+  routing settings under `TotalTimeout`, `Hedge`, `ConcurrencyLimit`, `CircuitBreaker`,
+  `AttemptTimeout`, `Handler`, and `Routing`; configuration binding uses the same nested paths.
 - `TimeoutExceededException` now derives directly from `KevlarException`. It no longer counts as
   an `ExecutionRejectedException`: fail-fast rejections mean the delegate did not run, while a
   timeout means it ran and exceeded its budget.
