@@ -201,7 +201,7 @@ internal sealed class RetryStrategy : Strategy
                 firstOutcomeShouldRetry = false;
 
                 var attempt = retriesUsed + 1;
-                KevlarMetrics.Retry(context.ShieldName);
+                KevlarMetrics.Retry(context);
                 var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
                 if (_maxDelay is { } cap && delay > cap)

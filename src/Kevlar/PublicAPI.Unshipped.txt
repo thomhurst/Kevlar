@@ -1,1 +1,10 @@
 #nullable enable
+abstract Kevlar.KevlarMetricEnricher.Enrich(in Kevlar.KevlarMetricEnrichmentContext context) -> void
+Kevlar.KevlarMetricEnricher
+Kevlar.KevlarMetricEnricher.KevlarMetricEnricher() -> void
+Kevlar.KevlarMetricEnrichmentContext
+Kevlar.KevlarMetricEnrichmentContext.Context.get -> Kevlar.KevlarContext?
+Kevlar.KevlarMetricEnrichmentContext.InstrumentName.get -> string!
+Kevlar.KevlarMetricEnrichmentContext.KevlarMetricEnrichmentContext() -> void
+Kevlar.KevlarMetricEnrichmentContext.Tags.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object?>>!
+static Kevlar.KevlarDiagnostics.AddMetricEnricher(Kevlar.KevlarMetricEnricher! enricher) -> System.IDisposable!

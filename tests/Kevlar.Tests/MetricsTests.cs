@@ -14,6 +14,8 @@ namespace Kevlar.Tests;
 [NotInParallel]
 public class MetricsTests
 {
+    private static readonly KevlarKey<string> MetricRegion = new("metric-region");
+
     private sealed class KevlarMeterListener : IDisposable
     {
         private readonly MeterListener _listener = new();
@@ -284,6 +286,82 @@ public class MetricsTests
         await Assert.That(listener.Instruments.All(instrument => !string.IsNullOrWhiteSpace(instrument.Description)))
             .IsTrue();
     }
+
+    [Test]
+    public async Task Metric_Enricher_Tags_Executions_Retries_And_Rejections()
+    {
+        using var listener = new KevlarMeterListener();
+        using var enrichment = KevlarDiagnostics.AddMetricEnricher(new RegionMetricEnricher());
+        const string name = "metrics-enriched";
+        var attempts = 0;
+        var retry = Shield.Retry(1, Backoff.None).WithName(name);
+
+        await retry.ExecuteWithContextAsync(
+            "eu-west",
+            static (region, properties) => properties.Set(MetricRegion, region),
+            (_, _) => ++attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException("retry"))
+                : new ValueTask<int>(42));
+
+        var monitor = new CircuitBreakerMonitor();
+        var breaker = Shield.CircuitBreaker(options => options.Monitor = monitor).WithName(name);
+        monitor.Isolate();
+        _ = await Assert.That(async () => await breaker.ExecuteWithContextAsync(
+                "eu-west",
+                static (region, properties) => properties.Set(MetricRegion, region),
+                static (_, _) => new ValueTask<int>(42)))
+            .Throws<CircuitOpenException>();
+
+        foreach (var instrument in new[] { "kevlar.executions", "kevlar.retries", "kevlar.rejections" })
+        {
+            var measurements = listener.Measurements(instrument, name);
+            await Assert.That(measurements.Count).IsGreaterThan(0);
+            await Assert.That(measurements.All(tags =>
+                    tags.TryGetValue("test.region", out var region) && Equals(region, "eu-west")))
+                .IsTrue();
+        }
+    }
+
+    [Test]
+    public async Task Metric_Enricher_Failure_Is_Isolated()
+    {
+        using var listener = new KevlarMeterListener();
+        using var throwing = KevlarDiagnostics.AddMetricEnricher(new ThrowingMetricEnricher());
+        using var enrichment = KevlarDiagnostics.AddMetricEnricher(new ConstantMetricEnricher());
+        const string name = "metrics-enricher-failure";
+
+        var result = await Shield.Empty.WithName(name)
+            .ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        var measurements = listener.Measurements("kevlar.executions", name);
+        await Assert.That(measurements.Count).IsGreaterThan(0);
+        await Assert.That(measurements.All(tags =>
+                tags.TryGetValue("test.constant", out var value) && Equals(value, "present")))
+            .IsTrue();
+    }
+
+    [Test]
+    public async Task Metric_Enricher_Subscription_Dispose_Stops_Enrichment()
+    {
+        using var listener = new KevlarMeterListener();
+        var subscription = KevlarDiagnostics.AddMetricEnricher(new ConstantMetricEnricher());
+        subscription.Dispose();
+        subscription.Dispose();
+        const string name = "metrics-enricher-disposed";
+
+        await Shield.Empty.WithName(name).ExecuteAsync(_ => ValueTask.CompletedTask);
+
+        var measurements = listener.Measurements("kevlar.executions", name);
+        await Assert.That(measurements.Count).IsGreaterThan(0);
+        await Assert.That(measurements.All(tags => !tags.ContainsKey("test.constant"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Add_Metric_Enricher_Rejects_Null() =>
+        _ = await Assert.That(() => KevlarDiagnostics.AddMetricEnricher(null!))
+            .Throws<ArgumentNullException>()
+            .WithParameterName("enricher");
 
     [Test]
     public async Task Partition_Evictions_Include_Reason_But_Not_Key()
@@ -1270,6 +1348,24 @@ public class MetricsTests
         await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", name))
             .IsEquivalentTo([3L]);
         GC.KeepAlive(partitions);
+    }
+
+    [Test]
+    public async Task Metric_Enricher_Tags_Observable_State()
+    {
+        using var listener = new KevlarMeterListener();
+        using var enrichment = KevlarDiagnostics.AddMetricEnricher(new ConstantMetricEnricher());
+        const string name = "metrics-enriched-state";
+        var shield = Shield.ConcurrencyLimit(1).WithName(name);
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        listener.RecordObservableInstruments();
+
+        var measurements = listener.Measurements("kevlar.concurrency_limit.capacity", name);
+        await Assert.That(measurements.Count).IsGreaterThan(0);
+        await Assert.That(measurements.All(tags =>
+                tags.TryGetValue("test.constant", out var value) && Equals(value, "present")))
+            .IsTrue();
     }
 
     [Test]
@@ -2396,5 +2492,28 @@ public class MetricsTests
             _sampleCaptured.Dispose();
             _releaseSample.Dispose();
         }
+    }
+
+    private sealed class RegionMetricEnricher : KevlarMetricEnricher
+    {
+        public override void Enrich(in KevlarMetricEnrichmentContext context)
+        {
+            if (context.Context?.Properties.TryGet(MetricRegion, out string? region) == true)
+            {
+                context.Tags.Add(new KeyValuePair<string, object?>("test.region", region));
+            }
+        }
+    }
+
+    private sealed class ConstantMetricEnricher : KevlarMetricEnricher
+    {
+        public override void Enrich(in KevlarMetricEnrichmentContext context) =>
+            context.Tags.Add(new KeyValuePair<string, object?>("test.constant", "present"));
+    }
+
+    private sealed class ThrowingMetricEnricher : KevlarMetricEnricher
+    {
+        public override void Enrich(in KevlarMetricEnrichmentContext context) =>
+            throw new InvalidOperationException("enrichment");
     }
 }

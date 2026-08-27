@@ -44,6 +44,8 @@ items:
   - Kevlar.KevlarException
   - Kevlar.KevlarKey`1
   - Kevlar.KevlarKeys
+  - Kevlar.KevlarMetricEnricher
+  - Kevlar.KevlarMetricEnrichmentContext
   - Kevlar.KevlarProperties
   - Kevlar.KevlarProxyException
   - Kevlar.KevlarTelemetryEvent
@@ -291,6 +293,22 @@ references:
   name: KevlarKeys
   nameWithType: KevlarKeys
   fullName: Kevlar.KevlarKeys
+- uid: Kevlar.KevlarMetricEnricher
+  commentId: T:Kevlar.KevlarMetricEnricher
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarMetricEnricher.html
+  name: KevlarMetricEnricher
+  nameWithType: KevlarMetricEnricher
+  fullName: Kevlar.KevlarMetricEnricher
+- uid: Kevlar.KevlarMetricEnrichmentContext
+  commentId: T:Kevlar.KevlarMetricEnrichmentContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarMetricEnrichmentContext.html
+  name: KevlarMetricEnrichmentContext
+  nameWithType: KevlarMetricEnrichmentContext
+  fullName: Kevlar.KevlarMetricEnrichmentContext
 - uid: Kevlar.KevlarProperties
   commentId: T:Kevlar.KevlarProperties
   parent: Kevlar

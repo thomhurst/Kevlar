@@ -48,6 +48,20 @@ public static class KevlarDiagnostics
     /// <summary>The name of Kevlar's <c>Meter</c>.</summary>
     public const string MeterName = "Kevlar";
 
+    /// <summary>Registers an application-defined enricher for every Kevlar metric measurement.</summary>
+    /// <param name="enricher">The enricher to register.</param>
+    /// <returns>A subscription that removes the enricher when disposed.</returns>
+    /// <remarks>
+    /// Enrichers run synchronously only when an enabled instrument records or observes a
+    /// measurement. Enricher exceptions are ignored and do not prevent later enrichers from
+    /// running. Keep tag names and values bounded to avoid unbounded metric cardinality.
+    /// </remarks>
+    public static IDisposable AddMetricEnricher(KevlarMetricEnricher enricher)
+    {
+        Internal.Throw.IfNull(enricher, nameof(enricher));
+        return KevlarMetricEnrichment.Subscribe(enricher);
+    }
+
     /// <summary>
     /// Raised when a strategy notification, observer, or superseded-result disposal throws. Each
     /// subscriber is isolated: subscriber failures are swallowed and do not prevent later
@@ -86,7 +100,7 @@ public static class KevlarDiagnostics
 
         try
         {
-            KevlarMetrics.CallbackError(context.ShieldName, kind, source);
+            KevlarMetrics.CallbackError(context, kind, source);
         }
         catch
         {

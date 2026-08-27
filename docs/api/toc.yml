@@ -124,6 +124,12 @@ items:
   - uid: Kevlar.KevlarKeys
     name: KevlarKeys
     type: Class
+  - uid: Kevlar.KevlarMetricEnricher
+    name: KevlarMetricEnricher
+    type: Class
+  - uid: Kevlar.KevlarMetricEnrichmentContext
+    name: KevlarMetricEnrichmentContext
+    type: Struct
   - uid: Kevlar.KevlarProperties
     name: KevlarProperties
     type: Class

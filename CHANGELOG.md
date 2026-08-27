@@ -14,6 +14,8 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 
 ### Added
 
+- `KevlarDiagnostics.AddMetricEnricher` applies bounded application tags to every enabled
+  instrument on the core `Kevlar` meter, with access to the active execution context when present.
 - The `Kevlar` package includes diagnostics-only Roslyn analyzers automatically. Rules KEV001–KEV014
   cover cancellation, ineffective handling, invalid ordering, state lifetime, fallback/result
   mismatches, untyped hedging, discarded builders and fluent calls, inherited and implicit default

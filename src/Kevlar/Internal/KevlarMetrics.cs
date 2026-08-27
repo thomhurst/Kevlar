@@ -153,24 +153,25 @@ internal static class KevlarMetrics
     public static bool RateStateEnabled => false;
 #endif
 
-    public static void Execution(string? shieldName, bool success)
+    public static void Execution(string? shieldName, bool success, KevlarContext? context = null)
     {
 #if NET8_0_OR_GREATER
         if (Executions.Enabled)
         {
             var tags = NameTags(shieldName);
             tags.Add("kevlar.execution.outcome", success ? "success" : "failure");
-            Executions.Add(1, tags);
+            KevlarMetricEnrichment.Add(Executions, 1, in tags, context);
         }
 #endif
     }
 
-    public static void Retry(string? shieldName)
+    public static void Retry(KevlarContext context)
     {
 #if NET8_0_OR_GREATER
         if (Retries.Enabled)
         {
-            Retries.Add(1, NameTags(shieldName));
+            var tags = NameTags(context.ShieldName);
+            KevlarMetricEnrichment.Add(Retries, 1, in tags, context);
         }
 #endif
     }
@@ -184,7 +185,8 @@ internal static class KevlarMetrics
 #if NET8_0_OR_GREATER
         if (Timeouts.Enabled)
         {
-            Timeouts.Add(1, NameTags(context.ShieldName));
+            var tags = NameTags(context.ShieldName);
+            KevlarMetricEnrichment.Add(Timeouts, 1, in tags, context);
         }
 #endif
         if (!KevlarTelemetry.IsEventEnabled(context))
@@ -214,7 +216,8 @@ internal static class KevlarMetrics
 #if NET8_0_OR_GREATER
         if (Hedges.Enabled)
         {
-            Hedges.Add(1, NameTags(context.ShieldName));
+            var tags = NameTags(context.ShieldName);
+            KevlarMetricEnrichment.Add(Hedges, 1, in tags, context);
         }
 #endif
         if (!KevlarTelemetry.IsEventEnabled(context))
@@ -244,7 +247,8 @@ internal static class KevlarMetrics
 #if NET8_0_OR_GREATER
         if (Fallbacks.Enabled)
         {
-            Fallbacks.Add(1, NameTags(context.ShieldName));
+            var tags = NameTags(context.ShieldName);
+            KevlarMetricEnrichment.Add(Fallbacks, 1, in tags, context);
         }
 #endif
         if (!KevlarTelemetry.IsEventEnabled(context))
@@ -273,7 +277,7 @@ internal static class KevlarMetrics
         {
             var tags = NameTags(context.ShieldName);
             tags.Add("kevlar.rejection.type", kind);
-            Rejections.Add(1, tags);
+            KevlarMetricEnrichment.Add(Rejections, 1, in tags, context);
         }
 #endif
         if (!KevlarTelemetry.IsEventEnabled(context))
@@ -301,7 +305,7 @@ internal static class KevlarMetrics
         {
             var tags = NameTags(context.ShieldName);
             tags.Add("kevlar.suppression.reason", reason);
-            HttpReplaySuppressions.Add(1, tags);
+            KevlarMetricEnrichment.Add(HttpReplaySuppressions, 1, in tags, context);
         }
 #endif
         if (!KevlarTelemetry.IsEventEnabled(context))
@@ -325,11 +329,12 @@ internal static class KevlarMetrics
 #if NET8_0_OR_GREATER
         if (CircuitTransitions.Enabled)
         {
-            CircuitTransitions.Add(1, new TagList
+            var tags = new TagList
             {
                 { "kevlar.circuit_breaker.state.from", StateName(from) },
                 { "kevlar.circuit_breaker.state.to", StateName(to) },
-            });
+            };
+            KevlarMetricEnrichment.Add(CircuitTransitions, 1, in tags);
         }
 #endif
     }
@@ -339,22 +344,27 @@ internal static class KevlarMetrics
 #if NET8_0_OR_GREATER
         if (PartitionEvictions.Enabled)
         {
-            PartitionEvictions.Add(1, new KeyValuePair<string, object?>(
-                "kevlar.partition.reason",
-                PartitionReasonName(reason)));
+            var tags = new TagList
+            {
+                { "kevlar.partition.reason", PartitionReasonName(reason) },
+            };
+            KevlarMetricEnrichment.Add(PartitionEvictions, 1, in tags);
         }
 #endif
     }
 
-    public static void CallbackError(string? shieldName, CallbackErrorKind kind, string source)
+    public static void CallbackError(
+        KevlarContext context,
+        CallbackErrorKind kind,
+        string source)
     {
 #if NET8_0_OR_GREATER
         if (CallbackErrors.Enabled)
         {
-            var tags = NameTags(shieldName);
+            var tags = NameTags(context.ShieldName);
             tags.Add("kevlar.callback.kind", CallbackKindName(kind));
             tags.Add("kevlar.callback.source", source);
-            CallbackErrors.Add(1, tags);
+            KevlarMetricEnrichment.Add(CallbackErrors, 1, in tags, context);
         }
 #endif
     }
@@ -366,14 +376,22 @@ internal static class KevlarMetrics
         0;
 #endif
 
-    public static void Duration(long startedAt, string? shieldName, bool success)
+    public static void Duration(
+        long startedAt,
+        string? shieldName,
+        bool success,
+        KevlarContext? context = null)
     {
 #if NET8_0_OR_GREATER
         if (startedAt != 0 && ExecutionDuration.Enabled)
         {
             var tags = NameTags(shieldName);
             tags.Add("kevlar.execution.outcome", success ? "success" : "failure");
-            ExecutionDuration.Record(Stopwatch.GetElapsedTime(startedAt).TotalSeconds, tags);
+            KevlarMetricEnrichment.Record(
+                ExecutionDuration,
+                Stopwatch.GetElapsedTime(startedAt).TotalSeconds,
+                in tags,
+                context);
         }
 #endif
     }
@@ -416,12 +434,20 @@ internal static class KevlarMetrics
 
         if (StrategyEvents.Enabled)
         {
-            StrategyEvents.Add(1, tags);
+            KevlarMetricEnrichment.Add(
+                StrategyEvents,
+                1,
+                in tags,
+                telemetryEvent.Context);
         }
 
         if (recordAttemptDuration && AttemptDuration.Enabled)
         {
-            AttemptDuration.Record(telemetryEvent.Duration.TotalMilliseconds, tags);
+            KevlarMetricEnrichment.Record(
+                AttemptDuration,
+                telemetryEvent.Duration.TotalMilliseconds,
+                in tags,
+                telemetryEvent.Context);
         }
 #endif
     }
@@ -452,27 +478,40 @@ internal static class KevlarMetrics
 
 #if NET9_0_OR_GREATER
     private static IEnumerable<Measurement<long>> ObserveCircuitStates() =>
-        CircuitStates.ObserveEach(static (strategy, _) => StateValue(strategy.Core.State));
+        CircuitStates.ObserveEach(
+            CircuitStateGauge,
+            static (strategy, _) => StateValue(strategy.Core.State));
 
     private static IEnumerable<Measurement<long>> ObserveCircuitInstances() =>
         CircuitStates.ObserveCountsByGroup(
+            CircuitInstances,
             static (strategy, _) => StateName(strategy.Core.State),
             "kevlar.circuit_breaker.state");
 
     private static IEnumerable<Measurement<long>> ObserveConcurrencyInflight() =>
-        ConcurrencyStates.Observe(static (strategy, _) => strategy.CaptureState().Running);
+        ConcurrencyStates.Observe(
+            ConcurrencyInflight,
+            static (strategy, _) => strategy.CaptureState().Running);
 
     private static IEnumerable<Measurement<long>> ObserveConcurrencyQueued() =>
-        ConcurrencyStates.Observe(static (strategy, _) => strategy.CaptureState().Queued);
+        ConcurrencyStates.Observe(
+            ConcurrencyQueued,
+            static (strategy, _) => strategy.CaptureState().Queued);
 
     private static IEnumerable<Measurement<long>> ObserveConcurrencyCapacity() =>
-        ConcurrencyStates.Observe(static (strategy, _) => strategy.MaxConcurrency);
+        ConcurrencyStates.Observe(
+            ConcurrencyCapacity,
+            static (strategy, _) => strategy.MaxConcurrency);
 
     private static IEnumerable<Measurement<long>> ObserveRateAvailable() =>
-        RateStates.Observe(static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Available);
+        RateStates.Observe(
+            RateAvailable,
+            static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Available);
 
     private static IEnumerable<Measurement<long>> ObserveRateQueued() =>
-        RateStates.Observe(static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Queued);
+        RateStates.Observe(
+            RateQueued,
+            static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Queued);
 #endif
 
 #if NET8_0_OR_GREATER
@@ -706,7 +745,18 @@ internal static class KevlarMetrics
             }
         }
 
-        public IEnumerable<Measurement<long>> Observe(Func<TStrategy, TimeProvider?, long> observe)
+        public IEnumerable<Measurement<long>> Observe(
+            Func<TStrategy, TimeProvider?, long> observe) =>
+            ObserveCore(instrument: null, observe);
+
+        public IEnumerable<Measurement<long>> Observe(
+            ObservableGauge<long> instrument,
+            Func<TStrategy, TimeProvider?, long> observe) =>
+            ObserveCore(instrument, observe);
+
+        private IEnumerable<Measurement<long>> ObserveCore(
+            ObservableGauge<long>? instrument,
+            Func<TStrategy, TimeProvider?, long> observe)
         {
             var aggregated = new Dictionary<StrategyMetricAlias, long>();
             foreach (var sample in ObserveValues(observe))
@@ -717,24 +767,26 @@ internal static class KevlarMetrics
 
             foreach (var sample in aggregated)
             {
-                yield return new Measurement<long>(
-                    sample.Value,
-                    StateTags(sample.Key.ShieldName, sample.Key.StrategyIndex));
+                var tags = StateTags(sample.Key.ShieldName, sample.Key.StrategyIndex);
+                yield return instrument is null
+                    ? new Measurement<long>(sample.Value, tags)
+                    : KevlarMetricEnrichment.Measure(instrument, sample.Value, in tags);
             }
         }
 
         public IEnumerable<Measurement<long>> ObserveEach(
+            ObservableGauge<long> instrument,
             Func<TStrategy, TimeProvider?, long> observe)
         {
             foreach (var sample in ObserveValues(observe))
             {
-                yield return new Measurement<long>(
-                    sample.Value,
-                    StateTags(sample.Alias.ShieldName, sample.Alias.StrategyIndex));
+                var tags = StateTags(sample.Alias.ShieldName, sample.Alias.StrategyIndex);
+                yield return KevlarMetricEnrichment.Measure(instrument, sample.Value, in tags);
             }
         }
 
         public IEnumerable<Measurement<long>> ObserveCountsByGroup(
+            ObservableGauge<long> instrument,
             Func<TStrategy, TimeProvider?, string> group,
             string groupTagName)
         {
@@ -750,7 +802,7 @@ internal static class KevlarMetrics
             {
                 var tags = StateTags(count.Key.Alias.ShieldName, count.Key.Alias.StrategyIndex);
                 tags.Add(groupTagName, count.Key.Group);
-                yield return new Measurement<long>(count.Value, tags);
+                yield return KevlarMetricEnrichment.Measure(instrument, count.Value, in tags);
             }
         }
 

@@ -49,8 +49,8 @@ internal static class ShieldEngine
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             KevlarContext.Return(context);
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
         }
 
@@ -100,8 +100,8 @@ internal static class ShieldEngine
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             KevlarContext.Return(context);
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return new ValueTask<Outcome<T>>(outcome);
         }
 
@@ -183,7 +183,7 @@ internal static class ShieldEngine
         }
         catch
         {
-            RecordExecution(startedAt, shieldName, success: false);
+            RecordExecution(startedAt, context, success: false);
             NotifyCompleted(onCompleted, state, context.PropertiesForCompletion);
             KevlarContext.Return(context);
             throw;
@@ -193,7 +193,7 @@ internal static class ShieldEngine
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             NotifyCompleted(onCompleted, state, context.PropertiesForCompletion);
             KevlarContext.Return(context);
             return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
@@ -271,7 +271,7 @@ internal static class ShieldEngine
                 ? pipeline.Result
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome.GetResultOrRethrowInternal();
         }
         finally
@@ -328,12 +328,12 @@ internal static class ShieldEngine
                 ? pipeline.Result
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome;
         }
         catch (Exception exception)
         {
-            RecordExecution(startedAt, shieldName, success: false);
+            RecordExecution(startedAt, context, success: false);
             return Outcome<T>.FromException(exception);
         }
         finally
@@ -369,7 +369,7 @@ internal static class ShieldEngine
             }
             catch
             {
-                RecordExecution(startedAt, shieldName, success: false);
+                RecordExecution(startedAt, context, success: false);
                 throw;
             }
 
@@ -378,7 +378,7 @@ internal static class ShieldEngine
                 ? pipeline.Result
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome.GetResultOrRethrow();
         }
         finally
@@ -508,7 +508,7 @@ internal static class ShieldEngine
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
-            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome.GetResultOrRethrowInternal();
         }
         finally
@@ -527,7 +527,7 @@ internal static class ShieldEngine
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
-            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome.GetResultOrRethrowInternal();
         }
         finally
@@ -609,7 +609,7 @@ internal static class ShieldEngine
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
-            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context, outcome.IsSuccess);
             return outcome;
         }
         finally
@@ -622,6 +622,12 @@ internal static class ShieldEngine
     {
         KevlarMetrics.Duration(startedAt, shieldName, success);
         KevlarMetrics.Execution(shieldName, success);
+    }
+
+    private static void RecordExecution(long startedAt, KevlarContext context, bool success)
+    {
+        KevlarMetrics.Duration(startedAt, context.ShieldName, success, context);
+        KevlarMetrics.Execution(context.ShieldName, success, context);
     }
 
     private static void NotifyCompleted<TState>(
