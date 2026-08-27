@@ -269,7 +269,7 @@ items:
   summary: A handling-clause or strategy handling predicate.
   example: []
   syntax:
-    content: HandlingPredicate = 10
+    content: HandlingPredicate = 11
     return:
       type: Kevlar.CallbackErrorKind
 references:
