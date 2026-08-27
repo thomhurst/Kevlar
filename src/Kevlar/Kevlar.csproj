@@ -29,11 +29,11 @@
   <ItemGroup>
     <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.dll"
           Pack="true"
-          PackagePath="analyzers/dotnet/cs"
+          PackagePath="analyzers/dotnet/roslyn4.8/cs"
           Visible="false" />
     <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb"
           Pack="true"
-          PackagePath="analyzers/dotnet/cs"
+          PackagePath="analyzers/dotnet/roslyn4.8/cs"
           Visible="false" />
   </ItemGroup>
 

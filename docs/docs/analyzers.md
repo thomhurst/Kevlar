@@ -10,9 +10,9 @@ required. They report diagnostics only; Kevlar does not install code fixes or ID
 ## Toolchain compatibility
 
 Kevlar's analyzers reference Microsoft.CodeAnalysis 4.8.0. Use Visual Studio 2022 17.8 or later,
-or the .NET 8.0.100 SDK or later. An older compiler can report `CS9057` because the analyzer was
-built against a newer compiler; projects that treat warnings as errors will then fail their build.
-Updating the compiler host is the preferred fix.
+or the .NET 8.0.100 SDK or later to run them. The package places them in its `roslyn4.8` analyzer
+band, so older compiler hosts skip them instead of reporting `CS9057`; the Kevlar runtime library
+remains available. Update the compiler host when those projects should also run Kevlar's analyzers.
 
 ## Disabling analyzers
 
