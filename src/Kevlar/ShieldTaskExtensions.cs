@@ -35,7 +35,7 @@ public static class ShieldTaskExtensions
     }
 
     /// <summary>Executes a context-aware <see cref="Task{TResult}"/> delegate using state inherited from <paramref name="parentContext"/>.</summary>
-    public static ValueTask<T> ExecuteAsync<T>(
+    public static ValueTask<T> ExecuteWithContextAsync<T>(
         this Shield shield,
         Func<KevlarContext, Task<T>> action,
         KevlarContext parentContext)
@@ -43,11 +43,11 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(action, static (a, context) => new ValueTask<T>(a(context)), parentContext);
+        return shield.ExecuteWithContextAsync(action, static (a, context) => new ValueTask<T>(a(context)), parentContext);
     }
 
     /// <summary>Executes a context-aware <see cref="Task{TResult}"/> delegate using state inherited from <paramref name="parentContext"/>, threading <paramref name="state"/> to avoid closure allocations.</summary>
-    public static ValueTask<T> ExecuteAsync<T, TState>(
+    public static ValueTask<T> ExecuteWithContextAsync<T, TState>(
         this Shield shield,
         TState state,
         Func<TState, KevlarContext, Task<T>> action,
@@ -56,7 +56,7 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(
+        return shield.ExecuteWithContextAsync(
             (state, action),
             static (s, context) => new ValueTask<T>(s.action(s.state, context)),
             parentContext);
@@ -139,7 +139,7 @@ public static class ShieldTaskExtensions
     }
 
     /// <summary>Executes a context-aware <see cref="Task"/> delegate using state inherited from <paramref name="parentContext"/>.</summary>
-    public static ValueTask ExecuteAsync(
+    public static ValueTask ExecuteWithContextAsync(
         this Shield shield,
         Func<KevlarContext, Task> action,
         KevlarContext parentContext)
@@ -147,11 +147,11 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(action, static (a, context) => new ValueTask(a(context)), parentContext);
+        return shield.ExecuteWithContextAsync(action, static (a, context) => new ValueTask(a(context)), parentContext);
     }
 
     /// <summary>Executes a context-aware <see cref="Task"/> delegate using state inherited from <paramref name="parentContext"/>, threading <paramref name="state"/> to avoid closure allocations.</summary>
-    public static ValueTask ExecuteAsync<TState>(
+    public static ValueTask ExecuteWithContextAsync<TState>(
         this Shield shield,
         TState state,
         Func<TState, KevlarContext, Task> action,
@@ -160,7 +160,7 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(
+        return shield.ExecuteWithContextAsync(
             (state, action),
             static (s, context) => new ValueTask(s.action(s.state, context)),
             parentContext);
@@ -290,7 +290,7 @@ public static class ShieldTaskExtensions
     }
 
     /// <summary>Executes a context-aware <see cref="Task{TResult}"/> delegate using state inherited from <paramref name="parentContext"/>.</summary>
-    public static ValueTask<TResult> ExecuteAsync<TResult>(
+    public static ValueTask<TResult> ExecuteWithContextAsync<TResult>(
         this Shield<TResult> shield,
         Func<KevlarContext, Task<TResult>> action,
         KevlarContext parentContext)
@@ -298,11 +298,11 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(action, static (a, context) => new ValueTask<TResult>(a(context)), parentContext);
+        return shield.ExecuteWithContextAsync(action, static (a, context) => new ValueTask<TResult>(a(context)), parentContext);
     }
 
     /// <summary>Executes a context-aware <see cref="Task{TResult}"/> delegate using state inherited from <paramref name="parentContext"/>, threading <paramref name="state"/> to avoid closure allocations.</summary>
-    public static ValueTask<TResult> ExecuteAsync<TResult, TState>(
+    public static ValueTask<TResult> ExecuteWithContextAsync<TResult, TState>(
         this Shield<TResult> shield,
         TState state,
         Func<TState, KevlarContext, Task<TResult>> action,
@@ -311,7 +311,7 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
-        return shield.ExecuteAsync(
+        return shield.ExecuteWithContextAsync(
             (state, action),
             static (s, context) => new ValueTask<TResult>(s.action(s.state, context)),
             parentContext);

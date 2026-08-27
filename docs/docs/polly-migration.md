@@ -173,7 +173,7 @@ await outerShield.ExecuteWithContextAsync(
     },
     async (state, parentContext) =>
     {
-        await innerShield.ExecuteAsync(
+        await innerShield.ExecuteWithContextAsync(
             static async context =>
             {
                 var operation = context.Properties.GetOrDefault(
@@ -199,7 +199,7 @@ neither context may be retained.
 | `ResilienceContext.OperationKey` | `KevlarKeys.OperationKey` in `KevlarProperties` |
 | `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName` / `KevlarContext.ShieldName` |
 | Top-level `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
-| Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteAsync(callback, parentContext)` |
+| Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteWithContextAsync(callback, parentContext)` |
 | `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
 
 Do not retain either library's pooled context beyond the current callback or execution delegate.

@@ -142,6 +142,26 @@ asynchronous, `ValueTask` and `Task`, on both `Shield` and `Shield<TResult>`. It
 state-based overload, passing your delegate as the state, so it stays closure-free when the lambda
 is `static`.
 
+Inside a context-aware action, pass its context to another shield to preserve the logical execution
+across the nested pipeline:
+
+```csharp
+var nestedResult = await Shield.Empty.ExecuteWithContextAsync(async parentContext =>
+{
+    var asyncResult = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(
+        static childContext => new ValueTask<int>(childContext.ShieldName?.Length ?? 0),
+        parentContext);
+    var syncResult = Shield.Empty.ExecuteWithContext(
+        static childContext => childContext.ShieldName?.Length ?? 0,
+        parentContext);
+    return asyncResult + syncResult;
+});
+```
+
+The child inherits the parent's properties, effective cancellation token, and `TimeProvider`.
+Child property changes merge back when the nested call completes. Await an asynchronous child
+before the parent action exits; both contexts are pooled and must not be retained.
+
 `ExecuteWithContext` provides the same contract for synchronous actions. Both `Shield` and
 `Shield<TResult>` support the context-aware shape; `Task` and `ValueTask` actions are accepted.
 Use static initializer and action delegates with the state parameter to avoid closures. The pooled

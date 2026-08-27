@@ -217,7 +217,7 @@ internal static class ShieldEngine
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.RentChild(parentContext, shieldName);
+        var context = KevlarContext.RentChild(parentContext, shieldName, isSynchronous: false);
         var pipeline = RunWithContextAsync(head, state, action, context);
         if (pipeline.IsCompletedSuccessfully)
         {
@@ -228,6 +228,40 @@ internal static class ShieldEngine
         }
 
         return AwaitWithParentContextAsync(pipeline, context, parentContext, startedAt);
+    }
+
+    public static T ExecuteWithParentContextSync<T, TState>(
+        StrategyNode? head,
+        string? shieldName,
+        TState state,
+        Func<TState, KevlarContext, T> action,
+        KevlarContext parentContext)
+    {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var cancellationToken = parentContext.CancellationToken;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            RecordExecution(startedAt, shieldName, success: false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        ValidateSynchronousExecution(head, startedAt, shieldName);
+
+        var context = KevlarContext.RentChild(parentContext, shieldName, isSynchronous: true);
+        try
+        {
+            var pipeline = RunWithContextSync(head, state, action, context);
+            var outcome = pipeline.IsCompletedSuccessfully
+                ? pipeline.Result
+                : pipeline.AsTask().GetAwaiter().GetResult();
+
+            RecordExecution(startedAt, context, outcome.IsSuccess);
+            return outcome.GetResultOrRethrow();
+        }
+        finally
+        {
+            ReturnChildContext(context, parentContext);
+        }
     }
 
     public static T ExecuteSync<T, TState>(

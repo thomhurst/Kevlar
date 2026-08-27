@@ -218,11 +218,14 @@ public sealed class KevlarContext
         return context;
     }
 
-    internal static KevlarContext RentChild(KevlarContext parent, string? shieldName)
+    internal static KevlarContext RentChild(
+        KevlarContext parent,
+        string? shieldName,
+        bool isSynchronous)
     {
         var context = Rent(
             parent.CancellationToken,
-            isSynchronous: false,
+            isSynchronous,
             parent.TimeProvider,
             shieldName);
         context._forkBaseline ??= new KevlarProperties();

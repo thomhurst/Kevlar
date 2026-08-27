@@ -25,7 +25,7 @@ public class ParentContextExecutionTests
             },
             async (_, parent) =>
             {
-                var childResult = await inner.ExecuteAsync(
+                var childResult = await inner.ExecuteWithContextAsync(
                     static context =>
                     {
                         if (context.Properties.GetOrDefault(RequestId, string.Empty) != "request-42"
@@ -57,7 +57,7 @@ public class ParentContextExecutionTests
 
         await Shield.Empty.WithTimeProvider(timeProvider).ExecuteWithContextAsync(async parent =>
         {
-            await Shield.Empty.ExecuteAsync(
+            await Shield.Empty.ExecuteWithContextAsync(
                 context =>
                 {
                     observedToken = context.CancellationToken;
@@ -79,7 +79,7 @@ public class ParentContextExecutionTests
 
         var execution = Shield.Empty.ExecuteWithContextAsync(async parent =>
         {
-            await Shield.Empty.ExecuteAsync(
+            await Shield.Empty.ExecuteWithContextAsync(
                 async context =>
                 {
                     entered.TrySetResult();
@@ -102,7 +102,7 @@ public class ParentContextExecutionTests
 
         await Shield.Empty.ExecuteWithContextAsync(async parent =>
         {
-            await Shield.Empty.ExecuteAsync(
+            await Shield.Empty.ExecuteWithContextAsync(
                 context =>
                 {
                     child = context;
@@ -123,12 +123,15 @@ public class ParentContextExecutionTests
     {
         var failures = new Action[]
         {
-            () => Shield.Empty.ExecuteAsync(static _ => new ValueTask<int>(42), null!),
-            () => Shield.Empty.ExecuteAsync(static _ => ValueTask.CompletedTask, null!),
-            () => Shield<int>.Empty.ExecuteAsync(static _ => new ValueTask<int>(42), null!),
-            () => Shield.Empty.ExecuteAsync(static _ => Task.FromResult(42), null!),
-            () => Shield.Empty.ExecuteAsync(static _ => Task.CompletedTask, null!),
-            () => Shield<int>.Empty.ExecuteAsync(static _ => Task.FromResult(42), null!),
+            () => Shield.Empty.ExecuteWithContextAsync(static _ => new ValueTask<int>(42), null!),
+            () => Shield.Empty.ExecuteWithContextAsync(static _ => ValueTask.CompletedTask, null!),
+            () => Shield<int>.Empty.ExecuteWithContextAsync(static _ => new ValueTask<int>(42), null!),
+            () => Shield.Empty.ExecuteWithContextAsync(static _ => Task.FromResult(42), null!),
+            () => Shield.Empty.ExecuteWithContextAsync(static _ => Task.CompletedTask, null!),
+            () => Shield<int>.Empty.ExecuteWithContextAsync(static _ => Task.FromResult(42), null!),
+            () => Shield.Empty.ExecuteWithContext(static _ => 42, null!),
+            () => Shield.Empty.ExecuteWithContext(static _ => { }, null!),
+            () => Shield<int>.Empty.ExecuteWithContext(static _ => 42, null!),
         };
 
         foreach (var failure in failures)
@@ -136,5 +139,31 @@ public class ParentContextExecutionTests
             var exception = await Assert.That(failure).Throws<ArgumentNullException>();
             await Assert.That(exception!.ParamName).IsEqualTo("parentContext");
         }
+    }
+
+    [Test]
+    public async Task Nested_Synchronous_Execution_Uses_And_Updates_Parent_Context()
+    {
+        var timeProvider = new FakeTimeProvider();
+
+        await Shield.Empty.WithTimeProvider(timeProvider).ExecuteWithContextAsync(async parent =>
+        {
+            parent.Properties.Set(RequestId, "request-42");
+
+            var result = Shield.Retry(0, Backoff.None).ExecuteWithContext(
+                (value: 40, timeProvider),
+                static (state, child) =>
+                {
+                    child.Properties.Set(ChildValue, 2);
+                    return state.value
+                        + child.Properties.GetOrDefault(ChildValue)
+                        + (child.Properties.GetOrDefault(RequestId, string.Empty) == "request-42" ? 0 : 100)
+                        + (ReferenceEquals(child.TimeProvider, state.timeProvider) ? 0 : 1000);
+                },
+                parent);
+
+            await Assert.That(result).IsEqualTo(42);
+            await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(2);
+        });
     }
 }
