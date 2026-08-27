@@ -80,7 +80,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Multi-attempt hedging races concurrent attempts and is only supported by Kevlar's asynchronous execution boundary. Synchronous Execute fails for a pipeline containing statically known multi-attempt hedging.");
+        description: "Multi-attempt hedging races concurrent attempts and is only supported by Kevlar's asynchronous execution boundary. Synchronous Execute fails for a pipeline containing statically known multi-attempt hedging.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV002", "synchronous-hedging"));
 
     /// <summary>The KEV003 rule.</summary>
     public static readonly DiagnosticDescriptor UnreachableReactiveStrategyRule = new(
@@ -90,7 +91,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "A fallback inside retry, hedging, or circuit breaker under the same handling clause recovers every handled failure before the outer strategy can observe it. Kevlar rejects this pipeline at construction time.");
+        description: "A fallback inside retry, hedging, or circuit breaker under the same handling clause recovers every handled failure before the outer strategy can observe it. Kevlar rejects this pipeline at construction time.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV003", "unreachable-reactive-strategy"));
 
     /// <summary>The KEV004 rule.</summary>
     public static readonly DiagnosticDescriptor EphemeralStatefulShieldRule = new(
@@ -100,7 +102,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Circuit breakers, rate limiters, concurrency limiters, and partition providers must outlive individual executions so their resilience state is retained and shared.");
+        description: "Circuit breakers, rate limiters, concurrency limiters, and partition providers must outlive individual executions so their resilience state is retained and shared.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV004", "per-execution-stateful-shields"));
 
     /// <summary>The KEV005 rule.</summary>
     public static readonly DiagnosticDescriptor VoidFallbackResultExecutionRule = new(
@@ -110,7 +113,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "A shield containing a void fallback rejects every result-returning execution at the execution boundary, before the delegate or any strategy runs.");
+        description: "A shield containing a void fallback rejects every result-returning execution at the execution boundary, before the delegate or any strategy runs.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV005", "void-fallback-with-a-result"));
 
     /// <summary>The KEV006 rule.</summary>
     public static readonly DiagnosticDescriptor UntypedHedgeRule = new(
@@ -120,7 +124,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "An untyped Shield can only judge hedged attempts by their exceptions, so every attempt it launches runs to completion against the real dependency. Duplicate writes, charges, or sends from a losing hedge are observable unless the action is idempotent.");
+        description: "An untyped Shield can only judge hedged attempts by their exceptions, so every attempt it launches runs to completion against the real dependency. Duplicate writes, charges, or sends from a losing hedge are observable unless the action is idempotent.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV006", "hedging-on-an-untyped-shield"));
 
     /// <summary>The KEV007 rule.</summary>
     public static readonly DiagnosticDescriptor DeadHandlingClauseRule = new(
@@ -130,7 +135,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "A When/Or clause only changes behaviour once a reactive strategy consumes it. A clause whose builder is discarded, or that a later When clause replaces before any reactive strategy is added, silently does nothing.");
+        description: "A When/Or clause only changes behaviour once a reactive strategy consumes it. A clause whose builder is discarded, or that a later When clause replaces before any reactive strategy is added, silently does nothing.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV007", "dead-handling-clause"));
 
     /// <summary>The KEV008 rule.</summary>
     public static readonly DiagnosticDescriptor DiscardedChainResultRule = new(
@@ -140,7 +146,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Shield, Shield<TResult> and their builders are immutable: every fluent method returns a new instance and leaves its receiver untouched. A chaining call written as a statement therefore has no effect.");
+        description: "Shield, Shield<TResult> and their builders are immutable: every fluent method returns a new instance and leaves its receiver untouched. A chaining call written as a statement therefore has no effect.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV008", "discarded-fluent-chaining-result"));
 
     /// <summary>The KEV009 rule.</summary>
     public static readonly DiagnosticDescriptor InheritedHandlingClauseRule = new(
@@ -150,7 +157,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WithDefaultHandling resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.");
+        description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WithDefaultHandling resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV009", "inherited-handling-clause"));
 
     /// <summary>The KEV010 rule.</summary>
     public static readonly DiagnosticDescriptor DefaultResultClauseOnValueTypeRule = new(
@@ -160,7 +168,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "WhenResultIsDefault and OrResultIsDefault were named for reference types, where default(TResult) is null and a missing value is usually the failure. On a value type the same clause treats a zero, a false, or an empty struct as a failure worth retrying, hedging, or falling back from. Reference-type shields can say so explicitly with WhenResultIsNull and OrResultIsNull.");
+        description: "WhenResultIsDefault and OrResultIsDefault were named for reference types, where default(TResult) is null and a missing value is usually the failure. On a value type the same clause treats a zero, a false, or an empty struct as a failure worth retrying, hedging, or falling back from. Reference-type shields can say so explicitly with WhenResultIsNull and OrResultIsNull.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV010", "default-result-clause-on-a-value-type"));
 
     /// <summary>The KEV011 rule.</summary>
     public static readonly DiagnosticDescriptor ImplicitDefaultHandlingRule = new(
@@ -170,7 +179,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.");
+        description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV011", "implicit-default-handling"));
 
     /// <summary>The KEV012 rule.</summary>
     public static readonly DiagnosticDescriptor AsyncConfigurationWithSynchronousExecuteRule = new(
@@ -180,7 +190,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Kevlar never blocks the calling thread on a strategy callback: synchronous Execute throws when a hook does not complete synchronously. This rule reports async delegates assigned to strategy hooks on shields that are executed synchronously so the failure surfaces at build time.");
+        description: "Kevlar never blocks the calling thread on a strategy callback: synchronous Execute throws when a hook does not complete synchronously. This rule reports async delegates assigned to strategy hooks on shields that are executed synchronously so the failure surfaces at build time.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV012", "async-configuration-with-synchronous-execute"));
 
     /// <summary>The KEV014 rule.</summary>
     public static readonly DiagnosticDescriptor DeferredContextCaptureRule = new(
@@ -190,7 +201,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Task.Run and ThreadPool work can execute after a strategy callback completes. Capturing an event context there can observe state from a later execution when the pooled context is reused.");
+        description: "Task.Run and ThreadPool work can execute after a strategy callback completes. Capturing an event context there can observe state from a later execution when the pooled context is reused.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV014", "deferred-event-context-capture"));
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>

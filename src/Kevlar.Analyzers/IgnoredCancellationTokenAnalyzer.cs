@@ -22,7 +22,8 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Kevlar hands the execution delegate a CancellationToken that timeout strategies and callers cancel. A delegate that ignores it keeps running after the pipeline has given up on it.");
+        description: "Kevlar hands the execution delegate a CancellationToken that timeout strategies and callers cancel. A delegate that ignores it keeps running after the pipeline has given up on it.",
+        helpLinkUri: AnalyzerHelpLink.Create("KEV001", "ignored-execution-cancellation"));
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
