@@ -64,6 +64,31 @@ public class AnalyzerMetadataTests
     }
 
     [Test]
+    public async Task Analyzer_Help_Links_Target_Published_Documentation_Anchors()
+    {
+        const string helpBase = "https://thomhurst.github.io/Kevlar/docs/analyzers#";
+        var analyzerDocsPath = Path.Combine(FindRepositoryRoot(), "docs", "docs", "analyzers.md");
+        var anchorsByRuleId = File.ReadLines(analyzerDocsPath)
+            .Where(static line => line.StartsWith("## KEV", StringComparison.Ordinal))
+            .ToDictionary(
+                static line => line.Substring(3, 6),
+                static line => line.Substring(3)
+                    .ToLowerInvariant()
+                    .Replace(": ", "-", StringComparison.Ordinal)
+                    .Replace(' ', '-'),
+                StringComparer.Ordinal);
+        var rules = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics
+            .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics);
+
+        foreach (var rule in rules)
+        {
+            await Assert.That(anchorsByRuleId.ContainsKey(rule.Id)).IsTrue();
+            await Assert.That(rule.HelpLinkUri)
+                .IsEqualTo(helpBase + anchorsByRuleId[rule.Id]);
+        }
+    }
+
+    [Test]
     [Arguments("KEV001", "Reliability", DiagnosticSeverity.Warning)]
     [Arguments("KEV002", "Reliability", DiagnosticSeverity.Warning)]
     [Arguments("KEV003", "Configuration", DiagnosticSeverity.Warning)]
