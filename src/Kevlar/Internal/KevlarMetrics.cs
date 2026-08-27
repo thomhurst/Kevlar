@@ -996,6 +996,7 @@ internal static class KevlarMetrics
         CallbackErrorKind.RateLimitRejected => "rate_limit_rejected",
         CallbackErrorKind.Custom => "custom",
         CallbackErrorKind.ResultDisposal => "result_disposal",
+        CallbackErrorKind.HandlingPredicate => "handling_predicate",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 

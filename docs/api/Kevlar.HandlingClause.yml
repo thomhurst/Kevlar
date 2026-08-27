@@ -49,6 +49,10 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: Returns whether <code class="paramref">outcome</code> is a handled failure.
+  remarks: >-
+    This context-free overload cannot report predicate failures through execution diagnostics.
+
+    Reactive strategies should use the overload that accepts <xref href="Kevlar.KevlarContext" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
     content: public bool ShouldHandle<T>(in Outcome<T> outcome)
@@ -374,6 +378,14 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
 - uid: Kevlar.HandlingClause.ShouldHandle*
   commentId: Overload:Kevlar.HandlingClause.ShouldHandle
   isExternal: true
@@ -450,14 +462,6 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.KevlarContext
-  commentId: T:Kevlar.KevlarContext
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.KevlarContext.html
-  name: KevlarContext
-  nameWithType: KevlarContext
-  fullName: Kevlar.KevlarContext
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

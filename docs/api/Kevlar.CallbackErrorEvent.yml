@@ -5,6 +5,7 @@ items:
   id: CallbackErrorEvent
   parent: Kevlar
   children:
+  - Kevlar.CallbackErrorEvent.AttemptNumber
   - Kevlar.CallbackErrorEvent.Exception
   - Kevlar.CallbackErrorEvent.Kind
   - Kevlar.CallbackErrorEvent.ShieldName
@@ -124,6 +125,29 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property StrategyIndex As Integer
   overload: Kevlar.CallbackErrorEvent.StrategyIndex*
+- uid: Kevlar.CallbackErrorEvent.AttemptNumber
+  commentId: P:Kevlar.CallbackErrorEvent.AttemptNumber
+  id: AttemptNumber
+  parent: Kevlar.CallbackErrorEvent
+  langs:
+  - csharp
+  - vb
+  name: AttemptNumber
+  nameWithType: CallbackErrorEvent.AttemptNumber
+  fullName: Kevlar.CallbackErrorEvent.AttemptNumber
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the zero-based execution attempt number.
+  example: []
+  syntax:
+    content: public int AttemptNumber { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.CallbackErrorEvent.AttemptNumber*
 - uid: Kevlar.CallbackErrorEvent.Exception
   commentId: P:Kevlar.CallbackErrorEvent.Exception
   id: Exception
@@ -430,6 +454,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
+- uid: Kevlar.CallbackErrorEvent.AttemptNumber*
+  commentId: Overload:Kevlar.CallbackErrorEvent.AttemptNumber
+  isExternal: true
+  href: Kevlar.CallbackErrorEvent.html#Kevlar_CallbackErrorEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: CallbackErrorEvent.AttemptNumber
+  fullName: Kevlar.CallbackErrorEvent.AttemptNumber
 - uid: Kevlar.CallbackErrorEvent.Exception*
   commentId: Overload:Kevlar.CallbackErrorEvent.Exception
   isExternal: true

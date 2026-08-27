@@ -218,15 +218,11 @@ public sealed class ShieldBuilder<TResult>
     /// </summary>
     private Shield<TResult> Seal()
     {
-        var exceptionPredicate = _exceptionPredicates.Length == 0
-            ? null
-            : ShieldBuilder.Combine(_exceptionPredicates);
-        var resultPredicate = CombineResults(_resultPredicates);
         var judge = new TypedJudge<TResult>(
-            exceptionPredicate,
-            resultPredicate,
+            _exceptionPredicates,
+            _resultPredicates,
             DescribeHelper.Clause(_clauseTerms),
-            CombineContexts(_contextPredicates));
+            _contextPredicates);
         return new Shield<TResult>(
             _parent.Strategies,
             judge,
@@ -272,46 +268,4 @@ public sealed class ShieldBuilder<TResult>
             _resultPredicates,
             ShieldBuilder.Append(_contextPredicates, predicate),
             ShieldBuilder.Append(_clauseTerms, clauseTerm));
-
-    private static Func<TResult, bool>? CombineResults(Func<TResult, bool>[] predicates)
-    {
-        if (predicates.Length == 0)
-        {
-            return null;
-        }
-
-        if (predicates.Length == 1)
-        {
-            return predicates[0];
-        }
-
-        return result =>
-        {
-            foreach (var predicate in predicates)
-            {
-                if (predicate(result))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-    }
-
-    private static Func<HandlingEvent<TResult>, bool>? CombineContexts(
-        Func<HandlingEvent<TResult>, bool>[] predicates)
-    {
-        if (predicates.Length == 0)
-        {
-            return null;
-        }
-
-        if (predicates.Length == 1)
-        {
-            return predicates[0];
-        }
-
-        return handling => ShieldBuilder.EvaluateContextPredicates(predicates, handling);
-    }
 }

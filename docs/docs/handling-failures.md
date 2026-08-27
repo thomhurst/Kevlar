@@ -216,8 +216,19 @@ await contextual.ExecuteWithContextAsync(
 On `Shield<TResult>`, context-aware predicates receive `HandlingEvent<TResult>`. Its typed
 `Outcome` exposes either the exception or result without boxing. Use the
 `HandlesExceptionWithContext` and `HandlesResultWithContext` option properties for a local
-per-strategy override. A context-aware predicate that throws is reported through `Trace` and treated as not
-handled, so it cannot replace the execution's real outcome.
+per-strategy override.
+
+Every predicate shape follows the same failure contract. If an exception, result, or context-aware
+predicate throws, that predicate is treated as not handled and later alternatives are still
+evaluated. The original execution outcome remains unchanged. During shield execution, Kevlar
+reports the predicate exception through `KevlarDiagnostics.OnCallbackError` with
+`CallbackErrorKind.HandlingPredicate`, the `kevlar.callback_errors` counter with
+`kevlar.callback.kind=handling_predicate`, telemetry, and structured logging. Predicate failures
+therefore stay visible without changing retry, breaker, hedge, or fallback behavior.
+
+The context-free `HandlingClause.ShouldHandle(in outcome)` overload has no active execution and
+cannot emit execution diagnostics. Custom reactive strategies should pass their active
+`KevlarContext` to the context-aware overload, as shown below.
 
 ## Per-strategy overrides
 

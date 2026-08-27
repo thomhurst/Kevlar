@@ -1,9 +1,122 @@
 using System.Diagnostics.Metrics;
+using Kevlar.Testing;
 
 namespace Kevlar.Tests;
 
 public class CallbackFailureTests
 {
+    [Test]
+    [NotInParallel]
+    public async Task Public_HandlingClause_Reports_Explicit_Evaluation_Metadata()
+    {
+        const int attemptNumber = 3;
+        const int strategyIndex = 7;
+        using var recorder = new TelemetryRecorder(
+            captureMetrics: false,
+            captureCallbackErrors: true);
+        var predicateFailure = new IOException("predicate");
+        var shield = Shield.WhenContext((HandlingEvent _) => throw predicateFailure)
+            .Use(clause => new HandlingClauseProbeStrategy(
+                clause,
+                attemptNumber,
+                strategyIndex));
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        var callback = recorder.Callbacks.Single();
+        await Assert.That(callback.ErrorKind).IsEqualTo(CallbackErrorKind.HandlingPredicate);
+        await Assert.That(callback.AttemptNumber).IsEqualTo(attemptNumber);
+        await Assert.That(callback.StrategyIndex).IsEqualTo(strategyIndex);
+        var telemetry = recorder.Events.Single(item => item.EventName == "callback_error");
+        await Assert.That(telemetry.AttemptNumber).IsEqualTo(attemptNumber);
+        await Assert.That(telemetry.StrategyIndex).IsEqualTo(strategyIndex);
+    }
+
+    [Test]
+    [NotInParallel]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Throwing_Handling_Predicate_Is_Reported_Without_Replacing_The_Outcome(
+        bool contextAware)
+    {
+        var predicateFailure = new IOException("predicate");
+        var executionFailure = new ArgumentException("execution");
+        var shieldName = $"predicate-{Guid.NewGuid():N}";
+        var reported = new List<CallbackErrorEvent>();
+        var measurements = new List<(string Kind, string Source)>();
+        Action<CallbackErrorEvent> handler = reported.Add;
+        using var listener = CreateCallbackErrorListener(shieldName, measurements);
+        KevlarDiagnostics.OnCallbackError += handler;
+
+        try
+        {
+            var shield = contextAware
+                ? Shield.WhenContext((HandlingEvent _) => throw predicateFailure)
+                    .Retry(1, Backoff.None)
+                : Shield.When(_ => throw predicateFailure)
+                    .Retry(1, Backoff.None);
+            shield = shield.WithName(shieldName);
+
+            var thrown = await Assert.That(async () => await shield.ExecuteAsync<int>(
+                _ => throw executionFailure)).Throws<ArgumentException>();
+
+            await Assert.That(thrown).IsSameReferenceAs(executionFailure);
+            await Assert.That(reported).HasSingleItem();
+            await Assert.That(reported[0].Kind).IsEqualTo(CallbackErrorKind.HandlingPredicate);
+            await Assert.That(reported[0].Source).IsEqualTo("HandlingPredicate");
+            await Assert.That(reported[0].Exception).IsSameReferenceAs(predicateFailure);
+            await Assert.That(measurements)
+                .IsEquivalentTo([("handling_predicate", "HandlingPredicate")]);
+        }
+        finally
+        {
+            KevlarDiagnostics.OnCallbackError -= handler;
+        }
+    }
+
+    [Test]
+    [NotInParallel]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Throwing_Result_Predicate_Is_Reported_Without_Replacing_The_Result(
+        bool contextAware)
+    {
+        var predicateFailure = new IOException("predicate");
+        var shieldName = $"result-predicate-{Guid.NewGuid():N}";
+        var reported = new List<CallbackErrorEvent>();
+        var measurements = new List<(string Kind, string Source)>();
+        Action<CallbackErrorEvent> handler = reported.Add;
+        using var listener = CreateCallbackErrorListener(shieldName, measurements);
+        KevlarDiagnostics.OnCallbackError += handler;
+
+        try
+        {
+            var shield = contextAware
+                ? Shield.For<int>()
+                    .WhenResultContext((HandlingEvent<int> _) => throw predicateFailure)
+                    .FallbackTo(-1)
+                : Shield.For<int>()
+                    .WhenResult(_ => throw predicateFailure)
+                    .FallbackTo(-1);
+            shield = shield.WithName(shieldName);
+
+            var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+            await Assert.That(result).IsEqualTo(42);
+            await Assert.That(reported).HasSingleItem();
+            await Assert.That(reported[0].Kind).IsEqualTo(CallbackErrorKind.HandlingPredicate);
+            await Assert.That(reported[0].Source).IsEqualTo("HandlingPredicate");
+            await Assert.That(reported[0].Exception).IsSameReferenceAs(predicateFailure);
+            await Assert.That(measurements)
+                .IsEquivalentTo([("handling_predicate", "HandlingPredicate")]);
+        }
+        finally
+        {
+            KevlarDiagnostics.OnCallbackError -= handler;
+        }
+    }
+
     [Test]
     [NotInParallel]
     public async Task Throwing_Callback_Is_Reported_Without_Changing_Successful_Outcome()
@@ -235,5 +348,20 @@ public class CallbackFailureTests
         });
         listener.Start();
         return listener;
+    }
+
+    private sealed class HandlingClauseProbeStrategy(
+        HandlingClause clause,
+        int attemptNumber,
+        int strategyIndex) : Strategy
+    {
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var failed = Outcome<T>.FromException(new InvalidOperationException("probe"));
+            _ = clause.ShouldHandle(in failed, context, attemptNumber, strategyIndex);
+            return next.InvokeAsync(context);
+        }
     }
 }
