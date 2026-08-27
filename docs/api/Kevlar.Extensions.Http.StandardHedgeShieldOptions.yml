@@ -530,6 +530,7 @@ references:
   commentId: T:Kevlar.HedgeOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.HedgeOptions`1
+  href: Kevlar.HedgeOptions-1.html
   name: HedgeOptions<HttpResponseMessage>
   nameWithType: HedgeOptions<HttpResponseMessage>
   fullName: Kevlar.HedgeOptions<System.Net.Http.HttpResponseMessage>
@@ -614,6 +615,7 @@ references:
   commentId: T:Kevlar.CircuitBreakerOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.CircuitBreakerOptions`1
+  href: Kevlar.CircuitBreakerOptions-1.html
   name: CircuitBreakerOptions<HttpResponseMessage>
   nameWithType: CircuitBreakerOptions<HttpResponseMessage>
   fullName: Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage>

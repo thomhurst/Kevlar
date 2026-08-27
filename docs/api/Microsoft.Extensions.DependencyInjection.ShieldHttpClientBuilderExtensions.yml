@@ -845,6 +845,7 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -1166,6 +1167,7 @@ references:
   commentId: T:Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.PartitionedShield`2
+  href: Kevlar.PartitionedShield-2.html
   name: PartitionedShield<TKey, HttpResponseMessage>
   nameWithType: PartitionedShield<TKey, HttpResponseMessage>
   fullName: Kevlar.PartitionedShield<TKey, System.Net.Http.HttpResponseMessage>

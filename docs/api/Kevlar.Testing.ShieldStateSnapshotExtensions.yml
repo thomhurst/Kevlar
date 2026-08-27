@@ -511,6 +511,7 @@ references:
   commentId: T:Kevlar.PartitionedShield{`0}
   parent: Kevlar
   definition: Kevlar.PartitionedShield`1
+  href: Kevlar.PartitionedShield-1.html
   name: PartitionedShield<TKey>
   nameWithType: PartitionedShield<TKey>
   fullName: Kevlar.PartitionedShield<TKey>
@@ -576,6 +577,7 @@ references:
   commentId: T:Kevlar.PartitionedShield{``0,``1}
   parent: Kevlar
   definition: Kevlar.PartitionedShield`2
+  href: Kevlar.PartitionedShield-2.html
   name: PartitionedShield<TKey, TResult>
   nameWithType: PartitionedShield<TKey, TResult>
   fullName: Kevlar.PartitionedShield<TKey, TResult>

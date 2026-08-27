@@ -6,10 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $resolvedMetadataPath = (Resolve-Path -LiteralPath $MetadataPath).Path
-$metadataFiles = @(
-    Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File |
-        Sort-Object -Property Name
-)
+$metadataFiles = @(Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File)
 $localReferencePages = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
 $localPages = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $assembliesByUid = [Collections.Generic.Dictionary[string, string[]]]::new([StringComparer]::Ordinal)
@@ -171,11 +168,6 @@ foreach ($metadataFile in $metadataFiles)
 
             $indent = $Matches.indent
             $uid = $Matches.uid
-            if (-not $localReferencePages.ContainsKey($uid))
-            {
-                continue
-            }
-
             $fieldIndent = "$indent  "
             $entryEnd = $i + 1
             while ($entryEnd -lt $normalizedLines.Count -and
