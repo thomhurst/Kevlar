@@ -334,7 +334,7 @@ public class TelemetryRecorderTests
 
         var records = recorder.Callbacks;
         await Assert.That(records.Select(record => record.Kind).SequenceEqual(
-            [CallbackKind.Timeout, CallbackKind.Hedge, CallbackKind.CircuitTransition])).IsTrue();
+            [CallbackKind.Timeout, CallbackKind.Hedge, CallbackKind.CircuitStateChanged])).IsTrue();
         await Assert.That(records[0].ShieldName).IsEqualTo("timeout");
         await Assert.That(records[0].Timeout).IsEqualTo(TimeSpan.FromMilliseconds(1));
         await Assert.That(records[1].ShieldName).IsEqualTo("hedge");

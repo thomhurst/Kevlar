@@ -20,7 +20,7 @@ Kevlar.Extensions.Http.HttpEndpoint.Weight.get -> int
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Endpoints.get -> System.Collections.Generic.IList<Kevlar.Extensions.Http.HttpEndpoint!>!
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions.HttpEndpointRoutingOptions() -> void
-Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.get -> int
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.get -> int?
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.set -> void
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.get -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
 Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.set -> void

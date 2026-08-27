@@ -11,7 +11,7 @@ items:
   - Kevlar.CircuitBreakerOptions.ConsecutiveFailures
   - Kevlar.CircuitBreakerOptions.FailureRatio
   - Kevlar.CircuitBreakerOptions.HandlesException
-  - Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
+  - Kevlar.CircuitBreakerOptions.HandlesExceptionContext
   - Kevlar.CircuitBreakerOptions.MinimumThroughput
   - Kevlar.CircuitBreakerOptions.Monitor
   - Kevlar.CircuitBreakerOptions.Name
@@ -127,16 +127,16 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
-- uid: Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
-  commentId: P:Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
-  id: HandlesExceptionWithContext
+- uid: Kevlar.CircuitBreakerOptions.HandlesExceptionContext
+  commentId: P:Kevlar.CircuitBreakerOptions.HandlesExceptionContext
+  id: HandlesExceptionContext
   parent: Kevlar.CircuitBreakerOptions
   langs:
   - csharp
   - vb
-  name: HandlesExceptionWithContext
-  nameWithType: CircuitBreakerOptions.HandlesExceptionWithContext
-  fullName: Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
+  name: HandlesExceptionContext
+  nameWithType: CircuitBreakerOptions.HandlesExceptionContext
+  fullName: Kevlar.CircuitBreakerOptions.HandlesExceptionContext
   type: Property
   assemblies:
   - Kevlar
@@ -144,12 +144,12 @@ items:
   summary: Locally handles exceptions using execution context and strategy metadata.
   example: []
   syntax:
-    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    content: public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.HandlingEvent,System.Boolean}
-    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
-  overload: Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext*
+    content.vb: Public Property HandlesExceptionContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.CircuitBreakerOptions.HandlesExceptionContext*
 - uid: Kevlar.CircuitBreakerOptions.ConsecutiveFailures
   commentId: P:Kevlar.CircuitBreakerOptions.ConsecutiveFailures
   id: ConsecutiveFailures
@@ -749,13 +749,13 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext*
-  commentId: Overload:Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
+- uid: Kevlar.CircuitBreakerOptions.HandlesExceptionContext*
+  commentId: Overload:Kevlar.CircuitBreakerOptions.HandlesExceptionContext
   isExternal: true
-  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_HandlesExceptionWithContext
-  name: HandlesExceptionWithContext
-  nameWithType: CircuitBreakerOptions.HandlesExceptionWithContext
-  fullName: Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_HandlesExceptionContext
+  name: HandlesExceptionContext
+  nameWithType: CircuitBreakerOptions.HandlesExceptionContext
+  fullName: Kevlar.CircuitBreakerOptions.HandlesExceptionContext
 - uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
   commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
   parent: System

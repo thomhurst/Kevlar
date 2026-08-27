@@ -140,7 +140,6 @@ public class ExceptionContractTests
         {
             [typeof(KevlarProxyException)] = typeof(Exception),
             [typeof(ChaosInjectedException)] = typeof(Exception),
-            [typeof(HttpRequestReplayException)] = typeof(InvalidOperationException),
             [typeof(ShieldAssertionException)] = typeof(Exception),
         };
         var actualNonCoreExceptions = GetPublicExceptionTypes()

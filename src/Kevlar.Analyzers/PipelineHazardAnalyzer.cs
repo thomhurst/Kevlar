@@ -8898,8 +8898,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             && propertyReference.Property.Name is
                 "HandlesException"
                 or "HandlesResult"
-                or "HandlesExceptionWithContext"
-                or "HandlesResultWithContext"
+                or "HandlesExceptionContext"
+                or "HandlesResultContext"
             && propertyReference.Property.ContainingNamespace.ToDisplayString() == "Kevlar"
             && value.ConstantValue is not { HasValue: true, Value: null })
         {
@@ -8964,8 +8964,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (current.ContainingNamespace.ToDisplayString() == "Kevlar"
                 && (current.GetMembers("HandlesException").Length > 0
                     || current.GetMembers("HandlesResult").Length > 0
-                    || current.GetMembers("HandlesExceptionWithContext").Length > 0
-                    || current.GetMembers("HandlesResultWithContext").Length > 0))
+                    || current.GetMembers("HandlesExceptionContext").Length > 0
+                    || current.GetMembers("HandlesResultContext").Length > 0))
             {
                 return true;
             }

@@ -27,10 +27,10 @@ public sealed class FallbackOptions
     public Func<Exception, bool>? HandlesException { get; set; }
 
     /// <summary>Locally handles exceptions using execution context and strategy metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
 
     internal bool HasHandlingOverride =>
-        HandlesException is not null || HandlesExceptionWithContext is not null;
+        HandlesException is not null || HandlesExceptionContext is not null;
 
     /// <summary>
     /// Invoked and awaited before the recovery action. Return <see langword="default"/> from a

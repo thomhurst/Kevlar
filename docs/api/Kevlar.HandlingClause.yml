@@ -85,13 +85,13 @@ items:
   summary: Returns whether an outcome is handled for the active execution and strategy.
   example: []
   syntax:
-    content: public bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext context, int attempt = 0, int strategyIndex = -1)
+    content: public bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext context, int attemptNumber = 0, int strategyIndex = -1)
     parameters:
     - id: outcome
       type: Kevlar.Outcome{{T}}
     - id: context
       type: Kevlar.KevlarContext
-    - id: attempt
+    - id: attemptNumber
       type: System.Int32
     - id: strategyIndex
       type: System.Int32
@@ -99,7 +99,7 @@ items:
     - id: T
     return:
       type: System.Boolean
-    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T), context As KevlarContext, attempt As Integer = 0, strategyIndex As Integer = -1) As Boolean
+    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T), context As KevlarContext, attemptNumber As Integer = 0, strategyIndex As Integer = -1) As Boolean
   overload: Kevlar.HandlingClause.ShouldHandle*
   nameWithType.vb: HandlingClause.ShouldHandle(Of T)(Outcome(Of T), KevlarContext, Integer, Integer)
   fullName.vb: Kevlar.HandlingClause.ShouldHandle(Of T)(Kevlar.Outcome(Of T), Kevlar.KevlarContext, Integer, Integer)

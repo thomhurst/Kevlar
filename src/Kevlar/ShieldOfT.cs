@@ -168,8 +168,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             JudgeOrDefault);
         return Append(RetryStrategy.Create(options, judge));
     }
@@ -227,8 +227,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             JudgeOrDefault);
         return Append(CircuitBreakerStrategy.Create(options, judge));
     }
@@ -303,8 +303,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             JudgeOrDefault);
         return Append(HedgingStrategy.Create(options, judge));
     }
@@ -326,8 +326,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
@@ -360,8 +360,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
@@ -397,8 +397,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
             options.HandlesResult,
-            options.HandlesExceptionWithContext,
-            options.HandlesResultWithContext,
+            options.HandlesExceptionContext,
+            options.HandlesResultContext,
             FallbackJudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),

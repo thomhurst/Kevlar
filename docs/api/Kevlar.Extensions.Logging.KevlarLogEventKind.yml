@@ -8,11 +8,12 @@ items:
   - Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
-  - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitStateChanged
   - Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
   - Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.None
   - Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
@@ -32,6 +33,26 @@ items:
   syntax:
     content: public enum KevlarLogEventKind
     content.vb: Public Enum KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.None
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.None
+  id: None
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: KevlarLogEventKind.None
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.None
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: No logging event kind.
+  example: []
+  syntax:
+    content: None = 0
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
   commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
   id: Retry
@@ -49,7 +70,7 @@ items:
   summary: A retry is about to run.
   example: []
   syntax:
-    content: Retry = 0
+    content: Retry = 1
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
@@ -69,19 +90,19 @@ items:
   summary: An execution exceeded a timeout.
   example: []
   syntax:
-    content: Timeout = 1
+    content: Timeout = 2
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
-- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
-  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
-  id: CircuitState
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitStateChanged
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitStateChanged
+  id: CircuitStateChanged
   parent: Kevlar.Extensions.Logging.KevlarLogEventKind
   langs:
   - csharp
   - vb
-  name: CircuitState
-  nameWithType: KevlarLogEventKind.CircuitState
-  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  name: CircuitStateChanged
+  nameWithType: KevlarLogEventKind.CircuitStateChanged
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitStateChanged
   type: Field
   assemblies:
   - Kevlar.Extensions.Logging
@@ -89,7 +110,7 @@ items:
   summary: A circuit breaker changed state or rejected an execution.
   example: []
   syntax:
-    content: CircuitState = 2
+    content: CircuitStateChanged = 3
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
@@ -109,7 +130,7 @@ items:
   summary: A hedged attempt started.
   example: []
   syntax:
-    content: Hedge = 3
+    content: Hedge = 4
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
@@ -129,7 +150,7 @@ items:
   summary: A fallback replaced an outcome.
   example: []
   syntax:
-    content: Fallback = 4
+    content: Fallback = 5
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
@@ -149,7 +170,7 @@ items:
   summary: A rate limiter rejected an execution.
   example: []
   syntax:
-    content: RateLimitRejected = 5
+    content: RateLimitRejected = 6
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
@@ -169,7 +190,7 @@ items:
   summary: A concurrency limiter rejected an execution.
   example: []
   syntax:
-    content: ConcurrencyLimitRejected = 6
+    content: ConcurrencyLimitRejected = 7
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
@@ -189,7 +210,7 @@ items:
   summary: A user callback threw.
   example: []
   syntax:
-    content: CallbackError = 7
+    content: CallbackError = 8
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
@@ -209,7 +230,7 @@ items:
   summary: An open or isolated circuit rejected an execution.
   example: []
   syntax:
-    content: CircuitRejected = 8
+    content: CircuitRejected = 9
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.AttemptsSuppressed
@@ -229,7 +250,7 @@ items:
   summary: HTTP replay safety disabled configured additional attempts.
   example: []
   syntax:
-    content: AttemptsSuppressed = 9
+    content: AttemptsSuppressed = 10
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored
@@ -249,7 +270,7 @@ items:
   summary: An execution completed after ignoring timeout cancellation.
   example: []
   syntax:
-    content: TimeoutIgnored = 10
+    content: TimeoutIgnored = 11
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 - uid: Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
@@ -269,7 +290,7 @@ items:
   summary: A hedged execution attempt completed.
   example: []
   syntax:
-    content: HedgeAttempt = 11
+    content: HedgeAttempt = 12
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 references:

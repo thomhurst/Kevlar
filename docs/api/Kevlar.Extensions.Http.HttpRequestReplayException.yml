@@ -21,13 +21,12 @@ items:
   summary: Thrown when another HTTP attempt cannot be created safely.
   example: []
   syntax:
-    content: 'public sealed class HttpRequestReplayException : InvalidOperationException, ISerializable'
-    content.vb: Public NotInheritable Class HttpRequestReplayException Inherits InvalidOperationException Implements ISerializable
+    content: 'public sealed class HttpRequestReplayException : KevlarException, ISerializable'
+    content.vb: Public NotInheritable Class HttpRequestReplayException Inherits KevlarException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
-  - System.SystemException
-  - System.InvalidOperationException
+  - Kevlar.KevlarException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
@@ -178,22 +177,14 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
-- uid: System.SystemException
-  commentId: T:System.SystemException
-  parent: System
+- uid: Kevlar.KevlarException
+  commentId: T:Kevlar.KevlarException
+  parent: Kevlar
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.systemexception
-  name: SystemException
-  nameWithType: SystemException
-  fullName: System.SystemException
-- uid: System.InvalidOperationException
-  commentId: T:System.InvalidOperationException
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.invalidoperationexception
-  name: InvalidOperationException
-  nameWithType: InvalidOperationException
-  fullName: System.InvalidOperationException
+  href: Kevlar.KevlarException.html
+  name: KevlarException
+  nameWithType: KevlarException
+  fullName: Kevlar.KevlarException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -486,6 +477,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
 - uid: System.Runtime.Serialization
   commentId: N:System.Runtime.Serialization
   isExternal: true

@@ -7,9 +7,10 @@ items:
   children:
   - Kevlar.Testing.CallbackKind.CallbackError
   - Kevlar.Testing.CallbackKind.CircuitBreakDuration
-  - Kevlar.Testing.CallbackKind.CircuitTransition
+  - Kevlar.Testing.CallbackKind.CircuitStateChanged
   - Kevlar.Testing.CallbackKind.Fallback
   - Kevlar.Testing.CallbackKind.Hedge
+  - Kevlar.Testing.CallbackKind.None
   - Kevlar.Testing.CallbackKind.Retry
   - Kevlar.Testing.CallbackKind.Timeout
   langs:
@@ -27,6 +28,26 @@ items:
   syntax:
     content: public enum CallbackKind
     content.vb: Public Enum CallbackKind
+- uid: Kevlar.Testing.CallbackKind.None
+  commentId: F:Kevlar.Testing.CallbackKind.None
+  id: None
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: CallbackKind.None
+  fullName: Kevlar.Testing.CallbackKind.None
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: No callback kind.
+  example: []
+  syntax:
+    content: None = 0
+    return:
+      type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.Retry
   commentId: F:Kevlar.Testing.CallbackKind.Retry
   id: Retry
@@ -44,7 +65,7 @@ items:
   summary: A retry callback.
   example: []
   syntax:
-    content: Retry = 0
+    content: Retry = 1
     return:
       type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.Timeout
@@ -64,7 +85,7 @@ items:
   summary: A timeout callback.
   example: []
   syntax:
-    content: Timeout = 1
+    content: Timeout = 2
     return:
       type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.Hedge
@@ -84,7 +105,7 @@ items:
   summary: A hedge callback.
   example: []
   syntax:
-    content: Hedge = 2
+    content: Hedge = 3
     return:
       type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.Fallback
@@ -104,19 +125,19 @@ items:
   summary: A fallback callback.
   example: []
   syntax:
-    content: Fallback = 3
+    content: Fallback = 4
     return:
       type: Kevlar.Testing.CallbackKind
-- uid: Kevlar.Testing.CallbackKind.CircuitTransition
-  commentId: F:Kevlar.Testing.CallbackKind.CircuitTransition
-  id: CircuitTransition
+- uid: Kevlar.Testing.CallbackKind.CircuitStateChanged
+  commentId: F:Kevlar.Testing.CallbackKind.CircuitStateChanged
+  id: CircuitStateChanged
   parent: Kevlar.Testing.CallbackKind
   langs:
   - csharp
   - vb
-  name: CircuitTransition
-  nameWithType: CallbackKind.CircuitTransition
-  fullName: Kevlar.Testing.CallbackKind.CircuitTransition
+  name: CircuitStateChanged
+  nameWithType: CallbackKind.CircuitStateChanged
+  fullName: Kevlar.Testing.CallbackKind.CircuitStateChanged
   type: Field
   assemblies:
   - Kevlar.Testing
@@ -124,7 +145,7 @@ items:
   summary: A circuit-breaker transition callback.
   example: []
   syntax:
-    content: CircuitTransition = 4
+    content: CircuitStateChanged = 5
     return:
       type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.CircuitBreakDuration
@@ -144,7 +165,7 @@ items:
   summary: A circuit-breaker break-duration callback.
   example: []
   syntax:
-    content: CircuitBreakDuration = 5
+    content: CircuitBreakDuration = 6
     return:
       type: Kevlar.Testing.CallbackKind
 - uid: Kevlar.Testing.CallbackKind.CallbackError
@@ -164,7 +185,7 @@ items:
   summary: A failed strategy notification reported by Kevlar diagnostics.
   example: []
   syntax:
-    content: CallbackError = 6
+    content: CallbackError = 7
     return:
       type: Kevlar.Testing.CallbackKind
 references:

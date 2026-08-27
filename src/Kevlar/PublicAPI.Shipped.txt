@@ -256,16 +256,17 @@ Kevlar.CallbackErrorEvent.ShieldName.get -> string?
 Kevlar.CallbackErrorEvent.Source.get -> string!
 Kevlar.CallbackErrorEvent.StrategyIndex.get -> int
 Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.CircuitMonitor = 3 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.CircuitStateChanged = 2 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 6 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Custom = 8 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Fallback = 5 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Hedge = 4 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.RateLimitRejected = 7 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.ResultDisposal = 9 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Retry = 0 -> Kevlar.CallbackErrorKind
-Kevlar.CallbackErrorKind.Timeout = 1 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.CircuitMonitor = 4 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.CircuitStateChanged = 3 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 7 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Custom = 9 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Fallback = 6 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Hedge = 5 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.None = 0 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.RateLimitRejected = 8 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ResultDisposal = 10 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Retry = 1 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Timeout = 2 -> Kevlar.CallbackErrorKind
 static Kevlar.KevlarDiagnostics.OnCallbackError -> System.Action<Kevlar.CallbackErrorEvent>?
 static Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind kind, Kevlar.KevlarContext! context, System.Exception! exception, string! source) -> void
 Kevlar.CircuitBreakerOptions.Name.get -> string?
@@ -650,30 +651,30 @@ Kevlar.HandlingEvent<TResult>.HandlingEvent() -> void
 Kevlar.HandlingEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
 Kevlar.HandlingEvent<TResult>.StrategyIndex.get -> int
 Kevlar.HandlingClause.IsContextAware.get -> bool
-Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
-Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionWithContext.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.HandlesResultWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.CircuitBreakerOptions<TResult>.HandlesResultWithContext.set -> void
-Kevlar.FallbackOptions.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
-Kevlar.FallbackOptions.HandlesExceptionWithContext.set -> void
-Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext.set -> void
-Kevlar.FallbackOptions<TResult>.HandlesResultWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.FallbackOptions<TResult>.HandlesResultWithContext.set -> void
-Kevlar.HedgeOptions.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
-Kevlar.HedgeOptions.HandlesExceptionWithContext.set -> void
-Kevlar.HedgeOptions<TResult>.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.HedgeOptions<TResult>.HandlesExceptionWithContext.set -> void
-Kevlar.HedgeOptions<TResult>.HandlesResultWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.HedgeOptions<TResult>.HandlesResultWithContext.set -> void
-Kevlar.RetryOptions.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
-Kevlar.RetryOptions.HandlesExceptionWithContext.set -> void
-Kevlar.RetryOptions<TResult>.HandlesExceptionWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.RetryOptions<TResult>.HandlesExceptionWithContext.set -> void
-Kevlar.RetryOptions<TResult>.HandlesResultWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
-Kevlar.RetryOptions<TResult>.HandlesResultWithContext.set -> void
+Kevlar.CircuitBreakerOptions.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
+Kevlar.CircuitBreakerOptions.HandlesExceptionContext.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionContext.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.HandlesResultContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.CircuitBreakerOptions<TResult>.HandlesResultContext.set -> void
+Kevlar.FallbackOptions.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
+Kevlar.FallbackOptions.HandlesExceptionContext.set -> void
+Kevlar.FallbackOptions<TResult>.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.FallbackOptions<TResult>.HandlesExceptionContext.set -> void
+Kevlar.FallbackOptions<TResult>.HandlesResultContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.FallbackOptions<TResult>.HandlesResultContext.set -> void
+Kevlar.HedgeOptions.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
+Kevlar.HedgeOptions.HandlesExceptionContext.set -> void
+Kevlar.HedgeOptions<TResult>.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.HedgeOptions<TResult>.HandlesExceptionContext.set -> void
+Kevlar.HedgeOptions<TResult>.HandlesResultContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.HedgeOptions<TResult>.HandlesResultContext.set -> void
+Kevlar.RetryOptions.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent, bool>?
+Kevlar.RetryOptions.HandlesExceptionContext.set -> void
+Kevlar.RetryOptions<TResult>.HandlesExceptionContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.RetryOptions<TResult>.HandlesExceptionContext.set -> void
+Kevlar.RetryOptions<TResult>.HandlesResultContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
+Kevlar.RetryOptions<TResult>.HandlesResultContext.set -> void
 Kevlar.Shield<TResult>.WhenContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.WhenResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder.OrContext(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
@@ -681,7 +682,7 @@ Kevlar.ShieldBuilder<TResult>.OrContext(System.Func<Kevlar.HandlingEvent<TResult
 Kevlar.ShieldBuilder<TResult>.OrResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 static Kevlar.Shield.WhenContext(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
 static Kevlar.ShieldExtensions.WhenContext(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
-Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome, Kevlar.KevlarContext! context, int attempt = 0, int strategyIndex = -1) -> bool
+Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome, Kevlar.KevlarContext! context, int attemptNumber = 0, int strategyIndex = -1) -> bool
 Kevlar.Outcome
 Kevlar.Outcome.Exception.get -> System.Exception?
 Kevlar.Outcome.IsSuccess.get -> bool

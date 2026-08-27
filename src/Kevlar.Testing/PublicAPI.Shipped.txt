@@ -1,5 +1,5 @@
 #nullable enable
-Kevlar.Testing.CallbackKind.CallbackError = 6 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CallbackError = 7 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackRecord.ErrorKind.get -> Kevlar.CallbackErrorKind?
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent item) -> void
 Kevlar.Testing.BackoffDescriptor
@@ -121,12 +121,13 @@ static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TResult>(th
 static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey, TResult>(this Kevlar.PartitionedShield<TKey, TResult>! shield) -> Kevlar.Testing.PartitionedShieldStateSnapshot!
 static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey>(this Kevlar.PartitionedShield<TKey>! shield) -> Kevlar.Testing.PartitionedShieldStateSnapshot!
 Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.CircuitTransition = 4 -> Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.CircuitBreakDuration = 5 -> Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.Fallback = 3 -> Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.Hedge = 2 -> Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.Retry = 0 -> Kevlar.Testing.CallbackKind
-Kevlar.Testing.CallbackKind.Timeout = 1 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitStateChanged = 5 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitBreakDuration = 6 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Fallback = 4 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Hedge = 3 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.None = 0 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Retry = 1 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Timeout = 2 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackRecord
 Kevlar.Testing.CallbackRecord.AttemptNumber.get -> int?
 Kevlar.Testing.CallbackRecord.Delay.get -> System.TimeSpan?

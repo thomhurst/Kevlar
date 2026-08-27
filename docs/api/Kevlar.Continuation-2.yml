@@ -296,7 +296,6 @@ references:
   fullName: System
 - uid: System.InvalidOperationException
   commentId: T:System.InvalidOperationException
-  parent: System
   isExternal: true
   href: https://learn.microsoft.com/dotnet/api/system.invalidoperationexception
   name: InvalidOperationException

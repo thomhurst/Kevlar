@@ -12,6 +12,7 @@ items:
   - Kevlar.CallbackErrorKind.Fallback
   - Kevlar.CallbackErrorKind.HandlingPredicate
   - Kevlar.CallbackErrorKind.Hedge
+  - Kevlar.CallbackErrorKind.None
   - Kevlar.CallbackErrorKind.RateLimitRejected
   - Kevlar.CallbackErrorKind.ResultDisposal
   - Kevlar.CallbackErrorKind.Retry
@@ -31,6 +32,26 @@ items:
   syntax:
     content: public enum CallbackErrorKind
     content.vb: Public Enum CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.None
+  commentId: F:Kevlar.CallbackErrorKind.None
+  id: None
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: CallbackErrorKind.None
+  fullName: Kevlar.CallbackErrorKind.None
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: No callback kind.
+  example: []
+  syntax:
+    content: None = 0
+    return:
+      type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.Retry
   commentId: F:Kevlar.CallbackErrorKind.Retry
   id: Retry
@@ -48,7 +69,7 @@ items:
   summary: A retry notification.
   example: []
   syntax:
-    content: Retry = 0
+    content: Retry = 1
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.Timeout
@@ -68,7 +89,7 @@ items:
   summary: A timeout notification.
   example: []
   syntax:
-    content: Timeout = 1
+    content: Timeout = 2
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.CircuitStateChanged
@@ -88,7 +109,7 @@ items:
   summary: A circuit-breaker state-change notification.
   example: []
   syntax:
-    content: CircuitStateChanged = 2
+    content: CircuitStateChanged = 3
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.CircuitMonitor
@@ -108,7 +129,7 @@ items:
   summary: A circuit-breaker monitor subscriber.
   example: []
   syntax:
-    content: CircuitMonitor = 3
+    content: CircuitMonitor = 4
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.Hedge
@@ -128,7 +149,7 @@ items:
   summary: A hedge notification.
   example: []
   syntax:
-    content: Hedge = 4
+    content: Hedge = 5
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.Fallback
@@ -148,7 +169,7 @@ items:
   summary: A fallback notification.
   example: []
   syntax:
-    content: Fallback = 5
+    content: Fallback = 6
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
@@ -168,7 +189,7 @@ items:
   summary: A concurrency-limit rejection notification.
   example: []
   syntax:
-    content: ConcurrencyLimitRejected = 6
+    content: ConcurrencyLimitRejected = 7
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.RateLimitRejected
@@ -188,7 +209,7 @@ items:
   summary: A built-in rate-limit rejection notification.
   example: []
   syntax:
-    content: RateLimitRejected = 7
+    content: RateLimitRejected = 8
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.Custom
@@ -208,7 +229,7 @@ items:
   summary: A callback owned by a custom strategy or integration.
   example: []
   syntax:
-    content: Custom = 8
+    content: Custom = 9
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.ResultDisposal
@@ -228,7 +249,7 @@ items:
   summary: Disposal of a superseded result.
   example: []
   syntax:
-    content: ResultDisposal = 9
+    content: ResultDisposal = 10
     return:
       type: Kevlar.CallbackErrorKind
 - uid: Kevlar.CallbackErrorKind.HandlingPredicate
@@ -248,7 +269,7 @@ items:
   summary: A handling-clause or strategy handling predicate.
   example: []
   syntax:
-    content: HandlingPredicate = 10
+    content: HandlingPredicate = 11
     return:
       type: Kevlar.CallbackErrorKind
 references:

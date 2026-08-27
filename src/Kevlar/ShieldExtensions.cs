@@ -54,7 +54,7 @@ public static class ShieldExtensions
         configure(options);
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
-            options.HandlesExceptionWithContext,
+            options.HandlesExceptionContext,
             shield.JudgeOrDefault);
         return shield.Append(new RetryStrategy(options, judge));
     }
@@ -117,7 +117,7 @@ public static class ShieldExtensions
         configure(options);
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
-            options.HandlesExceptionWithContext,
+            options.HandlesExceptionContext,
             shield.JudgeOrDefault);
         return shield.Append(new CircuitBreakerStrategy(options, judge));
     }
@@ -209,7 +209,7 @@ public static class ShieldExtensions
         configure(options);
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
-            options.HandlesExceptionWithContext,
+            options.HandlesExceptionContext,
             shield.JudgeOrDefault);
         return shield.Append(new HedgingStrategy(options, judge));
     }
@@ -382,7 +382,7 @@ public static class ShieldExtensions
         configure(options);
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
-            options.HandlesExceptionWithContext,
+            options.HandlesExceptionContext,
             shield.FallbackJudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
@@ -425,7 +425,7 @@ public static class ShieldExtensions
         configure(options);
         var judge = HandlingOverride.Resolve(
             options.HandlesException,
-            options.HandlesExceptionWithContext,
+            options.HandlesExceptionContext,
             shield.FallbackJudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             (_, token) => fallback(token),

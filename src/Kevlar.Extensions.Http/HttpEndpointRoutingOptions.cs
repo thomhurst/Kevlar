@@ -10,8 +10,11 @@ public sealed class HttpEndpointRoutingOptions
     /// <summary>The endpoint ordering algorithm.</summary>
     public HttpEndpointSelectionMode SelectionMode { get; set; }
 
-    /// <summary>The deterministic seed used by weighted ordering.</summary>
-    public int Seed { get; set; }
+    /// <summary>
+    /// The optional deterministic seed used by weighted ordering. A <see langword="null"/> value
+    /// selects a random initial order.
+    /// </summary>
+    public int? Seed { get; set; }
 
     /// <summary>
     /// Optionally creates a shield whose breaker or limiter state is isolated to one authority.

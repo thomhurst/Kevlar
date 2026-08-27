@@ -216,7 +216,7 @@ await contextual.ExecuteWithContextAsync(
 
 On `Shield<TResult>`, context-aware predicates receive `HandlingEvent<TResult>`. Its typed
 `Outcome` exposes either the exception or result without boxing. Use the
-`HandlesExceptionWithContext` and `HandlesResultWithContext` option properties for a local
+`HandlesExceptionContext` and `HandlesResultContext` option properties for a local
 per-strategy override.
 
 Every predicate shape follows the same failure contract. If an exception, result, or context-aware

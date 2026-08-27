@@ -986,6 +986,7 @@ internal static class KevlarMetrics
 
     private static string CallbackKindName(CallbackErrorKind kind) => kind switch
     {
+        CallbackErrorKind.None => "none",
         CallbackErrorKind.Retry => "retry",
         CallbackErrorKind.Timeout => "timeout",
         CallbackErrorKind.CircuitStateChanged => "circuit_state_changed",

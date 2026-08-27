@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.FallbackOptions.#ctor
   - Kevlar.FallbackOptions.HandlesException
-  - Kevlar.FallbackOptions.HandlesExceptionWithContext
+  - Kevlar.FallbackOptions.HandlesExceptionContext
   - Kevlar.FallbackOptions.Name
   - Kevlar.FallbackOptions.OnFallback
   langs:
@@ -125,16 +125,16 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
-- uid: Kevlar.FallbackOptions.HandlesExceptionWithContext
-  commentId: P:Kevlar.FallbackOptions.HandlesExceptionWithContext
-  id: HandlesExceptionWithContext
+- uid: Kevlar.FallbackOptions.HandlesExceptionContext
+  commentId: P:Kevlar.FallbackOptions.HandlesExceptionContext
+  id: HandlesExceptionContext
   parent: Kevlar.FallbackOptions
   langs:
   - csharp
   - vb
-  name: HandlesExceptionWithContext
-  nameWithType: FallbackOptions.HandlesExceptionWithContext
-  fullName: Kevlar.FallbackOptions.HandlesExceptionWithContext
+  name: HandlesExceptionContext
+  nameWithType: FallbackOptions.HandlesExceptionContext
+  fullName: Kevlar.FallbackOptions.HandlesExceptionContext
   type: Property
   assemblies:
   - Kevlar
@@ -142,12 +142,12 @@ items:
   summary: Locally handles exceptions using execution context and strategy metadata.
   example: []
   syntax:
-    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    content: public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.HandlingEvent,System.Boolean}
-    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
-  overload: Kevlar.FallbackOptions.HandlesExceptionWithContext*
+    content.vb: Public Property HandlesExceptionContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.FallbackOptions.HandlesExceptionContext*
 - uid: Kevlar.FallbackOptions.OnFallback
   commentId: P:Kevlar.FallbackOptions.OnFallback
   id: OnFallback
@@ -541,13 +541,13 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.FallbackOptions.HandlesExceptionWithContext*
-  commentId: Overload:Kevlar.FallbackOptions.HandlesExceptionWithContext
+- uid: Kevlar.FallbackOptions.HandlesExceptionContext*
+  commentId: Overload:Kevlar.FallbackOptions.HandlesExceptionContext
   isExternal: true
-  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_HandlesExceptionWithContext
-  name: HandlesExceptionWithContext
-  nameWithType: FallbackOptions.HandlesExceptionWithContext
-  fullName: Kevlar.FallbackOptions.HandlesExceptionWithContext
+  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_HandlesExceptionContext
+  name: HandlesExceptionContext
+  nameWithType: FallbackOptions.HandlesExceptionContext
+  fullName: Kevlar.FallbackOptions.HandlesExceptionContext
 - uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
   commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
   parent: System

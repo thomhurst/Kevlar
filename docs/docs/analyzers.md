@@ -63,6 +63,9 @@ The warning-level safety rules remain enabled by default.
 | `KEV012` | Warning | On | a delegate that completes asynchronously is assigned to a hook of a shield passed to synchronous `Execute` |
 | `KEV014` | Warning | On | a pooled event context is captured by deferred work |
 
+`KEV013` was retired before 1.0 together with the analyzer code-fix assembly. `KEV012` covers its
+synchronous-execution callback hazards, so the identifier remains intentionally unused.
+
 ## KEV001: ignored execution cancellation
 
 Kevlar cancels the token passed to an execution delegate when the caller cancels, a timeout expires,

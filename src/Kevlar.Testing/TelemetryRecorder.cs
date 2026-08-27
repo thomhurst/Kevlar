@@ -185,7 +185,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     public ValueTask Record(CircuitBreakerStateChangedEvent item)
     {
         AddCallback(new CallbackRecord(
-            0, CallbackKind.CircuitTransition, shieldName: item.Context.ShieldName,
+            0, CallbackKind.CircuitStateChanged, shieldName: item.Context.ShieldName,
             strategyIndex: item.Context.StrategyIndex,
             exception: item.LastException,
             from: item.From, to: item.To));

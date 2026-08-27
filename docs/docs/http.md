@@ -497,7 +497,8 @@ services.AddHttpClient("routed")
 ```
 
 `Ordered` is deterministic configuration order. `Weighted` creates a deterministic weighted
-permutation from `Seed`; a request visits every configured endpoint before cycling. `ShieldFactory`
+permutation from `Seed` when provided, or from a random initial seed otherwise; a request visits
+every configured endpoint before cycling. `ShieldFactory`
 is cached by authority, so circuit-breaker and limiter state stays isolated per endpoint. Keep that
 endpoint-local shield single-attempt (breaker, limiter, timeout); put retry or hedging in the outer
 shield so every additional send goes through safe replay and routing.
