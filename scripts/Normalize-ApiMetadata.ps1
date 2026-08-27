@@ -87,6 +87,11 @@ foreach ($metadataFile in $metadataFiles)
     }
 }
 
+function Test-IsLocalReferenceUid([string]$uid)
+{
+    return $localReferencePages.ContainsKey($uid)
+}
+
 foreach ($metadataFile in $metadataFiles)
 {
     $content = [IO.File]::ReadAllText($metadataFile.FullName)
@@ -105,14 +110,12 @@ foreach ($metadataFile in $metadataFiles)
         elseif ($inReferences -and $line -match '^\s*-\s*uid:\s+(?<uid>\S+)')
         {
             $referenceUid = $Matches.uid
-            $isLocalReference = $referenceUid -eq 'Kevlar' -or
-                $referenceUid.StartsWith('Kevlar.', [StringComparison]::Ordinal)
+            $isLocalReference = Test-IsLocalReferenceUid $referenceUid
         }
         elseif ($inReferences -and $line -match '^\s*definition:\s+(?<uid>\S+)')
         {
             $referenceUid = $Matches.uid
-            $isLocalReference = $referenceUid -eq 'Kevlar' -or
-                $referenceUid.StartsWith('Kevlar.', [StringComparison]::Ordinal)
+            $isLocalReference = Test-IsLocalReferenceUid $referenceUid
         }
 
         if ($line -match '^[ \t]*href:\s+(?<href>\S+)')
@@ -161,8 +164,7 @@ foreach ($metadataFile in $metadataFiles)
 
             $indent = $Matches.indent
             $uid = $Matches.uid
-            if ($uid -ne 'Kevlar' -and
-                -not $uid.StartsWith('Kevlar.', [StringComparison]::Ordinal))
+            if (-not (Test-IsLocalReferenceUid $uid))
             {
                 continue
             }
@@ -283,6 +285,51 @@ foreach ($metadataFile in $metadataFiles)
             {
                 $finalLines.Insert($insertionIndex, "  - $assembly")
                 $insertionIndex++
+            }
+        }
+
+        $referenceStart = $finalLines.IndexOf('references:')
+        if ($namespaceAssemblies.Count -gt 1 -and
+            $referenceStart -ge 0 -and
+            $referenceStart + 1 -lt $finalLines.Count)
+        {
+            while ($finalLines.Count -gt $referenceStart + 1 -and
+                $finalLines[$finalLines.Count - 1] -eq '')
+            {
+                $finalLines.RemoveAt($finalLines.Count - 1)
+            }
+
+            $referenceBlocks = [Collections.Generic.SortedDictionary[string, string[]]]::new(
+                [StringComparer]::Ordinal)
+            $i = $referenceStart + 1
+            while ($i -lt $finalLines.Count)
+            {
+                if ($finalLines[$i] -notmatch '^- uid:\s+(?<uid>\S+)')
+                {
+                    throw "Unexpected namespace reference metadata at line $($i + 1) in '$($metadataFile.Name)'."
+                }
+
+                $uid = $Matches.uid
+                $blockStart = $i
+                $i++
+                while ($i -lt $finalLines.Count -and $finalLines[$i] -notmatch '^- uid:\s+\S+')
+                {
+                    $i++
+                }
+
+                $block = $finalLines.GetRange($blockStart, $i - $blockStart).ToArray()
+                if ($referenceBlocks.ContainsKey($uid))
+                {
+                    throw "Duplicate namespace reference '$uid' in '$($metadataFile.Name)'."
+                }
+
+                $referenceBlocks.Add($uid, $block)
+            }
+
+            $finalLines.RemoveRange($referenceStart + 1, $finalLines.Count - $referenceStart - 1)
+            foreach ($referenceBlock in $referenceBlocks.Values)
+            {
+                $finalLines.AddRange($referenceBlock)
             }
         }
     }

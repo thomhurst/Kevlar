@@ -21,6 +21,14 @@ items:
   - Kevlar.Extensions.Http
   - Kevlar.Extensions.Logging
 references:
+- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.html
+  name: KevlarLoggingServiceCollectionExtensions
+  nameWithType: KevlarLoggingServiceCollectionExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
+
 - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   commentId: T:Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   isExternal: true
@@ -42,10 +50,3 @@ references:
   name: ShieldHttpClientBuilderExtensions
   nameWithType: ShieldHttpClientBuilderExtensions
   fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
-- uid: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
-  commentId: T:Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
-  isExternal: true
-  href: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions.html
-  name: KevlarLoggingServiceCollectionExtensions
-  nameWithType: KevlarLoggingServiceCollectionExtensions
-  fullName: Microsoft.Extensions.DependencyInjection.KevlarLoggingServiceCollectionExtensions
