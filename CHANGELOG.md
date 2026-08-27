@@ -6,110 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-27
+
+Kevlar 1.0 establishes the stable Shield API: composable retry, timeout, circuit-breaker,
+hedging, fallback, limiter, HTTP, dependency-injection, testing, logging, and analyzer support.
+Pipelines stay immutable, allocation-conscious, observable, and explicit about execution order.
+
 ### Added
 
-- The `Kevlar` package now includes its diagnostics-only Roslyn analyzers automatically. `KEV014`
-  detects pooled event contexts captured by deferred work.
+- The `Kevlar` package includes diagnostics-only Roslyn analyzers automatically. Rules KEV001–KEV014
+  cover cancellation, ineffective handling, invalid ordering, state lifetime, fallback/result
+  mismatches, untyped hedging, discarded builders and fluent calls, inherited and implicit default
+  handling, synchronous hook hazards, and pooled-context capture.
 - `Kevlar.Extensions.Logging` emits stable, structured `ILogger` events for retry, timeout,
   circuit-state, hedge, fallback, rejection, and callback-error activity. `WithLogging` decorates
   individual shields, while `AddKevlarLogging` applies to named, reloading, partitioned, and HTTP
   shields created through dependency injection.
-
-### Fixed
-
-- Circuit-breaker monitors and testing snapshots now report `HalfOpen` as soon as the break
-  duration elapses. Stale execution outcomes cannot alter a newer open/half-open generation, and
-  exceptions that opened a circuit are released when it closes or resets.
-
-### Changed
-
-- `TimeoutExceededException` now derives directly from `KevlarException`. It no longer counts as
-  an `ExecutionRejectedException`: fail-fast rejections mean the delegate did not run, while a
-  timeout means it ran and exceeded its budget.
-- Strategy callback events now expose their position through public
-  `KevlarContext.StrategyIndex`; the duplicate properties on limiter rejection events were removed.
-  Circuit transitions use `CircuitBreakerStateChangedEvent` and carry execution context, while
-  manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
-  duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
-  outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
-- Hedging supports a per-attempt `DelayGenerator` with access to the attempt number, execution
-  context, and elapsed time. Standard endpoint-aware HTTP hedging exposes the same adaptive delay
-  hook, and `Kevlar.Testing` reports whether one is configured.
-- `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
-  directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
-  wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
-  available `Outcome<TResult>`.
-- Untyped `Fallback(...)` continues to return `Shield`. The pre-release untyped shield type family
-  and its satellite overloads were removed. Result-returning execution through a void fallback is
-  guarded by the restored `KEV005` analyzer; use `Shield.For<TResult>().Fallback(...)` for
-  result-producing recovery.
-- Configure fallback notifications through `Fallback(..., configure)`. The pre-release
-  notification-specific methods and typed `onFallback` parameters were removed, including the
-  migration-only error overloads that briefly replaced them. Every fallback shape now has exactly
-  two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on
-  `Shield`, `Shield<TResult>`, `ShieldBuilder`, and `ShieldBuilder<TResult>`.
-- Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
-  `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
-  values explicit and avoids ambiguity between value and delegate overloads.
-- **Breaking:** typed constant-result clauses now use `WhenResultEquals(value)` and
-  `OrResultEquals(value)`. The predicate forms remain `WhenResult(predicate)` and
-  `OrResult(predicate)`, so `null` and `default` values no longer conflict with delegate overloads.
-- Named DI registrations now expose symmetric configuration overloads, typed
-  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
-- `IKevlarRegistry` now supports thread-safe late-bound `GetOrAdd`, `TryAdd`, and `Remove`, retries
-  failed factories, reloads shields from named `IOptionsMonitor<TOptions>` values, and disposes
-  resolved disposable strategies. Rate-limiter adapters can transfer limiter ownership explicitly.
-- Invalid values supplied through strategy options now throw `KevlarConfigurationException`;
-  direct shorthand overloads continue to throw `ArgumentOutOfRangeException` with the invoked
-  public parameter name.
-- The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
-  `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
-  separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
-- `StandardHttpShieldOptions.CircuitBreaker` now uses
-  `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
-  HTTP breaker.
-- `MaxHedgedAttempts` counts additional attempts after the original, matching Polly and retry's
-  `MaxRetries` convention. Its default is 1, so the default hedge still makes up to 2 total attempts.
-  Rename `MaxAttempts` configuration keys and named arguments; reduce previous values by one to
-  preserve the same total attempt count.
-- **Breaking:** every strategy hook is now a single `ValueTask`-returning property. The
-  synchronous/asynchronous twins were merged: `OnRetryAsync`, `DelayGeneratorAsync`,
-  `OnTimeoutAsync`, `TimeoutGeneratorSync`, `OnStateChangedAsync`, `BreakDurationGeneratorSync`,
-  `OnHedgeAsync`, `HedgeOptions.DelayGeneratorAsync`, `OnFallbackAsync`, every `OnRejectedAsync`,
-  `PartitionedShieldOptions.OnCreatedAsync` / `OnEvictedAsync`, and
-  `StandardHedgeShieldOptions.HedgeDelayGeneratorAsync` were removed. The surviving property
-  returns `ValueTask` (`OnRetry`, `OnTimeout`, `OnStateChanged`, `OnHedge`, `OnFallback`,
-  `OnRejected`, `OnCreated`, `OnEvicted`, `ChaosOptions.OnInjected`) or `ValueTask<T>`
-  (`RetryOptions.DelayGenerator`, `TimeoutOptions.TimeoutGenerator`,
-  `CircuitBreakerOptions.BreakDurationGenerator`, `HedgeOptions.DelayGenerator`,
-  `StandardHedgeShieldOptions.HedgeDelayGenerator`). `HttpShield.RetryAfter(retry)` returns
-  `ValueTask<TimeSpan?>` and `HttpShield.RetryAfter(maxDelay)` returns the matching delegate, so
-  `DelayGenerator = HttpShield.RetryAfter` still binds as a method group; the
-  `Kevlar.Testing.TelemetryRecorder.Record` event overloads likewise return `ValueTask`. Rewrite
-  `OnRetry = e => Log(e)` as `OnRetry = e => { Log(e); return default; }` and
-  `DelayGenerator = e => delay` as `DelayGenerator = e => new(delay)`; `async` lambdas move across
-  unchanged.
-- Synchronous `Execute`, `ExecuteOutcome`, and `ExecuteWithContext` now succeed whenever every
-  hook completes synchronously. A hook that actually yields throws `NotSupportedException` at that
-  call, naming the options type and hook (`ExecuteOutcome` returns it as a failed outcome). The
-  former up-front rejection of `…Async` hooks and the "cannot be combined with `…Sync`" and
-  "both generators configured" configuration errors are gone. Multi-attempt hedging,
-  `ValueTask`-returning fallback recovery delegates, and `UseRateLimiter` adapters are still
-  rejected before the action runs.
-- `KEV012` now reports `async` lambdas, `async` anonymous methods, and method groups naming
-  `async` methods assigned to strategy hooks on shields that are executed synchronously. Non-`async`
-  delegates that return a completed `ValueTask` are not reported.
-
-### Removed
-
-- `KEV013` and the `Kevlar.Analyzers.CodeFixes` assembly. Synchronous callback properties no longer
-  exist, so an `async` lambda assigned to a hook is valid and awaited; `KEV012` covers the
-  synchronous-`Execute` hazard.
-
-## [1.0.0] - 2026-08-24
-
-### Added
-
 - Non-generic `Outcome` and void `ExecuteOutcomeAsync` overloads make no-throw execution available
   to operations without a result. Synchronous `ExecuteOutcome` overloads cover void and typed work
   on `Shield` and `Shield<TResult>`; `Task`, `ValueTask`, and state-passing forms stay aligned.
@@ -125,32 +37,71 @@ All notable changes to this project are documented here. The format follows
   result-aware pipelines.
 - Context-only synchronous and asynchronous execution overloads expose `KevlarContext` without
   requiring seeded state.
-- Handling-clause builders now match their shield counterparts for configured timeouts, direct
-  custom strategies, and void fallbacks that do not need the handled exception.
-- Analyzer rules KEV001–KEV011 cover ignored cancellation, ineffective handling, invalid ordering,
-  state lifetime, void fallback/result mismatches, untyped hedging, discarded builders and fluent
-  calls, inherited and implicit default handling, and suspicious default-value matching.
-- Circuit-open, rate-limit, concurrency-limit, and timeout rejections derive from
-  `ExecutionRejectedException`, which provides their common `RetryAfter` property. Concrete public
-  exception types expose conventional constructors while retaining metadata-specific overloads.
+- Handling-clause builders match their shield counterparts for configured timeouts, direct custom
+  strategies, and void fallbacks that do not need the handled exception.
+- Circuit-open, rate-limit, concurrency-limit, and timeout failures expose conventional public
+  exception constructors while retaining strategy-specific metadata.
 
 ### Changed
 
-- `Kevlar.Testing` and `Kevlar.Extensions.RateLimiting` require the exact matching `Kevlar` package
-  version. NuGet reports version-skew combinations as `NU1608` instead of allowing incompatible
-  package combinations.
-- HTTP retry and hedging stop after the first outcome when a request method or body cannot be
-  replayed safely. The original response or exception is preserved without a retry delay or
-  callback, while other resilience stages still observe the attempt.
-- Runtime dependency floors remain compatible with .NET 8-era Microsoft.Extensions,
-  System.Threading.RateLimiting, and TimeProvider packages; Reservoir is bounded to `[1.4.0, 2.0.0)`.
+- `TimeoutExceededException` now derives directly from `KevlarException`. It no longer counts as
+  an `ExecutionRejectedException`: fail-fast rejections mean the delegate did not run, while a
+  timeout means it ran and exceeded its budget.
+- Strategy callback events expose their position through public `KevlarContext.StrategyIndex`.
+  Circuit transitions use `CircuitBreakerStateChangedEvent` and carry execution context, while
+  manual monitor transitions carry a detached context at index `-1`. Typed breaker-duration and
+  retry events store outcomes directly without boxing.
+- Hedging supports a per-attempt `DelayGenerator` with access to attempt number, execution context,
+  and elapsed time. Standard endpoint-aware HTTP hedging exposes the same adaptive delay hook, and
+  `Kevlar.Testing` reports whether one is configured.
 - Typed constant fallbacks use `FallbackTo(value)`; delegate factories continue to use
   `Fallback(...)`. Null fallback values are no longer ambiguous with delegate overloads.
-- Handling clauses use `When...` to start and `Or...` to continue. `Shield.For<TResult>()` returns a
-  `Shield<TResult>` directly.
+- **Breaking:** typed constant-result clauses now use `WhenResultEquals(value)` and
+  `OrResultEquals(value)`. The predicate forms remain `WhenResult(predicate)` and
+  `OrResult(predicate)`, so `null` and `default` values no longer conflict with delegate overloads.
+- Named DI registrations expose symmetric configuration overloads, typed
+  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
+- `IKevlarRegistry` supports thread-safe late-bound `GetOrAdd`, `TryAdd`, and `Remove`, retries
+  failed factories, reloads shields from named `IOptionsMonitor<TOptions>` values, and disposes
+  resolved disposable strategies. Rate-limiter adapters can transfer limiter ownership explicitly.
+- Invalid values supplied through strategy options throw `KevlarConfigurationException`; direct
+  shorthand overloads continue to throw `ArgumentOutOfRangeException` with the invoked public
+  parameter name.
+- The System.Threading.RateLimiting adapter uses `UseRateLimiter(...)`,
+  `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`, separating adapter
+  strategies from Kevlar's built-in `RateLimit(...)` strategy.
+- `StandardHttpShieldOptions.CircuitBreaker` uses `CircuitBreakerOptions<HttpResponseMessage>`,
+  exposing typed result predicates for the standard HTTP breaker.
+- `MaxHedgedAttempts` counts additional attempts after the original, matching Polly and retry's
+  `MaxRetries` convention. Its default is 1, so the default hedge makes up to 2 total attempts.
+- Every strategy hook is a single `ValueTask`-returning property. The synchronous/asynchronous
+  twins were merged: `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`,
+  `TimeoutGeneratorSync`, `OnStateChangedAsync`, `BreakDurationGeneratorSync`, `OnHedgeAsync`,
+  `HedgeOptions.DelayGeneratorAsync`, `OnFallbackAsync`, every `OnRejectedAsync`,
+  `PartitionedShieldOptions.OnCreatedAsync` / `OnEvictedAsync`, and
+  `StandardHedgeShieldOptions.HedgeDelayGeneratorAsync` were removed. Rewrite
+  `OnRetry = e => Log(e)` as `OnRetry = e => { Log(e); return default; }` and
+  `DelayGenerator = e => delay` as `DelayGenerator = e => new(delay)`; `async` lambdas are
+  unchanged.
+- Synchronous `Execute`, `ExecuteOutcome`, and `ExecuteWithContext` succeed whenever every hook
+  completes synchronously. A hook that yields throws `NotSupportedException` at that call, naming
+  the options type and hook. Multi-attempt hedging, `ValueTask`-returning fallback recovery
+  delegates, and `UseRateLimiter` adapters remain unsupported in synchronous execution.
+- `KEV012` reports `async` lambdas, `async` anonymous methods, and method groups naming `async`
+  methods assigned to hooks on shields executed synchronously. Completed `ValueTask` delegates are
+  not reported.
+- `Kevlar.Testing`, `Kevlar.Extensions.RateLimiting`, and other packages that use core internals
+  require the exact matching `Kevlar` version; NuGet reports skew as `NU1608`.
+- HTTP retry and hedging stop after the first outcome when a request method or body cannot be
+  replayed safely. The original response or exception is preserved while other resilience stages
+  still observe the attempt.
+- Runtime dependency floors remain compatible with .NET 8-era Microsoft.Extensions,
+  System.Threading.RateLimiting, and TimeProvider packages; Reservoir is bounded to
+  `[1.4.0, 2.0.0)`.
+- Handling clauses use `When...` to start and `Or...` to continue. `Shield.For<TResult>()` returns
+  a `Shield<TResult>` directly.
 - Typed and untyped retry, circuit-breaker, hedge, and fallback options are sealed sibling types
-  with matching shared properties instead of inheritance. Shared configurator helpers need a
-  separate typed counterpart such as `Action<RetryOptions<TResult>>`.
+  with matching shared properties instead of inheritance.
 - The `Hedge` method, options, testing descriptor, strategy kind, and standard HTTP registration
   use one consistent `Hedge` stem.
 - `Shield.Wrap(...)` and `Shield.Compose(...)` seal ambient handling. Strategies appended after
@@ -159,21 +110,23 @@ All notable changes to this project are documented here. The format follows
 - Clause builders are immutable. Each `Or...` call returns a new builder and leaves the source
   builder unchanged.
 - Debug builds reject access to a pooled `KevlarContext` after it has been returned.
-- `Backoff.Constant` and explicit `maxDelay` values validate timer limits. Linear and exponential
-  base delays are accepted beyond that limit, then computed delays clamp to their configured cap or
-  the default one-day cap; custom delays clamp to the runtime timer limit.
-- Retry jitter configuration uses the `Jitter` enum. The former Boolean `false` maps to
-  `Jitter.None`; `true` maps to `Jitter.Equal`.
+- `Backoff.Constant` and explicit `maxDelay` values validate timer limits. Computed delays clamp to
+  their configured cap; custom delays clamp to the runtime timer limit.
+- Retry jitter configuration uses `Jitter`; former Boolean values map to `Jitter.None` and
+  `Jitter.Equal`.
 - Custom strategies can declare `InvokesContinuationAtMostOnce`; the aggregate is exposed on
   `Shield` and `Shield<TResult>`.
 - Every NuGet package embeds the canonical icon, links release notes, and carries a package README
-  with status badges. `Kevlar.Analyzers` is a development dependency.
+  with status badges.
 - Queue capacity uses `QueueLimit` consistently across core strategies, adapters, dependency
   injection, and testing descriptors; shorthand parameters use `queueLimit`.
 - `Outcome<T>.Exception` recognizes `KevlarProxyException` by type instead of reading
   `Exception.Data` on ordinary exception access.
 
 **Upgrading from 0.x**
+
+Remove any direct `Kevlar.Analyzers` package reference; analyzers ship inside `Kevlar`. Upgrade all
+`Kevlar.*` packages together when exact version constraints report `NU1608`.
 
 <!-- upgrade-from-0.x:start -->
 | Before | After |
@@ -194,7 +147,7 @@ All notable changes to this project are documented here. The format follows
 | `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
 | `VoidShield` / `VoidShieldBuilder` | `Shield` / `ShieldBuilder`; use `Shield.For<TResult>()` when recovery produces a result |
 | `PartitionedVoidShield<TKey>` | `PartitionedShield<TKey>` |
-| `FallbackWithNotifications(...)` or typed `onFallback` parameters | `Fallback(..., configure)` with `OnFallback` / `OnFallbackAsync` |
+| `FallbackWithNotifications(...)` or typed `onFallback` parameters | `Fallback(..., configure)` with `OnFallback` |
 | shared `Action<RetryOptions>` used by typed shields | separate `Action<RetryOptions<TResult>>` configurator |
 | `RetryForever(backoff: null)` | `RetryForever()` |
 | ambient handling flowed past `Wrap`/`Compose` | `Wrap`/`Compose` seals the clause |
@@ -222,8 +175,15 @@ Shield recovery = Shield.Fallback(static _ => ValueTask.CompletedTask);
 _ = Shield.Empty.Wrap(Shield.Retry(1));
 ```
 
+### Deprecated
+
+- The standalone `Kevlar.Analyzers` package is superseded by the analyzers bundled in `Kevlar`.
+  Remove the separate package reference and use `Kevlar` as the replacement package.
+
 ### Removed
 
+- `KEV013` and the `Kevlar.Analyzers.CodeFixes` assembly. `KEV012` covers synchronous-`Execute`
+  callback hazards.
 - Typed constant-value `Fallback(value)` overloads; use `FallbackTo(value)`.
 - Nullable `RetryForever(Backoff? backoff = null)` overloads; use either explicit replacement.
 - Mutable clause-builder behavior where ignored return values changed later chains.
@@ -231,9 +191,11 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 
 ### Fixed
 
-- Circuit-breaker validation identifies the conflicting properties and reports public parameter
-  names.
-- Invalid fallback ordering is rejected at pipeline construction time. A shield containing a void
+- Circuit-breaker monitors and testing snapshots report `HalfOpen` as soon as break duration
+  elapses. Stale outcomes cannot alter newer state generations, and exceptions that opened a
+  circuit are released when it closes or resets.
+- Circuit-breaker validation identifies conflicting properties and reports public parameter names.
+- Invalid fallback ordering is rejected at pipeline construction. A shield containing a void
   fallback rejects result-returning execution at the execution boundary, and KEV005 diagnoses
   statically visible calls.
 - Custom backoff arithmetic cannot create negative or unbounded runtime delays.
