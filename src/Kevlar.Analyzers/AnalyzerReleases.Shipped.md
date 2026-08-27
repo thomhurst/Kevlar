@@ -15,8 +15,8 @@ KEV005 | Configuration | Warning | Void fallback is used with a result-returning
 KEV006 | Reliability | Warning | Hedging on an untyped Shield requires an idempotent action
 KEV007 | Configuration | Warning | Handling clause never reaches a reactive strategy
 KEV008 | Configuration | Warning | Fluent chaining result is discarded as a statement
-KEV009 | Configuration | Info | Strategy inherits a handling clause declared earlier in the chain
-KEV010 | Configuration | Info | Default-result clause handles a value type's default
-KEV011 | Configuration | Info | Reactive strategy uses implicit default handling
+KEV009 | Configuration | Disabled | Strategy inherits a handling clause declared earlier in the chain
+KEV010 | Configuration | Disabled | Default-result clause handles a value type's default
+KEV011 | Configuration | Disabled | Reactive strategy uses implicit default handling
 KEV012 | Reliability | Warning | Asynchronous strategy configuration requires ExecuteAsync
 KEV014 | Reliability | Warning | Pooled event context is captured by deferred work

@@ -156,7 +156,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         messageFormat: "This strategy inherits the handling clause declared earlier in the chain ('{0}'); only those exceptions or results count toward it. Declare a new clause, or call 'WithDefaultHandling()' first, to give it different handling.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WithDefaultHandling resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.",
         helpLinkUri: AnalyzerHelpLink.Create("KEV009", "inherited-handling-clause"));
 
@@ -167,7 +167,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         messageFormat: "'{0}' handles 'default({1})', which for a value type — 0, false, an empty struct — is as often a legitimate result as a failure. Confirm that is intended, or select the failing results with 'WhenResult'/'OrResult'.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "WhenResultIsDefault and OrResultIsDefault were named for reference types, where default(TResult) is null and a missing value is usually the failure. On a value type the same clause treats a zero, a false, or an empty struct as a failure worth retrying, hedging, or falling back from. Reference-type shields can say so explicitly with WhenResultIsNull and OrResultIsNull.",
         helpLinkUri: AnalyzerHelpLink.Create("KEV010", "default-result-clause-on-a-value-type"));
 
@@ -178,7 +178,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         messageFormat: "'{0}' uses Kevlar's default handling, which includes programming errors. Declare a When clause or local HandlesException override when only expected failures should be handled.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.",
         helpLinkUri: AnalyzerHelpLink.Create("KEV011", "implicit-default-handling"));
 

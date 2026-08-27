@@ -33,21 +33,35 @@ The analyzers report only hazards that are provable from the current expression 
 initializer. They do not guess what a factory method returns or follow a local that is reassigned.
 Generated code is ignored.
 
-| Rule | Severity | Hazard |
-|---|---|---|
-| `KEV001` | Warning | execution delegate ignores its `CancellationToken` |
-| `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
-| `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
-| `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
-| `KEV005` | Warning | void fallback is executed with a result-returning delegate |
-| `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
-| `KEV007` | Warning | handling clause never reaches a reactive strategy |
-| `KEV008` | Warning | fluent chaining result is discarded as a statement |
-| `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
-| `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
-| `KEV011` | Info | reactive strategy relies on implicit default handling, which includes programming errors |
-| `KEV012` | Warning | a delegate that completes asynchronously is assigned to a hook of a shield passed to synchronous `Execute` |
-| `KEV014` | Warning | a pooled event context is captured by deferred work |
+## Enabling stricter configuration hints
+
+`KEV009`, `KEV010`, and `KEV011` are opt-in informational design hints. Enable whichever checks
+match your team's conventions in `.editorconfig`:
+
+```ini
+[*.cs]
+dotnet_diagnostic.KEV009.severity = suggestion
+dotnet_diagnostic.KEV010.severity = suggestion
+dotnet_diagnostic.KEV011.severity = suggestion
+```
+
+The warning-level safety rules remain enabled by default.
+
+| Rule | Severity | Default | Hazard |
+|---|---|---|---|
+| `KEV001` | Warning | On | execution delegate ignores its `CancellationToken` |
+| `KEV002` | Warning | On | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
+| `KEV003` | Warning | On | inner fallback makes retry, hedging, or circuit breaker unreachable |
+| `KEV004` | Warning | On | stateful shield or partition provider is constructed for one execution |
+| `KEV005` | Warning | On | void fallback is executed with a result-returning delegate |
+| `KEV006` | Warning | On | hedging is added to an untyped shield, whose action must be idempotent |
+| `KEV007` | Warning | On | handling clause never reaches a reactive strategy |
+| `KEV008` | Warning | On | fluent chaining result is discarded as a statement |
+| `KEV009` | Info | Off | strategy inherits a handling clause declared earlier in the chain |
+| `KEV010` | Info | Off | default-result clause is written for a value type, whose default is usually valid |
+| `KEV011` | Info | Off | reactive strategy relies on implicit default handling, which includes programming errors |
+| `KEV012` | Warning | On | a delegate that completes asynchronously is assigned to a hook of a shield passed to synchronous `Execute` |
+| `KEV014` | Warning | On | a pooled event context is captured by deferred work |
 
 ## KEV001: ignored execution cancellation
 
@@ -292,9 +306,9 @@ never flagged and never end the inherited span. A strategy that sets `HandlesExc
 `HandlesResult` in its own options has opted out of the ambient clause and is not flagged either.
 The rule follows one fluent chain and a stable local, and stops at `Wrap`/`Compose` boundaries.
 
-Because it is `Info`, `KEV009` never fails a build, including under `TreatWarningsAsErrors`. Turn it
-off entirely with `dotnet_diagnostic.KEV009.severity = none` in `.editorconfig` if the ambient model
-is already second nature to your team.
+`KEV009` is disabled by default. Enable it through the
+[stricter configuration hints](#enabling-stricter-configuration-hints) when the extra editor signal
+fits your team's conventions.
 
 ## KEV010: default-result clause on a value type
 
@@ -323,8 +337,8 @@ var shield = Shield.For<string>().WhenResultIsNull().Retry(3);
 
 The rule reads `TResult` from the shield being configured. `Nullable<T>` results are left alone —
 their default *is* the missing value — and so is generic code, where `default(TResult)` is the only
-term available. Like `KEV009`, `KEV010` is `Info` and never fails a build; silence it per site with
-a pragma or project-wide with `dotnet_diagnostic.KEV010.severity = none`.
+term available. `KEV010` is disabled by default and can be enabled through the
+[stricter configuration hints](#enabling-stricter-configuration-hints).
 
 ## KEV011: implicit default handling
 
@@ -351,16 +365,14 @@ A local `HandlesException` or `HandlesResult` override also makes the policy exp
 does not report proactive strategies, an explicit `WithDefaultHandling()` reset, or opaque configuration
 that the analyzer cannot prove still uses the default.
 
-`KEV011` is an informational design hint, not a warning. Keep the default when it is deliberate,
-and suppress the hint at that site with a reason:
+`KEV011` is an opt-in informational design hint, not a warning. After enabling it, keep the default
+when it is deliberate and suppress the hint at that site with a reason:
 
 ```csharp
 #pragma warning disable KEV011 // This boundary deliberately retries every ordinary exception.
 var shield = Shield.Retry(3);
 #pragma warning restore KEV011
 ```
-
-Disable it project-wide with `dotnet_diagnostic.KEV011.severity = none`.
 
 ## KEV012: async configuration with synchronous Execute
 

@@ -12,6 +12,20 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
+    public async Task OptIn_Configuration_Hints_Are_Disabled_By_Default()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.For<int>()
+                .WhenResultIsDefault()
+                .Retry(1)
+                .CircuitBreaker(2, TimeSpan.FromSeconds(1));
+            _ = Shield.Retry(1);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Allows_Event_Use_After_Await_In_Awaited_Hooks()
     {
         var callbacks = new[]
@@ -6474,7 +6488,7 @@ public class PipelineHazardAnalyzerTests
             "var outer = Shield.When<InvalidOperationException>().Retry(1); _ = outer.CircuitBreaker(2, TimeSpan.FromSeconds(1));",
         };
 
-        await AssertEachAsync(cases, "KEV009", DiagnosticSeverity.Info, "KEV010");
+        await AssertEachOptInAsync(cases, "KEV009", DiagnosticSeverity.Info);
     }
 
     [Test]
@@ -6488,7 +6502,7 @@ public class PipelineHazardAnalyzerTests
                 .CircuitBreaker(2, TimeSpan.FromSeconds(1))
                 .RateLimit(10, TimeSpan.FromSeconds(1))
                 .RetryForever(Backoff.None);
-            """);
+            """, enabledRuleIds: ["KEV009"]);
 
         // The retry states the clause at its own call site; the breaker and the forever-retry
         // inherit it across the timeout and rate limit, which carry no clause of their own.
@@ -6526,7 +6540,8 @@ public class PipelineHazardAnalyzerTests
         {
             var diagnostics = await AnalyzeBodyAsync(
                 body,
-                "private static Shield CreateShield() => Shield.When<InvalidOperationException>().Retry(1);");
+                "private static Shield CreateShield() => Shield.When<InvalidOperationException>().Retry(1);",
+                enabledRuleIds: ["KEV009"]);
             await Assert.That(diagnostics).IsEmpty();
         }
     }
@@ -6535,12 +6550,12 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV009_Diagnostic_Contract_And_Suppression_Are_Exact()
     {
         const string body = "_ = Shield.When<InvalidOperationException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));";
-        var diagnostics = await AnalyzeBodyAsync(body);
+        var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: ["KEV009"]);
         var suppressed = await AnalyzeBodyAsync($"""
             #pragma warning disable KEV009 // The inherited clause is deliberate here.
             {body}
             #pragma warning restore KEV009
-            """);
+            """, enabledRuleIds: ["KEV009"]);
 
         await Assert.That(diagnostics.Length).IsEqualTo(1);
         var diagnostic = diagnostics[0];
@@ -6572,7 +6587,7 @@ public class PipelineHazardAnalyzerTests
             "var clause = Shield.For<int>().WhenResultIsDefault(); _ = clause.Retry(1);",
         };
 
-        await AssertEachAsync(cases, "KEV010", DiagnosticSeverity.Info);
+        await AssertEachOptInAsync(cases, "KEV010", DiagnosticSeverity.Info);
     }
 
     [Test]
@@ -6593,7 +6608,8 @@ public class PipelineHazardAnalyzerTests
             var diagnostics = await AnalyzeBodyAsync(
                 body,
                 // Generic code has no result to name but default(T), so the clause is all it can write.
-                "private static Shield<T> Build<T>() => Shield.For<T>().WhenResultIsDefault().Retry(1);");
+                "private static Shield<T> Build<T>() => Shield.For<T>().WhenResultIsDefault().Retry(1);",
+                enabledRuleIds: ["KEV010"]);
             await Assert.That(diagnostics).IsEmpty();
         }
     }
@@ -6602,12 +6618,12 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV010_Diagnostic_Contract_And_Suppression_Are_Exact()
     {
         const string body = "_ = Shield.For<int>().WhenResultIsDefault().Retry(1);";
-        var diagnostics = await AnalyzeBodyAsync(body);
+        var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: ["KEV010"]);
         var suppressed = await AnalyzeBodyAsync($"""
             #pragma warning disable KEV010 // Zero really is the failure here.
             {body}
             #pragma warning restore KEV010
-            """);
+            """, enabledRuleIds: ["KEV010"]);
 
         await Assert.That(diagnostics.Length).IsEqualTo(1);
         var diagnostic = diagnostics[0];
@@ -6639,7 +6655,7 @@ public class PipelineHazardAnalyzerTests
 
         foreach (var body in cases)
         {
-            var diagnostics = await AnalyzeBodyAsync(body, enableImplicitDefaultHandlingRule: true);
+            var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: ["KEV011"]);
             await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV011", DiagnosticSeverity.Info);
         }
     }
@@ -6659,7 +6675,7 @@ public class PipelineHazardAnalyzerTests
 
         foreach (var body in cases)
         {
-            var diagnostics = await AnalyzeBodyAsync(body, enableImplicitDefaultHandlingRule: true);
+            var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: ["KEV011"]);
             await Assert.That(Without(diagnostics, "KEV009")).IsEmpty();
         }
     }
@@ -6668,12 +6684,12 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV011_Diagnostic_Contract_And_Suppression_Are_Exact()
     {
         const string body = "_ = Shield.Retry(3);";
-        var diagnostics = await AnalyzeBodyAsync(body, enableImplicitDefaultHandlingRule: true);
+        var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: ["KEV011"]);
         var suppressed = await AnalyzeBodyAsync($"""
             #pragma warning disable KEV011 // Retrying all ordinary errors is deliberate.
             {body}
             #pragma warning restore KEV011
-            """, enableImplicitDefaultHandlingRule: true);
+            """, enabledRuleIds: ["KEV011"]);
 
         await Assert.That(diagnostics.Length).IsEqualTo(1);
         var diagnostic = diagnostics[0];
@@ -6973,6 +6989,18 @@ public class PipelineHazardAnalyzerTests
         }
     }
 
+    private static async Task AssertEachOptInAsync(
+        IEnumerable<string> cases,
+        string expectedRule,
+        DiagnosticSeverity expectedSeverity)
+    {
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body, enabledRuleIds: [expectedRule]);
+            await AssertRuleAsync(diagnostics, expectedRule, expectedSeverity);
+        }
+    }
+
     private static async Task AssertEachAsync(
         IEnumerable<string> cases,
         string expectedRule,
@@ -7014,7 +7042,7 @@ public class PipelineHazardAnalyzerTests
         string members = "",
         bool isGenerated = false,
         string assemblyName = "PipelineHazardAnalyzerTestSubject",
-        bool enableImplicitDefaultHandlingRule = false) =>
+        ImmutableArray<string> enabledRuleIds = default) =>
         AnalyzeSourceAsync($$"""
             public class TestSubject
             {
@@ -7025,18 +7053,18 @@ public class PipelineHazardAnalyzerTests
                     {{body}}
                 }
             }
-            """, isGenerated, assemblyName: assemblyName, enableImplicitDefaultHandlingRule: enableImplicitDefaultHandlingRule);
+            """, isGenerated, assemblyName: assemblyName, enabledRuleIds: enabledRuleIds);
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeSourceAsync(
         string declarations,
         bool isGenerated = false,
         bool allowCompilationErrors = false,
         string assemblyName = "PipelineHazardAnalyzerTestSubject",
-        bool enableImplicitDefaultHandlingRule = false,
-        MetadataReference? additionalReference = null)
+        MetadataReference? additionalReference = null,
+        ImmutableArray<string> enabledRuleIds = default)
     {
-        var source = CreateSource(declarations, isGenerated, enableImplicitDefaultHandlingRule);
-        var compilation = CreateCompilation(source, assemblyName, additionalReference);
+        var source = CreateSource(declarations, isGenerated);
+        var compilation = CreateCompilation(source, assemblyName, additionalReference, enabledRuleIds);
         var errors = compilation.GetDiagnostics().Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
         if (!allowCompilationErrors && errors.Length > 0)
         {
@@ -7070,10 +7098,8 @@ public class PipelineHazardAnalyzerTests
 
     private static string CreateSource(
         string declarations,
-        bool isGenerated = false,
-        bool enableImplicitDefaultHandlingRule = false) =>
+        bool isGenerated = false) =>
         (isGenerated ? "// <auto-generated/>\n" : string.Empty)
-        + (enableImplicitDefaultHandlingRule ? string.Empty : "#pragma warning disable KEV011\n")
         + $$"""
             using System;
             using System.Threading;
@@ -7088,7 +7114,8 @@ public class PipelineHazardAnalyzerTests
     private static CSharpCompilation CreateCompilation(
         string source,
         string assemblyName = "PipelineHazardAnalyzerTestSubject",
-        MetadataReference? additionalReference = null)
+        MetadataReference? additionalReference = null,
+        ImmutableArray<string> enabledRuleIds = default)
     {
         var references = GetMetadataReferences();
         if (additionalReference is not null)
@@ -7096,11 +7123,18 @@ public class PipelineHazardAnalyzerTests
             references = references.Append(additionalReference);
         }
 
+        var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        if (!enabledRuleIds.IsDefaultOrEmpty)
+        {
+            compilationOptions = (CSharpCompilationOptions)compilationOptions
+                .WithSyntaxTreeOptionsProvider(new EditorConfigOptionsProvider(enabledRuleIds));
+        }
+
         return CSharpCompilation.Create(
             assemblyName,
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, path: GetTestPath("TestSubject.cs"))],
             references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            compilationOptions);
     }
 
     private static MetadataReference CreateMetadataReference(string declarations)
@@ -7133,4 +7167,48 @@ public class PipelineHazardAnalyzerTests
         compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new PipelineHazardAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
+
+    private sealed class EditorConfigOptionsProvider : SyntaxTreeOptionsProvider
+    {
+        private readonly AnalyzerConfigSet _configSet;
+
+        public EditorConfigOptionsProvider(ImmutableArray<string> enabledRuleIds)
+        {
+            var settings = string.Join(
+                "\n",
+                enabledRuleIds.Select(static ruleId =>
+                    $"dotnet_diagnostic.{ruleId}.severity = suggestion"));
+            var editorConfig = AnalyzerConfig.Parse(
+                $$"""
+                root = true
+
+                [*.cs]
+                {{settings}}
+                """,
+                GetTestPath(".editorconfig"));
+            _configSet = AnalyzerConfigSet.Create(new[] { editorConfig });
+        }
+
+        public override GeneratedKind IsGenerated(
+            SyntaxTree tree,
+            CancellationToken cancellationToken) => GeneratedKind.Unknown;
+
+        public override bool TryGetDiagnosticValue(
+            SyntaxTree tree,
+            string diagnosticId,
+            CancellationToken cancellationToken,
+            out ReportDiagnostic severity) =>
+            _configSet.GetOptionsForSourcePath(tree.FilePath)
+                .TreeOptions
+                .TryGetValue(diagnosticId, out severity);
+
+        public override bool TryGetGlobalDiagnosticValue(
+            string diagnosticId,
+            CancellationToken cancellationToken,
+            out ReportDiagnostic severity) =>
+            _configSet.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
+    }
+
+    private static string GetTestPath(string fileName) =>
+        Path.Combine(Path.GetPathRoot(AppContext.BaseDirectory)!, fileName);
 }

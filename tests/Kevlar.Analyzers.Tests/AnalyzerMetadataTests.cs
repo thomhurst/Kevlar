@@ -56,7 +56,13 @@ public class AnalyzerMetadataTests
             await Assert.That(rules[informationalRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Info);
         }
 
-        await Assert.That(rules.Values.All(static rule => rule.IsEnabledByDefault)).IsTrue();
+        var optInRuleIds = new[] { "KEV009", "KEV010", "KEV011" };
+        await Assert.That(rules.Values
+            .Where(rule => optInRuleIds.Contains(rule.Id, StringComparer.Ordinal))
+            .All(static rule => !rule.IsEnabledByDefault)).IsTrue();
+        await Assert.That(rules.Values
+            .Where(rule => !optInRuleIds.Contains(rule.Id, StringComparer.Ordinal))
+            .All(static rule => rule.IsEnabledByDefault)).IsTrue();
         await Assert.That(rules.Values.All(static rule =>
             !string.IsNullOrWhiteSpace(rule.Title.ToString())
             && !string.IsNullOrWhiteSpace(rule.MessageFormat.ToString())
@@ -119,10 +125,14 @@ public class AnalyzerMetadataTests
             .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
             .Single(rule => rule.Id == ruleId);
 
+        var isOptIn = ruleId is "KEV009" or "KEV010" or "KEV011";
+        var shippedSeverity = isOptIn ? "Disabled" : severity.ToString();
+
         await Assert.That(shippedRule[1]).IsEqualTo(category);
-        await Assert.That(shippedRule[2]).IsEqualTo(severity.ToString());
+        await Assert.That(shippedRule[2]).IsEqualTo(shippedSeverity);
         await Assert.That(descriptor.Category).IsEqualTo(shippedRule[1]);
-        await Assert.That(descriptor.DefaultSeverity.ToString()).IsEqualTo(shippedRule[2]);
+        await Assert.That(descriptor.DefaultSeverity).IsEqualTo(severity);
+        await Assert.That(descriptor.IsEnabledByDefault).IsEqualTo(!isOptIn);
     }
 
     private static string FindRepositoryRoot()
