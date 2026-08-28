@@ -4,12 +4,15 @@ namespace Kevlar.Strategies;
 
 internal sealed class RetryStrategy : Strategy
 {
+    private const string TerminalInspectionAttributeName = "Kevlar.RetryTerminalInspectionAttribute";
+
     private readonly OutcomeJudge _judge;
     private readonly int _maxRetries;
     private readonly Backoff _backoff;
     private readonly TimeSpan? _maxDelay;
     private readonly Delegate? _onRetry;
     private readonly Delegate? _delayGenerator;
+    private readonly bool _inspectTerminalOutcome;
     private readonly Type? _callbackResultType;
     private readonly string _telemetryName;
     private readonly string _onRetryHookName;
@@ -73,6 +76,8 @@ internal sealed class RetryStrategy : Strategy
         _maxDelay = maxDelay ?? _backoff.MaxDelay;
         _onRetry = onRetry;
         _delayGenerator = delayGenerator;
+        _inspectTerminalOutcome = delayGenerator?.Method.CustomAttributes.Any(static attribute =>
+            attribute.AttributeType.FullName == TerminalInspectionAttributeName) is true;
         _callbackResultType = callbackResultType;
         _telemetryName = telemetryName ?? "Retry";
         HasHandlingOverride = hasHandlingOverride;
@@ -141,6 +146,17 @@ internal sealed class RetryStrategy : Strategy
                 RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
                 if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
                 {
+                    if (_inspectTerminalOutcome
+                        && _maxRetries == 0
+                        && !context.Properties.SuppressAdditionalAttempts
+                        && !context.CancellationToken.IsCancellationRequested)
+                    {
+                        return InspectCompletedTerminalOutcomeAsync(
+                            outcome,
+                            context,
+                            previousAttemptNumber);
+                    }
+
                     context.AttemptNumber = previousAttemptNumber;
                     return new ValueTask<Outcome<T>>(outcome);
                 }
@@ -195,6 +211,18 @@ internal sealed class RetryStrategy : Strategy
 
                 if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
                 {
+                    if (_inspectTerminalOutcome
+                        && retriesUsed >= _maxRetries
+                        && !context.Properties.SuppressAdditionalAttempts
+                        && !context.CancellationToken.IsCancellationRequested)
+                    {
+                        await InspectTerminalOutcomeAsync(
+                            outcome,
+                            retriesUsed,
+                            previousBackoffDelay,
+                            context).ConfigureAwait(false);
+                    }
+
                     return outcome;
                 }
 
@@ -275,6 +303,46 @@ internal sealed class RetryStrategy : Strategy
         {
             context.AttemptNumber = previousAttemptNumber;
         }
+    }
+
+    private async ValueTask<Outcome<T>> InspectCompletedTerminalOutcomeAsync<T>(
+        Outcome<T> outcome,
+        KevlarContext context,
+        int previousAttemptNumber)
+    {
+        try
+        {
+            await InspectTerminalOutcomeAsync(
+                outcome,
+                retriesUsed: 0,
+                previousBackoffDelay: TimeSpan.Zero,
+                context).ConfigureAwait(false);
+            return outcome;
+        }
+        finally
+        {
+            context.AttemptNumber = previousAttemptNumber;
+        }
+    }
+
+    private async ValueTask InspectTerminalOutcomeAsync<T>(
+        Outcome<T> outcome,
+        int retriesUsed,
+        TimeSpan previousBackoffDelay,
+        KevlarContext context)
+    {
+        var delay = _backoff.GetDelay(retriesUsed + 1, previousBackoffDelay);
+        if (_maxDelay is { } cap && delay > cap)
+        {
+            delay = cap;
+        }
+
+        _ = await InvokeDelayGeneratorAsync(
+            _delayGenerator!,
+            retriesUsed,
+            delay,
+            outcome,
+            context).ConfigureAwait(false);
     }
 
     private void RecordAttempt<T>(

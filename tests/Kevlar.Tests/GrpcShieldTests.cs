@@ -161,6 +161,39 @@ public class GrpcShieldTests
         await Assert.That(attempts).IsEqualTo(1);
     }
 
+    [Test]
+    [Arguments(false, 0)]
+    [Arguments(true, 0)]
+    [Arguments(false, 1)]
+    [Arguments(true, 1)]
+    public async Task RetryAfter_Inspects_Terminal_Retry_Before_Outer_Hedge(
+        bool completeAsynchronously,
+        int maxRetries)
+    {
+        var attempts = 0;
+        var shield = GrpcShield.WhenTransient()
+            .Hedge(2, Timeout.InfiniteTimeSpan)
+            .Retry(options =>
+            {
+                options.MaxRetries = maxRetries;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
+        {
+            attempts++;
+            if (completeAsynchronously)
+            {
+                await Task.Yield();
+            }
+
+            throw CreateException(attempts <= maxRetries ? null : "-1");
+        })).Throws<RpcException>();
+
+        await Assert.That(attempts).IsEqualTo(maxRetries + 1);
+    }
+
     private static RpcException CreateException(string? pushback)
     {
         var trailers = new Metadata();

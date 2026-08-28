@@ -42,6 +42,7 @@ public static class GrpcShield
     /// strategy's <see cref="RetryOptions.MaxDelay"/> still caps a returned delay; when unset, the
     /// selected backoff's maximum applies.
     /// </remarks>
+    [RetryTerminalInspection]
     public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
     {
         if (retry.Exception is not RpcException exception)
