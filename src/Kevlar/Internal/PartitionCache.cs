@@ -15,7 +15,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     private readonly Func<TKey, TShield, ValueTask>? _onCreated;
     private readonly Func<TKey, TShield, PartitionEvictionReason, ValueTask>? _onEvicted;
     private readonly bool _ownsStrategies;
-    private readonly AsyncLocal<bool> _creationCallback = new();
+    private readonly AsyncLocal<CreationCallbackScope?> _creationCallback = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
     private readonly Queue<Exception> _disposalFailures = new();
     private readonly List<Task> _pendingDisposals = [];
@@ -236,7 +236,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private ValueTask DisposeAsync(bool preferSynchronousDisposal)
     {
-        if (_creationCallback.Value || _evictionCallback.Value is { Active: true })
+        if (_creationCallback.Value is { Active: true }
+            || _evictionCallback.Value is { Active: true })
         {
             return new ValueTask(Task.FromException(new InvalidOperationException(
                 "A partition provider cannot be disposed from its own lifecycle callback.")));
@@ -378,23 +379,30 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             throw;
         }
 
-        if (createsUnretained)
-        {
-            TrackUnretained(entry, preferSynchronousDisposal);
-            return shield;
-        }
-
         try
         {
-            await PublishAsync(key, entry, creation, preferSynchronousDisposal)
-                .ConfigureAwait(false);
-            return shield;
+            if (createsUnretained)
+            {
+                TrackUnretained(entry, preferSynchronousDisposal);
+                return shield;
+            }
+
+            try
+            {
+                await PublishAsync(key, entry, creation, preferSynchronousDisposal)
+                    .ConfigureAwait(false);
+                return shield;
+            }
+            catch (Exception exception)
+            {
+                FailCreation(key, creation, exception);
+                await DisposeEvictedAsync(entry, preferSynchronousDisposal).ConfigureAwait(false);
+                throw;
+            }
         }
-        catch (Exception exception)
+        finally
         {
-            FailCreation(key, creation, exception);
-            await DisposeEvictedAsync(entry, preferSynchronousDisposal).ConfigureAwait(false);
-            throw;
+            entry.ReleaseCreationLease();
         }
     }
 
@@ -681,8 +689,9 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             return;
         }
 
-        var previous = _creationCallback.Value;
-        _creationCallback.Value = true;
+        var previousScope = _creationCallback.Value;
+        var scope = new CreationCallbackScope(previousScope);
+        _creationCallback.Value = scope;
         try
         {
             try
@@ -696,7 +705,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         }
         finally
         {
-            _creationCallback.Value = previous;
+            scope.Deactivate();
+            _creationCallback.Value = previousScope;
         }
     }
 
@@ -1002,7 +1012,9 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
                 continue;
             }
 
-            if (entry.ExecutionTracker is null || entry.ExecutionTracker.ActiveExecutions == 0)
+            if (!entry.CreationLeaseActive
+                && (entry.ExecutionTracker is null
+                    || entry.ExecutionTracker.ActiveExecutions == 0))
             {
                 await ReleaseOwnedStrategiesAsync(
                         entry.OwnedStrategies,
@@ -1017,7 +1029,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private async Task DisposeWhenInactiveAsync(Entry entry, bool preferSynchronousDisposal)
     {
-        while (entry.ExecutionTracker!.ActiveExecutions != 0)
+        while (entry.CreationLeaseActive
+            || entry.ExecutionTracker is { ActiveExecutions: not 0 })
         {
             await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
         }
@@ -1124,6 +1137,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         StrategyExecutionTracker? executionTracker,
         Strategy[] ownedStrategies)
     {
+        private int _creationLease = 1;
         private int _disposalStarted;
 
         public TKey Key { get; } = key;
@@ -1140,8 +1154,22 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
         public Entry? Next { get; set; }
 
+        public bool CreationLeaseActive => Volatile.Read(ref _creationLease) != 0;
+
+        public void ReleaseCreationLease() => Volatile.Write(ref _creationLease, 0);
+
         public bool TryBeginDisposal() =>
             Interlocked.Exchange(ref _disposalStarted, 1) == 0;
+    }
+
+    private sealed class CreationCallbackScope(CreationCallbackScope? parent)
+    {
+        private int _active = 1;
+
+        public bool Active => Volatile.Read(ref _active) != 0
+            || parent is { Active: true };
+
+        public void Deactivate() => Volatile.Write(ref _active, 0);
     }
 
     private sealed class Creation

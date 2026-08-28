@@ -192,7 +192,9 @@ items:
 
     <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback. Disposing this provider from its own
 
-    callback is rejected to prevent a lifecycle deadlock.
+    callback is rejected to prevent a lifecycle deadlock. Owned strategies remain alive until
+
+    the callback and the creating lookup complete, even if the partition is concurrently evicted.
   example: []
   syntax:
     content: public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }

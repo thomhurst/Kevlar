@@ -31,7 +31,8 @@ public sealed class PartitionedShieldOptions<TKey>
     /// <summary>
     /// Invoked and awaited after a partition is created and retained. Return
     /// <see langword="default"/> from a synchronous callback. Disposing this provider from its own
-    /// callback is rejected to prevent a lifecycle deadlock.
+    /// callback is rejected to prevent a lifecycle deadlock. Owned strategies remain alive until
+    /// the callback and the creating lookup complete, even if the partition is concurrently evicted.
     /// </summary>
     public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }
 

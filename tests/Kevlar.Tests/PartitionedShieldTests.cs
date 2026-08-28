@@ -468,6 +468,40 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Capacity_Eviction_Keeps_The_Shield_Alive_Through_OnCreated()
+    {
+        var createdEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCreated = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstStrategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(
+            key => Shield.Use(key == "first" ? firstStrategy : new DisposablePartitionStrategy()),
+            new PartitionedShieldOptions<string>
+            {
+                MaxPartitions = 1,
+                OnCreated = async created =>
+                {
+                    if (created.Key == "first")
+                    {
+                        createdEntered.TrySetResult();
+                        await releaseCreated.Task;
+                    }
+                },
+            });
+        var firstLookup = provider.GetShieldAsync("first").AsTask();
+        await createdEntered.Task;
+
+        _ = await provider.GetShieldAsync("second");
+
+        await Assert.That(firstStrategy.DisposeCount).IsEqualTo(0);
+        releaseCreated.TrySetResult();
+        _ = await firstLookup;
+        await provider.DisposeAsync();
+        await Assert.That(firstStrategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Disposal_Reentered_From_OnEvicted_Is_Rejected_Without_Deadlock()
     {
         PartitionedShield<string>? provider = null;
@@ -524,6 +558,46 @@ public class PartitionedShieldTests
 
         await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
         await provider.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OnCreated_Captured_Context_Allows_Disposal_After_Callback_Returns()
+    {
+        PartitionedShield<string>? provider = null;
+        Task<Exception?>? delayedDisposal = null;
+        var releaseDisposal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions<string>
+            {
+                OnCreated = _ =>
+                {
+                    delayedDisposal = DisposeAfterReleaseAsync(provider!, releaseDisposal.Task);
+                    return default;
+                },
+            });
+
+        _ = await provider.GetShieldAsync("tenant");
+        releaseDisposal.TrySetResult();
+
+        await Assert.That(await delayedDisposal!).IsNull();
+
+        static async Task<Exception?> DisposeAfterReleaseAsync(
+            PartitionedShield<string> provider,
+            Task release)
+        {
+            await release;
+            try
+            {
+                await provider.DisposeAsync();
+                return null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }
     }
 
     [Test]

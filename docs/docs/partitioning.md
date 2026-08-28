@@ -59,7 +59,9 @@ strategies and adapters such as an owned `RateLimiter`.
 
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
-eviction callback is awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
+owned strategies of a newly published shield remain alive until `OnCreated` and the creating lookup
+complete, even if another operation evicts that partition concurrently. The eviction callback is
+awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
 lookup creates and retains the partition normally. Its owned strategies are released when the
 callback finishes. Explicit `TryRemove` and `Clear` removals use the `Cleared` reason; idle expiry
