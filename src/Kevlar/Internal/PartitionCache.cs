@@ -15,7 +15,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     private readonly Func<TKey, TShield, ValueTask>? _onCreated;
     private readonly Func<TKey, TShield, PartitionEvictionReason, ValueTask>? _onEvicted;
     private readonly bool _ownsStrategies;
-    private readonly AsyncLocal<CreationCallbackScope?> _creationCallback = new();
+    private readonly AsyncLocal<ReentrancyScope?> _factoryCallback = new();
+    private readonly AsyncLocal<ReentrancyScope?> _creationCallback = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
     private readonly Queue<Exception> _disposalFailures = new();
     private readonly List<Task> _pendingDisposals = [];
@@ -236,11 +237,12 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private ValueTask DisposeAsync(bool preferSynchronousDisposal)
     {
-        if (_creationCallback.Value is { Active: true }
+        if (_factoryCallback.Value is { Active: true }
+            || _creationCallback.Value is { Active: true }
             || _evictionCallback.Value is { Active: true })
         {
             return new ValueTask(Task.FromException(new InvalidOperationException(
-                "A partition provider cannot be disposed from its own lifecycle callback.")));
+                "A partition provider cannot be disposed from its own factory or lifecycle callback.")));
         }
 
         var created = new TaskCompletionSource<bool>(
@@ -366,7 +368,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         Entry entry;
         try
         {
-            shield = await _factory(key).ConfigureAwait(false)
+            shield = await CreateShieldAsync(key).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The partition factory returned null.");
             entry = await CreateEntryAsync(key, shield, preferSynchronousDisposal)
                 .ConfigureAwait(false);
@@ -692,7 +694,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         }
 
         var previousScope = _creationCallback.Value;
-        var scope = new CreationCallbackScope(previousScope);
+        var scope = new ReentrancyScope(previousScope);
         _creationCallback.Value = scope;
         try
         {
@@ -709,6 +711,22 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         {
             scope.Deactivate();
             _creationCallback.Value = previousScope;
+        }
+    }
+
+    private async ValueTask<TShield> CreateShieldAsync(TKey key)
+    {
+        var previousScope = _factoryCallback.Value;
+        var scope = new ReentrancyScope(previousScope);
+        _factoryCallback.Value = scope;
+        try
+        {
+            return await _factory(key).ConfigureAwait(false);
+        }
+        finally
+        {
+            scope.Deactivate();
+            _factoryCallback.Value = previousScope;
         }
     }
 
@@ -778,8 +796,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         }
         finally
         {
-            var unretained = scope.TakeUnretained();
-            scope.Deactivate();
+            var unretained = scope.DeactivateAndTakeUnretained();
             _evictionCallback.Value = previousScope;
             await DisposeEvictedAsync(unretained, scope.PreferSynchronousDisposal)
                 .ConfigureAwait(false);
@@ -1167,7 +1184,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             Interlocked.Exchange(ref _disposalStarted, 1) == 0;
     }
 
-    private sealed class CreationCallbackScope(CreationCallbackScope? parent)
+    private sealed class ReentrancyScope(ReentrancyScope? parent)
     {
         private int _active = 1;
 
@@ -1215,32 +1232,36 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             ReferenceEquals(blockedCreation, creation)
             || parent is { Active: true } && parent.Blocks(creation);
 
-        public void AddUnretained(Entry entry)
+        public bool TryAddUnretained(Entry entry)
         {
             lock (this)
             {
+                if (_active == 0)
+                {
+                    return false;
+                }
+
                 (_unretained ??= []).Add(entry);
+                return true;
             }
         }
 
-        public Entry[]? TakeUnretained()
+        public Entry[]? DeactivateAndTakeUnretained()
         {
             lock (this)
             {
+                Volatile.Write(ref _active, 0);
                 var entries = _unretained?.ToArray();
                 _unretained = null;
                 return entries;
             }
         }
-
-        public void Deactivate() => Volatile.Write(ref _active, 0);
     }
 
     private void TrackUnretained(Entry entry, bool preferSynchronousDisposal)
     {
-        if (_evictionCallback.Value is { Active: true } scope)
+        if (_evictionCallback.Value is { } scope && scope.TryAddUnretained(entry))
         {
-            scope.AddUnretained(entry);
             return;
         }
 

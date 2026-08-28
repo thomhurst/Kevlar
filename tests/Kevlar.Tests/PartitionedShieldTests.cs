@@ -651,6 +651,32 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Disposal_Reentered_From_Factory_Is_Rejected_Without_Deadlock()
+    {
+        PartitionedShield<string>? provider = null;
+        Exception? disposalFailure = null;
+        provider = PartitionedShield<string>.CreateAsync(async _ =>
+        {
+            try
+            {
+                await provider!.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                disposalFailure = exception;
+            }
+
+            return Shield.Empty;
+        });
+
+        _ = await provider.GetShieldAsync("tenant").AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(2));
+
+        await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task OnCreated_Captured_Context_Allows_Disposal_After_Callback_Returns()
     {
         PartitionedShield<string>? provider = null;
