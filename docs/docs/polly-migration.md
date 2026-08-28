@@ -108,11 +108,6 @@ Polly handling predicate. Retry callback counters map directly:
 |---|---|
 | `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.AttemptNumber` is zero-based (`0` before the first retry) |
 
-Polly's `HandleInner<T>`, `OrInner<T>`, and `PredicateBuilder.HandleInner<T>` have no direct
-equivalent. Use `When(exception => exception.InnerException is T)` or
-`Or<Exception>(exception => exception.InnerException is T)` for one level. If an
-`AggregateException` or a deeper chain is possible, unwrap or walk it explicitly in the predicate.
-
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar's
 retry, circuit-breaker, and hedging defaults also let execution-rejection exceptions and fatal
 runtime exceptions propagate. Fallback is the terminal recovery strategy, so its default additionally
