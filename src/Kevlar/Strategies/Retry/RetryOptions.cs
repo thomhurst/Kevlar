@@ -200,6 +200,12 @@ public readonly struct RetryEvent
     /// the callback (including an asynchronous callback) completes.
     /// </summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
+
+    /// <summary>
+    /// Suppresses this retry and any later retry or hedge attempts in the current execution.
+    /// </summary>
+    public void SuppressAdditionalAttempts() =>
+        Context.Properties.SuppressAdditionalAttempts = true;
 }
 
 /// <summary>Describes a retry that is about to happen, with the handled outcome typed as <typeparamref name="TResult"/>.</summary>

@@ -19,15 +19,11 @@ public static class GrpcShield
             or StatusCode.ResourceExhausted;
 
     /// <summary>
-    /// Returns <see langword="true"/> when the exception has a commonly transient status and the
-    /// server did not explicitly suppress retries through <c>grpc-retry-pushback-ms</c>, or
-    /// <see langword="false"/> when <paramref name="exception"/> is <see langword="null"/>.
+    /// Returns <see langword="true"/> when the exception has a commonly transient status,
+    /// or <see langword="false"/> when <paramref name="exception"/> is <see langword="null"/>.
     /// </summary>
-    /// <remarks>A negative or malformed pushback value suppresses retries as required by the gRPC retry protocol.</remarks>
     public static bool IsTransient(RpcException? exception) =>
-        exception is not null
-        && IsTransient(exception.StatusCode)
-        && ReadRetryPushback(exception, out _) != RetryPushback.Stop;
+        exception is not null && IsTransient(exception.StatusCode);
 
     /// <summary>
     /// Starts a shield that handles only <see cref="RpcException"/> instances whose status is
@@ -41,14 +37,25 @@ public static class GrpcShield
     /// <c>grpc-retry-pushback-ms</c> trailer as the next retry delay.
     /// </summary>
     /// <remarks>
-    /// Use with <see cref="WhenTransient"/>, whose predicate suppresses retries for negative or
-    /// malformed pushback values. The retry strategy's <see cref="RetryOptions.MaxDelay"/> still
-    /// caps the returned delay; when unset, the selected backoff's maximum applies.
+    /// Negative, malformed, or duplicate pushback values suppress additional attempts without
+    /// changing the ambient handling clause used by circuit breakers or fallbacks. The retry
+    /// strategy's <see cref="RetryOptions.MaxDelay"/> still caps a returned delay; when unset, the
+    /// selected backoff's maximum applies.
     /// </remarks>
     public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
     {
-        if (retry.Exception is RpcException exception
-            && ReadRetryPushback(exception, out var delay) == RetryPushback.Delay)
+        if (retry.Exception is not RpcException exception)
+        {
+            return default;
+        }
+
+        var pushback = ReadRetryPushback(exception, out var delay);
+        if (pushback == RetryPushback.Stop)
+        {
+            retry.SuppressAdditionalAttempts();
+        }
+
+        if (pushback == RetryPushback.Delay)
         {
             return new(delay);
         }
@@ -59,10 +66,16 @@ public static class GrpcShield
     private static RetryPushback ReadRetryPushback(RpcException exception, out TimeSpan? delay)
     {
         delay = null;
-        var value = exception.Trailers.GetValue(RetryPushbackMetadataName);
-        if (value is null)
+        using var entries = exception.Trailers.GetAll(RetryPushbackMetadataName).GetEnumerator();
+        if (!entries.MoveNext())
         {
             return RetryPushback.None;
+        }
+
+        var value = entries.Current.Value;
+        if (entries.MoveNext())
+        {
+            return RetryPushback.Stop;
         }
 
         if (!int.TryParse(
@@ -70,10 +83,6 @@ public static class GrpcShield
                 NumberStyles.AllowLeadingSign,
                 CultureInfo.InvariantCulture,
                 out var milliseconds)
-            || !string.Equals(
-                value,
-                milliseconds.ToString(CultureInfo.InvariantCulture),
-                StringComparison.Ordinal)
             || milliseconds < 0)
         {
             return RetryPushback.Stop;

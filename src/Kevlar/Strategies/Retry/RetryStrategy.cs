@@ -201,7 +201,6 @@ internal sealed class RetryStrategy : Strategy
                 firstOutcomeShouldRetry = false;
 
                 var attempt = retriesUsed + 1;
-                KevlarMetrics.Retry(context);
                 var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
                 if (_maxDelay is { } cap && delay > cap)
@@ -222,6 +221,13 @@ internal sealed class RetryStrategy : Strategy
                         .ConfigureAwait(false);
                     delay = ApplyGeneratedDelay(delay, generated);
                 }
+
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
+                }
+
+                KevlarMetrics.Retry(context);
 
                 if (KevlarTelemetry.IsEventEnabled(context))
                 {

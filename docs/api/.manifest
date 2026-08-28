@@ -683,6 +683,7 @@
   "Kevlar.RetryEvent.Delay": "Kevlar.RetryEvent.yml",
   "Kevlar.RetryEvent.Exception": "Kevlar.RetryEvent.yml",
   "Kevlar.RetryEvent.Result": "Kevlar.RetryEvent.yml",
+  "Kevlar.RetryEvent.SuppressAdditionalAttempts": "Kevlar.RetryEvent.yml",
   "Kevlar.RetryEvent`1": "Kevlar.RetryEvent-1.yml",
   "Kevlar.RetryEvent`1.AttemptNumber": "Kevlar.RetryEvent-1.yml",
   "Kevlar.RetryEvent`1.Context": "Kevlar.RetryEvent-1.yml",

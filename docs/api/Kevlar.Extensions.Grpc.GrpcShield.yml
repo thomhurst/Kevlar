@@ -79,12 +79,9 @@ items:
   - Kevlar.Extensions.Grpc
   namespace: Kevlar.Extensions.Grpc
   summary: >-
-    Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the exception has a commonly transient status and the
+    Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> when the exception has a commonly transient status,
 
-    server did not explicitly suppress retries through <code>grpc-retry-pushback-ms</code>, or
-
-    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when <code class="paramref">exception</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
-  remarks: A negative or malformed pushback value suppresses retries as required by the gRPC retry protocol.
+    or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when <code class="paramref">exception</code> is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>.
   example: []
   syntax:
     content: public static bool IsTransient(RpcException? exception)
@@ -142,11 +139,13 @@ items:
 
     <code>grpc-retry-pushback-ms</code> trailer as the next retry delay.
   remarks: >-
-    Use with <xref href="Kevlar.Extensions.Grpc.GrpcShield.WhenTransient" data-throw-if-not-resolved="false"></xref>, whose predicate suppresses retries for negative or
+    Negative, malformed, or duplicate pushback values suppress additional attempts without
 
-    malformed pushback values. The retry strategy's <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still
+    changing the ambient handling clause used by circuit breakers or fallbacks. The retry
 
-    caps the returned delay; when unset, the selected backoff's maximum applies.
+    strategy's <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps a returned delay; when unset, the
+
+    selected backoff's maximum applies.
   example: []
   syntax:
     content: public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
@@ -531,27 +530,6 @@ references:
   name: DelayGenerator
   nameWithType: RetryOptions.DelayGenerator
   fullName: Kevlar.RetryOptions.DelayGenerator
-- uid: Kevlar.Extensions.Grpc.GrpcShield.WhenTransient
-  commentId: M:Kevlar.Extensions.Grpc.GrpcShield.WhenTransient
-  isExternal: true
-  href: Kevlar.Extensions.Grpc.GrpcShield.html#Kevlar_Extensions_Grpc_GrpcShield_WhenTransient
-  name: WhenTransient()
-  nameWithType: GrpcShield.WhenTransient()
-  fullName: Kevlar.Extensions.Grpc.GrpcShield.WhenTransient()
-  spec.csharp:
-  - uid: Kevlar.Extensions.Grpc.GrpcShield.WhenTransient
-    name: WhenTransient
-    isExternal: true
-    href: Kevlar.Extensions.Grpc.GrpcShield.html#Kevlar_Extensions_Grpc_GrpcShield_WhenTransient
-  - name: (
-  - name: )
-  spec.vb:
-  - uid: Kevlar.Extensions.Grpc.GrpcShield.WhenTransient
-    name: WhenTransient
-    isExternal: true
-    href: Kevlar.Extensions.Grpc.GrpcShield.html#Kevlar_Extensions_Grpc_GrpcShield_WhenTransient
-  - name: (
-  - name: )
 - uid: Kevlar.RetryOptions.MaxDelay
   commentId: P:Kevlar.RetryOptions.MaxDelay
   isExternal: true

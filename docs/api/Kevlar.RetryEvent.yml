@@ -10,6 +10,7 @@ items:
   - Kevlar.RetryEvent.Delay
   - Kevlar.RetryEvent.Exception
   - Kevlar.RetryEvent.Result
+  - Kevlar.RetryEvent.SuppressAdditionalAttempts
   langs:
   - csharp
   - vb
@@ -32,6 +33,26 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.RetryEvent.SuppressAdditionalAttempts
+  commentId: M:Kevlar.RetryEvent.SuppressAdditionalAttempts
+  id: SuppressAdditionalAttempts
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: SuppressAdditionalAttempts()
+  nameWithType: RetryEvent.SuppressAdditionalAttempts()
+  fullName: Kevlar.RetryEvent.SuppressAdditionalAttempts()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Suppresses this retry and any later retry or hedge attempts in the current execution.
+  example: []
+  syntax:
+    content: public void SuppressAdditionalAttempts()
+    content.vb: Public Sub SuppressAdditionalAttempts()
+  overload: Kevlar.RetryEvent.SuppressAdditionalAttempts*
 - uid: Kevlar.RetryEvent.AttemptNumber
   commentId: P:Kevlar.RetryEvent.AttemptNumber
   id: AttemptNumber
@@ -390,6 +411,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar.RetryEvent.SuppressAdditionalAttempts*
+  commentId: Overload:Kevlar.RetryEvent.SuppressAdditionalAttempts
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_SuppressAdditionalAttempts
+  name: SuppressAdditionalAttempts
+  nameWithType: RetryEvent.SuppressAdditionalAttempts
+  fullName: Kevlar.RetryEvent.SuppressAdditionalAttempts
 - uid: Kevlar.RetryEvent.AttemptNumber*
   commentId: Overload:Kevlar.RetryEvent.AttemptNumber
   isExternal: true

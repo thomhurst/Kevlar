@@ -25,7 +25,7 @@ public class GrpcShieldTests
         {
             attemptsStarted.Signal();
             return ++attempts == 1
-                ? ValueTask.FromException<int>(CreateException("2500"))
+                ? ValueTask.FromException<int>(CreateException("02500"))
                 : new ValueTask<int>(42);
         }).AsTask();
 
@@ -42,11 +42,15 @@ public class GrpcShieldTests
     [Test]
     [Arguments("-1")]
     [Arguments("invalid")]
-    [Arguments("01")]
-    public async Task WhenTransient_Suppresses_Invalid_Or_Negative_Pushback(string value)
+    public async Task RetryAfter_Suppresses_Invalid_Or_Negative_Pushback(string value)
     {
         var attempts = 0;
-        var shield = GrpcShield.WhenTransient().Retry(3, Backoff.None);
+        var shield = GrpcShield.WhenTransient().Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.DelayGenerator = GrpcShield.RetryAfter;
+        });
 
         var exception = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
@@ -63,10 +67,68 @@ public class GrpcShieldTests
     {
         await Assert.That(GrpcShield.IsTransient(CreateException(pushback: null))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("0"))).IsTrue();
+        await Assert.That(GrpcShield.IsTransient(CreateException("01"))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("2147483647"))).IsTrue();
+        await Assert.That(GrpcShield.IsTransient(CreateException("-1"))).IsTrue();
+        await Assert.That(GrpcShield.IsTransient(CreateException("invalid"))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(
             new RpcException(new Status(StatusCode.InvalidArgument, "not transient")))).IsFalse();
         await Assert.That(GrpcShield.IsTransient((RpcException?)null)).IsFalse();
+    }
+
+    [Test]
+    public async Task RetryAfter_Suppresses_Duplicate_Pushback_Trailers()
+    {
+        var attempts = 0;
+        var trailers = new Metadata
+        {
+            { "grpc-retry-pushback-ms", "1" },
+            { "grpc-retry-pushback-ms", "2" },
+        };
+        var exception = new RpcException(new Status(StatusCode.Unavailable, "transient"), trailers);
+        var shield = GrpcShield.WhenTransient().Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.DelayGenerator = GrpcShield.RetryAfter;
+        });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw exception;
+        })).Throws<RpcException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task RetryAfter_Suppression_Still_Records_The_Failure_In_A_CircuitBreaker()
+    {
+        var attempts = 0;
+        var shield = GrpcShield.WhenTransient()
+            .Retry(options =>
+            {
+                options.MaxRetries = 3;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            })
+            .CircuitBreaker(
+                consecutiveFailures: 1,
+                breakDuration: TimeSpan.FromMinutes(1));
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw CreateException("-1");
+        })).Throws<RpcException>();
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            return new ValueTask<int>(42);
+        })).Throws<CircuitOpenException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
     }
 
     private static RpcException CreateException(string? pushback)
