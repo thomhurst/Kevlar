@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0  # Required for changelog compare-link validation
+          fetch-depth: 0  # Required for GitVersion
           persist-credentials: false
 
       - name: Setup Node.js
@@ -249,16 +249,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: npx --yes --package renovate -- renovate-config-validator renovate.json
 
-      - name: Verify changelog and release notes
-        if: matrix.os == 'ubuntu-latest'
-        shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: |
-          ./scripts/Verify-Changelog.ps1
-          $notes = ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION
-          if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$env:RELEASE_VERSION release notes are empty." }
-
       - name: Build API reference
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
@@ -430,14 +420,12 @@ jobs:
             throw "Expected nupkg/snupkg artifacts for [$($expectedPackageIds -join ', ')]; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
           }
 
-      - name: Extract release notes
+      - name: Preview generated release notes
+        if: inputs.release_dry_run == true
         shell: pwsh
         env:
-          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: |
-          $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
-          ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION -OutputPath $notesPath
-          "RELEASE_NOTES_PATH=$notesPath" >> $env:GITHUB_ENV
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -AssetsPath packages -TargetCommitish $env:GITHUB_SHA -DryRun
 
       - name: NuGet login
         if: inputs.release_dry_run != true
@@ -465,4 +453,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
-        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -NotesPath $env:RELEASE_NOTES_PATH -AssetsPath packages
+        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -AssetsPath packages -TargetCommitish $env:GITHUB_SHA

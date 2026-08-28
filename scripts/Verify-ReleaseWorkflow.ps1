@@ -7,31 +7,6 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $workflow = Get-Content -LiteralPath $WorkflowPath -Raw
-$changelogStepStart = $workflow.IndexOf('- name: Verify changelog and release notes', [StringComparison]::Ordinal)
-$changelogStepEnd = if ($changelogStepStart -lt 0)
-{
-    -1
-}
-else
-{
-    $workflow.IndexOf('- name:', $changelogStepStart + 1, [StringComparison]::Ordinal)
-}
-if ($changelogStepStart -lt 0 -or $changelogStepEnd -lt 0)
-{
-    throw "Changelog verification step was not found in '$WorkflowPath'."
-}
-
-$changelogStep = $workflow.Substring($changelogStepStart, $changelogStepEnd - $changelogStepStart)
-foreach ($requiredText in @(
-    'RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}',
-    './scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION'))
-{
-    if (-not $changelogStep.Contains($requiredText, [StringComparison]::Ordinal))
-    {
-        throw "Changelog verification is missing '$requiredText'."
-    }
-}
-
 $publishStart = $workflow.IndexOf("`n  publish:", [StringComparison]::Ordinal)
 if ($publishStart -lt 0)
 {
@@ -59,7 +34,8 @@ function Assert-StepGuarded([string]$StepName)
 
 Assert-Contains 'Publish branch guard' "github.ref == 'refs/heads/main'"
 Assert-Contains 'Publish approval environment' 'environment: nuget'
-Assert-Contains 'Changelog release notes' './scripts/Get-ReleaseNotes.ps1'
+Assert-Contains 'Generated release-note preview' '-DryRun'
+Assert-Contains 'Dry-run release-note guard' 'if: inputs.release_dry_run == true'
 Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
 Assert-Contains 'Retry-safe NuGet publication' './scripts/Push-NuGetRelease.ps1'
 Assert-Contains 'Retry-safe GitHub release' './scripts/Publish-GitHubRelease.ps1'
@@ -116,11 +92,6 @@ if ($publish.Contains('--skip-duplicate', [StringComparison]::Ordinal))
     throw 'Publish must verify an existing package payload instead of masking duplicates.'
 }
 
-if ($publish.Contains('--generate-notes', [StringComparison]::Ordinal))
-{
-    throw 'Publish must use CHANGELOG.md notes instead of generated notes.'
-}
-
 $nugetPublishScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Push-NuGetRelease.ps1') -Raw
 foreach ($requiredText in @('Compare-NuGetPackagePayload.ps1', '--no-symbols', "-Filter '*.snupkg'"))
 {
@@ -168,11 +139,20 @@ if ($tagIndex -lt 0 -or $packageIndex -lt 0 -or $releaseIndex -lt 0 -or
 }
 
 $githubReleaseScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Publish-GitHubRelease.ps1') -Raw
-foreach ($requiredText in @('gh release create', '--verify-tag', '--notes-file', 'gh release upload', '--clobber'))
+foreach ($requiredText in @('gh release create', '--verify-tag', '--generate-notes', '--notes-start-tag', 'gh release upload', '--clobber'))
 {
     if (-not $githubReleaseScript.Contains($requiredText, [StringComparison]::Ordinal))
     {
         throw "GitHub release publication is missing '$requiredText'."
+    }
+}
+
+$releaseConfiguration = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '.github/release.yml') -Raw
+foreach ($requiredCategory in @('Breaking changes', 'Features', 'Fixes', 'Documentation', 'Dependencies'))
+{
+    if (-not $releaseConfiguration.Contains("title: $requiredCategory", [StringComparison]::Ordinal))
+    {
+        throw "Generated release-note configuration is missing '$requiredCategory'."
     }
 }
 
@@ -218,70 +198,6 @@ try
         "#nullable enable`n",
         [Text.UTF8Encoding]::new($false))
     & $baselineScript -Version '1.0.0' -RepositoryRoot $apiFixtureRoot
-
-    $fixturePath = Join-Path $resolvedTemporaryRoot 'CHANGELOG.md'
-    $outputPath = Join-Path $resolvedTemporaryRoot 'notes.md'
-    [IO.File]::WriteAllText(
-        $fixturePath,
-        "# Changelog`n`n## [Unreleased]`n`n## [1.2.3] - 2026-08-25`n`n### Fixed`n`n- Release note.`n`n[Unreleased]: https://example.invalid/compare/v1.2.3...HEAD`n[1.2.3]: https://example.invalid/compare/v1.2.2...v1.2.3`n",
-        [Text.UTF8Encoding]::new($false))
-
-    & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '1.2.3-pr.274.75' `
-        -ChangelogPath $fixturePath `
-        -OutputPath $outputPath
-
-    $actualNotes = (Get-Content -LiteralPath $outputPath -Raw).Trim() -replace '\r\n?', "`n"
-    $expectedNotes = "### Fixed`n`n- Release note."
-    if ($actualNotes -ne $expectedNotes)
-    {
-        throw "Release-note extraction mismatch: '$actualNotes'."
-    }
-
-    [IO.File]::WriteAllText(
-        $fixturePath,
-        "# Changelog`n`n## [Unreleased]`n`n### Added`n`n- Hidden release note.`n`n## [1.2.3] - 2026-08-25`n`n### Fixed`n`n- Release note.`n",
-        [Text.UTF8Encoding]::new($false))
-
-    $populatedUnreleasedRejected = $false
-    try
-    {
-        & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-            -Version '1.2.3' `
-            -ChangelogPath $fixturePath `
-            -OutputPath $outputPath
-    }
-    catch
-    {
-        if (-not $_.Exception.Message.Contains('populated Unreleased', [StringComparison]::Ordinal))
-        {
-            throw
-        }
-
-        $populatedUnreleasedRejected = $true
-    }
-
-    if (-not $populatedUnreleasedRejected)
-    {
-        throw 'Release-note extraction accepted a populated Unreleased section beside its target version.'
-    }
-
-    [IO.File]::WriteAllText(
-        $fixturePath,
-        "# Changelog`n`n## Unreleased`n`n### Added`n`n- Pending release note.`n",
-        [Text.UTF8Encoding]::new($false))
-
-    & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '2.0.0-alpha.1+build.42' `
-        -ChangelogPath $fixturePath `
-        -OutputPath $outputPath
-
-    $actualNotes = (Get-Content -LiteralPath $outputPath -Raw).Trim() -replace '\r\n?', "`n"
-    $expectedNotes = "### Added`n`n- Pending release note."
-    if ($actualNotes -ne $expectedNotes)
-    {
-        throw "Unreleased-note extraction mismatch: '$actualNotes'."
-    }
 
     function New-PackageFixture([string]$path, [string]$payload, [bool]$includeSignature)
     {
@@ -391,4 +307,4 @@ finally
     }
 }
 
-Write-Host 'Release workflow guard, ordering, artifacts, dry run, and notes passed.'
+Write-Host 'Release workflow guard, ordering, artifacts, dry run, and generated notes passed.'

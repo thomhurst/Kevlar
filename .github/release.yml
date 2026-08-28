@@ -1,0 +1,27 @@
+changelog:
+  exclude:
+    labels:
+      - renovate-bot
+    authors:
+      - renovate[bot]
+  categories:
+    - title: Breaking changes
+      labels:
+        - MAJOR
+    - title: Features
+      labels:
+        - enhancement
+        - MINOR
+    - title: Fixes
+      labels:
+        - bug
+        - PATCH
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Dependencies
+      labels:
+        - dependencies
+    - title: Other changes
+      labels:
+        - '*'
