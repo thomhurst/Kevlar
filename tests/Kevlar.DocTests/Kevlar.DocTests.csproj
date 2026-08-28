@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Kevlar" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Chaos" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" VersionOverride="$(KevlarPackageVersion)" />
