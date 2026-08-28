@@ -187,3 +187,5 @@ Kevlar.Testing.HandlingClauseDescriptor
 Kevlar.Testing.HandlingClauseDescriptor.Description.get -> string?
 Kevlar.Testing.HandlingClauseDescriptor.IsContextAware.get -> bool
 Kevlar.Testing.StrategyDescriptor.HandlingClause.get -> Kevlar.Testing.HandlingClauseDescriptor?
+Kevlar.Testing.TelemetryEventRecord.IsCancelled.get -> bool
+Kevlar.Testing.TelemetryEventRecord.IsWinner.get -> bool
