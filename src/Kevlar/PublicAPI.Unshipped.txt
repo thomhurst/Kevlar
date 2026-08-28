@@ -7,6 +7,10 @@ Kevlar.PartitionedShield<TKey>.Dispose() -> void
 Kevlar.PartitionedShield<TKey>.DisposeAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.PartitionedShieldOptions<TKey>.OwnsStrategies.get -> bool
 Kevlar.PartitionedShieldOptions<TKey>.OwnsStrategies.set -> void
+Kevlar.RetryEvent.RequestTerminalInspection() -> void
+Kevlar.RetryEvent.SuppressAdditionalAttempts() -> void
+Kevlar.RetryEvent<TResult>.RequestTerminalInspection() -> void
+Kevlar.RetryEvent<TResult>.SuppressAdditionalAttempts() -> void
 Kevlar.Shield<TResult>.WhenInner<TException>() -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.WhenInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder.OrInner<TException>() -> Kevlar.ShieldBuilder!

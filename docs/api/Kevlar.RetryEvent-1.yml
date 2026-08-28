@@ -9,6 +9,8 @@ items:
   - Kevlar.RetryEvent`1.Context
   - Kevlar.RetryEvent`1.Delay
   - Kevlar.RetryEvent`1.Outcome
+  - Kevlar.RetryEvent`1.RequestTerminalInspection
+  - Kevlar.RetryEvent`1.SuppressAdditionalAttempts
   langs:
   - csharp
   - vb
@@ -36,6 +38,53 @@ items:
   nameWithType.vb: RetryEvent(Of TResult)
   fullName.vb: Kevlar.RetryEvent(Of TResult)
   name.vb: RetryEvent(Of TResult)
+- uid: Kevlar.RetryEvent`1.RequestTerminalInspection
+  commentId: M:Kevlar.RetryEvent`1.RequestTerminalInspection
+  id: RequestTerminalInspection
+  parent: Kevlar.RetryEvent`1
+  langs:
+  - csharp
+  - vb
+  name: RequestTerminalInspection()
+  nameWithType: RetryEvent<TResult>.RequestTerminalInspection()
+  fullName: Kevlar.RetryEvent<TResult>.RequestTerminalInspection()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Requests one final delay-generator invocation when a handled outcome exhausts the retry
+
+    budget. The inspection does not schedule another retry.
+  example: []
+  syntax:
+    content: public void RequestTerminalInspection()
+    content.vb: Public Sub RequestTerminalInspection()
+  overload: Kevlar.RetryEvent`1.RequestTerminalInspection*
+  nameWithType.vb: RetryEvent(Of TResult).RequestTerminalInspection()
+  fullName.vb: Kevlar.RetryEvent(Of TResult).RequestTerminalInspection()
+- uid: Kevlar.RetryEvent`1.SuppressAdditionalAttempts
+  commentId: M:Kevlar.RetryEvent`1.SuppressAdditionalAttempts
+  id: SuppressAdditionalAttempts
+  parent: Kevlar.RetryEvent`1
+  langs:
+  - csharp
+  - vb
+  name: SuppressAdditionalAttempts()
+  nameWithType: RetryEvent<TResult>.SuppressAdditionalAttempts()
+  fullName: Kevlar.RetryEvent<TResult>.SuppressAdditionalAttempts()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Suppresses this retry and any later retry or hedge attempts in the current execution.
+  example: []
+  syntax:
+    content: public void SuppressAdditionalAttempts()
+    content.vb: Public Sub SuppressAdditionalAttempts()
+  overload: Kevlar.RetryEvent`1.SuppressAdditionalAttempts*
+  nameWithType.vb: RetryEvent(Of TResult).SuppressAdditionalAttempts()
+  fullName.vb: Kevlar.RetryEvent(Of TResult).SuppressAdditionalAttempts()
 - uid: Kevlar.RetryEvent`1.AttemptNumber
   commentId: P:Kevlar.RetryEvent`1.AttemptNumber
   id: AttemptNumber
@@ -364,6 +413,24 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar.RetryEvent`1.RequestTerminalInspection*
+  commentId: Overload:Kevlar.RetryEvent`1.RequestTerminalInspection
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html#Kevlar_RetryEvent_1_RequestTerminalInspection
+  name: RequestTerminalInspection
+  nameWithType: RetryEvent<TResult>.RequestTerminalInspection
+  fullName: Kevlar.RetryEvent<TResult>.RequestTerminalInspection
+  nameWithType.vb: RetryEvent(Of TResult).RequestTerminalInspection
+  fullName.vb: Kevlar.RetryEvent(Of TResult).RequestTerminalInspection
+- uid: Kevlar.RetryEvent`1.SuppressAdditionalAttempts*
+  commentId: Overload:Kevlar.RetryEvent`1.SuppressAdditionalAttempts
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html#Kevlar_RetryEvent_1_SuppressAdditionalAttempts
+  name: SuppressAdditionalAttempts
+  nameWithType: RetryEvent<TResult>.SuppressAdditionalAttempts
+  fullName: Kevlar.RetryEvent<TResult>.SuppressAdditionalAttempts
+  nameWithType.vb: RetryEvent(Of TResult).SuppressAdditionalAttempts
+  fullName.vb: Kevlar.RetryEvent(Of TResult).SuppressAdditionalAttempts
 - uid: Kevlar.RetryEvent`1.AttemptNumber*
   commentId: Overload:Kevlar.RetryEvent`1.AttemptNumber
   isExternal: true

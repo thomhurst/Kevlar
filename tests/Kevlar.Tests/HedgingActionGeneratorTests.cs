@@ -11,6 +11,48 @@ public class HedgingActionGeneratorTests
     private static readonly KevlarKey<ThrowingEquality> ThrowingEqualityKey = new("throwing-equality");
 
     [Test]
+    public async Task Suppression_During_Action_Generation_Stops_The_Generated_Operation()
+    {
+        var generatorEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var suppressionRequested = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var generatedCalls = 0;
+        var shield = Shield.For<int>()
+            .When<InvalidOperationException>()
+            .Hedge(options =>
+            {
+                options.MaxHedgedAttempts = 1;
+                options.Delay = TimeSpan.Zero;
+                options.ActionGenerator = _ =>
+                {
+                    generatorEntered.TrySetResult();
+                    suppressionRequested.Task.GetAwaiter().GetResult();
+                    return _ => new ValueTask<int>(Interlocked.Increment(ref generatedCalls));
+                };
+            })
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = retry =>
+                {
+                    retry.SuppressAdditionalAttempts();
+                    suppressionRequested.TrySetResult();
+                    return default;
+                };
+            });
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
+        {
+            await generatorEntered.Task;
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(generatedCalls).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Typed_Generator_Selects_A_Distinct_Action()
     {
         var primaryCalls = 0;

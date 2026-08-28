@@ -4,12 +4,15 @@ namespace Kevlar.Strategies;
 
 internal sealed class RetryStrategy : Strategy
 {
+    private const string TerminalInspectionAttributeName = "Kevlar.RetryTerminalInspectionAttribute";
+
     private readonly OutcomeJudge _judge;
     private readonly int _maxRetries;
     private readonly Backoff _backoff;
     private readonly TimeSpan? _maxDelay;
     private readonly Delegate? _onRetry;
     private readonly Delegate? _delayGenerator;
+    private readonly bool _inspectTerminalOutcome;
     private readonly Type? _callbackResultType;
     private readonly string _telemetryName;
     private readonly string _onRetryHookName;
@@ -73,6 +76,8 @@ internal sealed class RetryStrategy : Strategy
         _maxDelay = maxDelay ?? _backoff.MaxDelay;
         _onRetry = onRetry;
         _delayGenerator = delayGenerator;
+        _inspectTerminalOutcome = delayGenerator?.Method.CustomAttributes.Any(static attribute =>
+            attribute.AttributeType.FullName == TerminalInspectionAttributeName) is true;
         _callbackResultType = callbackResultType;
         _telemetryName = telemetryName ?? "Retry";
         HasHandlingOverride = hasHandlingOverride;
@@ -141,6 +146,18 @@ internal sealed class RetryStrategy : Strategy
                 RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
                 if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
                 {
+                    if (ShouldInspectTerminalOutcome(
+                        in outcome,
+                        retriesUsed: 0,
+                        context,
+                        strategyIndex))
+                    {
+                        return InspectCompletedTerminalOutcomeAsync(
+                            outcome,
+                            context,
+                            previousAttemptNumber);
+                    }
+
                     context.AttemptNumber = previousAttemptNumber;
                     return new ValueTask<Outcome<T>>(outcome);
                 }
@@ -176,12 +193,23 @@ internal sealed class RetryStrategy : Strategy
         bool recordAttempts,
         int previousAttemptNumber)
     {
+        Outcome<T>? supersededOutcome = null;
         try
         {
             var previousBackoffDelay = TimeSpan.Zero;
             for (var retriesUsed = 0; ; retriesUsed++)
             {
                 var outcome = await execution.ConfigureAwait(false);
+                if (supersededOutcome is { } superseded)
+                {
+                    supersededOutcome = null;
+                    if (!OutcomeDisposer.IsSameResult(in superseded, in outcome))
+                    {
+                        await OutcomeDisposer.DisposeResultAsync(in superseded, context)
+                            .ConfigureAwait(false);
+                    }
+                }
+
                 if (!firstOutcomeShouldRetry)
                 {
                     RecordAttempt(
@@ -195,13 +223,25 @@ internal sealed class RetryStrategy : Strategy
 
                 if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
                 {
+                    if (ShouldInspectTerminalOutcome(
+                        in outcome,
+                        retriesUsed,
+                        context,
+                        strategyIndex))
+                    {
+                        await InspectTerminalOutcomeAsync(
+                            outcome,
+                            retriesUsed,
+                            previousBackoffDelay,
+                            context).ConfigureAwait(false);
+                    }
+
                     return outcome;
                 }
 
                 firstOutcomeShouldRetry = false;
 
                 var attempt = retriesUsed + 1;
-                KevlarMetrics.Retry(context);
                 var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
                 if (_maxDelay is { } cap && delay > cap)
@@ -223,6 +263,89 @@ internal sealed class RetryStrategy : Strategy
                     delay = ApplyGeneratedDelay(delay, generated);
                 }
 
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
+                }
+
+                if (_onRetry is not null)
+                {
+                    await InvokeOnRetryAsync(
+                        _onRetry,
+                        retriesUsed,
+                        delay,
+                        outcome,
+                        context).ConfigureAwait(false);
+                }
+
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
+                }
+
+                var deferDisposalUntilReplacement =
+                    context.Properties.CanSuppressAdditionalAttemptsConcurrently;
+                var disposeBeforeDelay = delay > TimeSpan.Zero
+                    && !deferDisposalUntilReplacement;
+                if (disposeBeforeDelay)
+                {
+                    await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                        .ConfigureAwait(false);
+                }
+
+                if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException cancelled)
+                    {
+                        if (!disposeBeforeDelay)
+                        {
+                            await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                                .ConfigureAwait(false);
+                        }
+
+                        return Outcome<T>.FromException(cancelled);
+                    }
+                }
+
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
+                }
+
+                if (!disposeBeforeDelay && !deferDisposalUntilReplacement)
+                {
+                    await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                        .ConfigureAwait(false);
+                }
+
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    if (deferDisposalUntilReplacement)
+                    {
+                        await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                            .ConfigureAwait(false);
+                    }
+
+                    return Outcome<T>.FromException(
+                        new OperationCanceledException(context.CancellationToken));
+                }
+
+                if (!context.Properties.TryBeginAdditionalAttempt())
+                {
+                    return outcome;
+                }
+
+                if (deferDisposalUntilReplacement)
+                {
+                    supersededOutcome = outcome;
+                }
+
+                KevlarMetrics.Retry(context);
+
                 if (KevlarTelemetry.IsEventEnabled(context))
                 {
                     KevlarTelemetry.RecordResult(
@@ -236,30 +359,6 @@ internal sealed class RetryStrategy : Strategy
                         delay: delay);
                 }
 
-                if (_onRetry is not null)
-                {
-                    await InvokeOnRetryAsync(
-                        _onRetry,
-                        retriesUsed,
-                        delay,
-                        outcome,
-                        context).ConfigureAwait(false);
-                }
-
-                await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);
-
-                if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException cancelled)
-                    {
-                        return Outcome<T>.FromException(cancelled);
-                    }
-                }
-
                 attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
                 context.AttemptNumber = attempt;
                 execution = next.InvokeAsync(context);
@@ -267,8 +366,54 @@ internal sealed class RetryStrategy : Strategy
         }
         finally
         {
+            if (supersededOutcome is { } superseded)
+            {
+                await OutcomeDisposer.DisposeResultAsync(in superseded, context)
+                    .ConfigureAwait(false);
+            }
+
             context.AttemptNumber = previousAttemptNumber;
         }
+    }
+
+    private async ValueTask<Outcome<T>> InspectCompletedTerminalOutcomeAsync<T>(
+        Outcome<T> outcome,
+        KevlarContext context,
+        int previousAttemptNumber)
+    {
+        try
+        {
+            await InspectTerminalOutcomeAsync(
+                outcome,
+                retriesUsed: 0,
+                previousBackoffDelay: TimeSpan.Zero,
+                context).ConfigureAwait(false);
+            return outcome;
+        }
+        finally
+        {
+            context.AttemptNumber = previousAttemptNumber;
+        }
+    }
+
+    private async ValueTask InspectTerminalOutcomeAsync<T>(
+        Outcome<T> outcome,
+        int retriesUsed,
+        TimeSpan previousBackoffDelay,
+        KevlarContext context)
+    {
+        var delay = _backoff.GetDelay(retriesUsed + 1, previousBackoffDelay);
+        if (_maxDelay is { } cap && delay > cap)
+        {
+            delay = cap;
+        }
+
+        _ = await InvokeDelayGeneratorAsync(
+            _delayGenerator!,
+            retriesUsed,
+            delay,
+            outcome,
+            context).ConfigureAwait(false);
     }
 
     private void RecordAttempt<T>(
@@ -308,6 +453,18 @@ internal sealed class RetryStrategy : Strategy
         && !context.Properties.SuppressAdditionalAttempts
         && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
         && !context.CancellationToken.IsCancellationRequested;
+
+    private bool ShouldInspectTerminalOutcome<T>(
+        in Outcome<T> outcome,
+        int retriesUsed,
+        KevlarContext context,
+        int strategyIndex) =>
+        _delayGenerator is not null
+        && (_inspectTerminalOutcome || context.IsRetryTerminalInspectionRequested(strategyIndex))
+        && retriesUsed >= _maxRetries
+        && !context.Properties.SuppressAdditionalAttempts
+        && !context.CancellationToken.IsCancellationRequested
+        && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex);
 
     private ValueTask<TimeSpan?> InvokeDelayGeneratorAsync<T>(
         Delegate generator,

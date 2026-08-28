@@ -152,6 +152,7 @@ internal sealed class HedgingStrategy : Strategy
         try
         {
             outcome = primary.Execution.Result;
+            var suppressAdditionalAttempts = PropagateAttemptSuppression(primary.Context, context);
             shouldHandle = _judge.ShouldHandle(
                 in outcome,
                 primary.Context,
@@ -162,10 +163,10 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Attempt,
                 primaryStartedAt,
                 in outcome,
-                isWinner: !shouldHandle,
+                isWinner: !shouldHandle || suppressAdditionalAttempts,
                 _telemetryName);
 
-            if (!shouldHandle)
+            if (!shouldHandle || suppressAdditionalAttempts)
             {
                 CopyAttemptProperties(primary.Context, context);
             }
@@ -175,7 +176,7 @@ internal sealed class HedgingStrategy : Strategy
             primary.Dispose();
         }
 
-        if (!shouldHandle)
+        if (!shouldHandle || context.Properties.SuppressAdditionalAttempts)
         {
             return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
@@ -210,20 +211,29 @@ internal sealed class HedgingStrategy : Strategy
             }
             else
             {
-                pending.Add(await StartHedgeAttemptAsync(
+                var firstHedge = await StartHedgeAttemptAsync(
                     next,
                     context,
                     1,
                     lastOutcome,
-                    TimeSpan.Zero).ConfigureAwait(false));
+                    TimeSpan.Zero).ConfigureAwait(false);
+                if (firstHedge is not { } launched)
+                {
+                    var terminal = lastOutcome!.Value;
+                    lastOutcome = null;
+                    terminalOutcome = terminal;
+                    return terminal;
+                }
+
+                pending.Add(launched);
                 hedgesLaunched++;
             }
 
             while (true)
             {
-                // Preserve fixed zero-delay parallel mode: launch all configured hedges before
-                // selecting even an already-completed outcome. A generator, however, must not run
-                // after an acceptable outcome has already completed.
+                // Preserve fixed zero-delay parallel mode by launching the first hedge before
+                // selecting even an already-completed primary. Shared suppression can stop later
+                // launches. A generator must not run after an acceptable outcome has completed.
                 Task<Outcome<T>>? completed = HasDelayGenerator
                     ? FindCompletedAttempt(pending)
                     : null;
@@ -234,14 +244,26 @@ internal sealed class HedgingStrategy : Strategy
                     delay = await GetDelayAsync(hedgesLaunched + 1, context, startedAt).ConfigureAwait(false);
                     if (delay == TimeSpan.Zero)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(
-                            next,
-                            context,
-                            hedgesLaunched + 1,
-                            lastOutcome,
-                            TimeSpan.Zero).ConfigureAwait(false));
-                        hedgesLaunched++;
-                        continue;
+                        if (!HasDelayGenerator && hedgesLaunched == 0
+                            || !context.Properties.SuppressAdditionalAttempts)
+                        {
+                            var hedge = await StartHedgeAttemptAsync(
+                                next,
+                                context,
+                                hedgesLaunched + 1,
+                                lastOutcome,
+                                TimeSpan.Zero).ConfigureAwait(false);
+                            if (hedge is { } launched)
+                            {
+                                pending.Add(launched);
+                                hedgesLaunched++;
+                                continue;
+                            }
+                        }
+
+                        completed = pending.Count == 1
+                            ? pending[0].Task
+                            : await WhenAnyAttempt(pending).ConfigureAwait(false);
                     }
                 }
 
@@ -255,18 +277,32 @@ internal sealed class HedgingStrategy : Strategy
 
                     if (winner == delayTask)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(
-                            next,
-                            context,
-                            hedgesLaunched + 1,
-                            lastOutcome,
-                            delay).ConfigureAwait(false));
-                        hedgesLaunched++;
-                        continue;
-                    }
+                        if (!context.Properties.SuppressAdditionalAttempts)
+                        {
+                            var hedge = await StartHedgeAttemptAsync(
+                                next,
+                                context,
+                                hedgesLaunched + 1,
+                                lastOutcome,
+                                delay).ConfigureAwait(false);
+                            if (hedge is { } launched)
+                            {
+                                pending.Add(launched);
+                                hedgesLaunched++;
+                                continue;
+                            }
+                        }
 
-                    delayCancellation.Cancel();
-                    completed = (Task<Outcome<T>>)winner;
+                        delayCancellation.Cancel();
+                        completed = pending.Count == 1
+                            ? pending[0].Task
+                            : await WhenAnyAttempt(pending).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        delayCancellation.Cancel();
+                        completed = (Task<Outcome<T>>)winner;
+                    }
                 }
                 else if (completed is null)
                 {
@@ -290,7 +326,12 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
+                    var suppressAdditionalAttempts = PropagateAttemptSuppression(
+                        judgingContext,
+                        context,
+                        pending);
                     var isWinner = !shouldHandle
+                        || suppressAdditionalAttempts && pending.Count == 0
                         || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
                     RecordAttempt(
                         in completedAttempt,
@@ -312,7 +353,8 @@ internal sealed class HedgingStrategy : Strategy
                     await completedAttempt.DisposeAsync().ConfigureAwait(false);
                 }
 
-                if (!shouldHandle)
+                if (!shouldHandle
+                    || context.Properties.SuppressAdditionalAttempts && pending.Count == 0)
                 {
                     if (lastOutcome is { } superseded)
                     {
@@ -337,17 +379,23 @@ internal sealed class HedgingStrategy : Strategy
 
                 lastOutcome = outcome;
 
-                if (hedgesLaunched < _maxHedgedAttempts)
+                if (!context.Properties.SuppressAdditionalAttempts
+                    && hedgesLaunched < _maxHedgedAttempts)
                 {
-                    pending.Add(await StartHedgeAttemptAsync(
+                    var hedge = await StartHedgeAttemptAsync(
                         next,
                         context,
                         hedgesLaunched + 1,
                         lastOutcome,
-                        TimeSpan.Zero).ConfigureAwait(false));
-                    hedgesLaunched++;
+                        TimeSpan.Zero).ConfigureAwait(false);
+                    if (hedge is { } launched)
+                    {
+                        pending.Add(launched);
+                        hedgesLaunched++;
+                    }
                 }
-                else if (pending.Count == 0)
+
+                if (pending.Count == 0)
                 {
                     var terminal = lastOutcome!.Value;
                     lastOutcome = null;
@@ -422,7 +470,7 @@ internal sealed class HedgingStrategy : Strategy
         return delay < TimeSpan.Zero ? TimeSpan.Zero : DelayHelper.Clamp(delay);
     }
 
-    private ValueTask<HedgeAttempt<T>> StartHedgeAttemptAsync<T, TState>(
+    private ValueTask<HedgeAttempt<T>?> StartHedgeAttemptAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
@@ -445,7 +493,13 @@ internal sealed class HedgingStrategy : Strategy
         }
 
         context.CancellationToken.ThrowIfCancellationRequested();
-        return new ValueTask<HedgeAttempt<T>>(
+        if (_onHedge is not null
+            && !context.Properties.TryBeginAdditionalAttempt())
+        {
+            return new ValueTask<HedgeAttempt<T>?>((HedgeAttempt<T>?)null);
+        }
+
+        return new ValueTask<HedgeAttempt<T>?>(
             StartHedgeAttempt(next, context, attemptNumber, outcome, delay));
     }
 
@@ -473,7 +527,7 @@ internal sealed class HedgingStrategy : Strategy
             _onHedgeHookName);
     }
 
-    private async ValueTask<HedgeAttempt<T>> AwaitHedgeNotificationAsync<T, TState>(
+    private async ValueTask<HedgeAttempt<T>?> AwaitHedgeNotificationAsync<T, TState>(
         ValueTask notification,
         Continuation<T, TState> next,
         KevlarContext context,
@@ -484,6 +538,11 @@ internal sealed class HedgingStrategy : Strategy
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         await notification.ConfigureAwait(false);
         context.CancellationToken.ThrowIfCancellationRequested();
+        if (!context.Properties.TryBeginAdditionalAttempt())
+        {
+            return null;
+        }
+
         return StartHedgeAttempt(next, context, attemptNumber, outcome, delay);
     }
 
@@ -506,7 +565,7 @@ internal sealed class HedgingStrategy : Strategy
         }
     }
 
-    private HedgeAttempt<T> StartHedgeAttempt<T, TState>(
+    private HedgeAttempt<T>? StartHedgeAttempt<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
@@ -553,6 +612,18 @@ internal sealed class HedgingStrategy : Strategy
                 context.CancellationToken.ThrowIfCancellationRequested();
             }
 
+            var reservedFirstFixedHedge = attemptNumber == 1
+                && !HasDelayGenerator
+                && _delay == TimeSpan.Zero
+                && _onHedge is null
+                && _actionGenerator is null;
+            if (!reservedFirstFixedHedge
+                && !context.Properties.TryBeginAdditionalAttempt())
+            {
+                ReleaseAttemptResources(fork, cancellation, contextCapture);
+                return null;
+            }
+
             KevlarMetrics.Hedge(
                 context,
                 _telemetryName,
@@ -571,12 +642,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         catch
         {
-            var release = ReleaseAttemptResourcesAsync(fork, cancellation, contextCapture);
-            if (!release.IsCompletedSuccessfully)
-            {
-                _ = release.AsTask();
-            }
-
+            ReleaseAttemptResources(fork, cancellation, contextCapture);
             throw;
         }
     }
@@ -729,6 +795,18 @@ internal sealed class HedgingStrategy : Strategy
         return default;
     }
 
+    private static void ReleaseAttemptResources<T>(
+        KevlarContext context,
+        CancellationTokenSource cancellation,
+        OriginalActionContextCapture<T>? contextCapture)
+    {
+        var release = ReleaseAttemptResourcesAsync(context, cancellation, contextCapture);
+        if (!release.IsCompletedSuccessfully)
+        {
+            _ = release.AsTask();
+        }
+    }
+
     private sealed class OriginalActionContextCapture<T>
     {
         private static readonly ObjectPool<OriginalActionContextCapture<T>, PoolPolicy> Pool = new(
@@ -762,6 +840,7 @@ internal sealed class HedgingStrategy : Strategy
                 capture._cancellation = cancellation;
                 capture._completions = null;
                 capture._selectedContext = null;
+                capture._initialProperties.ResetAdditionalAttemptState();
                 capture._initialProperties.Clear();
                 context.Properties.CopyTo(capture._initialProperties);
                 capture._acceptingInvocations = true;
@@ -999,6 +1078,7 @@ internal sealed class HedgingStrategy : Strategy
 
         private void MergeContext(KevlarContext source, KevlarContext target)
         {
+            _mergedProperties.ResetAdditionalAttemptState();
             _mergedProperties.Clear();
             source.PropertiesForCompletion.CopyTo(_mergedProperties);
             target.Properties.ApplyChangesSince(_initialProperties, _mergedProperties);
@@ -1309,6 +1389,35 @@ internal sealed class HedgingStrategy : Strategy
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
         source.CopyCompletionPropertiesToParent(target);
+
+    private static bool PropagateAttemptSuppression<T>(
+        KevlarContext source,
+        KevlarContext target,
+        List<HedgeAttempt<T>> pending)
+    {
+        if (!PropagateAttemptSuppression(source, target))
+        {
+            return false;
+        }
+
+        foreach (var attempt in pending)
+        {
+            attempt.Context.Properties.SuppressAdditionalAttempts = true;
+        }
+
+        return true;
+    }
+
+    private static bool PropagateAttemptSuppression(KevlarContext source, KevlarContext target)
+    {
+        if (!source.Properties.SuppressAdditionalAttempts)
+        {
+            return false;
+        }
+
+        target.Properties.SuppressAdditionalAttempts = true;
+        return true;
+    }
 
     private readonly struct StartedAttempt<T>
     {

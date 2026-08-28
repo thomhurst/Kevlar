@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.RpcException)
   - Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.StatusCode)
+  - Kevlar.Extensions.Grpc.GrpcShield.RetryAfter(Kevlar.RetryEvent)
   - Kevlar.Extensions.Grpc.GrpcShield.WhenTransient
   langs:
   - csharp
@@ -119,6 +120,44 @@ items:
       type: Kevlar.ShieldBuilder
     content.vb: Public Shared Function WhenTransient() As ShieldBuilder
   overload: Kevlar.Extensions.Grpc.GrpcShield.WhenTransient*
+- uid: Kevlar.Extensions.Grpc.GrpcShield.RetryAfter(Kevlar.RetryEvent)
+  commentId: M:Kevlar.Extensions.Grpc.GrpcShield.RetryAfter(Kevlar.RetryEvent)
+  id: RetryAfter(Kevlar.RetryEvent)
+  parent: Kevlar.Extensions.Grpc.GrpcShield
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter(RetryEvent)
+  nameWithType: GrpcShield.RetryAfter(RetryEvent)
+  fullName: Kevlar.Extensions.Grpc.GrpcShield.RetryAfter(Kevlar.RetryEvent)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: >-
+    A <xref href="Kevlar.RetryOptions.DelayGenerator" data-throw-if-not-resolved="false"></xref> that uses a valid non-negative
+
+    <code>grpc-retry-pushback-ms</code> trailer as the next retry delay.
+  remarks: >-
+    Negative, malformed, or duplicate pushback values suppress additional attempts without
+
+    changing the ambient handling clause used by circuit breakers or fallbacks. The retry
+
+    strategy's <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps a returned delay; when unset, the
+
+    selected backoff's maximum applies. Wrapped and aggregate exception graphs are searched for
+
+    the handled <xref href="Grpc.Core.RpcException" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
+    parameters:
+    - id: retry
+      type: Kevlar.RetryEvent
+    return:
+      type: System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+    content.vb: Public Shared Function RetryAfter(retry As RetryEvent) As ValueTask(Of TimeSpan?)
+  overload: Kevlar.Extensions.Grpc.GrpcShield.RetryAfter*
 references:
 - uid: Kevlar.Extensions.Grpc
   commentId: N:Kevlar.Extensions.Grpc
@@ -486,3 +525,134 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
+- uid: Kevlar.RetryOptions.DelayGenerator
+  commentId: P:Kevlar.RetryOptions.DelayGenerator
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_DelayGenerator
+  name: DelayGenerator
+  nameWithType: RetryOptions.DelayGenerator
+  fullName: Kevlar.RetryOptions.DelayGenerator
+- uid: Kevlar.RetryOptions.MaxDelay
+  commentId: P:Kevlar.RetryOptions.MaxDelay
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryOptions.MaxDelay
+  fullName: Kevlar.RetryOptions.MaxDelay
+- uid: Kevlar.Extensions.Grpc.GrpcShield.RetryAfter*
+  commentId: Overload:Kevlar.Extensions.Grpc.GrpcShield.RetryAfter
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.GrpcShield.html#Kevlar_Extensions_Grpc_GrpcShield_RetryAfter_Kevlar_RetryEvent_
+  name: RetryAfter
+  nameWithType: GrpcShield.RetryAfter
+  fullName: Kevlar.Extensions.Grpc.GrpcShield.RetryAfter
+- uid: Kevlar.RetryEvent
+  commentId: T:Kevlar.RetryEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.RetryEvent.html
+  name: RetryEvent
+  nameWithType: RetryEvent
+  fullName: Kevlar.RetryEvent
+- uid: System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+  commentId: T:System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TimeSpan?>
+  nameWithType: ValueTask<TimeSpan?>
+  fullName: System.Threading.Tasks.ValueTask<System.TimeSpan?>
+  nameWithType.vb: ValueTask(Of TimeSpan?)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of System.TimeSpan?)
+  name.vb: ValueTask(Of TimeSpan?)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: )
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks

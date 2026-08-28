@@ -1,4 +1,5 @@
 using Kevlar.Internal;
+using Reservoir;
 
 namespace Kevlar;
 
@@ -12,12 +13,17 @@ namespace Kevlar;
 public sealed class KevlarProperties
 {
     private const int RetainedSlotCapacity = 32;
+    private static readonly ObjectPool<AdditionalAttemptState, AdditionalAttemptStatePoolPolicy>
+        AdditionalAttemptStates = new(maxCapacity: 256);
 
+    private AdditionalAttemptState _ownedAdditionalAttemptState = new();
     private PropertyIdentity _firstIdentity;
     private PropertySlot? _firstItem;
     private Dictionary<PropertyIdentity, PropertySlot>? _items;
     private int _count;
     private KevlarProperties? _mutationTarget;
+    private AdditionalAttemptState _additionalAttemptState;
+    private bool _holdsConcurrentAttemptReference;
 
 #if DEBUG
     private bool _returnedToPool;
@@ -25,9 +31,20 @@ public sealed class KevlarProperties
 
     internal KevlarProperties()
     {
+        _additionalAttemptState = _ownedAdditionalAttemptState;
     }
 
-    internal bool SuppressAdditionalAttempts { get; set; }
+    internal bool SuppressAdditionalAttempts
+    {
+        get => _additionalAttemptState.IsSuppressed;
+        set => _additionalAttemptState.IsSuppressed = value;
+    }
+
+    internal bool CanSuppressAdditionalAttemptsConcurrently =>
+        _additionalAttemptState.CanSuppressConcurrently;
+
+    internal bool TryBeginAdditionalAttempt() =>
+        _additionalAttemptState.TryBeginAttempt();
 
     /// <summary>Gets the number of values currently stored in the bag.</summary>
     public int Count
@@ -111,9 +128,51 @@ public sealed class KevlarProperties
 
     internal void MirrorMutationsTo(KevlarProperties? target) => _mutationTarget = target;
 
+    internal void ShareAdditionalAttemptStateWith(KevlarProperties source)
+    {
+        source._additionalAttemptState.AddReference();
+        _additionalAttemptState = source._additionalAttemptState;
+    }
+
+    internal void MarkAdditionalAttemptsConcurrent()
+    {
+        _additionalAttemptState.AddConcurrentReference();
+        _holdsConcurrentAttemptReference = true;
+    }
+
+    internal void ResetAdditionalAttemptState()
+    {
+        if (_holdsConcurrentAttemptReference)
+        {
+            _additionalAttemptState.ReleaseConcurrentReference();
+            _holdsConcurrentAttemptReference = false;
+        }
+
+        if (!ReferenceEquals(_additionalAttemptState, _ownedAdditionalAttemptState))
+        {
+            ReleaseAdditionalAttemptState(_additionalAttemptState);
+            _additionalAttemptState = _ownedAdditionalAttemptState;
+        }
+        else if (_ownedAdditionalAttemptState.ReferenceCount != 1)
+        {
+            ReleaseAdditionalAttemptState(_ownedAdditionalAttemptState);
+            _ownedAdditionalAttemptState = AdditionalAttemptStates.Rent();
+            _additionalAttemptState = _ownedAdditionalAttemptState;
+        }
+
+        _ownedAdditionalAttemptState.Reset();
+    }
+
+    private static void ReleaseAdditionalAttemptState(AdditionalAttemptState state)
+    {
+        if (state.ReleaseReference())
+        {
+            AdditionalAttemptStates.Return(state);
+        }
+    }
+
     internal void Clear()
     {
-        SuppressAdditionalAttempts = false;
         if (_firstItem is null)
         {
             return;
@@ -141,7 +200,11 @@ public sealed class KevlarProperties
 
     internal void CopyTo(KevlarProperties target)
     {
-        target.SuppressAdditionalAttempts = SuppressAdditionalAttempts;
+        if (SuppressAdditionalAttempts)
+        {
+            target.SuppressAdditionalAttempts = true;
+        }
+
         if (_firstItem is null)
         {
             return;
@@ -159,10 +222,11 @@ public sealed class KevlarProperties
 
     internal void ApplyChangesSince(KevlarProperties baseline, KevlarProperties target)
     {
-        if (SuppressAdditionalAttempts != baseline.SuppressAdditionalAttempts
-            && target.SuppressAdditionalAttempts == baseline.SuppressAdditionalAttempts)
+        if (SuppressAdditionalAttempts
+            && !baseline.SuppressAdditionalAttempts
+            && !target.SuppressAdditionalAttempts)
         {
-            target.SuppressAdditionalAttempts = SuppressAdditionalAttempts;
+            target.SuppressAdditionalAttempts = true;
         }
 
         baseline.RemoveMissingValuesFrom(this, target);
@@ -367,5 +431,97 @@ public sealed class KevlarProperties
             other is PropertySlot<T> slot
             && _hasValue == slot._hasValue
             && (!_hasValue || EqualityComparer<T>.Default.Equals(_value, slot._value));
+    }
+
+    private sealed class AdditionalAttemptState
+    {
+        private int _referenceCount = 1;
+        private int _suppressed;
+        private int _concurrentReferenceCount;
+
+        public int ReferenceCount => Volatile.Read(ref _referenceCount);
+
+        public bool IsSuppressed
+        {
+            get => Volatile.Read(ref _suppressed) != 0;
+            set
+            {
+                if (!value)
+                {
+                    return;
+                }
+
+                if (!CanSuppressConcurrently)
+                {
+                    Volatile.Write(ref _suppressed, 1);
+                    return;
+                }
+
+                lock (this)
+                {
+                    Volatile.Write(ref _suppressed, 1);
+                }
+            }
+        }
+
+        public bool CanSuppressConcurrently =>
+            Volatile.Read(ref _concurrentReferenceCount) != 0;
+
+        public void AddConcurrentReference()
+        {
+            lock (this)
+            {
+                _concurrentReferenceCount++;
+            }
+        }
+
+        public void ReleaseConcurrentReference()
+        {
+            lock (this)
+            {
+                _concurrentReferenceCount--;
+            }
+        }
+
+        public bool TryBeginAttempt()
+        {
+            if (!CanSuppressConcurrently)
+            {
+                return !IsSuppressed;
+            }
+
+            lock (this)
+            {
+                return !IsSuppressed;
+            }
+        }
+
+        public void AddReference() => Interlocked.Increment(ref _referenceCount);
+
+        public bool ReleaseReference() => Interlocked.Decrement(ref _referenceCount) == 0;
+
+        public void Reset()
+        {
+            Volatile.Write(ref _suppressed, 0);
+            Volatile.Write(ref _concurrentReferenceCount, 0);
+        }
+
+        public void ResetForPool()
+        {
+            Volatile.Write(ref _referenceCount, 1);
+            Reset();
+        }
+    }
+
+    private readonly struct AdditionalAttemptStatePoolPolicy
+        : IPooledObjectPolicy<AdditionalAttemptState>
+    {
+        public AdditionalAttemptState Create() => new();
+
+        public bool TryReset(AdditionalAttemptState state)
+        {
+            state.ResetForPool();
+            return true;
+        }
     }
 }

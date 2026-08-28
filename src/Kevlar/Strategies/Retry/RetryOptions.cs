@@ -200,6 +200,19 @@ public readonly struct RetryEvent
     /// the callback (including an asynchronous callback) completes.
     /// </summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
+
+    /// <summary>
+    /// Requests one final delay-generator invocation when a handled outcome exhausts the retry
+    /// budget. The inspection does not schedule another retry.
+    /// </summary>
+    public void RequestTerminalInspection() =>
+        Context.RequestRetryTerminalInspection(Context.StrategyIndex);
+
+    /// <summary>
+    /// Suppresses this retry and any later retry or hedge attempts in the current execution.
+    /// </summary>
+    public void SuppressAdditionalAttempts() =>
+        Context.Properties.SuppressAdditionalAttempts = true;
 }
 
 /// <summary>Describes a retry that is about to happen, with the handled outcome typed as <typeparamref name="TResult"/>.</summary>
@@ -233,4 +246,17 @@ public readonly struct RetryEvent<TResult>
     /// the callback (including an asynchronous callback) completes.
     /// </summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
+
+    /// <summary>
+    /// Requests one final delay-generator invocation when a handled outcome exhausts the retry
+    /// budget. The inspection does not schedule another retry.
+    /// </summary>
+    public void RequestTerminalInspection() =>
+        Context.RequestRetryTerminalInspection(Context.StrategyIndex);
+
+    /// <summary>
+    /// Suppresses this retry and any later retry or hedge attempts in the current execution.
+    /// </summary>
+    public void SuppressAdditionalAttempts() =>
+        Context.Properties.SuppressAdditionalAttempts = true;
 }

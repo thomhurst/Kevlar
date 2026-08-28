@@ -99,6 +99,184 @@ public class HedgingTests
     }
 
     [Test]
+    public async Task Suppression_During_An_Async_Retry_Callback_Stops_A_Timed_Hedge()
+    {
+        var timeProvider = new ControlledTimeProvider();
+        var callbackEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var shield = Shield.When<InvalidOperationException>()
+            .Hedge(1, TimeSpan.FromMinutes(1))
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = async retry =>
+                {
+                    retry.SuppressAdditionalAttempts();
+                    callbackEntered.TrySetResult();
+                    await releaseCallback.Task;
+                };
+            })
+            .WithTimeProvider(timeProvider);
+        var execution = shield.ExecuteAsync<int>(_ =>
+        {
+            Interlocked.Increment(ref attempts);
+            throw new InvalidOperationException();
+        }).AsTask();
+        await callbackEntered.Task;
+        await timeProvider.WaitForTimersAsync(1);
+
+        timeProvider.FireTimer(0);
+        releaseCallback.TrySetResult();
+
+        _ = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Suppression_During_OnHedge_Stops_The_Hedge_Operation()
+    {
+        var callbackEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var suppressionRequested = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var shield = Shield.When<InvalidOperationException>()
+            .Hedge(options =>
+            {
+                options.MaxHedgedAttempts = 1;
+                options.Delay = TimeSpan.Zero;
+                options.OnHedge = async _ =>
+                {
+                    callbackEntered.TrySetResult();
+                    await suppressionRequested.Task;
+                };
+            })
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = retry =>
+                {
+                    retry.SuppressAdditionalAttempts();
+                    suppressionRequested.TrySetResult();
+                    return default;
+                };
+            });
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
+        {
+            Interlocked.Increment(ref attempts);
+            await callbackEntered.Task;
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Suppression_During_DelayGenerator_Stops_The_First_Hedge()
+    {
+        var generatorEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var suppressionRequested = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var shield = Shield.When<InvalidOperationException>()
+            .Hedge(options =>
+            {
+                options.MaxHedgedAttempts = 1;
+                options.DelayGenerator = async _ =>
+                {
+                    generatorEntered.TrySetResult();
+                    await suppressionRequested.Task;
+                    return TimeSpan.Zero;
+                };
+            })
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = retry =>
+                {
+                    retry.SuppressAdditionalAttempts();
+                    suppressionRequested.TrySetResult();
+                    return default;
+                };
+            });
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
+        {
+            Interlocked.Increment(ref attempts);
+            await generatorEntered.Task;
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Detached_Loser_Suppression_Does_Not_Leak_Into_A_Reused_Context()
+    {
+        var loserCallbackEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseLoserCallback = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var loserSuppressed = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var hedgeAttempts = 0;
+        var hedge = Shield.When<InvalidOperationException>()
+            .Hedge(1, TimeSpan.Zero)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = async retry =>
+                {
+                    loserCallbackEntered.TrySetResult();
+                    await releaseLoserCallback.Task;
+                    retry.SuppressAdditionalAttempts();
+                    loserSuppressed.TrySetResult();
+                };
+            });
+        var winner = await hedge.ExecuteAsync<int>(async _ =>
+        {
+            if (Interlocked.Increment(ref hedgeAttempts) == 1)
+            {
+                await loserCallbackEntered.Task;
+                return 42;
+            }
+
+            throw new InvalidOperationException();
+        });
+        await Assert.That(winner).IsEqualTo(42);
+
+        var unrelatedAttempts = 0;
+        var unrelatedStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var unrelated = Shield.Retry(1, Backoff.None).ExecuteAsync<int>(async _ =>
+        {
+            if (Interlocked.Increment(ref unrelatedAttempts) == 1)
+            {
+                unrelatedStarted.TrySetResult();
+                await loserSuppressed.Task;
+                throw new InvalidOperationException();
+            }
+
+            return 84;
+        }).AsTask();
+        await unrelatedStarted.Task;
+
+        releaseLoserCallback.TrySetResult();
+
+        await Assert.That(await unrelated).IsEqualTo(84);
+        await Assert.That(unrelatedAttempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Handled_Failure_Launches_The_Next_Attempt_Immediately()
     {
         var attempts = 0;

@@ -42,6 +42,60 @@ public class ResultDisposalTests
     }
 
     [Test]
+    public async Task Retry_Disposes_Handled_Result_Before_Ordinary_Backoff()
+    {
+        var timeProvider = new ControlledTimeProvider();
+        var handled = new DisposableResult(isHandled: true);
+        var final = new DisposableResult(isHandled: false);
+        var attempts = 0;
+        var shield = Shield.For<DisposableResult>()
+            .WhenResult(static result => result.IsHandled)
+            .Retry(1, Backoff.Constant(TimeSpan.FromMinutes(1)))
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteAsync(_ => new ValueTask<DisposableResult>(
+            Interlocked.Increment(ref attempts) == 1 ? handled : final)).AsTask();
+        await timeProvider.WaitForTimersAsync(1);
+
+        await Assert.That(handled.DisposeCount).IsEqualTo(1);
+        timeProvider.FireTimer(0);
+        var result = await execution;
+        await Assert.That(ReferenceEquals(result, final)).IsTrue();
+        await Assert.That(final.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Retry_Disposes_Result_After_Inner_Hedges_Finish()
+    {
+        var timeProvider = new ControlledTimeProvider();
+        var first = new DisposableResult(isHandled: true);
+        var second = new DisposableResult(isHandled: true);
+        var final = new DisposableResult(isHandled: false);
+        var attempts = 0;
+        var shield = Shield.For<DisposableResult>()
+            .WhenResult(static result => result.IsHandled)
+            .Retry(1, Backoff.Constant(TimeSpan.FromMinutes(1)))
+            .Hedge(1, Timeout.InfiniteTimeSpan)
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteAsync(_ => new ValueTask<DisposableResult>(
+            Interlocked.Increment(ref attempts) switch
+            {
+                1 => first,
+                2 => second,
+                _ => final,
+            })).AsTask();
+        await timeProvider.WaitForTimersAsync(1);
+
+        await Assert.That(first.DisposeCount).IsEqualTo(1);
+        await Assert.That(second.DisposeCount).IsEqualTo(1);
+        timeProvider.FireTimer(0);
+
+        await Assert.That(ReferenceEquals(await execution, final)).IsTrue();
+        await Assert.That(final.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Retry_Prefers_Async_Disposal()
     {
         var handled = new AsyncDisposableResult(isHandled: true);
@@ -83,6 +137,72 @@ public class ResultDisposalTests
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(handled.AsyncDisposeCount).IsEqualTo(1);
         await Assert.That(handled.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Cancellation_During_Async_Disposal_Stops_The_Retry()
+    {
+        var handled = new BlockingAsyncDisposableResult(isHandled: true);
+        var final = new BlockingAsyncDisposableResult(isHandled: false);
+        using var cancellation = new CancellationTokenSource();
+        var attempts = 0;
+        var shield = Shield.For<BlockingAsyncDisposableResult>()
+            .WhenResult(static result => result.IsHandled)
+            .Retry(1, Backoff.None);
+        var execution = shield.ExecuteAsync(
+            _ => new ValueTask<BlockingAsyncDisposableResult>(
+                Interlocked.Increment(ref attempts) == 1 ? handled : final),
+            cancellation.Token).AsTask();
+        await handled.DisposalStarted;
+
+        cancellation.Cancel();
+        handled.AllowDisposal();
+
+        _ = await Assert.That(async () => await execution)
+            .Throws<OperationCanceledException>();
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(handled.AsyncDisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Concurrent_Suppression_During_Deferred_Disposal_Preserves_The_Result()
+    {
+        var first = new BlockingAsyncDisposableResult(isHandled: true);
+        var second = new BlockingAsyncDisposableResult(isHandled: true);
+        var suppressionRequested = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var shield = Shield.For<BlockingAsyncDisposableResult>()
+            .WhenResult(static result => result.IsHandled)
+            .Hedge(1, TimeSpan.Zero)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = async retry =>
+                {
+                    if (!ReferenceEquals(retry.Outcome.Result, second))
+                    {
+                        return;
+                    }
+
+                    await first.DisposalStarted;
+                    retry.SuppressAdditionalAttempts();
+                    suppressionRequested.TrySetResult();
+                };
+            });
+        var execution = shield.ExecuteAsync(_ => new ValueTask<BlockingAsyncDisposableResult>(
+            Interlocked.Increment(ref attempts) == 1 ? first : second)).AsTask();
+        await first.DisposalStarted;
+        await suppressionRequested.Task;
+
+        second.AllowDisposal();
+        first.AllowDisposal();
+        var result = await execution;
+
+        await Assert.That(attempts).IsEqualTo(3);
+        await Assert.That(first.AsyncDisposeCount).IsEqualTo(1);
+        await Assert.That(result.AsyncDisposeCount).IsEqualTo(0);
     }
 
     [Test]

@@ -32,6 +32,8 @@ public sealed class KevlarContext
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
+    private long _retryTerminalInspectionMask;
+    private HashSet<int>? _retryTerminalInspectionOverflow;
     private int _attemptNumber;
     private string? _shieldName;
     private int _strategyIndex = -1;
@@ -143,6 +145,7 @@ public sealed class KevlarContext
         lock (_completionPropertiesLock)
         {
             _completionProperties ??= new KevlarProperties();
+            _completionProperties.ResetAdditionalAttemptState();
             _completionProperties.Clear();
             properties.CopyTo(_completionProperties);
             if (baseline is not null)
@@ -246,6 +249,7 @@ public sealed class KevlarContext
         context._forkBaseline ??= new KevlarProperties();
         parent.Properties.CopyTo(context._forkBaseline);
         context._forkBaseline.CopyTo(context.Properties);
+        context.Properties.ShareAdditionalAttemptStateWith(parent.Properties);
         context._hasForkBaseline = true;
         return context;
     }
@@ -295,6 +299,8 @@ public sealed class KevlarContext
         fork.TelemetryListener = TelemetryListener;
 
         Properties.CopyTo(fork.Properties);
+        fork.Properties.ShareAdditionalAttemptStateWith(Properties);
+        fork.Properties.MarkAdditionalAttemptsConcurrent();
         fork._forkBaseline ??= new KevlarProperties();
         Properties.CopyTo(fork._forkBaseline);
         fork._hasForkBaseline = true;
@@ -329,6 +335,46 @@ public sealed class KevlarContext
             {
                 return;
             }
+        }
+    }
+
+    internal void RequestRetryTerminalInspection(int strategyIndex)
+    {
+        if ((uint)strategyIndex >= 64)
+        {
+            lock (_completionPropertiesLock)
+            {
+                (_retryTerminalInspectionOverflow ??= []).Add(strategyIndex);
+            }
+
+            return;
+        }
+
+        var bit = 1L << strategyIndex;
+        while (true)
+        {
+            var current = Volatile.Read(ref _retryTerminalInspectionMask);
+            if ((current & bit) != 0
+                || Interlocked.CompareExchange(
+                    ref _retryTerminalInspectionMask,
+                    current | bit,
+                    current) == current)
+            {
+                return;
+            }
+        }
+    }
+
+    internal bool IsRetryTerminalInspectionRequested(int strategyIndex)
+    {
+        if ((uint)strategyIndex < 64)
+        {
+            return (Volatile.Read(ref _retryTerminalInspectionMask) & (1L << strategyIndex)) != 0;
+        }
+
+        lock (_completionPropertiesLock)
+        {
+            return _retryTerminalInspectionOverflow?.Contains(strategyIndex) is true;
         }
     }
 
@@ -385,11 +431,24 @@ public sealed class KevlarContext
             context.AttemptNumber = 0;
             context.TelemetryListener = null;
             context._activeStrategyMask = 0;
+            context._retryTerminalInspectionMask = 0;
+            context._retryTerminalInspectionOverflow?.Clear();
             context.TimeProvider = TimeProvider.System;
             context._properties.MirrorMutationsTo(null);
+            context._properties.ResetAdditionalAttemptState();
             context._properties.Clear();
-            context._completionProperties?.Clear();
-            context._forkBaseline?.Clear();
+            if (context._completionProperties is not null)
+            {
+                context._completionProperties.ResetAdditionalAttemptState();
+                context._completionProperties.Clear();
+            }
+
+            if (context._forkBaseline is not null)
+            {
+                context._forkBaseline.ResetAdditionalAttemptState();
+                context._forkBaseline.Clear();
+            }
+
             context._hasCompletionProperties = false;
             context._hasForkBaseline = false;
             return true;
