@@ -7,12 +7,12 @@ namespace Kevlar;
 /// Selects and retains an independent result-aware <see cref="Shield{TResult}"/> for each partition key.
 /// </summary>
 /// <remarks>
-/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey, TResult}.MaxPartitions"/>. Eviction
-/// removes only the provider's reference: callers that already hold the old shield, including
-/// active executions, continue normally. A later lookup creates a fresh partition with fresh
-/// strategy state. Partition keys are never added to metric tags or shield names automatically.
+/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey, TResult}.MaxPartitions"/>.
+/// After the eviction callback, disposable strategies owned by an evicted shield are disposed. Do
+/// not reuse a shield after its partition is evicted. A later lookup creates a fresh partition with
+/// fresh strategy state. Partition keys are never added to metric tags or shield names automatically.
 /// </remarks>
-public sealed class PartitionedShield<TKey, TResult>
+public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDisposable
     where TKey : notnull
 {
     private readonly PartitionCache<TKey, Shield<TResult>> _cache;
@@ -91,6 +91,12 @@ public sealed class PartitionedShield<TKey, TResult>
     public long EvictionCount => _cache.EvictionCount;
 
     internal PartitionCacheState CaptureState() => _cache.CaptureState();
+
+    /// <summary>Disposes strategies owned by every retained partition.</summary>
+    public void Dispose() => _cache.Dispose();
+
+    /// <summary>Asynchronously disposes strategies owned by every retained partition.</summary>
+    public ValueTask DisposeAsync() => _cache.DisposeAsync();
 
     private static Func<TKey, ValueTask<Shield<TResult>>> Wrap(Func<TKey, Shield<TResult>> factory)
     {

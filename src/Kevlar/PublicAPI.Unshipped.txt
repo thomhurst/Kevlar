@@ -1,4 +1,8 @@
 #nullable enable
+Kevlar.PartitionedShield<TKey, TResult>.Dispose() -> void
+Kevlar.PartitionedShield<TKey, TResult>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+Kevlar.PartitionedShield<TKey>.Dispose() -> void
+Kevlar.PartitionedShield<TKey>.DisposeAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.Shield<TResult>.WhenInner<TException>() -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield<TResult>.WhenInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder.OrInner<TException>() -> Kevlar.ShieldBuilder!

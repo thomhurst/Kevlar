@@ -47,10 +47,11 @@ partition is evicted before that limit can be exceeded. `IdleExpiration` is opti
 opportunistic: expired entries are removed by later provider operations or an explicit
 `PruneExpired()` call; no timer or background worker is retained.
 
-Eviction removes only the provider's reference to a shield. An execution already using that shield
-continues normally and is not cancelled. A later lookup of the evicted key creates a new shield
-with fresh breaker, limiter, and queue state. This makes capacity eviction deterministic without
-coupling cache lifetime to execution lifetime.
+After `OnEvicted` completes, Kevlar disposes disposable strategies owned by the evicted shield.
+Do not retain and reuse a shield after its partition is evicted. A later lookup of the evicted key
+creates a new shield with fresh breaker, limiter, and queue state. Core strategies hold no
+long-lived disposable resources; this lifecycle primarily matters for custom strategies and
+adapters such as an owned `RateLimiter`.
 
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
@@ -82,6 +83,10 @@ var observed = new PartitionedShield<string>(
 lifecycle status. `TryGetShield`, `TryRemove`, `Clear`, and their async cleanup variants provide
 explicit cache control. If the factory throws, no existing partition is evicted and the failed key
 is not cached.
+
+`PartitionedShield` implements both `IDisposable` and `IAsyncDisposable`. Disposing it clears live
+partitions and disposes their owned strategies exactly once. Keyed partition providers registered
+through DI are singleton-owned and are therefore disposed with the service provider.
 
 ## Dependency injection
 

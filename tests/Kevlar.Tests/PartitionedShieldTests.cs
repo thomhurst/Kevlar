@@ -1,4 +1,5 @@
 using Kevlar.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -126,6 +127,118 @@ public class PartitionedShieldTests
         await Assert.That(provider.ExpirationEvictionCount).IsEqualTo(1);
         await Assert.That(provider.CreatedCount).IsEqualTo(2);
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
+    }
+
+    [Test]
+    public async Task Idle_Eviction_Disposes_Owned_Strategies()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var strategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(
+            _ => Shield.Use(strategy),
+            new PartitionedShieldOptions<string>
+            {
+                IdleExpiration = TimeSpan.FromMinutes(1),
+                TimeProvider = timeProvider,
+            });
+        _ = provider.GetShield("tenant");
+
+        timeProvider.Advance(TimeSpan.FromMinutes(1));
+        _ = provider.PruneExpired();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task DisposeAsync_Disposes_All_Live_Partitions_Once()
+    {
+        var strategies = new List<DisposablePartitionStrategy>();
+        var provider = new PartitionedShield<int>(_ =>
+        {
+            var strategy = new DisposablePartitionStrategy();
+            strategies.Add(strategy);
+            return Shield.Use(strategy);
+        });
+        _ = provider.GetShield(1);
+        _ = provider.GetShield(2);
+
+        await provider.DisposeAsync();
+        await provider.DisposeAsync();
+
+        await Assert.That(strategies.Select(static strategy => strategy.DisposeCount))
+            .IsEquivalentTo([1, 1]);
+        await Assert.That(() => provider.GetShield(3)).Throws<ObjectDisposedException>();
+    }
+
+    [Test]
+    public async Task Shared_Strategy_Is_Disposed_After_Last_Partition_Is_Removed()
+    {
+        var strategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(_ => Shield.Use(strategy));
+        _ = provider.GetShield("first");
+        _ = provider.GetShield("second");
+
+        _ = provider.TryRemove("first");
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+
+        _ = provider.TryRemove("second");
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Typed_DisposeAsync_Prefers_Async_Strategy_Disposal()
+    {
+        var strategy = new AsyncDisposablePartitionStrategy();
+        var provider = new PartitionedShield<string, int>(_ =>
+            Shield.For<int>().Use(strategy));
+        _ = provider.GetShield("tenant");
+
+        await provider.DisposeAsync();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ServiceProvider_DisposeAsync_Disposes_Partitioned_Shields()
+    {
+        var strategy = new DisposablePartitionStrategy();
+        var services = new ServiceCollection()
+            .AddKevlar()
+            .AddPartitionedShield<string>("tenant", (_, _) => Shield.Use(strategy))
+            .BuildServiceProvider();
+        var provider = services.GetRequiredKeyedService<PartitionedShield<string>>("tenant");
+        _ = provider.GetShield("alpha");
+
+        await services.DisposeAsync();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Eviction_Defers_Disposal_Until_Active_Execution_Completes()
+    {
+        var firstStrategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(
+            key => Shield.Use(key == "first" ? firstStrategy : new DisposablePartitionStrategy()),
+            new PartitionedShieldOptions<string> { MaxPartitions = 1 });
+        var first = provider.GetShield("first");
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var execution = first.ExecuteAsync(async _ =>
+        {
+            entered.TrySetResult();
+            await release.Task;
+        }).AsTask();
+        await entered.Task;
+
+        _ = provider.GetShield("second");
+        await Assert.That(firstStrategy.DisposeCount).IsEqualTo(0);
+
+        release.TrySetResult();
+        await execution;
+        await provider.DisposeAsync();
+
+        await Assert.That(firstStrategy.DisposeCount).IsEqualTo(1);
     }
 
     [Test]
@@ -263,5 +376,33 @@ public class PartitionedShieldTests
 
         var provider = new PartitionedShield<string>(_ => Shield.Empty);
         _ = await Assert.That(() => provider.GetShield(null!)).Throws<ArgumentNullException>();
+    }
+
+    private sealed class DisposablePartitionStrategy : Strategy, IDisposable
+    {
+        public int DisposeCount { get; private set; }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) =>
+            next.InvokeAsync(context);
+
+        public void Dispose() => DisposeCount++;
+    }
+
+    private sealed class AsyncDisposablePartitionStrategy : Strategy, IAsyncDisposable
+    {
+        public int DisposeCount { get; private set; }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) =>
+            next.InvokeAsync(context);
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCount++;
+            return default;
+        }
     }
 }
