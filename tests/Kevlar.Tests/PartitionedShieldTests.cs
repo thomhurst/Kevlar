@@ -369,6 +369,50 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Publication_Expiration_Callback_Can_Await_Cold_Lookup()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var factoryEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFactory = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        PartitionedShield<string>? provider = null;
+        provider = PartitionedShield<string>.CreateAsync(
+            async key =>
+            {
+                if (key == "publishing")
+                {
+                    factoryEntered.TrySetResult();
+                    await releaseFactory.Task;
+                }
+
+                return Shield.Use(new DisposablePartitionStrategy());
+            },
+            new PartitionedShieldOptions<string>
+            {
+                MaxPartitions = 1,
+                IdleExpiration = TimeSpan.FromMinutes(1),
+                TimeProvider = timeProvider,
+                OnEvicted = async item =>
+                {
+                    if (item.Key == "expired")
+                    {
+                        _ = await provider!.GetShieldAsync("nested");
+                    }
+                },
+            });
+        _ = await provider.GetShieldAsync("expired");
+        var publishing = provider.GetShieldAsync("publishing").AsTask();
+        await factoryEntered.Task;
+        timeProvider.Advance(TimeSpan.FromMinutes(1));
+
+        releaseFactory.TrySetResult();
+        _ = await publishing.WaitAsync(TimeSpan.FromSeconds(2));
+
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task Nested_Eviction_Captured_Context_Uses_Active_Parent()
     {
         PartitionedShield<string>? provider = null;

@@ -507,6 +507,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
                         expired,
                         PartitionEvictionReason.Expiration,
                         preferSynchronousDisposal,
+                        ownsReservation: true,
                         blockedCreation: creation)
                     .ConfigureAwait(false);
                 await DisposeEvictedAsync(expired, preferSynchronousDisposal)
