@@ -267,7 +267,9 @@ items:
 
     <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> launches all attempts at once;
 
-    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref> hedges only on failure.
+    any negative value hedges only on failure and is normalized to
+
+    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref>.
 
     Default 1 second.
   example: []

@@ -42,7 +42,8 @@ public sealed class HedgeOptions
     /// <summary>
     /// Time to wait before launching the next attempt while the current ones are still running.
     /// <see cref="TimeSpan.Zero"/> launches all attempts at once;
-    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> hedges only on failure.
+    /// any negative value hedges only on failure and is normalized to
+    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/>.
     /// Default 1 second.
     /// </summary>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);

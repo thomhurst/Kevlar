@@ -183,6 +183,12 @@ public static class ShieldExtensions
     /// hedge that later loses. Prefer <c>Shield.For&lt;T&gt;()</c>, where result clauses decide which
     /// attempt is acceptable, or confirm the action is safe to repeat.
     /// </remarks>
+    /// <param name="shield">The shield to append hedging to.</param>
+    /// <param name="maxHedgedAttempts">Maximum additional attempts after the primary attempt.</param>
+    /// <param name="delay">
+    /// The delay between attempts. Zero launches attempts in parallel; any negative value launches
+    /// another attempt only after a handled failure.
+    /// </param>
     public static Shield Hedge(this Shield shield, int maxHedgedAttempts, TimeSpan delay)
     {
         Throw.IfNull(shield, nameof(shield));
@@ -190,10 +196,6 @@ public static class ShieldExtensions
             maxHedgedAttempts < 0,
             nameof(maxHedgedAttempts),
             "Maximum hedged attempts must be non-negative.");
-        Throw.IfOutOfRange(
-            delay < TimeSpan.Zero && delay != System.Threading.Timeout.InfiniteTimeSpan,
-            nameof(delay),
-            "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
         Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
         return shield.Hedge(options =>
         {

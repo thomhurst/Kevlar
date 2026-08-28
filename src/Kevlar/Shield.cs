@@ -147,6 +147,11 @@ public sealed class Shield : IShieldLifecycle
     /// hedge that later loses. Prefer <see cref="For{TResult}"/>, where result clauses decide which
     /// attempt is acceptable, or confirm the action is safe to repeat.
     /// </remarks>
+    /// <param name="maxHedgedAttempts">Maximum additional attempts after the primary attempt.</param>
+    /// <param name="delay">
+    /// The delay between attempts. Zero launches attempts in parallel; any negative value launches
+    /// another attempt only after a handled failure.
+    /// </param>
     public static Shield Hedge(int maxHedgedAttempts, TimeSpan delay) => ShieldExtensions.Hedge(Empty, maxHedgedAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>

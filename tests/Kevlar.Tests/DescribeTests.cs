@@ -73,6 +73,13 @@ public class DescribeTests
             .IsEqualTo("ConcurrencyLimit(10)");
         await Assert.That(Shield.Hedge(2, TimeSpan.FromMilliseconds(100)).ToString())
             .IsEqualTo("Hedge(2 extra, delay 100ms)");
+        const string failureOnlyHedge = "Hedge(2 extra, delay infinite)";
+        await Assert.That(Shield.Hedge(2, TimeSpan.FromSeconds(-1)).ToString())
+            .IsEqualTo(failureOnlyHedge);
+        await Assert.That(Shield.Hedge(2, Timeout.InfiniteTimeSpan).ToString())
+            .IsEqualTo(failureOnlyHedge);
+        await Assert.That(Shield.For<int>().Hedge(2, TimeSpan.FromSeconds(-1)).ToString())
+            .IsEqualTo(failureOnlyHedge);
         await Assert.That(Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 2;
