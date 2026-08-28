@@ -168,6 +168,8 @@ timeline. Advance time through the provider—changing UTC alone does not advanc
 
 `GetDescriptor()` returns an immutable snapshot. Assert stable strategy kinds, order, and typed
 configuration properties; do not parse `Description`, which is diagnostic text.
+Transparent infrastructure decorators such as `AddKevlarLogging` are excluded by default. Pass
+`includeTransparent: true` when a test specifically needs to verify those decorators.
 
 <!-- doc-test-run: testing-pipeline-shape -->
 ```csharp

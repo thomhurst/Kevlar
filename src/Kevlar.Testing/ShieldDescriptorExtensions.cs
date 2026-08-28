@@ -9,38 +9,76 @@ public static class ShieldDescriptorExtensions
         "Kevlar.Extensions.RateLimiting.RateLimiterStrategy";
     private const string RateLimiterAdapterAssemblyName = "Kevlar.Extensions.RateLimiting";
 
+    /// <summary>Describes an untyped shield without executing it, excluding transparent decorators.</summary>
+    public static ShieldDescriptor GetDescriptor(this Shield shield) =>
+        GetDescriptor(shield, includeTransparent: false);
+
     /// <summary>Describes an untyped shield without executing it.</summary>
-    public static ShieldDescriptor GetDescriptor(this Shield shield)
+    /// <param name="shield">The shield to describe.</param>
+    /// <param name="includeTransparent">
+    /// Whether to include transparent infrastructure decorators such as structured logging.
+    /// </param>
+    public static ShieldDescriptor GetDescriptor(this Shield shield, bool includeTransparent)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return Create(shield.Name, resultType: null, shield.Time is not null, shield.Strategies);
+        return Create(
+            shield.Name,
+            resultType: null,
+            shield.Time is not null,
+            shield.Strategies,
+            includeTransparent);
     }
 
+    /// <summary>Describes a typed shield without executing it, excluding transparent decorators.</summary>
+    public static ShieldDescriptor GetDescriptor<TResult>(this Shield<TResult> shield) =>
+        GetDescriptor(shield, includeTransparent: false);
+
     /// <summary>Describes a typed shield without executing it.</summary>
-    public static ShieldDescriptor GetDescriptor<TResult>(this Shield<TResult> shield)
+    /// <param name="shield">The shield to describe.</param>
+    /// <param name="includeTransparent">
+    /// Whether to include transparent infrastructure decorators such as structured logging.
+    /// </param>
+    public static ShieldDescriptor GetDescriptor<TResult>(
+        this Shield<TResult> shield,
+        bool includeTransparent)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return Create(shield.Name, typeof(TResult), shield.Time is not null, shield.Strategies);
+        return Create(
+            shield.Name,
+            typeof(TResult),
+            shield.Time is not null,
+            shield.Strategies,
+            includeTransparent);
     }
 
     private static ShieldDescriptor Create(
         string? name,
         Type? resultType,
         bool usesCustomTimeProvider,
-        Strategy[] strategies)
+        Strategy[] strategies,
+        bool includeTransparent)
     {
-        var descriptors = new StrategyDescriptor[strategies.Length];
-        for (var index = 0; index < strategies.Length; index++)
+        var descriptorCount = includeTransparent
+            ? strategies.Length
+            : strategies.Count(static strategy => strategy is not ITransparentStrategy);
+        var descriptors = new StrategyDescriptor[descriptorCount];
+        var descriptorIndex = 0;
+        foreach (var strategy in strategies)
         {
-            descriptors[index] = Describe(strategies[index]);
+            if (!includeTransparent && strategy is ITransparentStrategy)
+            {
+                continue;
+            }
+
+            descriptors[descriptorIndex++] = Describe(strategy);
         }
 
         return new ShieldDescriptor(
