@@ -257,21 +257,6 @@ internal sealed class RetryStrategy : Strategy
                     return outcome;
                 }
 
-                KevlarMetrics.Retry(context);
-
-                if (KevlarTelemetry.IsEventEnabled(context))
-                {
-                    KevlarTelemetry.RecordResult(
-                        context,
-                        strategyName: _telemetryName,
-                        eventName: "retry",
-                        KevlarTelemetrySeverity.Warning,
-                        strategyIndex,
-                        attempt,
-                        in outcome,
-                        delay: delay);
-                }
-
                 if (_onRetry is not null)
                 {
                     await InvokeOnRetryAsync(
@@ -285,6 +270,21 @@ internal sealed class RetryStrategy : Strategy
                 if (context.Properties.SuppressAdditionalAttempts)
                 {
                     return outcome;
+                }
+
+                KevlarMetrics.Retry(context);
+
+                if (KevlarTelemetry.IsEventEnabled(context))
+                {
+                    KevlarTelemetry.RecordResult(
+                        context,
+                        strategyName: _telemetryName,
+                        eventName: "retry",
+                        KevlarTelemetrySeverity.Warning,
+                        strategyIndex,
+                        attempt,
+                        in outcome,
+                        delay: delay);
                 }
 
                 await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);

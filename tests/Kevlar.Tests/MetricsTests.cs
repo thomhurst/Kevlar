@@ -461,6 +461,34 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Suppressed_Retries_Are_Not_Recorded()
+    {
+        using var listener = new KevlarMeterListener();
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = retry =>
+            {
+                retry.SuppressAdditionalAttempts();
+                return default;
+            };
+        }).WithName("metrics-suppressed-retry");
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(
+                static _ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(listener.Total("kevlar.retries", "metrics-suppressed-retry"))
+            .IsEqualTo(0);
+        await Assert.That(listener.Measurements(
+                "kevlar.strategy.events",
+                "metrics-suppressed-retry")
+            .Any(tags => Equals(tags["kevlar.event.name"], "retry")))
+            .IsFalse();
+    }
+
+    [Test]
     public async Task Retry_Attempts_Record_Duration_And_Documented_Tags()
     {
         using var listener = new KevlarMeterListener();
