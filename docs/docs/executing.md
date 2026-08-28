@@ -58,7 +58,7 @@ var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
 await shield.ExecuteAsync(
     ct => Task.Factory.StartNew(
-            () => viewModel.RefreshAsync(ct),
+            async () => await viewModel.RefreshAsync(ct),
             ct,
             TaskCreationOptions.DenyChildAttach,
             uiScheduler)
@@ -71,7 +71,9 @@ captured context. Capture the scheduler only while running on the intended UI co
 same wrapper to a strategy hook when that hook also touches UI state. Do not synchronously block
 while waiting for the shield: a single-threaded context must remain free to run the scheduled work.
 Hedged delegates are serialized by a single UI thread, and cancellation can prevent work that is
-still queued from starting.
+still queued from starting. The `async` scheduled lambda accepts either a `Task`- or
+`ValueTask`-returning UI method; result-bearing variants preserve `TResult` through the unwrapped
+`Task<TResult>`.
 
 `ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
 
