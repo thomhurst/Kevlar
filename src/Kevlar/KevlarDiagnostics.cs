@@ -69,7 +69,8 @@ public static class KevlarDiagnostics
     /// <summary>
     /// Raised when a strategy notification, observer, or superseded-result disposal throws. Each
     /// subscriber is isolated: subscriber failures are swallowed and do not prevent later
-    /// subscribers from running.
+    /// subscribers from running. This event is process-global, not scoped to a shield or service
+    /// provider; unsubscribe handlers when their lifetime ends.
     /// </summary>
     public static event Action<CallbackErrorEvent>? OnCallbackError;
 

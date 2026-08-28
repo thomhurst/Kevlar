@@ -53,6 +53,8 @@ Kevlar invokes the first user delegate inline when no preceding strategy defers 
 
 Synchronous `Execute` never pumps a `SynchronizationContext`. Retry delays and limiter queues block
 the calling thread until they complete, so prefer `ExecuteAsync` for delayed or queued work.
+When a retry delay uses `FakeTimeProvider`, another thread must advance that provider; otherwise the
+calling thread remains blocked indefinitely.
 
 ## Synchronous execution compatibility
 
@@ -76,6 +78,10 @@ rejected statically, before the action runs:
 | Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
 | Any `UseRateLimiter` adapter | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` |
 | Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
+
+Built-in strategies do not introduce an incomplete strategy-body `ValueTask` on the synchronous
+path. A custom `Strategy.ExecuteAsync` can, which turns synchronous `Execute` into
+sync-over-async; avoid captured contexts and prefer asynchronous execution for such strategies.
 
 [`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) reports `async`
 delegates assigned to hooks or fallback recovery on a shield that is passed to `Execute`. A shield
@@ -198,7 +204,9 @@ await shield.ExecuteWithContextAsync(
 ```
 
 The callback receives `KevlarProperties`, not the pooled `KevlarContext`, so it cannot keep the
-execution alive accidentally. Copy any values you need into caller-owned state during the callback.
+execution alive accidentally. It is still the live pooled property bag and is recycled immediately
+after the callback returns. Copy any values you need into caller-owned state during the callback;
+never store the `KevlarProperties` reference for later use.
 Exceptions thrown by `onCompleted` are ignored and never replace the execution result or exception.
 For hedging, the callback sees properties from the winning attempt.
 

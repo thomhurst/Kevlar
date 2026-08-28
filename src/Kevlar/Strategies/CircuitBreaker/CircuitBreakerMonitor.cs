@@ -47,6 +47,10 @@ public sealed class CircuitBreakerMonitor
 
     /// <summary>
     /// Forces every bound circuit open. Executions are rejected until <see cref="Reset"/> is called.
+    /// A non-reentrant caller blocks until transition observers complete; use
+    /// <see cref="IsolateAsync"/> when an <see cref="CircuitBreakerOptions.OnStateChanged"/>
+    /// callback may yield. A call made from a transition observer queues its transition and returns
+    /// before that queued transition reaches observers.
     /// </summary>
     public void Isolate()
     {
@@ -71,7 +75,13 @@ public sealed class CircuitBreakerMonitor
             : IsolateAllAsync(cores);
     }
 
-    /// <summary>Closes every bound circuit and clears all failure metrics.</summary>
+    /// <summary>
+    /// Closes every bound circuit and clears all failure metrics. A non-reentrant caller blocks
+    /// until transition observers complete; use <see cref="ResetAsync"/> when an
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> callback may yield. A call made from a
+    /// transition observer queues its transition and returns before that queued transition reaches
+    /// observers.
+    /// </summary>
     public void Reset()
     {
         foreach (var core in BoundCores())

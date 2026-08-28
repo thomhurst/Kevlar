@@ -292,6 +292,10 @@ through `KevlarDiagnostics.OnCallbackError`, increments `kevlar.callback_errors`
 Each diagnostics subscriber is isolated too: one throwing subscriber cannot prevent later
 subscribers from receiving the error.
 
+`KevlarDiagnostics.OnCallbackError` is process-global, not scoped to a shield or dependency
+injection container. Unsubscribe handlers when their lifetime ends, especially in tests, to avoid
+cross-test callbacks and retained state.
+
 This differs from Polly, where a strategy-hook exception propagates to the caller. During migration,
 use `KevlarDiagnostics.OnCallbackError`, `AddKevlarLogging`, or `TelemetryRecorder` in tests to keep
 hook failures visible. See [semantic differences](polly-migration.md#semantic-differences).

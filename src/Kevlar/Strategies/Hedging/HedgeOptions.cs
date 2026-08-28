@@ -8,6 +8,8 @@ namespace Kevlar;
 /// <remarks>
 /// The executed delegate may be invoked multiple times concurrently — it must be safe to do so.
 /// Hedging requires asynchronous execution.
+/// If no attempt produces an acceptable outcome, the final outcome processed by the coordinator
+/// surfaces; selection among attempts already completed is not chronological.
 /// Before an additional attempt starts, callbacks run in this order: <see cref="DelayGenerator"/>,
 /// <see cref="OnHedge"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
 /// before callbacks and again before the generated operation starts.
@@ -41,7 +43,9 @@ public sealed class HedgeOptions
 
     /// <summary>
     /// Time to wait before launching the next attempt while the current ones are still running.
-    /// <see cref="TimeSpan.Zero"/> launches all attempts at once;
+    /// <see cref="TimeSpan.Zero"/> removes timer staggering and starts scheduling the original and
+    /// all additional attempts, even when the original completes synchronously. Callbacks and
+    /// cancellation checks can still delay or prevent an additional delegate from starting;
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> hedges only on failure.
     /// Default 1 second.
     /// </summary>

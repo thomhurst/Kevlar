@@ -116,6 +116,11 @@ and identify the options type, property, and offending value.
 
 Order per retry: retry metrics are recorded → backoff computes the delay → effective cap (`MaxDelay ?? Backoff.MaxDelay`) clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay and handled outcome → a superseded disposable result is disposed → sleep. The generator's `null` and negative results are ignored, and the effective cap clamps its override.
 
+If cancellation arrives during that sleep, the next attempt never starts. Cancellation surfaces as
+an `OperationCanceledException` with no `InnerException`; the failure that triggered the retry is
+not retained. The `kevlar.retries` measurement and `OnRetry` have already run for that suppressed
+attempt, matching Polly's ordering.
+
 When result handling triggers another attempt, Kevlar disposes the handled result before the next
 attempt starts. It prefers `IAsyncDisposable.DisposeAsync()` when a result implements both disposal
 interfaces. `OnRetry` runs first so it can inspect the live result. The final result returned to the
