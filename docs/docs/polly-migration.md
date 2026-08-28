@@ -212,9 +212,11 @@ Do not retain either library's pooled context beyond the current callback or exe
 Use the `onCompleted` overload of `ExecuteWithContextAsync` to copy final
 `KevlarProperties` into caller-owned state before the context returns to the pool.
 
-Kevlar has one shield name and no separate `pipeline.instance` telemetry dimension. Encode any
-instance identifier into `WithName` or `KevlarKeys.OperationKey`. Dashboards grouped by Polly's
-`pipeline.instance` must be re-keyed to `kevlar.shield.name` or the operation key.
+Kevlar has one shield name and no separate `pipeline.instance` telemetry dimension. Encode an
+instance identifier into `WithName` for general telemetry, and re-key dashboards grouped by
+Polly's `pipeline.instance` to `kevlar.shield.name`. For `kevlar.strategy.events` and
+`kevlar.attempt.duration` only, `KevlarKeys.OperationKey` is also available as the optional
+`kevlar.operation.key` dimension; other instruments do not emit it.
 
 ## Registry and dependency injection
 
