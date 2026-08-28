@@ -17,9 +17,21 @@ internal static class ExceptionTraversal
         where TException : Exception
     {
         Stack<Exception>? pendingBranches = null;
+        HashSet<Exception>? visited = null;
 
         while (true)
         {
+            if (visited is not null && !visited.Add(exception))
+            {
+                if (pendingBranches is null || pendingBranches.Count == 0)
+                {
+                    return false;
+                }
+
+                exception = pendingBranches.Pop();
+                continue;
+            }
+
             if (exception is TException typed && (predicate is null || predicate(typed)))
             {
                 return true;
@@ -27,6 +39,14 @@ internal static class ExceptionTraversal
 
             if (exception is AggregateException aggregate && aggregate.InnerExceptions.Count > 0)
             {
+                if (visited is null)
+                {
+                    visited = new HashSet<Exception>(ExceptionReferenceComparer.Instance)
+                    {
+                        exception,
+                    };
+                }
+
                 for (var index = aggregate.InnerExceptions.Count - 1; index > 0; index--)
                 {
                     (pendingBranches ??= new()).Push(aggregate.InnerExceptions[index]);
@@ -49,5 +69,15 @@ internal static class ExceptionTraversal
 
             exception = pendingBranches.Pop();
         }
+    }
+
+    private sealed class ExceptionReferenceComparer : IEqualityComparer<Exception>
+    {
+        public static ExceptionReferenceComparer Instance { get; } = new();
+
+        public bool Equals(Exception? x, Exception? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode(Exception exception) =>
+            System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(exception);
     }
 }
