@@ -369,6 +369,47 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Nested_Eviction_Captured_Context_Uses_Active_Parent()
+    {
+        PartitionedShield<string>? provider = null;
+        Task? nestedLookup = null;
+        var releaseNestedLookup = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        provider = new PartitionedShield<string>(
+            static _ => Shield.Use(new DisposablePartitionStrategy()),
+            new PartitionedShieldOptions<string>
+            {
+                MaxPartitions = 2,
+                OnEvicted = async item =>
+                {
+                    if (item.Key == "second")
+                    {
+                        nestedLookup = Task.Run(async () =>
+                        {
+                            await releaseNestedLookup.Task;
+                            _ = await provider!.GetShieldAsync("third");
+                        });
+                        return;
+                    }
+
+                    if (item.Key == "first")
+                    {
+                        _ = await provider!.TryRemoveAsync("second");
+                        releaseNestedLookup.TrySetResult();
+                        await nestedLookup!;
+                    }
+                },
+            });
+        _ = provider.GetShield("first");
+        _ = provider.GetShield("second");
+
+        _ = await provider.GetShieldAsync("third").AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(2));
+
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task Callback_Creation_Is_Not_Shared_With_An_Ordinary_Waiter()
     {
         PartitionedShield<string>? provider = null;
@@ -702,6 +743,19 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Disposal_Reentered_From_Strategy_Disposal_Is_Rejected_Without_Deadlock()
+    {
+        var strategy = new ReentrantDisposalStrategy();
+        var provider = new PartitionedShield<string>(_ => Shield.Use(strategy));
+        strategy.Provider = provider;
+        _ = provider.GetShield("tenant");
+
+        await provider.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(2));
+
+        await Assert.That(strategy.DisposalFailure).IsTypeOf<InvalidOperationException>();
+    }
+
+    [Test]
     public async Task OnCreated_Captured_Context_Allows_Disposal_After_Callback_Returns()
     {
         PartitionedShield<string>? provider = null;
@@ -1014,6 +1068,30 @@ public class PartitionedShieldTests
         {
             AsyncDisposeCount++;
             return ValueTask.FromException(new InvalidOperationException("async disposal"));
+        }
+    }
+
+    private sealed class ReentrantDisposalStrategy : Strategy, IAsyncDisposable
+    {
+        public PartitionedShield<string>? Provider { get; set; }
+
+        public Exception? DisposalFailure { get; private set; }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) =>
+            next.InvokeAsync(context);
+
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await Provider!.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                DisposalFailure = exception;
+            }
         }
     }
 }

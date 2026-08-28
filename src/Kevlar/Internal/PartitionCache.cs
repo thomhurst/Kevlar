@@ -17,6 +17,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     private readonly bool _ownsStrategies;
     private readonly AsyncLocal<ReentrancyScope?> _factoryCallback = new();
     private readonly AsyncLocal<ReentrancyScope?> _creationCallback = new();
+    private readonly AsyncLocal<ReentrancyScope?> _strategyDisposal = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
     private readonly ExecutionReentrancyGuard _executionReentrancy = new();
     private readonly Queue<Exception> _disposalFailures = new();
@@ -241,6 +242,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         if (_executionReentrancy.Active
             || _factoryCallback.Value is { Active: true }
             || _creationCallback.Value is { Active: true }
+            || _strategyDisposal.Value is { Active: true }
             || _evictionCallback.Value is { Active: true })
         {
             return new ValueTask(Task.FromException(new InvalidOperationException(
@@ -1092,6 +1094,9 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         Strategy strategy,
         bool preferSynchronousDisposal)
     {
+        var previousScope = _strategyDisposal.Value;
+        var scope = new ReentrancyScope(previousScope);
+        _strategyDisposal.Value = scope;
         try
         {
             if (preferSynchronousDisposal && strategy is IDisposable synchronousDisposable)
@@ -1113,6 +1118,11 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             {
                 _disposalFailures.Enqueue(exception);
             }
+        }
+        finally
+        {
+            scope.Deactivate();
+            _strategyDisposal.Value = previousScope;
         }
     }
 
@@ -1225,7 +1235,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         private int _active = 1;
         private List<Entry>? _unretained;
 
-        public bool Active => Volatile.Read(ref _active) != 0;
+        public bool Active => Volatile.Read(ref _active) != 0
+            || parent is { Active: true };
 
         public bool OwnsReservation => ownsReservation
             || parent is { Active: true, OwnsReservation: true };
@@ -1240,14 +1251,14 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         {
             lock (this)
             {
-                if (_active == 0)
+                if (_active != 0)
                 {
-                    return false;
+                    (_unretained ??= []).Add(entry);
+                    return true;
                 }
-
-                (_unretained ??= []).Add(entry);
-                return true;
             }
+
+            return parent?.TryAddUnretained(entry) == true;
         }
 
         public Entry[]? DeactivateAndTakeUnretained()
