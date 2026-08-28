@@ -170,7 +170,12 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Retries failed executions up to <code class="paramref">maxRetries</code> times with the default exponential jittered backoff.
+  summary: >-
+    Retries failed executions up to <code class="paramref">maxRetries</code> times with
+
+    <xref href="Kevlar.Backoff.Default" data-throw-if-not-resolved="false"></xref>: exponential from 250 milliseconds with factor 2, equal
+
+    jitter, and a 30-second cap.
   example: []
   syntax:
     content: public static Shield Retry(int maxRetries = 3)
@@ -269,7 +274,10 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Retries failed executions indefinitely with the default exponential jittered backoff.
+  summary: >-
+    Retries failed executions indefinitely with <xref href="Kevlar.Backoff.Default" data-throw-if-not-resolved="false"></xref>: exponential
+
+    from 250 milliseconds with factor 2, equal jitter, and a 30-second cap.
   example: []
   syntax:
     content: public static Shield RetryForever()
@@ -10061,6 +10069,13 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
   - name: )
+- uid: Kevlar.Backoff.Default
+  commentId: P:Kevlar.Backoff.Default
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Default
+  name: Default
+  nameWithType: Backoff.Default
+  fullName: Kevlar.Backoff.Default
 - uid: Kevlar.Shield.Retry*
   commentId: Overload:Kevlar.Shield.Retry
   isExternal: true

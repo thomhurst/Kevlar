@@ -123,7 +123,11 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
-    /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Retries handled outcomes up to <paramref name="maxRetries"/> times with
+    /// <see cref="Backoff.Default"/>: exponential from 250 milliseconds with factor 2, equal
+    /// jitter, and a 30-second cap.
+    /// </summary>
     /// <param name="maxRetries">
     /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
     /// total attempts — the initial call plus 3 retries.
@@ -174,7 +178,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
         return Append(RetryStrategy.Create(options, judge));
     }
 
-    /// <summary>Retries handled outcomes indefinitely with the default exponential jittered backoff.</summary>
+    /// <summary>
+    /// Retries handled outcomes indefinitely with <see cref="Backoff.Default"/>: exponential
+    /// from 250 milliseconds with factor 2, equal jitter, and a 30-second cap.
+    /// </summary>
     public Shield<TResult> RetryForever() => RetryForever(Backoff.Default);
 
     /// <summary>Retries handled outcomes indefinitely with the given backoff.</summary>
