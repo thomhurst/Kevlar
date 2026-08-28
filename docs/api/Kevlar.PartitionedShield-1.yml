@@ -13,6 +13,8 @@ items:
   - Kevlar.PartitionedShield`1.Count
   - Kevlar.PartitionedShield`1.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}},Kevlar.PartitionedShieldOptions{`0},System.Collections.Generic.IEqualityComparer{`0})
   - Kevlar.PartitionedShield`1.CreatedCount
+  - Kevlar.PartitionedShield`1.Dispose
+  - Kevlar.PartitionedShield`1.DisposeAsync
   - Kevlar.PartitionedShield`1.EvictionCount
   - Kevlar.PartitionedShield`1.ExpirationEvictionCount
   - Kevlar.PartitionedShield`1.GetShield(`0)
@@ -34,21 +36,24 @@ items:
   namespace: Kevlar
   summary: Selects and retains an independent untyped <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> for each partition key.
   remarks: >-
-    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions%601.MaxPartitions" data-throw-if-not-resolved="false"></xref>. Eviction
+    Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions%601.MaxPartitions" data-throw-if-not-resolved="false"></xref>. After the
 
-    removes only the provider's reference: callers that already hold the old shield, including
+    eviction callback, disposable strategies owned by an evicted shield are disposed. Do not reuse
 
-    active executions, continue normally. A later lookup creates a fresh partition with fresh
+    a shield after its partition is evicted. A later lookup creates a fresh partition with fresh
 
     strategy state. Partition keys are never added to metric tags or shield names automatically.
   example: []
   syntax:
-    content: 'public sealed class PartitionedShield<TKey> where TKey : notnull'
+    content: 'public sealed class PartitionedShield<TKey> : IDisposable, IAsyncDisposable where TKey : notnull'
     typeParameters:
     - id: TKey
-    content.vb: Public NotInheritable Class PartitionedShield(Of TKey)
+    content.vb: Public NotInheritable Class PartitionedShield(Of TKey) Implements IDisposable, IAsyncDisposable
   inheritance:
   - System.Object
+  implements:
+  - System.IDisposable
+  - System.IAsyncDisposable
   inheritedMembers:
   - System.Object.GetType
   - System.Object.ToString
@@ -360,6 +365,56 @@ items:
   overload: Kevlar.PartitionedShield`1.PruneExpiredAsync*
   nameWithType.vb: PartitionedShield(Of TKey).PruneExpiredAsync()
   fullName.vb: Kevlar.PartitionedShield(Of TKey).PruneExpiredAsync()
+- uid: Kevlar.PartitionedShield`1.Dispose
+  commentId: M:Kevlar.PartitionedShield`1.Dispose
+  id: Dispose
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: Dispose()
+  nameWithType: PartitionedShield<TKey>.Dispose()
+  fullName: Kevlar.PartitionedShield<TKey>.Dispose()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Disposes strategies owned by every retained partition.
+  example: []
+  syntax:
+    content: public void Dispose()
+    content.vb: Public Sub Dispose()
+  overload: Kevlar.PartitionedShield`1.Dispose*
+  implements:
+  - System.IDisposable.Dispose
+  nameWithType.vb: PartitionedShield(Of TKey).Dispose()
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).Dispose()
+- uid: Kevlar.PartitionedShield`1.DisposeAsync
+  commentId: M:Kevlar.PartitionedShield`1.DisposeAsync
+  id: DisposeAsync
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: DisposeAsync()
+  nameWithType: PartitionedShield<TKey>.DisposeAsync()
+  fullName: Kevlar.PartitionedShield<TKey>.DisposeAsync()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Asynchronously disposes strategies owned by every retained partition.
+  example: []
+  syntax:
+    content: public ValueTask DisposeAsync()
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function DisposeAsync() As ValueTask
+  overload: Kevlar.PartitionedShield`1.DisposeAsync*
+  implements:
+  - System.IAsyncDisposable.DisposeAsync
+  nameWithType.vb: PartitionedShield(Of TKey).DisposeAsync()
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).DisposeAsync()
 - uid: Kevlar.PartitionedShield`1.Count
   commentId: P:Kevlar.PartitionedShield`1.Count
   id: Count
@@ -546,6 +601,22 @@ references:
   nameWithType.vb: Object
   fullName.vb: Object
   name.vb: Object
+- uid: System.IDisposable
+  commentId: T:System.IDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable
+  name: IDisposable
+  nameWithType: IDisposable
+  fullName: System.IDisposable
+- uid: System.IAsyncDisposable
+  commentId: T:System.IAsyncDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable
+  name: IAsyncDisposable
+  nameWithType: IAsyncDisposable
+  fullName: System.IAsyncDisposable
 - uid: System.Object.GetType
   commentId: M:System.Object.GetType
   parent: System.Object
@@ -1367,6 +1438,68 @@ references:
     name: Integer
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: )
+- uid: Kevlar.PartitionedShield`1.Dispose*
+  commentId: Overload:Kevlar.PartitionedShield`1.Dispose
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_Dispose
+  name: Dispose
+  nameWithType: PartitionedShield<TKey>.Dispose
+  fullName: Kevlar.PartitionedShield<TKey>.Dispose
+  nameWithType.vb: PartitionedShield(Of TKey).Dispose
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).Dispose
+- uid: System.IDisposable.Dispose
+  commentId: M:System.IDisposable.Dispose
+  parent: System.IDisposable
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  name: Dispose()
+  nameWithType: IDisposable.Dispose()
+  fullName: System.IDisposable.Dispose()
+  spec.csharp:
+  - uid: System.IDisposable.Dispose
+    name: Dispose
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.IDisposable.Dispose
+    name: Dispose
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  - name: (
+  - name: )
+- uid: Kevlar.PartitionedShield`1.DisposeAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.DisposeAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_DisposeAsync
+  name: DisposeAsync
+  nameWithType: PartitionedShield<TKey>.DisposeAsync
+  fullName: Kevlar.PartitionedShield<TKey>.DisposeAsync
+  nameWithType.vb: PartitionedShield(Of TKey).DisposeAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).DisposeAsync
+- uid: System.IAsyncDisposable.DisposeAsync
+  commentId: M:System.IAsyncDisposable.DisposeAsync
+  parent: System.IAsyncDisposable
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  name: DisposeAsync()
+  nameWithType: IAsyncDisposable.DisposeAsync()
+  fullName: System.IAsyncDisposable.DisposeAsync()
+  spec.csharp:
+  - uid: System.IAsyncDisposable.DisposeAsync
+    name: DisposeAsync
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.IAsyncDisposable.DisposeAsync
+    name: DisposeAsync
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  - name: (
   - name: )
 - uid: Kevlar.PartitionedShield`1.Count*
   commentId: Overload:Kevlar.PartitionedShield`1.Count
