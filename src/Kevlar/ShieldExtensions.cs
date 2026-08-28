@@ -239,6 +239,24 @@ public static class ShieldExtensions
         return new ShieldBuilder(shield).Or(predicate);
     }
 
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public static ShieldBuilder WhenInner<TException>(this Shield shield)
+        where TException : Exception
+    {
+        Throw.IfNull(shield, nameof(shield));
+        return new ShieldBuilder(shield).OrInner<TException>();
+    }
+
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public static ShieldBuilder WhenInner<TException>(this Shield shield, Func<TException, bool> predicate)
+        where TException : Exception
+    {
+        Throw.IfNull(shield, nameof(shield));
+        return new ShieldBuilder(shield).OrInner(predicate);
+    }
+
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public static ShieldBuilder When(this Shield shield, Func<Exception, bool> predicate)
     {

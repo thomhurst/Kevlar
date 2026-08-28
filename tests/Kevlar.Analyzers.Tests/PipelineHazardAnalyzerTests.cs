@@ -6102,7 +6102,9 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "Shield.When<InvalidOperationException>();",
+            "Shield.WhenInner<InvalidOperationException>();",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>();",
+            "Shield.When<InvalidOperationException>().OrInner<TimeoutException>();",
             "Shield.WhenContext((HandlingEvent handling) => handling.AttemptNumber == 0);",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>().Or(static exception => exception is null);",
             "_ = Shield.When<InvalidOperationException>();",
@@ -6130,6 +6132,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WithDefaultHandling().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(static options => options.Timeout = TimeSpan.FromSeconds(1)).WithDefaultHandling().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
+            "_ = Shield.WhenInner<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().RateLimit(1, TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Use((Strategy)null!).When<TimeoutException>().Retry(1);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenResult(static value => value < 0).Retry(1);",
@@ -6145,7 +6148,9 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = Shield.When<InvalidOperationException>().Retry(1);",
+            "_ = Shield.WhenInner<InvalidOperationException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().OrInner<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Fallback(static (_, _) => default);",
             "_ = Shield.When<InvalidOperationException>().Fallback(static _ => default);",

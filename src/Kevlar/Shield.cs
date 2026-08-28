@@ -224,6 +224,18 @@ public sealed class Shield : IShieldLifecycle
         where TException : Exception
         => ShieldExtensions.When(Empty, predicate);
 
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public static ShieldBuilder WhenInner<TException>()
+        where TException : Exception
+        => ShieldExtensions.WhenInner<TException>(Empty);
+
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public static ShieldBuilder WhenInner<TException>(Func<TException, bool> predicate)
+        where TException : Exception
+        => ShieldExtensions.WhenInner(Empty, predicate);
+
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WithDefaultHandling(Shield)"/> to return to default handling.</summary>
     public static ShieldBuilder When(Func<Exception, bool> predicate) => ShieldExtensions.When(Empty, predicate);
 

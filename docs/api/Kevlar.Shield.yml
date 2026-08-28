@@ -68,6 +68,8 @@ items:
   - Kevlar.Shield.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield.When(System.Func{System.Exception,System.Boolean})
   - Kevlar.Shield.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  - Kevlar.Shield.WhenInner``1
+  - Kevlar.Shield.WhenInner``1(System.Func{``0,System.Boolean})
   - Kevlar.Shield.When``1
   - Kevlar.Shield.When``1(System.Func{``0,System.Boolean})
   langs:
@@ -131,6 +133,8 @@ items:
   - Kevlar.Shield.Kevlar.ShieldExtensions.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When(System.Func{System.Exception,System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  - Kevlar.Shield.Kevlar.ShieldExtensions.WhenInner``1
+  - Kevlar.Shield.Kevlar.ShieldExtensions.WhenInner``1(System.Func{{TException},System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1(System.Func{{TException},System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithDefaultHandling
@@ -874,6 +878,65 @@ items:
   nameWithType.vb: Shield.When(Of TException)(Func(Of TException, Boolean))
   fullName.vb: Kevlar.Shield.When(Of TException)(System.Func(Of TException, Boolean))
   name.vb: When(Of TException)(Func(Of TException, Boolean))
+- uid: Kevlar.Shield.WhenInner``1
+  commentId: M:Kevlar.Shield.WhenInner``1
+  id: WhenInner``1
+  parent: Kevlar.Shield
+  langs:
+  - csharp
+  - vb
+  name: WhenInner<TException>()
+  nameWithType: Shield.WhenInner<TException>()
+  fullName: Kevlar.Shield.WhenInner<TException>()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause for exceptions containing an exception of type <code class="typeparamref">TException</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder WhenInner<TException>() where TException : Exception'
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Shared Function WhenInner(Of TException As Exception)() As ShieldBuilder
+  overload: Kevlar.Shield.WhenInner*
+  nameWithType.vb: Shield.WhenInner(Of TException)()
+  fullName.vb: Kevlar.Shield.WhenInner(Of TException)()
+  name.vb: WhenInner(Of TException)()
+- uid: Kevlar.Shield.WhenInner``1(System.Func{``0,System.Boolean})
+  commentId: M:Kevlar.Shield.WhenInner``1(System.Func{``0,System.Boolean})
+  id: WhenInner``1(System.Func{``0,System.Boolean})
+  parent: Kevlar.Shield
+  langs:
+  - csharp
+  - vb
+  name: WhenInner<TException>(Func<TException, bool>)
+  nameWithType: Shield.WhenInner<TException>(Func<TException, bool>)
+  fullName: Kevlar.Shield.WhenInner<TException>(System.Func<TException, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause for exceptions containing an exception of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder WhenInner<TException>(Func<TException, bool> predicate) where TException : Exception'
+    parameters:
+    - id: predicate
+      type: System.Func{{TException},System.Boolean}
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Shared Function WhenInner(Of TException As Exception)(predicate As Func(Of TException, Boolean)) As ShieldBuilder
+  overload: Kevlar.Shield.WhenInner*
+  nameWithType.vb: Shield.WhenInner(Of TException)(Func(Of TException, Boolean))
+  fullName.vb: Kevlar.Shield.WhenInner(Of TException)(System.Func(Of TException, Boolean))
+  name.vb: WhenInner(Of TException)(Func(Of TException, Boolean))
 - uid: Kevlar.Shield.When(System.Func{System.Exception,System.Boolean})
   commentId: M:Kevlar.Shield.When(System.Func{System.Exception,System.Boolean})
   id: When(System.Func{System.Exception,System.Boolean})
@@ -3930,6 +3993,120 @@ references:
     name: HandlingEvent
     isExternal: true
     href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+  - name: )
+- uid: Kevlar.Shield.Kevlar.ShieldExtensions.WhenInner``1
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  parent: Kevlar.ShieldExtensions
+  definition: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  name: WhenInner<TException>(Shield)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield)
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield)
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield)
+  name.vb: WhenInner(Of TException)(Shield)
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  - name: <
+  - name: TException
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: Kevlar.Shield.Kevlar.ShieldExtensions.WhenInner``1(System.Func{{TException},System.Boolean})
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  parent: Kevlar.ShieldExtensions
+  definition: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  name: WhenInner<TException>(Shield, Func<TException, bool>)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield, Func<TException, bool>)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield, System.Func<TException, bool>)
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield, System.Func(Of TException, Boolean))
+  name.vb: WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  - name: <
+  - name: TException
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TException
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
   - name: ','
   - name: " "
   - uid: System.Boolean
@@ -7737,6 +7914,118 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
   - name: )
+- uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  name: WhenInner<TException>(Shield)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield)
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield)
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield)
+  name.vb: WhenInner(Of TException)(Shield)
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  - name: <
+  - name: TException
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  name: WhenInner<TException>(Shield, Func<TException, bool>)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield, Func<TException, bool>)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield, System.Func<TException, bool>)
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield, System.Func(Of TException, Boolean))
+  name.vb: WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  - name: <
+  - name: TException
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TException
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+    name: WhenInner
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_System_Func___0_System_Boolean__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+  - name: )
 - uid: Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
   commentId: M:Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
   isExternal: true
@@ -10803,6 +11092,20 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+- uid: System.AggregateException
+  commentId: T:System.AggregateException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.aggregateexception
+  name: AggregateException
+  nameWithType: AggregateException
+  fullName: System.AggregateException
+- uid: Kevlar.Shield.WhenInner*
+  commentId: Overload:Kevlar.Shield.WhenInner
+  isExternal: true
+  href: Kevlar.Shield.html#Kevlar_Shield_WhenInner__1
+  name: WhenInner
+  nameWithType: Shield.WhenInner
+  fullName: Kevlar.Shield.WhenInner
 - uid: System.Func{System.Exception,System.Boolean}
   commentId: T:System.Func{System.Exception,System.Boolean}
   parent: System

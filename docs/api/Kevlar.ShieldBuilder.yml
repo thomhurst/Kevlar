@@ -17,6 +17,8 @@ items:
   - Kevlar.ShieldBuilder.Hedge(System.Int32,System.TimeSpan)
   - Kevlar.ShieldBuilder.Or(System.Func{System.Exception,System.Boolean})
   - Kevlar.ShieldBuilder.OrContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  - Kevlar.ShieldBuilder.OrInner``1
+  - Kevlar.ShieldBuilder.OrInner``1(System.Func{``0,System.Boolean})
   - Kevlar.ShieldBuilder.Or``1
   - Kevlar.ShieldBuilder.Or``1(System.Func{``0,System.Boolean})
   - Kevlar.ShieldBuilder.RateLimit(System.Action{Kevlar.RateLimitOptions})
@@ -156,6 +158,65 @@ items:
   nameWithType.vb: ShieldBuilder.Or(Of TException)(Func(Of TException, Boolean))
   fullName.vb: Kevlar.ShieldBuilder.Or(Of TException)(System.Func(Of TException, Boolean))
   name.vb: Or(Of TException)(Func(Of TException, Boolean))
+- uid: Kevlar.ShieldBuilder.OrInner``1
+  commentId: M:Kevlar.ShieldBuilder.OrInner``1
+  id: OrInner``1
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: OrInner<TException>()
+  nameWithType: ShieldBuilder.OrInner<TException>()
+  fullName: Kevlar.ShieldBuilder.OrInner<TException>()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions containing an exception of type <code class="typeparamref">TException</code>.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public ShieldBuilder OrInner<TException>() where TException : Exception'
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Function OrInner(Of TException As Exception)() As ShieldBuilder
+  overload: Kevlar.ShieldBuilder.OrInner*
+  nameWithType.vb: ShieldBuilder.OrInner(Of TException)()
+  fullName.vb: Kevlar.ShieldBuilder.OrInner(Of TException)()
+  name.vb: OrInner(Of TException)()
+- uid: Kevlar.ShieldBuilder.OrInner``1(System.Func{``0,System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder.OrInner``1(System.Func{``0,System.Boolean})
+  id: OrInner``1(System.Func{``0,System.Boolean})
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: OrInner<TException>(Func<TException, bool>)
+  nameWithType: ShieldBuilder.OrInner<TException>(Func<TException, bool>)
+  fullName: Kevlar.ShieldBuilder.OrInner<TException>(System.Func<TException, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions containing an exception of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public ShieldBuilder OrInner<TException>(Func<TException, bool> predicate) where TException : Exception'
+    parameters:
+    - id: predicate
+      type: System.Func{{TException},System.Boolean}
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Function OrInner(Of TException As Exception)(predicate As Func(Of TException, Boolean)) As ShieldBuilder
+  overload: Kevlar.ShieldBuilder.OrInner*
+  nameWithType.vb: ShieldBuilder.OrInner(Of TException)(Func(Of TException, Boolean))
+  fullName.vb: Kevlar.ShieldBuilder.OrInner(Of TException)(System.Func(Of TException, Boolean))
+  name.vb: OrInner(Of TException)(Func(Of TException, Boolean))
 - uid: Kevlar.ShieldBuilder.Or(System.Func{System.Exception,System.Boolean})
   commentId: M:Kevlar.ShieldBuilder.Or(System.Func{System.Exception,System.Boolean})
   id: Or(System.Func{System.Exception,System.Boolean})
@@ -1190,6 +1251,20 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: System.AggregateException
+  commentId: T:System.AggregateException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.aggregateexception
+  name: AggregateException
+  nameWithType: AggregateException
+  fullName: System.AggregateException
+- uid: Kevlar.ShieldBuilder.OrInner*
+  commentId: Overload:Kevlar.ShieldBuilder.OrInner
+  isExternal: true
+  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_OrInner__1
+  name: OrInner
+  nameWithType: ShieldBuilder.OrInner
+  fullName: Kevlar.ShieldBuilder.OrInner
 - uid: System.Func{System.Exception,System.Boolean}
   commentId: T:System.Func{System.Exception,System.Boolean}
   parent: System
