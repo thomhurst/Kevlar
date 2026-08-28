@@ -240,6 +240,7 @@
   "Kevlar.Extensions.Grpc.GrpcShield": "Kevlar.Extensions.Grpc.GrpcShield.yml",
   "Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.RpcException)": "Kevlar.Extensions.Grpc.GrpcShield.yml",
   "Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.StatusCode)": "Kevlar.Extensions.Grpc.GrpcShield.yml",
+  "Kevlar.Extensions.Grpc.GrpcShield.RetryAfter(Kevlar.RetryEvent)": "Kevlar.Extensions.Grpc.GrpcShield.yml",
   "Kevlar.Extensions.Grpc.GrpcShield.WhenTransient": "Kevlar.Extensions.Grpc.GrpcShield.yml",
   "Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor": "Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.yml",
   "Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.#ctor(Kevlar.Shield)": "Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.yml",

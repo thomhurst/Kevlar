@@ -35,6 +35,37 @@ var client = new Orders.OrdersClient(
 
 The final response or `RpcException` remains the caller's result. Superseded retry calls and losing hedge calls are disposed. Response headers, status, and trailers come from the selected final attempt.
 
+## Choose one retry owner
+
+`Grpc.Net.Client` can apply a `ServiceConfig` `RetryPolicy` or `HedgingPolicy` transparently inside
+the channel. Those policies can target individual methods, stop after response headers or request
+buffer limits commit a call, honour server pushback, and share retry throttling for a server name.
+Kevlar operates outside the channel: its interceptor can apply retry, circuit breaker, hedging,
+fallback, timeout, and observability consistently across methods.
+
+Do not configure both a ServiceConfig retry policy and a Kevlar retry for the same call. Their
+attempt counts multiply, and the outer Kevlar shield sees only the channel's final result. Choose
+ServiceConfig when protocol-native, per-method retry with built-in throttling is sufficient. Choose
+Kevlar when retry must compose with its other strategies or share their telemetry and state.
+
+When Kevlar owns retry, opt in to the server's `grpc-retry-pushback-ms` trailer:
+
+```csharp
+using Kevlar;
+using Kevlar.Extensions.Grpc;
+
+var retryingShield = GrpcShield.WhenTransient()
+    .Retry(options =>
+    {
+        options.MaxRetries = 3;
+        options.DelayGenerator = GrpcShield.RetryAfter;
+    });
+```
+
+A valid non-negative trailer replaces the computed delay for that retry. A negative or malformed
+value suppresses further retries. `RetryOptions.MaxDelay` still caps server delays; when it is
+unset, the selected backoff's maximum applies (30 seconds for `Backoff.Default`).
+
 ## Streaming calls
 
 Use `ShieldStreamingClientInterceptor` for server-streaming, client-streaming, and duplex calls:
