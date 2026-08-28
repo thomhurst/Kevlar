@@ -57,6 +57,12 @@ lookup of the evicted key creates a new shield with fresh breaker, limiter, and 
 strategies hold no long-lived disposable resources; this lifecycle primarily matters for custom
 strategies and adapters such as an owned `RateLimiter`.
 
+When an owned partition contains disposable strategies, each shield execution allocates one small
+async-flow lifetime token. The token must be unique so provider disposal can distinguish the exact
+protected execution from detached tasks and concurrent later executions. Set
+`OwnsStrategies = false` to avoid provider lifetime tracking when another component owns and
+disposes those strategies.
+
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
 owned strategies of a newly published shield remain alive until `OnCreated` and the creating lookup

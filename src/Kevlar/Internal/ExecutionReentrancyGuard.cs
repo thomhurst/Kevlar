@@ -8,6 +8,8 @@ internal sealed class ExecutionReentrancyGuard
 
     public Scope Enter()
     {
+        // ExecutionContext captures AsyncLocal values in detached child tasks. A unique, non-pooled
+        // scope lets deactivation reach every capture without token reuse reactivating stale contexts.
         var scope = new Scope(_current.Value);
         _current.Value = scope;
         return scope;
