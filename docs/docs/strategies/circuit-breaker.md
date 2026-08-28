@@ -148,7 +148,9 @@ and an empty property bag. Callbacks run outside the circuit lock, so they can r
 the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the
 transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when `OnStateChanged`
 may yield so the calling thread is not blocked; these methods await every bound breaker in binding
-order. If an observer throws,
+order. Transition publication is serialized per breaker. A publisher arriving while another thread
+drains observers waits for that drain; an execution can therefore occupy a thread-pool thread until
+the earlier handlers return. If an observer throws,
 later observers still run and the circuit keeps its new, usable state. Observer failures are
 reported through `KevlarDiagnostics.OnCallbackError` under the shared
 [callback-failure contract](../observability.md#callback-failures) and never replace an execution

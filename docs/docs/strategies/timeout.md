@@ -46,6 +46,12 @@ Two behaviours worth knowing:
   increments `kevlar.timeouts` with `outcome=ignored`, and does not invoke `OnTimeout`.
 - Cancellation from your own outer token is **not** reported as a timeout — it propagates as a normal `OperationCanceledException`.
 
+The strategy always awaits the delegate; it never returns early or abandons work. Consequently,
+synchronous `Execute` cannot time out a blocking delegate that ignores its token. Timeout
+classification also requires the delegate's direct outcome to be `OperationCanceledException`.
+Wrapping that cancellation in `AggregateException` or another exception surfaces the wrapper
+unchanged, and an outer retry may handle it like any other failure.
+
 ## Cancellation arbitration
 
 When cancellation signals overlap, the outcome is decided after the delegate completes:

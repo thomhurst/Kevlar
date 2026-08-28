@@ -112,6 +112,10 @@ zero/infinite meanings apply. Generator exceptions fail the execution and cancel
 - `Timeout.InfiniteTimeSpan` — never hedge on latency; launch the next attempt **only when the previous one fails**.
 - Any delay: a handled failure always launches the next attempt *immediately*, without waiting out the rest of the delay.
 
+Zero delay launches the primary plus all `MaxHedgedAttempts` immediately, even when the primary
+delegate completes synchronously. If no attempt produces an acceptable outcome, the last completed
+outcome surfaces.
+
 ## The rules
 
 :::warning Your delegate runs concurrently

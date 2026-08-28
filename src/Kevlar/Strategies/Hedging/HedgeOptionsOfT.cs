@@ -6,6 +6,7 @@ namespace Kevlar;
 /// <remarks>
 /// <see cref="HedgeOptions{TResult}"/> and <see cref="HedgeOptions"/> are standalone sibling types
 /// with matching shared property names and defaults.
+/// If no attempt produces an acceptable outcome, the last completed outcome surfaces.
 /// </remarks>
 public sealed class HedgeOptions<TResult>
 {

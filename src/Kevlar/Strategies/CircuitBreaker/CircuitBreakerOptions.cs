@@ -69,7 +69,8 @@ public sealed class CircuitBreakerOptions
     /// <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered serially
     /// outside the circuit lock, so a slow handler delays later transition publishers. Return
     /// <see langword="default"/> from a synchronous callback. The event context is valid only
-    /// until the returned task completes.
+    /// until the returned task completes. A publisher arriving during an active drain waits for
+    /// the earlier handlers; an execution may therefore occupy a thread-pool thread until they return.
     /// </summary>
     public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
 }

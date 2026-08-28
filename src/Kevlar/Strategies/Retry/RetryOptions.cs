@@ -7,6 +7,9 @@ namespace Kevlar;
 /// stops and surfaces caller cancellation. Hooks that complete synchronously (for example by
 /// returning <see langword="default"/>) add no overhead and remain compatible with synchronous
 /// <c>Execute</c>.
+/// Cancellation during the retry delay surfaces an <see cref="OperationCanceledException"/> with
+/// no inner exception. The handled outcome is no longer retained, and <see cref="OnRetry"/> has
+/// already run for the suppressed attempt.
 /// </remarks>
 public sealed class RetryOptions
 {
@@ -77,6 +80,9 @@ public sealed class RetryOptions
 /// Before each retry, <see cref="DelayGenerator"/> runs and is awaited, then <see cref="OnRetry"/>.
 /// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
 /// stops and surfaces caller cancellation.
+/// Cancellation during the retry delay surfaces an <see cref="OperationCanceledException"/> with
+/// no inner exception. The handled outcome is no longer retained, and <see cref="OnRetry"/> has
+/// already run for the suppressed attempt.
 /// </remarks>
 public sealed class RetryOptions<TResult>
 {

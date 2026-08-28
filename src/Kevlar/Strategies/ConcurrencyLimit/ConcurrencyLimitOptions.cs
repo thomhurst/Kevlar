@@ -18,7 +18,10 @@ public sealed class ConcurrencyLimitOptions
     /// <summary>Maximum concurrent executions. Default 10.</summary>
     public int MaxConcurrency { get; set; } = 10;
 
-    /// <summary>Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).</summary>
+    /// <summary>
+    /// Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).
+    /// The queue has no built-in timeout; compose a timeout outside this strategy to bound the wait.
+    /// </summary>
     public int QueueLimit { get; set; }
 
     /// <summary>

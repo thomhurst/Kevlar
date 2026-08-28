@@ -47,6 +47,8 @@ public sealed class CircuitBreakerMonitor
 
     /// <summary>
     /// Forces every bound circuit open. Executions are rejected until <see cref="Reset"/> is called.
+    /// Blocks until transition observers complete; use <see cref="IsolateAsync"/> when an
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> callback may yield.
     /// </summary>
     public void Isolate()
     {
@@ -71,7 +73,11 @@ public sealed class CircuitBreakerMonitor
             : IsolateAllAsync(cores);
     }
 
-    /// <summary>Closes every bound circuit and clears all failure metrics.</summary>
+    /// <summary>
+    /// Closes every bound circuit and clears all failure metrics. Blocks until transition observers
+    /// complete; use <see cref="ResetAsync"/> when an
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> callback may yield.
+    /// </summary>
     public void Reset()
     {
         foreach (var core in BoundCores())
