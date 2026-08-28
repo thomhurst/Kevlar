@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-08-27 23:55 UTC (commit `4f53bb4`).*
+*Last updated 2026-08-28 01:24 UTC (commit `c9f6265`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,10 +19,10 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Library | Throughput | Operations | Allocated | Allocated/op | Managed heap (before / after) | GC collections (0 / 1 / 2) |
 |---|---:|---:|---:|---:|---:|---:|
-| Kevlar | 2.44M ops/s | 1.10B | 8.39 KiB | 0.00 B | 247.65 KiB / 287.81 KiB | 0 / 0 / 0 |
-| Polly | 2.46M ops/s | 1.11B | 49.47 GiB | 48.00 B | 231.77 KiB / 53.18 MiB | 634 / 44 / 4 |
+| Kevlar | 3.59M ops/s | 1.61B | 9.27 KiB | 0.00 B | 247.76 KiB / 305.91 KiB | 0 / 0 / 0 |
+| Polly | 2.88M ops/s | 1.30B | 57.92 GiB | 48.00 B | 234.27 KiB / 1.63 MiB | 3726 / 44 / 4 |
 
-Kevlar completed **0.99×** as many operations per second as Polly in this run.
+Kevlar completed **1.25×** as many operations per second as Polly in this run.
 
 ## Method
 
@@ -30,7 +30,7 @@ Kevlar completed **0.99×** as many operations per second as Polly in this run.
 - Each pipeline warmed for 2 seconds before measurement.
 - Each operation returns `42` successfully through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Process-wide allocation counters include all worker threads. GC counts are captured separately for each phase.
-- Peak working set for the shared process: 136.62 MiB.
+- Peak working set for the shared process: 72.76 MiB.
 
 ## Environment
 
