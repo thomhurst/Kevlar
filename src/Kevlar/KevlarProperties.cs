@@ -18,6 +18,7 @@ public sealed class KevlarProperties
     private Dictionary<PropertyIdentity, PropertySlot>? _items;
     private int _count;
     private KevlarProperties? _mutationTarget;
+    private int _suppressAdditionalAttempts;
 
 #if DEBUG
     private bool _returnedToPool;
@@ -27,7 +28,11 @@ public sealed class KevlarProperties
     {
     }
 
-    internal bool SuppressAdditionalAttempts { get; set; }
+    internal bool SuppressAdditionalAttempts
+    {
+        get => Volatile.Read(ref _suppressAdditionalAttempts) != 0;
+        set => Volatile.Write(ref _suppressAdditionalAttempts, value ? 1 : 0);
+    }
 
     /// <summary>Gets the number of values currently stored in the bag.</summary>
     public int Count

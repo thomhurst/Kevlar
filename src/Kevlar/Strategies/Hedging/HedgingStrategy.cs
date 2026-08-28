@@ -293,7 +293,8 @@ internal sealed class HedgingStrategy : Strategy
                         strategyIndex);
                     var suppressAdditionalAttempts = PropagateAttemptSuppression(
                         judgingContext,
-                        context);
+                        context,
+                        pending);
                     var isWinner = !shouldHandle
                         || suppressAdditionalAttempts && pending.Count == 0
                         || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
@@ -1316,6 +1317,24 @@ internal sealed class HedgingStrategy : Strategy
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
         source.CopyCompletionPropertiesToParent(target);
+
+    private static bool PropagateAttemptSuppression<T>(
+        KevlarContext source,
+        KevlarContext target,
+        List<HedgeAttempt<T>> pending)
+    {
+        if (!PropagateAttemptSuppression(source, target))
+        {
+            return false;
+        }
+
+        foreach (var attempt in pending)
+        {
+            attempt.Context.Properties.SuppressAdditionalAttempts = true;
+        }
+
+        return true;
+    }
 
     private static bool PropagateAttemptSuppression(KevlarContext source, KevlarContext target)
     {
