@@ -1408,6 +1408,24 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task RemoveAllShields_Suppresses_Default_Shield_Factories_For_The_Named_Client()
+    {
+        var services = new ServiceCollection();
+        services.ConfigureHttpClientDefaults(builder =>
+            builder.AddShield(_ => throw new InvalidOperationException("Default factory was invoked.")));
+        services.AddHttpClient("removed-default")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("removed-default");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
     public async Task RemoveAllShields_Does_Not_Invoke_Removed_Factories()
     {
         var services = new ServiceCollection();

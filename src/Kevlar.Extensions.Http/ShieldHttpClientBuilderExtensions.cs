@@ -90,6 +90,14 @@ public static class ShieldHttpClientBuilderExtensions
             builder.Name,
             static options =>
             {
+                for (var index = options.HttpMessageHandlerBuilderActions.Count - 1; index >= 0; index--)
+                {
+                    if (options.HttpMessageHandlerBuilderActions[index].Target is ShieldHandlerConfiguration)
+                    {
+                        options.HttpMessageHandlerBuilderActions.RemoveAt(index);
+                    }
+                }
+
                 for (var index = options.HttpClientActions.Count - 1; index >= 0; index--)
                 {
                     if (options.HttpClientActions[index].Target is StandardTimeoutConfiguration)
