@@ -13,7 +13,8 @@ public static class ShieldStateSnapshotExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return Capture(shield.Strategies, shield.TimeOrSystem);
+        var snapshot = shield.CurrentSnapshot;
+        return Capture(snapshot.Strategies, snapshot.TimeOrSystem);
     }
 
     /// <summary>Captures the current state of a typed shield's stateful strategies.</summary>
@@ -24,7 +25,8 @@ public static class ShieldStateSnapshotExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return Capture(shield.Strategies, shield.TimeOrSystem);
+        var snapshot = shield.CurrentSnapshot;
+        return Capture(snapshot.Strategies, snapshot.TimeOrSystem);
     }
 
     /// <summary>Captures the current retention and eviction state of a partitioned provider.</summary>

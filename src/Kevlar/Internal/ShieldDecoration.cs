@@ -51,6 +51,7 @@ internal static class ShieldDecoration
         string? name,
         IEnumerable<IShieldDecorator> decorators)
     {
+        shield = shield.CurrentSnapshot;
         foreach (var decorator in decorators)
         {
             if (IsApplied(shield.AppliedDecorators, decorator))
@@ -72,6 +73,7 @@ internal static class ShieldDecoration
         string? name,
         IEnumerable<IShieldDecorator> decorators)
     {
+        shield = shield.CurrentSnapshot;
         foreach (var decorator in decorators)
         {
             if (IsApplied(shield.AppliedDecorators, decorator))

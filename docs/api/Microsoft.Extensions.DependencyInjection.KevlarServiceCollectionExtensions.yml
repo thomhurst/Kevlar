@@ -316,13 +316,15 @@ items:
   remarks: >-
     Changes are debounced for 250 milliseconds by default. Each successful replacement has
 
-    fresh circuit-breaker, rate-limiter, and concurrency-limiter state. Resolve the keyed
+    fresh circuit-breaker, rate-limiter, and concurrency-limiter state. The registry returns a
 
-    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider" data-throw-if-not-resolved="false"></xref> to observe future replacements, or call
+    stable forwarding <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> whose executions, inspections, and fluent copies use
 
-    <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)" data-throw-if-not-resolved="false"></xref> once per operation. Reloading names do not
+    the latest valid publication. Resolve the keyed <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider" data-throw-if-not-resolved="false"></xref> and read
 
-    register a keyed <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref>, preventing consumers from retaining a stale snapshot.
+    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider.Current" data-throw-if-not-resolved="false"></xref> once per operation when an explicit immutable snapshot
+
+    is required. Reloading names do not register a keyed <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref>.
 
     Exceptions thrown by <code class="paramref">onReloadFailure</code> are suppressed so future reloads
 
@@ -665,13 +667,15 @@ items:
   remarks: >-
     Changes are debounced for 250 milliseconds by default. Each successful replacement has
 
-    fresh strategy state. Resolve the keyed
+    fresh strategy state. The registry returns a stable forwarding
 
-    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider%601" data-throw-if-not-resolved="false"></xref> to observe future replacements, or call
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> whose executions, inspections, and fluent copies use the latest
 
-    <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield%60%601(System.String)" data-throw-if-not-resolved="false"></xref> once per operation. Reloading names
+    valid publication. Resolve the keyed <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider%601" data-throw-if-not-resolved="false"></xref> and read
 
-    do not register a keyed <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref>, preventing stale injection.
+    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider%601.Current" data-throw-if-not-resolved="false"></xref> once per operation when an explicit immutable
+
+    snapshot is required. Reloading names do not register a keyed <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref>.
 
     Exceptions thrown by <code class="paramref">onReloadFailure</code> are suppressed.
   example: []
@@ -1749,6 +1753,15 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  commentId: P:Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html#Kevlar_Extensions_DependencyInjection_IShieldProvider_1_Current
+  name: Current
+  nameWithType: IShieldProvider<TResult>.Current
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>.Current
+  nameWithType.vb: IShieldProvider(Of TResult).Current
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult).Current
 - uid: Microsoft.Extensions.Options.IOptionsMonitor`1
   commentId: T:Microsoft.Extensions.Options.IOptionsMonitor`1
   isExternal: true

@@ -29,11 +29,15 @@ items:
   remarks: >-
     Each registration factory runs at most once after a successful build; failed factories may be
 
-    retried. Reload-aware registrations cache their provider; <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)" data-throw-if-not-resolved="false"></xref> returns
+    retried. For a reload-aware registration, <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)" data-throw-if-not-resolved="false"></xref> returns one stable
 
-    that provider's current snapshot. Names are case-sensitive; an empty name is valid. Removing a
+    forwarding shield whose executions and inspections use the latest valid publication. The keyed
 
-    registration does not dispose shields already returned to callers.
+    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider.Current" data-throw-if-not-resolved="false"></xref> property provides explicit immutable snapshots instead.
+
+    Names are case-sensitive; an empty name is valid. Removing a registration does not dispose
+
+    shields already returned to callers.
   example: []
   syntax:
     content: 'public interface IKevlarRegistry : IDisposable, IAsyncDisposable'
@@ -388,6 +392,13 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.string
   - name: )
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider.Current
+  commentId: P:Kevlar.Extensions.DependencyInjection.IShieldProvider.Current
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider.html#Kevlar_Extensions_DependencyInjection_IShieldProvider_Current
+  name: Current
+  nameWithType: IShieldProvider.Current
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider.Current
 - uid: Kevlar.Extensions.DependencyInjection
   commentId: N:Kevlar.Extensions.DependencyInjection
   isExternal: true

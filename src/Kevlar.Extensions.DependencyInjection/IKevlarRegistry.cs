@@ -5,9 +5,11 @@ namespace Kevlar.Extensions.DependencyInjection;
 /// <summary>Resolves named shields registered via <c>AddShield</c>.</summary>
 /// <remarks>
 /// Each registration factory runs at most once after a successful build; failed factories may be
-/// retried. Reload-aware registrations cache their provider; <see cref="GetShield(string)"/> returns
-/// that provider's current snapshot. Names are case-sensitive; an empty name is valid. Removing a
-/// registration does not dispose shields already returned to callers.
+/// retried. For a reload-aware registration, <see cref="GetShield(string)"/> returns one stable
+/// forwarding shield whose executions and inspections use the latest valid publication. The keyed
+/// <see cref="IShieldProvider.Current"/> property provides explicit immutable snapshots instead.
+/// Names are case-sensitive; an empty name is valid. Removing a registration does not dispose
+/// shields already returned to callers.
 /// </remarks>
 public interface IKevlarRegistry : IDisposable, IAsyncDisposable
 {

@@ -114,6 +114,82 @@ public class ReloadingShieldTests
     }
 
     [Test]
+    public async Task Registry_Forwarders_Preserve_The_Current_Pipeline_When_Transformed()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = registry.GetShield("dynamic");
+        var typedLive = registry.GetShield<int>("typed");
+
+        var appended = live.Timeout(TimeSpan.FromSeconds(1));
+        var named = live.WithName("copy");
+        var typed = live.For<int>();
+        var wrapped = live.Wrap(Shield.Timeout(TimeSpan.FromSeconds(2)));
+        var composed = Shield.Compose(Shield.Timeout(TimeSpan.FromSeconds(3)), live);
+        var typedAppended = typedLive.Timeout(TimeSpan.FromSeconds(4));
+        var typedNamed = typedLive.WithName("typed-copy");
+        var typedWrapped = typedLive.Wrap(Shield.For<int>().Timeout(TimeSpan.FromSeconds(5)));
+        var typedComposed = Shield<int>.Compose(
+            Shield.For<int>().Timeout(TimeSpan.FromSeconds(6)),
+            typedLive);
+
+        await Assert.That(live.Name).IsEqualTo("dynamic");
+        await Assert.That(appended.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(named.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(named.Name).IsEqualTo("copy");
+        await Assert.That(typed.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(wrapped.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(composed.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedLive.Name).IsEqualTo("typed");
+        await Assert.That(typedAppended.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedNamed.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(typedNamed.Name).IsEqualTo("typed-copy");
+        await Assert.That(typedWrapped.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedComposed.GetDescriptor().Strategies.Count).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Registry_Forwarder_State_Snapshot_Uses_The_Current_Pipeline()
+    {
+        var configuration = BuildConfiguration(
+            ("CircuitBreaker:ConsecutiveFailures", "1"),
+            ("CircuitBreaker:BreakDuration", "00:00:01"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = registry.GetShield("dynamic");
+        var typedLive = registry.GetShield<int>("typed");
+
+        var snapshot = live.GetStateSnapshot();
+        var typedSnapshot = typedLive.GetStateSnapshot();
+
+        await Assert.That(snapshot.Strategies).HasSingleItem();
+        await Assert.That(snapshot.Strategies[0]).IsTypeOf<CircuitBreakerStateSnapshot>();
+        await Assert.That(typedSnapshot.Strategies).HasSingleItem();
+        await Assert.That(typedSnapshot.Strategies[0]).IsTypeOf<CircuitBreakerStateSnapshot>();
+    }
+
+    [Test]
+    public async Task Registry_Forwarders_Conservatively_Report_Potential_Reinvocation()
+    {
+        var configuration = BuildConfiguration();
+        using var services = new ServiceCollection()
+            .AddReloadingShield("untyped", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+
+        await Assert.That(registry.GetShield("untyped").InvokesContinuationAtMostOnce).IsFalse();
+        await Assert.That(registry.GetShield<int>("typed").InvokesContinuationAtMostOnce).IsFalse();
+    }
+
+    [Test]
     public async Task Registry_Forwarders_Cover_All_Execution_Shapes()
     {
         var configuration = BuildConfiguration();

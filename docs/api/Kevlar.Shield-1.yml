@@ -1903,6 +1903,10 @@ items:
     Gets whether every strategy guarantees invoking the execution continuation at most once.
 
     Custom strategies may opt in through <xref href="Kevlar.Strategy.InvokesContinuationAtMostOnce" data-throw-if-not-resolved="false"></xref>.
+  remarks: >-
+    A live-forwarding shield reports <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> because a later publication may
+
+    introduce retry, hedging, or another multi-attempt strategy.
   example: []
   syntax:
     content: public bool InvokesContinuationAtMostOnce { get; }

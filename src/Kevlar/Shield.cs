@@ -26,8 +26,9 @@ public sealed class Shield : IShieldLifecycle
     private readonly bool _hasVoidFallback;
     private readonly StrategyOwnerSet _strategyOwners;
     private readonly Func<Shield>? _currentSnapshot;
+    private readonly string? _name;
 
-    Strategy[] IShieldLifecycle.Strategies => Strategies;
+    Strategy[] IShieldLifecycle.Strategies => CurrentSnapshot.Strategies;
 
     internal Shield(
         Strategy[] strategies,
@@ -41,7 +42,7 @@ public sealed class Shield : IShieldLifecycle
         _strategyOwners = GetStrategyOwners(strategies);
         Head = BuildChain(strategies, _strategyOwners);
         Ambient = ambient;
-        Name = name;
+        _name = name;
         Time = timeProvider;
         AppliedDecorators = appliedDecorators ?? [];
 
@@ -62,28 +63,35 @@ public sealed class Shield : IShieldLifecycle
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <c>WithName</c>.</summary>
-    public string? Name { get; }
+    public string? Name => _currentSnapshot is { } currentSnapshot
+        ? currentSnapshot().Name
+        : _name;
 
     internal Shield CurrentSnapshot => _currentSnapshot?.Invoke() ?? this;
 
     /// <summary>A shield with no strategies: executions pass straight through.</summary>
     public static Shield Empty { get; } = new([], null, null, null);
 
-    internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
+    internal OutcomeJudge JudgeOrDefault => CurrentSnapshot.Ambient ?? OutcomeJudge.Default;
 
     internal OutcomeJudge FallbackJudgeOrDefault =>
-        Ambient is null || ReferenceEquals(Ambient, OutcomeJudge.Default)
+        CurrentSnapshot.Ambient is not { } ambient || ReferenceEquals(ambient, OutcomeJudge.Default)
             ? OutcomeJudge.FallbackDefault
-            : Ambient;
+            : ambient;
 
-    internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
+    internal TimeProvider TimeOrSystem => CurrentSnapshot.Time ?? TimeProvider.System;
 
     /// <summary>
     /// Gets whether every strategy guarantees invoking the execution continuation at most once.
     /// Custom strategies may opt in through <see cref="Strategy.InvokesContinuationAtMostOnce"/>.
     /// </summary>
+    /// <remarks>
+    /// A live-forwarding shield reports <see langword="false"/> because a later publication may
+    /// introduce retry, hedging, or another multi-attempt strategy.
+    /// </remarks>
     public bool InvokesContinuationAtMostOnce =>
-        Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
+        _currentSnapshot is null
+        && Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
 
     // ── Static factories ────────────────────────────────────────────────────────────────
 
@@ -264,6 +272,7 @@ public sealed class Shield : IShieldLifecycle
         {
             var shield = shields[i];
             Throw.IfNull(shield, nameof(shields));
+            shield = shield.CurrentSnapshot;
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
@@ -1171,11 +1180,17 @@ public sealed class Shield : IShieldLifecycle
 
     internal Shield Append(Strategy strategy, OutcomeJudge? ambient = null)
     {
-        var strategies = new Strategy[Strategies.Length + 1];
-        Array.Copy(Strategies, strategies, Strategies.Length);
-        strategies[Strategies.Length] = strategy;
-        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
-        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
+        var snapshot = CurrentSnapshot;
+        var strategies = new Strategy[snapshot.Strategies.Length + 1];
+        Array.Copy(snapshot.Strategies, strategies, snapshot.Strategies.Length);
+        strategies[snapshot.Strategies.Length] = strategy;
+        var shield = new Shield(
+            strategies,
+            ambient ?? snapshot.Ambient,
+            snapshot.Name,
+            snapshot.Time,
+            snapshot.AppliedDecorators);
+        StrategyAppendObserver.Notify(snapshot.Strategies, strategy, snapshot.Name, shield);
         return shield;
     }
 
@@ -1183,11 +1198,17 @@ public sealed class Shield : IShieldLifecycle
         IShieldDecorator[] appliedDecorators,
         IShieldDecorator decorator)
     {
+        var snapshot = CurrentSnapshot;
         var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
         Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
         decorators[^1] = decorator;
-        var decorated = new Shield(Strategies, Ambient, Name, Time, decorators);
-        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        var decorated = new Shield(
+            snapshot.Strategies,
+            snapshot.Ambient,
+            snapshot.Name,
+            snapshot.Time,
+            decorators);
+        StrategyAppendObserver.NotifyComposition(snapshot.Strategies, snapshot.Name, decorated);
         return decorated;
     }
 

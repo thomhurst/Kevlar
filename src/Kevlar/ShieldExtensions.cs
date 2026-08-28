@@ -54,6 +54,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new RetryOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(
@@ -97,6 +98,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new TimeoutOptions();
         configure(options);
         return shield.Append(new TimeoutStrategy(options));
@@ -120,6 +122,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new CircuitBreakerOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(
@@ -147,6 +150,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new RateLimitOptions();
         configure(options);
         return shield.Append(new RateLimitStrategy(options));
@@ -170,6 +174,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new ConcurrencyLimitOptions();
         configure(options);
         return shield.Append(new ConcurrencyLimitStrategy(options));
@@ -214,6 +219,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new HedgeOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(
@@ -260,6 +266,7 @@ public static class ShieldExtensions
     public static Shield WithDefaultHandling(this Shield shield)
     {
         Throw.IfNull(shield, nameof(shield));
+        shield = shield.CurrentSnapshot;
         return new Shield(
             shield.Strategies,
             OutcomeJudge.Default,
@@ -284,6 +291,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(factory, nameof(factory));
+        shield = shield.CurrentSnapshot;
         var strategy = factory(new HandlingClause(shield.JudgeOrDefault))
             ?? throw new InvalidOperationException("The strategy factory returned null.");
         return shield.Append(strategy);
@@ -298,6 +306,8 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
+        outer = outer.CurrentSnapshot;
+        inner = inner.CurrentSnapshot;
         var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
         var wrapped = new Shield(
             strategies,
@@ -324,6 +334,8 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
+        outer = outer.CurrentSnapshot;
+        inner = inner.CurrentSnapshot;
         var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
         var wrapped = new Shield<TResult>(
             strategies,
@@ -349,6 +361,7 @@ public static class ShieldExtensions
     public static Shield<TResult> For<TResult>(this Shield shield)
     {
         Throw.IfNull(shield, nameof(shield));
+        shield = shield.CurrentSnapshot;
         return new Shield<TResult>(
             shield.Strategies,
             shield.Ambient,
@@ -368,6 +381,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
+        shield = shield.CurrentSnapshot;
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             shield.FallbackJudgeOrDefault,
@@ -387,6 +401,7 @@ public static class ShieldExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
         Throw.IfNull(configure, nameof(configure));
+        shield = shield.CurrentSnapshot;
         var options = new FallbackOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(
@@ -411,6 +426,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(fallback, nameof(fallback));
         Throw.IfNull(shield, nameof(shield));
+        shield = shield.CurrentSnapshot;
         return shield.Append(new VoidFallbackStrategy(
             (_, token) => fallback(token),
             shield.FallbackJudgeOrDefault,
@@ -430,6 +446,7 @@ public static class ShieldExtensions
         Throw.IfNull(fallback, nameof(fallback));
         Throw.IfNull(configure, nameof(configure));
         Throw.IfNull(shield, nameof(shield));
+        shield = shield.CurrentSnapshot;
         var options = new FallbackOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(
@@ -449,6 +466,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(name, nameof(name));
+        shield = shield.CurrentSnapshot;
         var named = new Shield(
             shield.Strategies,
             shield.Ambient,
@@ -464,6 +482,7 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(timeProvider, nameof(timeProvider));
+        shield = shield.CurrentSnapshot;
         var timed = new Shield(
             shield.Strategies,
             shield.Ambient,
