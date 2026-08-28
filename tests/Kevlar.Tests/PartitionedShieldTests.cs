@@ -468,6 +468,36 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Disposal_Reentered_From_OnEvicted_Is_Rejected_Without_Deadlock()
+    {
+        PartitionedShield<string>? provider = null;
+        Exception? disposalFailure = null;
+        provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions<string>
+            {
+                OnEvicted = async _ =>
+                {
+                    try
+                    {
+                        await provider!.DisposeAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        disposalFailure = exception;
+                    }
+                },
+            });
+        _ = provider.GetShield("tenant");
+
+        _ = await provider.TryRemoveAsync("tenant").AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(2));
+
+        await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task Synchronous_Removal_And_Disposal_Prefer_IDisposable()
     {
         var removedStrategy = new DualDisposablePartitionStrategy();

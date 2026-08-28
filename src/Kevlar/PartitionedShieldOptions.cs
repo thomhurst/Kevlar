@@ -38,7 +38,8 @@ public sealed class PartitionedShieldOptions<TKey>
     /// Invoked and awaited after a partition is removed from the provider and before an
     /// automatically evicted partition's slot is reused. A cold lookup reentered from this
     /// callback may return an unretained shield when the invoking eviction owns all available
-    /// capacity. Return <see langword="default"/> from a synchronous callback.
+    /// capacity. Disposing this provider from its own callback is rejected to prevent a lifecycle
+    /// deadlock. Return <see langword="default"/> from a synchronous callback.
     /// </summary>
     public Func<PartitionEvictedEvent<TKey>, ValueTask>? OnEvicted { get; set; }
 

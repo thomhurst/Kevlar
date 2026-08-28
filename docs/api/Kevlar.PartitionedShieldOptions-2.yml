@@ -223,7 +223,9 @@ items:
 
     callback may return an unretained shield when the invoking eviction owns all available
 
-    capacity. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    capacity. Disposing this provider from its own callback is rejected to prevent a lifecycle
+
+    deadlock. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
     content: public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted { get; set; }

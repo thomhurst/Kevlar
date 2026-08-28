@@ -235,6 +235,12 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private ValueTask DisposeAsync(bool preferSynchronousDisposal)
     {
+        if (_evictionCallback.Value is { Active: true })
+        {
+            return new ValueTask(Task.FromException(new InvalidOperationException(
+                "A partition provider cannot be disposed from its own eviction callback.")));
+        }
+
         var created = new TaskCompletionSource<bool>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var completion = Interlocked.CompareExchange(ref _disposeCompletion, created, null);
