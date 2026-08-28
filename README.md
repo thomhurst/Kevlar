@@ -159,7 +159,8 @@ part or supply your own shield. POST, PATCH, and custom methods remain single-at
 explicitly enable replay for operations that are safe to repeat.
 
 `Kevlar.Extensions.DependencyInjection` adds named, configuration-bound shields and
-`IKevlarRegistry`:
+`IKevlarRegistry`. In a standalone console project, install the concrete
+`Microsoft.Extensions.DependencyInjection` package as well; it provides `BuildServiceProvider()`:
 
 ```csharp
 using System;
