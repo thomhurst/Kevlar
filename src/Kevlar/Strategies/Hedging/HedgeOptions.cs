@@ -45,8 +45,9 @@ public sealed class HedgeOptions
     /// Time to wait before launching the next attempt while the current ones are still running.
     /// <see cref="TimeSpan.Zero"/> removes timer staggering and starts scheduling the original and
     /// all additional attempts, even when the original completes synchronously. Callbacks and
-    /// cancellation checks can still delay or prevent an additional delegate from starting;
-    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> hedges only on failure.
+    /// cancellation checks can still delay or prevent an additional delegate from starting. Any
+    /// negative value hedges only on failure and is normalized to
+    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/>.
     /// Default 1 second.
     /// </summary>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);

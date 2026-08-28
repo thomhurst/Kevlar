@@ -273,9 +273,11 @@ items:
 
     all additional attempts, even when the original completes synchronously. Callbacks and
 
-    cancellation checks can still delay or prevent an additional delegate from starting;
+    cancellation checks can still delay or prevent an additional delegate from starting. Any
 
-    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref> hedges only on failure.
+    negative value hedges only on failure and is normalized to
+
+    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref>.
 
     Default 1 second.
   example: []

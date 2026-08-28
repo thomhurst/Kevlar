@@ -522,10 +522,16 @@ items:
     parameters:
     - id: shield
       type: Kevlar.Shield
+      description: The shield to append hedging to.
     - id: maxHedgedAttempts
       type: System.Int32
+      description: Maximum additional attempts after the primary attempt.
     - id: delay
       type: System.TimeSpan
+      description: >-
+        The delay between attempts. Zero launches attempts in parallel; any negative value launches
+
+        another attempt only after a handled failure.
     return:
       type: Kevlar.Shield
     content.vb: Public Shared Function Hedge(shield As Shield, maxHedgedAttempts As Integer, delay As TimeSpan) As Shield

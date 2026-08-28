@@ -124,6 +124,30 @@ public class HedgingTests
     }
 
     [Test]
+    public async Task Any_Negative_Delay_Hedges_Only_On_Handled_Failure()
+    {
+        var attempts = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxHedgedAttempts = 1;
+            options.Delay = TimeSpan.FromSeconds(-1);
+        });
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new InvalidOperationException("first fails");
+            }
+
+            return new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Typed_OnHedge_Receives_The_Handled_Outcome()
     {
         HedgeEvent<string>? observed = null;

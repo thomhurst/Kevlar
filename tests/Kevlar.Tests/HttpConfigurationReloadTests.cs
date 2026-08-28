@@ -224,6 +224,17 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
+    public async Task Hedge_Section_Accepts_Negative_Delay()
+    {
+        var configuration = BuildConfiguration(("Hedge:Delay", "-00:00:01"));
+        var services = new ServiceCollection();
+        services.AddHttpClient("client").AddStandardHedgeShield(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+    }
+
+    [Test]
     public async Task Hedge_Section_Leaves_Optional_Stages_Null_When_Absent()
     {
         var configuration = BuildConfiguration(("Hedge:MaxHedgedAttempts", "0"));

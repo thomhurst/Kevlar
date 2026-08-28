@@ -677,7 +677,7 @@ if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
 | hedging `ActionGenerator` | `HedgeOptions.ActionGenerator` delegate |
 | circuit `BreakDurationGenerator` returning `ValueTask<TimeSpan>` | `BreakDurationGenerator` returning `ValueTask<TimeSpan>` |
 | hedging `DelayGenerator` returning `ValueTask<TimeSpan>` | `HedgeOptions.DelayGenerator` returning `ValueTask<TimeSpan>`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
-| hedging `Delay = TimeSpan.FromSeconds(-1)` to disable scheduled hedges | `Delay = Timeout.InfiniteTimeSpan`; other negative values are rejected |
+| any negative hedging `Delay` | any negative `HedgeOptions.Delay`; normalized to `Timeout.InfiniteTimeSpan` for failure-only hedging |
 | `OnRetry` / `OnTimeout` / `OnHedging` / `OnFallback` / `OnRejected` returning `ValueTask` | `OnRetry` / `OnTimeout` / `OnHedge` / `OnFallback` / `OnRejected` returning `ValueTask` |
 | `OnOpened` / `OnClosed` / `OnHalfOpened` | one `OnStateChanged` callback returning `ValueTask` |
 

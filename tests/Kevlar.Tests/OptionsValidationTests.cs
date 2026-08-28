@@ -19,7 +19,6 @@ public class OptionsValidationTests
             new(() => Shield.CircuitBreaker(options => options.SamplingWindow = TimeSpan.Zero), "CircuitBreakerOptions", "SamplingWindow", "00:00:00"),
             new(() => Shield.CircuitBreaker(options => options.BreakDuration = TimeSpan.Zero), "CircuitBreakerOptions", "BreakDuration", "00:00:00"),
             new(() => Shield.Hedge(options => options.MaxHedgedAttempts = -1), "HedgeOptions", "MaxHedgedAttempts", "-1"),
-            new(() => Shield.Hedge(options => options.Delay = TimeSpan.FromSeconds(-1)), "HedgeOptions", "Delay", "-00:00:01"),
             new(() => Shield.RateLimit(options => options.Permits = 0), "RateLimitOptions", "Permits", "0"),
             new(() => Shield.RateLimit(options => options.Window = TimeSpan.Zero), "RateLimitOptions", "Window", "00:00:00"),
             new(() => Shield.RateLimit(options => options.Burst = 0), "RateLimitOptions", "Burst", "0"),
@@ -182,10 +181,9 @@ public class OptionsValidationTests
     }
 
     [Test]
-    public async Task Hedge_Rejects_Invalid_Options()
+    public async Task Hedge_Rejects_Negative_Attempt_Count()
     {
         await Assert.That(() => Shield.Hedge(-1, TimeSpan.Zero)).Throws<ArgumentOutOfRangeException>();
-        await Assert.That(() => Shield.Hedge(1, TimeSpan.FromSeconds(-5))).Throws<ArgumentOutOfRangeException>();
     }
 
     [Test]

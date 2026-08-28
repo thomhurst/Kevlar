@@ -283,16 +283,17 @@ public sealed class Shield<TResult> : IShieldLifecycle
     }
 
     /// <summary>Races the primary with up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
+    /// <param name="maxHedgedAttempts">Maximum additional attempts after the primary attempt.</param>
+    /// <param name="delay">
+    /// The delay between attempts. Zero launches attempts in parallel; any negative value launches
+    /// another attempt only after a handled failure.
+    /// </param>
     public Shield<TResult> Hedge(int maxHedgedAttempts, TimeSpan delay)
     {
         Throw.IfOutOfRange(
             maxHedgedAttempts < 0,
             nameof(maxHedgedAttempts),
             "Maximum hedged attempts must be non-negative.");
-        Throw.IfOutOfRange(
-            delay < TimeSpan.Zero && delay != System.Threading.Timeout.InfiniteTimeSpan,
-            nameof(delay),
-            "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
         Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
         return Hedge(options =>
         {

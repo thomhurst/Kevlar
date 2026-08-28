@@ -49,12 +49,6 @@ internal sealed class HedgingStrategy : Strategy
             options.MaxHedgedAttempts,
             "must be non-negative");
         ConfigurationValidation.ThrowIf(
-            options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan,
-            optionsType,
-            nameof(options.Delay),
-            options.Delay,
-            "must be non-negative or Timeout.InfiniteTimeSpan");
-        ConfigurationValidation.ThrowIf(
             options.Delay > DelayHelper.MaximumDelay,
             optionsType,
             nameof(options.Delay),
@@ -63,7 +57,9 @@ internal sealed class HedgingStrategy : Strategy
 
         _judge = judge;
         _maxHedgedAttempts = options.MaxHedgedAttempts;
-        _delay = options.Delay;
+        _delay = options.Delay < TimeSpan.Zero
+            ? System.Threading.Timeout.InfiniteTimeSpan
+            : options.Delay;
         _delayGenerator = options.DelayGenerator;
         _onHedge = onHedge;
         _actionGenerator = actionGenerator;

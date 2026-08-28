@@ -308,10 +308,6 @@ internal static class StandardHttpConfigurationBinder
             "must be positive or Timeout.InfiniteTimeSpan");
         Ensure(options.Hedge.MaxHedgedAttempts >= 0, configuration.GetSection("Hedge:MaxHedgedAttempts"), "must not be negative");
         Ensure(
-            options.Hedge.Delay >= TimeSpan.Zero || options.Hedge.Delay == Timeout.InfiniteTimeSpan,
-            configuration.GetSection("Hedge:Delay"),
-            "must be non-negative or Timeout.InfiniteTimeSpan");
-        Ensure(
             IsValidStandardTimeout(options.AttemptTimeout),
             TimeoutSection(configuration, nameof(options.AttemptTimeout)),
             "must be positive or Timeout.InfiniteTimeSpan");
