@@ -743,6 +743,32 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task DisposeAsync_Beside_InFlight_Execution_Waits_Instead_Of_Rejecting()
+    {
+        var entered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var strategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(_ => Shield.Use(strategy));
+        var shield = provider.GetShield("tenant");
+        var execution = shield.ExecuteAsync(async _ =>
+        {
+            entered.TrySetResult();
+            await release.Task;
+        }).AsTask();
+        await entered.Task;
+
+        var disposal = provider.DisposeAsync().AsTask();
+
+        await Assert.That(disposal.IsCompleted).IsFalse();
+        release.TrySetResult();
+        await execution;
+        await disposal;
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Disposal_Reentered_From_Strategy_Disposal_Is_Rejected_Without_Deadlock()
     {
         var strategy = new ReentrantDisposalStrategy();

@@ -14,6 +14,7 @@ internal sealed class ExecutionTrackingStrategy(
         var scope = reentrancyGuard.Enter();
         tracker.Enter();
         var execution = next.InvokeAsync(context);
+        reentrancyGuard.Restore(scope);
 
         if (execution.IsCompletedSuccessfully)
         {
@@ -41,6 +42,6 @@ internal sealed class ExecutionTrackingStrategy(
     private void Complete(ExecutionReentrancyGuard.Scope scope)
     {
         tracker.Exit();
-        reentrancyGuard.Exit(scope);
+        scope.Deactivate();
     }
 }

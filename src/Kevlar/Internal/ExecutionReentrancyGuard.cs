@@ -13,11 +13,7 @@ internal sealed class ExecutionReentrancyGuard
         return scope;
     }
 
-    public void Exit(Scope scope)
-    {
-        scope.Deactivate();
-        _current.Value = scope.Parent;
-    }
+    public void Restore(Scope scope) => _current.Value = scope.Parent;
 
     internal sealed class Scope(Scope? parent)
     {
