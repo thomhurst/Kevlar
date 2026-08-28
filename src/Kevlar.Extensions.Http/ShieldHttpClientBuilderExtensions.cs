@@ -5,6 +5,7 @@ using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -56,7 +57,8 @@ public static class ShieldHttpClientBuilderExtensions
 
     /// <summary>
     /// Removes previously registered <see cref="ShieldDelegatingHandler"/> instances from this
-    /// client's handler pipeline while preserving other delegating handlers.
+    /// client's handler pipeline and their standard-shield timeout overrides while preserving
+    /// other delegating handlers and client configuration.
     /// </summary>
     public static IHttpClientBuilder RemoveAllShields(this IHttpClientBuilder builder)
     {
@@ -64,6 +66,19 @@ public static class ShieldHttpClientBuilderExtensions
         {
             throw new ArgumentNullException(nameof(builder));
         }
+
+        builder.Services.Configure<HttpClientFactoryOptions>(
+            builder.Name,
+            static options =>
+            {
+                for (var index = options.HttpClientActions.Count - 1; index >= 0; index--)
+                {
+                    if (options.HttpClientActions[index].Target is StandardTimeoutConfiguration)
+                    {
+                        options.HttpClientActions.RemoveAt(index);
+                    }
+                }
+            });
 
         return builder.ConfigureAdditionalHttpMessageHandlers(static (handlers, _) =>
         {
@@ -401,8 +416,11 @@ public static class ShieldHttpClientBuilderExtensions
         });
     }
 
-    private static IHttpClientBuilder UseStandardTimeout(IHttpClientBuilder builder) =>
-        builder.ConfigureHttpClient(static client => client.Timeout = Timeout.InfiniteTimeSpan);
+    private static IHttpClientBuilder UseStandardTimeout(IHttpClientBuilder builder)
+    {
+        var configuration = new StandardTimeoutConfiguration();
+        return builder.ConfigureHttpClient(configuration.Apply);
+    }
 
     private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source)
     {
@@ -771,6 +789,11 @@ public static class ShieldHttpClientBuilderExtensions
         target.BreakDurationGenerator = source.BreakDurationGenerator;
         target.Monitor = source.Monitor;
         target.OnStateChanged = source.OnStateChanged;
+    }
+
+    private sealed class StandardTimeoutConfiguration
+    {
+        public void Apply(HttpClient client) => client.Timeout = Timeout.InfiniteTimeSpan;
     }
 }
 

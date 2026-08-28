@@ -274,7 +274,9 @@ reload-aware registrations and dynamic registry replacements are observed withou
 
 `AddShield` also accepts a shield instance, an `IServiceProvider` factory, or a per-request selector.
 Call `RemoveAllShields()` after the relevant registrations to remove Kevlar handlers from that named
-client while leaving unrelated delegating handlers intact.
+client while leaving unrelated delegating handlers intact. It also removes the
+`HttpClient.Timeout = Timeout.InfiniteTimeSpan` overrides installed by preceding standard shields,
+so an earlier custom client timeout (or the normal default) remains effective.
 
 ## Per-request options
 

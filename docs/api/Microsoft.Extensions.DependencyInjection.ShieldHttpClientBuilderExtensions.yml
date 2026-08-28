@@ -132,7 +132,9 @@ items:
   summary: >-
     Removes previously registered <xref href="Kevlar.Extensions.Http.ShieldDelegatingHandler" data-throw-if-not-resolved="false"></xref> instances from this
 
-    client's handler pipeline while preserving other delegating handlers.
+    client's handler pipeline and their standard-shield timeout overrides while preserving
+
+    other delegating handlers and client configuration.
   example: []
   syntax:
     content: public static IHttpClientBuilder RemoveAllShields(this IHttpClientBuilder builder)

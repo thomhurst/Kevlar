@@ -1392,6 +1392,22 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task RemoveAllShields_Restores_The_Configured_HttpClient_Timeout()
+    {
+        var expectedTimeout = TimeSpan.FromSeconds(17);
+        var services = new ServiceCollection();
+        services.AddHttpClient("timeout", client => client.Timeout = expectedTimeout)
+            .AddStandardShield()
+            .AddStandardHedgeShield()
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("timeout");
+
+        await Assert.That(client.Timeout).IsEqualTo(expectedTimeout);
+    }
+
+    [Test]
     public async Task Handler_Disposal_Disposes_Inner_Handler()
     {
         var inner = new DelegateHandler((_, _) =>
