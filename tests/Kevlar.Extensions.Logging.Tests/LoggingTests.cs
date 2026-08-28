@@ -388,7 +388,7 @@ public class LoggingTests
         var callbackRecord = logger.Collector.GetSnapshot()
             .Single(record => record.Id == new EventId(1008, "CallbackError"));
         await Assert.That(callbackCalls).IsEqualTo(1);
-        await Assert.That(order.SequenceEqual(["log", "callback"])).IsTrue();
+        await Assert.That(order.SequenceEqual(["callback", "log"])).IsTrue();
         await Assert.That(callbackRecord.Level).IsEqualTo(LogLevel.Error);
         await Assert.That(callbackRecord.GetStructuredStateValue("CallbackKind")).IsEqualTo("Retry");
         await Assert.That(callbackRecord.GetStructuredStateValue("CallbackSource"))
