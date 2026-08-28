@@ -10,16 +10,7 @@ internal sealed class ExecutionTrackingStrategy(StrategyExecutionTracker tracker
         KevlarContext context)
     {
         tracker.Enter();
-        ValueTask<Outcome<T>> execution;
-        try
-        {
-            execution = next.InvokeAsync(context);
-        }
-        catch
-        {
-            tracker.Exit();
-            throw;
-        }
+        var execution = next.InvokeAsync(context);
 
         if (execution.IsCompletedSuccessfully)
         {
