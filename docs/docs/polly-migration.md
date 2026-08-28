@@ -200,7 +200,7 @@ neither context may be retained.
 | `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName` / `KevlarContext.ShieldName` |
 | Top-level `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
 | Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteWithContextAsync(parentContext, callback)` |
-| `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
+| `ContinueOnCapturedContext` | no global switch; [capture the UI scheduler and dispatch inside the action](executing.md#ui-thread-delegates) |
 
 Do not retain either library's pooled context beyond the current callback or execution delegate.
 
