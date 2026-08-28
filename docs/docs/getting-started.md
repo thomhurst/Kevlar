@@ -19,6 +19,7 @@ integrations and testing support.
 ## Protect your first call
 
 ```csharp
+using System.Net.Http;
 using Kevlar;
 
 var shield = Shield.Retry(3);
@@ -32,6 +33,31 @@ using var response = await shield.ExecuteAsync(
 exponential with equal jitter, starting at 250 ms and capped at 30 seconds. Always forward the
 cancellation token passed to your delegate; timeout and hedging strategies use it to stop
 abandoned work.
+
+:::note .NET Framework
+
+The .NET SDK console template does not accept `-f net48`. Create an SDK-style console project,
+then edit its project file to target .NET Framework and enable the language features used above:
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net48</TargetFramework>
+  <LangVersion>latest</LangVersion>
+</PropertyGroup>
+
+<ItemGroup>
+  <Reference Include="System.Net.Http" />
+</ItemGroup>
+```
+
+The HTTP example also needs the explicit `using System.Net.Http;` shown above because .NET
+Framework does not supply that implicit using. Expect MSBuild to generate binding redirects for the
+transitive compatibility dependencies: `Microsoft.Bcl.AsyncInterfaces` 8.0.0,
+`Microsoft.Bcl.TimeProvider` 8.0.1, `Reservoir` 1.4.0,
+`System.Runtime.CompilerServices.Unsafe` 6.1.2, `System.Threading.Tasks.Extensions` 4.6.3, and
+`System.ValueTuple` 4.5.0.
+
+:::
 
 Shields are immutable and thread-safe. Build one and reuse it. Reuse also preserves state: calls
 through the same shield share circuit-breaker and limiter state.
