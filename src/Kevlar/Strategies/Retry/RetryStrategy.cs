@@ -272,6 +272,25 @@ internal sealed class RetryStrategy : Strategy
                     return outcome;
                 }
 
+                if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException cancelled)
+                    {
+                        await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                            .ConfigureAwait(false);
+                        return Outcome<T>.FromException(cancelled);
+                    }
+                }
+
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
+                }
+
                 KevlarMetrics.Retry(context);
 
                 if (KevlarTelemetry.IsEventEnabled(context))
@@ -288,18 +307,6 @@ internal sealed class RetryStrategy : Strategy
                 }
 
                 await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);
-
-                if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
-                {
-                    try
-                    {
-                        await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException cancelled)
-                    {
-                        return Outcome<T>.FromException(cancelled);
-                    }
-                }
 
                 attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
                 context.AttemptNumber = attempt;
@@ -395,7 +402,8 @@ internal sealed class RetryStrategy : Strategy
         int retriesUsed,
         KevlarContext context,
         int strategyIndex) =>
-        _inspectTerminalOutcome
+        _delayGenerator is not null
+        && (_inspectTerminalOutcome || context.IsRetryTerminalInspectionRequested(strategyIndex))
         && retriesUsed >= _maxRetries
         && !context.Properties.SuppressAdditionalAttempts
         && !context.CancellationToken.IsCancellationRequested

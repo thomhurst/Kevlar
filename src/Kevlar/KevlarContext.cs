@@ -32,6 +32,7 @@ public sealed class KevlarContext
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
+    private long _retryTerminalInspectionMask;
     private int _attemptNumber;
     private string? _shieldName;
     private int _strategyIndex = -1;
@@ -332,6 +333,26 @@ public sealed class KevlarContext
         }
     }
 
+    internal void RequestRetryTerminalInspection(int strategyIndex)
+    {
+        var bit = 1L << (strategyIndex & 63);
+        while (true)
+        {
+            var current = Volatile.Read(ref _retryTerminalInspectionMask);
+            if ((current & bit) != 0
+                || Interlocked.CompareExchange(
+                    ref _retryTerminalInspectionMask,
+                    current | bit,
+                    current) == current)
+            {
+                return;
+            }
+        }
+    }
+
+    internal bool IsRetryTerminalInspectionRequested(int strategyIndex) =>
+        (Volatile.Read(ref _retryTerminalInspectionMask) & (1L << (strategyIndex & 63))) != 0;
+
     /// <summary>
     /// Clears the debug pooling guard on a context that Kevlar's own pool tests inspect after it
     /// went back to the pool. A no-op in release builds, where the guard does not exist.
@@ -385,6 +406,7 @@ public sealed class KevlarContext
             context.AttemptNumber = 0;
             context.TelemetryListener = null;
             context._activeStrategyMask = 0;
+            context._retryTerminalInspectionMask = 0;
             context.TimeProvider = TimeProvider.System;
             context._properties.MirrorMutationsTo(null);
             context._properties.Clear();

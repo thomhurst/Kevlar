@@ -45,6 +45,7 @@ public static class GrpcShield
     [RetryTerminalInspection]
     public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
     {
+        retry.RequestTerminalInspection();
         if (retry.Exception is not RpcException exception)
         {
             return default;

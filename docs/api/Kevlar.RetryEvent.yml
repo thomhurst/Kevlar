@@ -9,6 +9,7 @@ items:
   - Kevlar.RetryEvent.Context
   - Kevlar.RetryEvent.Delay
   - Kevlar.RetryEvent.Exception
+  - Kevlar.RetryEvent.RequestTerminalInspection
   - Kevlar.RetryEvent.Result
   - Kevlar.RetryEvent.SuppressAdditionalAttempts
   langs:
@@ -33,6 +34,29 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.RetryEvent.RequestTerminalInspection
+  commentId: M:Kevlar.RetryEvent.RequestTerminalInspection
+  id: RequestTerminalInspection
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: RequestTerminalInspection()
+  nameWithType: RetryEvent.RequestTerminalInspection()
+  fullName: Kevlar.RetryEvent.RequestTerminalInspection()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Requests one final delay-generator invocation when a handled outcome exhausts the retry
+
+    budget. The inspection does not schedule another retry.
+  example: []
+  syntax:
+    content: public void RequestTerminalInspection()
+    content.vb: Public Sub RequestTerminalInspection()
+  overload: Kevlar.RetryEvent.RequestTerminalInspection*
 - uid: Kevlar.RetryEvent.SuppressAdditionalAttempts
   commentId: M:Kevlar.RetryEvent.SuppressAdditionalAttempts
   id: SuppressAdditionalAttempts
@@ -411,6 +435,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar.RetryEvent.RequestTerminalInspection*
+  commentId: Overload:Kevlar.RetryEvent.RequestTerminalInspection
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_RequestTerminalInspection
+  name: RequestTerminalInspection
+  nameWithType: RetryEvent.RequestTerminalInspection
+  fullName: Kevlar.RetryEvent.RequestTerminalInspection
 - uid: Kevlar.RetryEvent.SuppressAdditionalAttempts*
   commentId: Overload:Kevlar.RetryEvent.SuppressAdditionalAttempts
   isExternal: true

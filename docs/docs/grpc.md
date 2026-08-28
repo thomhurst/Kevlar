@@ -64,7 +64,9 @@ var retryingShield = GrpcShield.WhenTransient()
 
 A valid non-negative trailer replaces the computed delay for that retry. A negative or malformed
 value suppresses further retries. `RetryOptions.MaxDelay` still caps server delays; when it is
-unset, the selected backoff's maximum applies (30 seconds for `Backoff.Default`).
+unset, the selected backoff's maximum applies (30 seconds for `Backoff.Default`). Assigning the
+method directly also inspects a handled final outcome when no retry budget remains. A wrapper that
+forwards to `GrpcShield.RetryAfter` registers that terminal inspection on its first invocation.
 
 ## Streaming calls
 
