@@ -399,6 +399,45 @@ public class OutcomeAndContextTests
     }
 
     [Test]
+    public async Task Clear_Does_Not_Reset_Shared_Additional_Attempt_Suppression()
+    {
+        var owner = new KevlarProperties();
+        var source = new KevlarProperties();
+        var staleSnapshot = new KevlarProperties();
+        source.ShareAdditionalAttemptStateWith(owner);
+        source.CopyTo(staleSnapshot);
+        owner.SuppressAdditionalAttempts = true;
+
+        source.Clear();
+        staleSnapshot.CopyTo(source);
+
+        await Assert.That(owner.SuppressAdditionalAttempts).IsTrue();
+        await Assert.That(source.SuppressAdditionalAttempts).IsTrue();
+    }
+
+    [Test]
+    public async Task Retry_Terminal_Inspection_Does_Not_Alias_Strategy_Indices()
+    {
+        var context = KevlarContext.Rent(
+            CancellationToken.None,
+            isSynchronous: false,
+            TimeProvider.System,
+            shieldName: null);
+
+        try
+        {
+            context.RequestRetryTerminalInspection(64);
+
+            await Assert.That(context.IsRetryTerminalInspectionRequested(0)).IsFalse();
+            await Assert.That(context.IsRetryTerminalInspectionRequested(64)).IsTrue();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    [Test]
     public async Task Context_Reports_Synchronous_And_Asynchronous_Executions()
     {
         bool? sawSynchronous = null;

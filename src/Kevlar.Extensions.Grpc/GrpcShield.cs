@@ -40,13 +40,15 @@ public static class GrpcShield
     /// Negative, malformed, or duplicate pushback values suppress additional attempts without
     /// changing the ambient handling clause used by circuit breakers or fallbacks. The retry
     /// strategy's <see cref="RetryOptions.MaxDelay"/> still caps a returned delay; when unset, the
-    /// selected backoff's maximum applies.
+    /// selected backoff's maximum applies. Wrapped and aggregate exception graphs are searched for
+    /// the handled <see cref="RpcException"/>.
     /// </remarks>
     [RetryTerminalInspection]
     public static ValueTask<TimeSpan?> RetryAfter(RetryEvent retry)
     {
         retry.RequestTerminalInspection();
-        if (retry.Exception is not RpcException exception)
+        if (retry.Exception is not { } failure
+            || FindTransientRpcException(failure) is not { } exception)
         {
             return default;
         }
@@ -63,6 +65,63 @@ public static class GrpcShield
         }
 
         return default;
+    }
+
+    private static RpcException? FindTransientRpcException(Exception exception)
+    {
+        Stack<Exception>? pendingBranches = null;
+        HashSet<Exception>? visited = null;
+
+        while (true)
+        {
+            if (visited is not null && !visited.Add(exception))
+            {
+                if (pendingBranches is null || pendingBranches.Count == 0)
+                {
+                    return null;
+                }
+
+                exception = pendingBranches.Pop();
+                continue;
+            }
+
+            if (exception is RpcException rpcException && IsTransient(rpcException))
+            {
+                return rpcException;
+            }
+
+            if (exception is AggregateException aggregate && aggregate.InnerExceptions.Count > 0)
+            {
+                if (visited is null)
+                {
+                    visited = new HashSet<Exception>(ExceptionReferenceComparer.Instance)
+                    {
+                        exception,
+                    };
+                }
+
+                for (var index = aggregate.InnerExceptions.Count - 1; index > 0; index--)
+                {
+                    (pendingBranches ??= new()).Push(aggregate.InnerExceptions[index]);
+                }
+
+                exception = aggregate.InnerExceptions[0];
+                continue;
+            }
+
+            if (exception.InnerException is { } innerException)
+            {
+                exception = innerException;
+                continue;
+            }
+
+            if (pendingBranches is null || pendingBranches.Count == 0)
+            {
+                return null;
+            }
+
+            exception = pendingBranches.Pop();
+        }
     }
 
     private static RetryPushback ReadRetryPushback(RpcException exception, out TimeSpan? delay)
@@ -98,5 +157,15 @@ public static class GrpcShield
         None,
         Delay,
         Stop,
+    }
+
+    private sealed class ExceptionReferenceComparer : IEqualityComparer<Exception>
+    {
+        public static ExceptionReferenceComparer Instance { get; } = new();
+
+        public bool Equals(Exception? x, Exception? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode(Exception exception) =>
+            System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(exception);
     }
 }

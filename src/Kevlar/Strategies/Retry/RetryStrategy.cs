@@ -193,12 +193,23 @@ internal sealed class RetryStrategy : Strategy
         bool recordAttempts,
         int previousAttemptNumber)
     {
+        Outcome<T>? supersededOutcome = null;
         try
         {
             var previousBackoffDelay = TimeSpan.Zero;
             for (var retriesUsed = 0; ; retriesUsed++)
             {
                 var outcome = await execution.ConfigureAwait(false);
+                if (supersededOutcome is { } superseded)
+                {
+                    supersededOutcome = null;
+                    if (!OutcomeDisposer.IsSameResult(in superseded, in outcome))
+                    {
+                        await OutcomeDisposer.DisposeResultAsync(in superseded, context)
+                            .ConfigureAwait(false);
+                    }
+                }
+
                 if (!firstOutcomeShouldRetry)
                 {
                     RecordAttempt(
@@ -272,6 +283,16 @@ internal sealed class RetryStrategy : Strategy
                     return outcome;
                 }
 
+                var deferDisposalUntilReplacement =
+                    context.Properties.CanSuppressAdditionalAttemptsConcurrently;
+                var disposeBeforeDelay = delay > TimeSpan.Zero
+                    && !deferDisposalUntilReplacement;
+                if (disposeBeforeDelay)
+                {
+                    await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                        .ConfigureAwait(false);
+                }
+
                 if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
                 {
                     try
@@ -280,8 +301,12 @@ internal sealed class RetryStrategy : Strategy
                     }
                     catch (OperationCanceledException cancelled)
                     {
-                        await OutcomeDisposer.DisposeResultAsync(in outcome, context)
-                            .ConfigureAwait(false);
+                        if (!disposeBeforeDelay)
+                        {
+                            await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                                .ConfigureAwait(false);
+                        }
+
                         return Outcome<T>.FromException(cancelled);
                     }
                 }
@@ -289,6 +314,34 @@ internal sealed class RetryStrategy : Strategy
                 if (context.Properties.SuppressAdditionalAttempts)
                 {
                     return outcome;
+                }
+
+                if (!disposeBeforeDelay && !deferDisposalUntilReplacement)
+                {
+                    await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                        .ConfigureAwait(false);
+                }
+
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    if (deferDisposalUntilReplacement)
+                    {
+                        await OutcomeDisposer.DisposeResultAsync(in outcome, context)
+                            .ConfigureAwait(false);
+                    }
+
+                    return Outcome<T>.FromException(
+                        new OperationCanceledException(context.CancellationToken));
+                }
+
+                if (!context.Properties.TryBeginAdditionalAttempt())
+                {
+                    return outcome;
+                }
+
+                if (deferDisposalUntilReplacement)
+                {
+                    supersededOutcome = outcome;
                 }
 
                 KevlarMetrics.Retry(context);
@@ -306,8 +359,6 @@ internal sealed class RetryStrategy : Strategy
                         delay: delay);
                 }
 
-                await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);
-
                 attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
                 context.AttemptNumber = attempt;
                 execution = next.InvokeAsync(context);
@@ -315,6 +366,12 @@ internal sealed class RetryStrategy : Strategy
         }
         finally
         {
+            if (supersededOutcome is { } superseded)
+            {
+                await OutcomeDisposer.DisposeResultAsync(in superseded, context)
+                    .ConfigureAwait(false);
+            }
+
             context.AttemptNumber = previousAttemptNumber;
         }
     }

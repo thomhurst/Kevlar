@@ -65,6 +65,91 @@ public class GrpcShieldTests
     }
 
     [Test]
+    public async Task RetryAfter_Uses_Pushback_From_A_Handled_Inner_Exception()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var attempts = 0;
+        var attemptsStarted = new AsyncCounter("wrapped gRPC pushback attempts");
+        var shield = Shield.WhenInner<RpcException>(GrpcShield.IsTransient)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            })
+            .WithTimeProvider(timeProvider);
+        var execution = shield.ExecuteAsync<int>(_ =>
+        {
+            attemptsStarted.Signal();
+            return ++attempts == 1
+                ? ValueTask.FromException<int>(
+                    new InvalidOperationException("wrapper", CreateException("2500")))
+                : new ValueTask<int>(42);
+        }).AsTask();
+
+        await attemptsStarted.WaitForAsync(1);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(2499));
+        await Assert.That(attempts).IsEqualTo(1);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(1));
+        await attemptsStarted.WaitForAsync(2);
+
+        await Assert.That(await execution).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task RetryAfter_Suppresses_Pushback_From_A_Handled_Aggregate_Branch()
+    {
+        var attempts = 0;
+        var shield = Shield.WhenInner<RpcException>(GrpcShield.IsTransient)
+            .Retry(options =>
+            {
+                options.MaxRetries = 3;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+        var exception = new AggregateException(
+            new InvalidOperationException("unrelated"),
+            CreateException("-1"));
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw exception;
+        })).Throws<AggregateException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task RetryAfter_Uses_The_Handled_Rpc_Branch_In_An_Aggregate()
+    {
+        var attempts = 0;
+        var shield = Shield.WhenInner<RpcException>(GrpcShield.IsTransient)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+        var exception = new AggregateException(
+            new RpcException(
+                new Status(StatusCode.InvalidArgument, "not transient"),
+                new Metadata { { "grpc-retry-pushback-ms", "invalid" } }),
+            CreateException(pushback: null));
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(exception)
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task IsTransient_Accepts_Missing_And_NonNegative_Pushback()
     {
         await Assert.That(GrpcShield.IsTransient(CreateException(pushback: null))).IsTrue();
@@ -159,6 +244,43 @@ public class GrpcShieldTests
         })).Throws<RpcException>();
 
         await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task RetryAfter_Suppression_Stops_Later_Zero_Delay_Hedges()
+    {
+        var attempts = 0;
+        var releasePrimary = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstHedgeStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = GrpcShield.WhenTransient()
+            .Hedge(2, TimeSpan.Zero)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+
+        var execution = shield.ExecuteAsync<int>(async _ =>
+        {
+            var attempt = Interlocked.Increment(ref attempts);
+            if (attempt == 1)
+            {
+                await releasePrimary.Task;
+                return 42;
+            }
+
+            firstHedgeStarted.TrySetResult();
+            throw CreateException("-1");
+        }).AsTask();
+
+        await firstHedgeStarted.Task;
+        releasePrimary.TrySetResult();
+
+        await Assert.That(await execution).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     [Test]
@@ -296,6 +418,57 @@ public class GrpcShieldTests
         }
 
         await Assert.That(delayedContext!.Properties.SuppressAdditionalAttempts).IsTrue();
+        timeProvider.FireTimer(0);
+
+        _ = await Assert.That(async () => await execution).Throws<RpcException>();
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task RetryAfter_Suppression_Reaches_An_Active_Nested_Child()
+    {
+        var timeProvider = new ControlledTimeProvider();
+        var attempts = 0;
+        KevlarContext? delayedChild = null;
+        var inner = GrpcShield.WhenTransient()
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.Constant(TimeSpan.FromMinutes(1));
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+        var outer = GrpcShield.WhenTransient()
+            .Hedge(1, TimeSpan.Zero)
+            .WithTimeProvider(timeProvider);
+
+        var execution = outer.ExecuteWithContextAsync<int>(parent =>
+            inner.ExecuteWithContextAsync(parent, async child =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                if (attempt == 1)
+                {
+                    delayedChild = child;
+                    throw CreateException(null);
+                }
+
+                if (attempt == 2)
+                {
+                    await timeProvider.WaitForTimersAsync(1);
+                    throw CreateException("-1");
+                }
+
+                return 42;
+            })).AsTask();
+
+        await timeProvider.WaitForTimersAsync(1);
+        for (var i = 0;
+             i < 100 && delayedChild?.Properties.SuppressAdditionalAttempts is not true;
+             i++)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1));
+        }
+
+        await Assert.That(delayedChild!.Properties.SuppressAdditionalAttempts).IsTrue();
         timeProvider.FireTimer(0);
 
         _ = await Assert.That(async () => await execution).Throws<RpcException>();
