@@ -190,7 +190,9 @@ items:
   summary: >-
     Invoked and awaited after a partition is created and retained. Return
 
-    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback. Disposing this provider from its own
+
+    callback is rejected to prevent a lifecycle deadlock.
   example: []
   syntax:
     content: public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }
@@ -222,9 +224,9 @@ items:
 
     callback may return an unretained shield when the invoking eviction owns all available
 
-    capacity. Disposing this provider from its own callback is rejected to prevent a lifecycle
+    capacity. Disposing this provider from either lifecycle callback is rejected to prevent a
 
-    deadlock. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    lifecycle deadlock. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
     content: public Func<PartitionEvictedEvent<TKey>, ValueTask>? OnEvicted { get; set; }

@@ -63,8 +63,8 @@ eviction callback is awaited before a capacity slot is reused. If that callback 
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
 lookup creates and retains the partition normally. Its owned strategies are released when the
 callback finishes. Explicit `TryRemove` and `Clear` removals use the `Cleared` reason; idle expiry
-uses `Expiration`. Disposing a provider from its own `OnEvicted` callback is rejected because the
-provider must wait for that callback before disposal can complete.
+uses `Expiration`. Disposing a provider from its own `OnCreated` or `OnEvicted` callback is rejected
+because the provider must wait for that callback before disposal can complete.
 
 ```csharp
 var observed = new PartitionedShield<string>(

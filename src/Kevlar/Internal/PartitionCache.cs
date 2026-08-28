@@ -15,6 +15,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     private readonly Func<TKey, TShield, ValueTask>? _onCreated;
     private readonly Func<TKey, TShield, PartitionEvictionReason, ValueTask>? _onEvicted;
     private readonly bool _ownsStrategies;
+    private readonly AsyncLocal<bool> _creationCallback = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
     private readonly Queue<Exception> _disposalFailures = new();
     private readonly List<Task> _pendingDisposals = [];
@@ -235,10 +236,10 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private ValueTask DisposeAsync(bool preferSynchronousDisposal)
     {
-        if (_evictionCallback.Value is { Active: true })
+        if (_creationCallback.Value || _evictionCallback.Value is { Active: true })
         {
             return new ValueTask(Task.FromException(new InvalidOperationException(
-                "A partition provider cannot be disposed from its own eviction callback.")));
+                "A partition provider cannot be disposed from its own lifecycle callback.")));
         }
 
         var created = new TaskCompletionSource<bool>(
@@ -680,13 +681,22 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             return;
         }
 
+        var previous = _creationCallback.Value;
+        _creationCallback.Value = true;
         try
         {
-            await _onCreated(key, shield).ConfigureAwait(false);
+            try
+            {
+                await _onCreated(key, shield).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Lifecycle observers must not change partition behavior.
+            }
         }
-        catch
+        finally
         {
-            // Lifecycle observers must not change partition behavior.
+            _creationCallback.Value = previous;
         }
     }
 
