@@ -1,9 +1,37 @@
+using Kevlar.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
 
 public class PartitionedShieldTests
 {
+    [Test]
+    public async Task Warm_Idle_Expiration_Hit_Does_Not_Wait_For_Mutation_Gate()
+    {
+        var cache = new PartitionCache<string, Shield>(
+            static _ => new ValueTask<Shield>(Shield.Empty),
+            new PartitionCacheOptions<string, Shield>(
+                maxPartitions: 10,
+                idleExpiration: TimeSpan.FromMinutes(1),
+                TimeProvider.System,
+                onCreated: null,
+                onEvicted: null),
+            comparer: null);
+        var first = cache.Get("tenant");
+        var mutationGate = (SemaphoreSlim)typeof(PartitionCache<string, Shield>)
+            .GetField("_mutationGate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(cache)!;
+
+        await mutationGate.WaitAsync();
+        var lookup = cache.GetAsync("tenant");
+        var completedSynchronously = lookup.IsCompletedSuccessfully;
+        mutationGate.Release();
+        var second = await lookup;
+
+        await Assert.That(completedSynchronously).IsTrue();
+        await Assert.That(second).IsSameReferenceAs(first);
+    }
+
     [Test]
     public async Task Concurrent_First_Lookup_Creates_One_Partition()
     {
