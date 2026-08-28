@@ -80,14 +80,9 @@ public static class GrpcShield
 
         if (!int.TryParse(
                 value,
-                NumberStyles.AllowLeadingSign,
+                NumberStyles.None,
                 CultureInfo.InvariantCulture,
-                out var milliseconds)
-            || !string.Equals(
-                value,
-                milliseconds.ToString(CultureInfo.InvariantCulture),
-                StringComparison.Ordinal)
-            || milliseconds < 0)
+                out var milliseconds))
         {
             return RetryPushback.Stop;
         }
