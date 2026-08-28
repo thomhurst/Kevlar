@@ -109,8 +109,8 @@ zero/infinite meanings apply. Generator exceptions fail the execution and cancel
 ### Special delay values
 
 - `TimeSpan.Zero` — race **all** attempts at once.
-- Any negative delay, including `Timeout.InfiniteTimeSpan` — never hedge on latency; launch the
-  next attempt **only when the previous one fails**.
+- Any negative fixed `HedgeOptions.Delay`, including `Timeout.InfiniteTimeSpan` — never hedge on
+  latency; launch the next attempt **only when the previous one fails**.
 - Any delay: a handled failure always launches the next attempt *immediately*, without waiting out the rest of the delay.
 
 Zero delay removes timer staggering and starts scheduling the primary plus all
