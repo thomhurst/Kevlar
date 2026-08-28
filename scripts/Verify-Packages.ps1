@@ -443,7 +443,7 @@ foreach ($packageId in $expectedDependencies.Keys)
         Assert-Equal `
             "$packageId release notes" `
             (Get-NodeText $metadata "*[local-name()='releaseNotes']") `
-            'https://github.com/thomhurst/Kevlar/blob/main/CHANGELOG.md'
+            'https://github.com/thomhurst/Kevlar/releases'
         Assert-Equal "$packageId repository URL" (Get-NodeText $metadata "*[local-name()='repository']/@url") 'https://github.com/thomhurst/Kevlar'
         Assert-Equal "$packageId repository type" (Get-NodeText $metadata "*[local-name()='repository']/@type") 'git'
         Assert-Equal "$packageId repository commit" (Get-NodeText $metadata "*[local-name()='repository']/@commit") $expectedRepositoryCommit

@@ -239,5 +239,5 @@ Kevlar is licensed under the [MIT License](https://github.com/thomhurst/Kevlar/b
 Read the [contribution guide](https://github.com/thomhurst/Kevlar/blob/main/CONTRIBUTING.md),
 [security policy](https://github.com/thomhurst/Kevlar/blob/main/SECURITY.md),
 [code of conduct](https://github.com/thomhurst/Kevlar/blob/main/CODE_OF_CONDUCT.md), and
-[changelog](https://github.com/thomhurst/Kevlar/blob/main/CHANGELOG.md). Use the guided issue forms
+[release notes](https://github.com/thomhurst/Kevlar/releases). Use the guided issue forms
 for bugs, feature requests, and questions; report vulnerabilities privately.

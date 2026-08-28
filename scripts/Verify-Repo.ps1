@@ -43,7 +43,6 @@ $requiredReadmeLinks = @(
     'CONTRIBUTING.md'
     'SECURITY.md'
     'CODE_OF_CONDUCT.md'
-    'CHANGELOG.md'
 )
 
 foreach ($requiredLink in $requiredReadmeLinks)
@@ -53,6 +52,11 @@ foreach ($requiredLink in $requiredReadmeLinks)
     {
         $errors.Add("README.md does not link to canonical '$url'.")
     }
+}
+
+if ($readme -notmatch [regex]::Escape('](https://github.com/thomhurst/Kevlar/releases)'))
+{
+    $errors.Add('README.md does not link to GitHub releases.')
 }
 
 $testing = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs/docs/testing.md') -Raw
