@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -27,7 +28,7 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
             new ShieldDelegatingHandler(
                 Decorate(services, shield, builder.Name),
                 new ShieldHttpHandlerOptions(),
@@ -51,6 +52,7 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldName));
         }
 
+        builder.Services.AddKevlar();
         return builder.AddShield((_, services) =>
             services.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(shieldName));
     }
@@ -65,6 +67,17 @@ public static class ShieldHttpClientBuilderExtensions
         if (builder is null)
         {
             throw new ArgumentNullException(nameof(builder));
+        }
+
+        for (var index = builder.Services.Count - 1; index >= 0; index--)
+        {
+            var descriptor = builder.Services[index];
+            if (descriptor.ServiceType == typeof(IConfigureOptions<HttpClientFactoryOptions>)
+                && descriptor.ImplementationInstance is ShieldHandlerConfiguration configuration
+                && configuration.Name == builder.Name)
+            {
+                builder.Services.RemoveAt(index);
+            }
         }
 
         builder.Services.Configure<HttpClientFactoryOptions>(
@@ -115,7 +128,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         var optionsSnapshot = Snapshot(options);
         var registration = RegisterSharedPipeline(builder);
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -145,7 +158,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         var registration = RegisterSharedPipeline(builder);
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -177,7 +190,7 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldSelector));
         }
 
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
             new ShieldDelegatingHandler(request =>
                 Decorate(services, shieldSelector(request, services), builder.Name),
                 new ShieldHttpHandlerOptions(),
@@ -206,7 +219,7 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(keySelector));
         }
 
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
             new ShieldDelegatingHandler(
                 request => GetDecoratedPartitionAsync(
                     services,
@@ -241,7 +254,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         var registration = RegisterSharedPipeline(builder);
-        return builder.AddHttpMessageHandler(services =>
+        return AddShieldHandler(builder, services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -288,7 +301,7 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
         var registration = RegisterSharedPipeline(builder);
-        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        return AddShieldHandler(UseStandardTimeout(builder), services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -321,7 +334,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         var registration = RegisterSharedPipeline(builder);
-        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        return AddShieldHandler(UseStandardTimeout(builder), services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -385,7 +398,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         ValidateStandardConfiguration(configuration);
         var registration = RegisterSharedPipeline(builder);
-        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        return AddShieldHandler(UseStandardTimeout(builder), services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var reloadingPipeline = registry.GetOrAdd(
@@ -487,7 +500,7 @@ public static class ShieldHttpClientBuilderExtensions
         var handlerOptions = CreateHandlerOptions(options);
         var registration = RegisterSharedPipeline(builder);
 
-        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        return AddShieldHandler(UseStandardTimeout(builder), services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var pipeline = registry.GetOrAdd(
@@ -543,7 +556,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         ValidateHedgeConfiguration(configuration);
         var registration = RegisterSharedPipeline(builder);
-        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        return AddShieldHandler(UseStandardTimeout(builder), services =>
         {
             var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
             var reloadingPipeline = registry.GetOrAdd(
@@ -584,6 +597,15 @@ public static class ShieldHttpClientBuilderExtensions
     {
         builder.Services.TryAddSingleton(static services => new HttpShieldPipelineRegistry(services));
         return new HttpShieldPipelineRegistration(builder.Name);
+    }
+
+    private static IHttpClientBuilder AddShieldHandler(
+        IHttpClientBuilder builder,
+        Func<IServiceProvider, DelegatingHandler> handlerFactory)
+    {
+        var configuration = new ShieldHandlerConfiguration(builder.Name, handlerFactory);
+        builder.Services.AddSingleton<IConfigureOptions<HttpClientFactoryOptions>>(configuration);
+        return builder;
     }
 
     private static Shield<TResult> Decorate<TResult>(
@@ -794,6 +816,34 @@ public static class ShieldHttpClientBuilderExtensions
     private sealed class StandardTimeoutConfiguration
     {
         public void Apply(HttpClient client) => client.Timeout = Timeout.InfiniteTimeSpan;
+    }
+
+    private sealed class ShieldHandlerConfiguration : IConfigureNamedOptions<HttpClientFactoryOptions>
+    {
+        private readonly Func<IServiceProvider, DelegatingHandler> _handlerFactory;
+
+        public ShieldHandlerConfiguration(
+            string name,
+            Func<IServiceProvider, DelegatingHandler> handlerFactory)
+        {
+            Name = name;
+            _handlerFactory = handlerFactory;
+        }
+
+        public string Name { get; }
+
+        public void Configure(HttpClientFactoryOptions options)
+        {
+        }
+
+        public void Configure(string? name, HttpClientFactoryOptions options)
+        {
+            if (name == Name)
+            {
+                options.HttpMessageHandlerBuilderActions.Add(builder =>
+                    builder.AdditionalHandlers.Add(_handlerFactory(builder.Services)));
+            }
+        }
     }
 }
 

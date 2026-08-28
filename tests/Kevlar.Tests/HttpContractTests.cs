@@ -1349,7 +1349,6 @@ public class HttpContractTests
     public async Task AddShield_Name_Reports_Missing_Registration_On_First_Request()
     {
         var services = new ServiceCollection();
-        services.AddKevlar();
         services.AddHttpClient("missing")
             .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
                 Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
@@ -1363,6 +1362,23 @@ public class HttpContractTests
                 using var response = await client.GetAsync("http://localhost/test");
             })
             .Throws<KeyNotFoundException>();
+    }
+
+    [Test]
+    public async Task RemoveAllShields_Does_Not_Invoke_Removed_Factories()
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient("removed-factory")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield(_ => throw new InvalidOperationException("Removed factory was invoked."))
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("removed-factory");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Test]
