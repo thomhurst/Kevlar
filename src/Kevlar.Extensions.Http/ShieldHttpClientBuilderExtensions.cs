@@ -53,8 +53,14 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         builder.Services.AddKevlar();
-        return builder.AddShield((_, services) =>
-            services.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(shieldName));
+        return AddShieldHandler(builder, services =>
+        {
+            var registry = services.GetRequiredService<IKevlarRegistry>();
+            return new ShieldDelegatingHandler(
+                _ => registry.GetShield<HttpResponseMessage>(shieldName),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name));
+        });
     }
 
     /// <summary>

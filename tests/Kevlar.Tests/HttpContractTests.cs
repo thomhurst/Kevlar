@@ -1365,6 +1365,26 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task AddShield_Name_Does_Not_Redecorate_The_Registry_Shield()
+    {
+        var decorator = new DescriptorCapturingDecorator();
+        var services = new ServiceCollection()
+            .AddSingleton<IShieldDecorator>(decorator)
+            .AddShield<HttpResponseMessage>("named", Shield<HttpResponseMessage>.Empty);
+        services.AddHttpClient("named")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield("named");
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("named");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(decorator.Descriptors).HasSingleItem();
+    }
+
+    [Test]
     public async Task RemoveAllShields_Does_Not_Invoke_Removed_Factories()
     {
         var services = new ServiceCollection();
