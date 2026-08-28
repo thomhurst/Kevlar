@@ -260,6 +260,10 @@ as follows:
 | remove a registry entry | `IKevlarRegistry.Remove(name)` |
 | `EnableReloads<TOptions>()` | `AddReloadingShield<TOptions>(name, build)` using named `IOptionsMonitor<TOptions>` |
 
+For reloading registrations, `IKevlarRegistry.GetShield(name)` returns a stable live-forwarding
+shield that follows each valid publication. The keyed `IShieldProvider.Current` API remains the
+explicit immutable-snapshot path; read it once per operation.
+
 Kevlar's dynamic names are string-keyed and registry-only; keyed DI services still must be declared
 before the service provider is built. Both providers expose non-throwing lookup forms.
 

@@ -224,12 +224,16 @@ public class DynamicRegistryTests
             .BuildServiceProvider();
         var alpha = services.GetRequiredKeyedService<IShieldProvider>("alpha");
         var beta = services.GetRequiredKeyedService<IShieldProvider>("beta");
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var liveAlpha = registry.GetShield("alpha");
         var originalAlpha = alpha.Current;
         var originalBeta = beta.Current;
 
         monitor.Set("alpha", new ReloadOptions { Retries = 4 });
 
         await Assert.That(alpha.Current.ToString()).Contains("Retry(4");
+        await Assert.That(liveAlpha.ToString()).Contains("Retry(4");
+        await Assert.That(registry.GetShield("alpha")).IsSameReferenceAs(liveAlpha);
         await Assert.That(ReferenceEquals(alpha.Current, originalAlpha)).IsFalse();
         await Assert.That(ReferenceEquals(beta.Current, originalBeta)).IsTrue();
     }
@@ -488,12 +492,16 @@ public class DynamicRegistryTests
                 static (options, _) => Shield.For<int>().FallbackTo(options.Fallback))
             .BuildServiceProvider();
         var provider = services.GetRequiredKeyedService<IShieldProvider<int>>("typed");
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = registry.GetShield<int>("typed");
 
-        await Assert.That(provider.Current.Execute(static _ => throw new InvalidOperationException()))
+        await Assert.That(live.Execute(static _ => throw new InvalidOperationException()))
             .IsEqualTo(7);
         monitor.Set("typed", new ReloadOptions { Fallback = 9 });
-        await Assert.That(provider.Current.Execute(static _ => throw new InvalidOperationException()))
+        await Assert.That(live.Execute(static _ => throw new InvalidOperationException()))
             .IsEqualTo(9);
+        await Assert.That(registry.GetShield<int>("typed")).IsSameReferenceAs(live);
+        await Assert.That(live).IsNotSameReferenceAs(provider.Current);
     }
 
     [Test]

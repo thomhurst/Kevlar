@@ -1,4 +1,5 @@
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -88,15 +89,28 @@ public class ReloadingShieldTests
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var first = shieldProvider.Current;
+        var live = registry.GetShield("dynamic");
 
         configuration["Retry:MaxRetries"] = "4";
         configuration.Reload();
 
         var second = shieldProvider.Current;
+        var attempts = 0;
+        _ = await live.ExecuteOutcomeAsync<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException("failure");
+        });
+        var retry = (RetryStrategyDescriptor)live.GetDescriptor().Strategies.Single();
+
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
         await Assert.That(first.ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
         await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
-        await Assert.That(ReferenceEquals(registry.GetShield("dynamic"), second)).IsTrue();
+        await Assert.That(ReferenceEquals(live, registry.GetShield("dynamic"))).IsTrue();
+        await Assert.That(ReferenceEquals(live, second)).IsFalse();
+        await Assert.That(live.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
+        await Assert.That(retry.MaxRetries).IsEqualTo(4);
+        await Assert.That(attempts).IsEqualTo(5);
     }
 
     [Test]
@@ -148,6 +162,7 @@ public class ReloadingShieldTests
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var live = services.GetRequiredKeyedService<IShieldProvider<HttpResponseMessage>>("dynamic");
         var first = live.Current;
+        var forwarding = registry.GetShield<HttpResponseMessage>("dynamic");
         var attempts = 0;
 
         await Assert.That(async () => await first.ExecuteAsync(_ =>
@@ -165,17 +180,19 @@ public class ReloadingShieldTests
         configuration.Reload();
 
         var second = live.Current;
-        using var response = await second.ExecuteAsync(_ =>
+        using var response = await forwarding.ExecuteAsync(_ =>
         {
             attempts++;
             return new ValueTask<HttpResponseMessage>(new HttpResponseMessage());
         });
 
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
-        await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), second))
+        await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), forwarding))
             .IsTrue();
+        await Assert.That(ReferenceEquals(forwarding, second)).IsFalse();
         await Assert.That(first.ToString()).Contains("Retry(0, no delay)");
         await Assert.That(second.ToString()).Contains("Retry(4, no delay)");
+        await Assert.That(forwarding.ToString()).Contains("Retry(4, no delay)");
         await Assert.That(attempts).IsEqualTo(2);
     }
 

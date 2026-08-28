@@ -25,11 +25,12 @@ public static class ShieldDescriptorExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
+        var snapshot = shield.CurrentSnapshot;
         return Create(
-            shield.Name,
+            snapshot.Name,
             resultType: null,
-            shield.Time is not null,
-            shield.Strategies,
+            snapshot.Time is not null,
+            snapshot.Strategies,
             includeTransparent);
     }
 
@@ -51,11 +52,12 @@ public static class ShieldDescriptorExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
+        var snapshot = shield.CurrentSnapshot;
         return Create(
-            shield.Name,
+            snapshot.Name,
             typeof(TResult),
-            shield.Time is not null,
-            shield.Strategies,
+            snapshot.Time is not null,
+            snapshot.Strategies,
             includeTransparent);
     }
 
