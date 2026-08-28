@@ -486,6 +486,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
                         preferSynchronousDisposal,
                         blockedCreation: creation)
                     .ConfigureAwait(false);
+                await DisposeEvictedAsync(expired, preferSynchronousDisposal)
+                    .ConfigureAwait(false);
                 if (capacityEviction is not null)
                 {
                     await NotifyEvictedAsync(

@@ -150,6 +150,45 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Publication_Disposes_Entries_That_Expire_During_The_Factory()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var factoryEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFactory = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var expiredStrategy = new DisposablePartitionStrategy();
+        var provider = PartitionedShield<string>.CreateAsync(
+            async key =>
+            {
+                if (key == "publishing")
+                {
+                    factoryEntered.TrySetResult();
+                    await releaseFactory.Task;
+                    return Shield.Empty;
+                }
+
+                return Shield.Use(expiredStrategy);
+            },
+            new PartitionedShieldOptions<string>
+            {
+                MaxPartitions = 2,
+                IdleExpiration = TimeSpan.FromMinutes(1),
+                TimeProvider = timeProvider,
+            });
+        _ = await provider.GetShieldAsync("expired");
+        var publishing = provider.GetShieldAsync("publishing").AsTask();
+        await factoryEntered.Task;
+        timeProvider.Advance(TimeSpan.FromMinutes(1));
+
+        releaseFactory.TrySetResult();
+        _ = await publishing;
+
+        await Assert.That(expiredStrategy.DisposeCount).IsEqualTo(1);
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task DisposeAsync_Disposes_All_Live_Partitions_Once()
     {
         var strategies = new List<DisposablePartitionStrategy>();
