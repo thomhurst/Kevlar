@@ -112,7 +112,7 @@ if ($LASTEXITCODE -eq 0)
 if (-not [string]::IsNullOrWhiteSpace($Headline))
 {
     & gh release create $Tag --verify-tag --generate-notes --notes-start-tag $previousTag `
-        --notes $Headline.Trim() @assets
+        --notes ($Headline.Trim()) @assets
 }
 else
 {
