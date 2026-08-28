@@ -76,9 +76,10 @@ var uiRetryShield = Shield.Retry(options =>
 {
     options.OnRetry = async retry =>
     {
+        var ct = retry.Context.CancellationToken;
         await Task.Factory.StartNew(
-                async () => await viewModel.ShowRetryAsync(retry.AttemptNumber),
-                retry.Context.CancellationToken,
+                async () => await viewModel.ShowRetryAsync(retry.AttemptNumber, ct),
+                ct,
                 TaskCreationOptions.DenyChildAttach,
                 uiScheduler)
             .Unwrap();
