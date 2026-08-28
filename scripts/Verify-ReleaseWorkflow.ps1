@@ -74,6 +74,17 @@ foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-Pu
     }
 }
 
+$publicApiVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-PublicApi.ps1') -Raw
+foreach ($requiredText in @(
+    '^analyzers/dotnet/(?:roslyn[\d.]+/)?cs/(Kevlar\.Analyzers)\.dll$',
+    'Expected package assemblies were not found'))
+{
+    if (-not $publicApiVerificationScript.Contains($requiredText, [StringComparison]::Ordinal))
+    {
+        throw "Public API package verification is missing '$requiredText'."
+    }
+}
+
 $dependencyTablePattern = [regex]'(?ms)^\$expectedDependencies = @\{(?<body>.*?)^\}\r?$'
 $dependencyTableMatch = $dependencyTablePattern.Match($packageVerificationScript)
 if (-not $dependencyTableMatch.Success)
