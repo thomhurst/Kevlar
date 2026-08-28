@@ -114,7 +114,7 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
   methods assigned to hooks on shields executed synchronously. Completed `ValueTask` delegates are
   not reported.
 - `Kevlar.Testing`, `Kevlar.Extensions.RateLimiting`, and other packages that use core internals
-  require the exact matching `Kevlar` version; NuGet reports skew as `NU1608`.
+  require the exact matching `Kevlar` version; NuGet reports skew as `NU1605` or `NU1608`.
 - HTTP retry and hedging stop after the first outcome when a request method or body cannot be
   replayed safely. The original response or exception is preserved while other resilience stages
   still observe the attempt.
@@ -155,7 +155,7 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 **Upgrading from 0.x**
 
 Remove any direct `Kevlar.Analyzers` package reference; analyzers ship inside `Kevlar`. Upgrade all
-`Kevlar.*` packages together when exact version constraints report `NU1608`.
+`Kevlar.*` packages together when exact version constraints report `NU1605` or `NU1608`.
 
 <!-- upgrade-from-0.x:start -->
 | Before | After |
@@ -230,8 +230,8 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 - State gauges now aggregate identical shield-name and strategy-index series across partitioned
   shields. Circuit breakers expose `kevlar.circuit_breaker.instances` counts grouped by state.
 - Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
-  dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
-  runtime failures from incompatible internals.
+  dependency injection, logging, and gRPC packages raise `NU1605` or `NU1608`; treat those
+  warnings as errors to prevent runtime failures from incompatible internals.
 - Retry and hedging dispose superseded result values. `IAsyncDisposable` is preferred over
   `IDisposable`; disposal failures are isolated through `CallbackErrorKind.ResultDisposal`, while
   the selected terminal result remains caller-owned. The `netstandard2.0` package carries the

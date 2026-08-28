@@ -23,8 +23,8 @@ Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary dele
 dotnet add package Kevlar
 ```
 
-Install all coupled `Kevlar.*` packages at the same version. Their exact NuGet dependencies reject
-partial upgrades early; see the [package lockstep policy](https://thomhurst.github.io/Kevlar/docs/support-policy#kevlar-package-lockstep).
+Install all coupled `Kevlar.*` packages at the same version. NuGet reports partial upgrades with
+`NU1605` or `NU1608`; see the [package lockstep policy](https://thomhurst.github.io/Kevlar/docs/support-policy#kevlar-package-lockstep).
 
 ```csharp
 using Kevlar;

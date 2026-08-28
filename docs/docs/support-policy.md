@@ -58,9 +58,19 @@ dependencies enforce this for `Kevlar.Testing`, `Kevlar.Extensions.Http`,
 so it exact-pins both `Kevlar` and `Kevlar.Extensions.DependencyInjection`.
 
 Upgrade these packages together. If package versions are managed centrally, assign one version to
-the coupled package set. A partial upgrade fails restore with `NU1608` instead of allowing a mixed
-version deployment that could fail at runtime. `Kevlar.Chaos` uses only public APIs and is not part
-of this lockstep set.
+the coupled package set. A satellite-first upgrade can raise the package-downgrade warning
+`NU1605`; other version skew can raise the dependency-constraint warning `NU1608`. Depending on
+client settings, restore can still succeed and allow a mixed-version deployment that fails at
+runtime. To reject version skew, treat both warnings as errors in the consuming project or a
+shared build properties file:
+
+```xml
+<PropertyGroup>
+  <WarningsAsErrors>$(WarningsAsErrors);NU1605;NU1608</WarningsAsErrors>
+</PropertyGroup>
+```
+
+`Kevlar.Chaos` uses only public APIs and is not part of this lockstep set.
 
 ## Security support
 
