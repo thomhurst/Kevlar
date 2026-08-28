@@ -152,6 +152,7 @@ internal sealed class HedgingStrategy : Strategy
         try
         {
             outcome = primary.Execution.Result;
+            var suppressAdditionalAttempts = PropagateAttemptSuppression(primary.Context, context);
             shouldHandle = _judge.ShouldHandle(
                 in outcome,
                 primary.Context,
@@ -162,10 +163,10 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Attempt,
                 primaryStartedAt,
                 in outcome,
-                isWinner: !shouldHandle,
+                isWinner: !shouldHandle || suppressAdditionalAttempts,
                 _telemetryName);
 
-            if (!shouldHandle)
+            if (!shouldHandle || suppressAdditionalAttempts)
             {
                 CopyAttemptProperties(primary.Context, context);
             }
@@ -175,7 +176,7 @@ internal sealed class HedgingStrategy : Strategy
             primary.Dispose();
         }
 
-        if (!shouldHandle)
+        if (!shouldHandle || context.Properties.SuppressAdditionalAttempts)
         {
             return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
@@ -290,7 +291,11 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
+                    var suppressAdditionalAttempts = PropagateAttemptSuppression(
+                        judgingContext,
+                        context);
                     var isWinner = !shouldHandle
+                        || suppressAdditionalAttempts
                         || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
                     RecordAttempt(
                         in completedAttempt,
@@ -312,7 +317,7 @@ internal sealed class HedgingStrategy : Strategy
                     await completedAttempt.DisposeAsync().ConfigureAwait(false);
                 }
 
-                if (!shouldHandle)
+                if (!shouldHandle || context.Properties.SuppressAdditionalAttempts)
                 {
                     if (lastOutcome is { } superseded)
                     {
@@ -1309,6 +1314,17 @@ internal sealed class HedgingStrategy : Strategy
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
         source.CopyCompletionPropertiesToParent(target);
+
+    private static bool PropagateAttemptSuppression(KevlarContext source, KevlarContext target)
+    {
+        if (!source.Properties.SuppressAdditionalAttempts)
+        {
+            return false;
+        }
+
+        target.Properties.SuppressAdditionalAttempts = true;
+        return true;
+    }
 
     private readonly struct StartedAttempt<T>
     {
