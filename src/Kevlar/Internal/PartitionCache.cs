@@ -254,8 +254,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     {
         try
         {
-            await ClearSlowAsync(preferSynchronousDisposal).ConfigureAwait(false);
             await GetOperationCompletionTask().ConfigureAwait(false);
+            await ClearSlowAsync(preferSynchronousDisposal).ConfigureAwait(false);
             Task[] pendingDisposals;
             lock (_gate)
             {

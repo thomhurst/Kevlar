@@ -432,6 +432,42 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task DisposeAsync_Waits_For_OnCreated_Before_Evicting_The_Entry()
+    {
+        var createdEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCreated = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var evicted = 0;
+        var provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions<string>
+            {
+                OnCreated = async _ =>
+                {
+                    createdEntered.TrySetResult();
+                    await releaseCreated.Task;
+                },
+                OnEvicted = _ =>
+                {
+                    Interlocked.Increment(ref evicted);
+                    return default;
+                },
+            });
+        var lookup = provider.GetShieldAsync("tenant").AsTask();
+        await createdEntered.Task;
+
+        var disposal = provider.DisposeAsync().AsTask();
+
+        await Assert.That(evicted).IsEqualTo(0);
+        await Assert.That(disposal.IsCompleted).IsFalse();
+        releaseCreated.TrySetResult();
+        _ = await lookup;
+        await disposal;
+        await Assert.That(evicted).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Synchronous_Removal_And_Disposal_Prefer_IDisposable()
     {
         var removedStrategy = new DualDisposablePartitionStrategy();
