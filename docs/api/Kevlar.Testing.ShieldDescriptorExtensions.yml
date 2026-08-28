@@ -6,7 +6,9 @@ items:
   parent: Kevlar.Testing
   children:
   - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield)
+  - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield,System.Boolean)
   - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
+  - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0},System.Boolean)
   langs:
   - csharp
   - vb
@@ -47,7 +49,7 @@ items:
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: Describes an untyped shield without executing it.
+  summary: Describes an untyped shield without executing it, excluding transparent decorators.
   example: []
   syntax:
     content: public static ShieldDescriptor GetDescriptor(this Shield shield)
@@ -58,6 +60,39 @@ items:
       type: Kevlar.Testing.ShieldDescriptor
     content.vb: Public Shared Function GetDescriptor(shield As Shield) As ShieldDescriptor
   overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
+- uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield,System.Boolean)
+  commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield,System.Boolean)
+  id: GetDescriptor(Kevlar.Shield,System.Boolean)
+  isExtensionMethod: true
+  parent: Kevlar.Testing.ShieldDescriptorExtensions
+  langs:
+  - csharp
+  - vb
+  name: GetDescriptor(Shield, bool)
+  nameWithType: ShieldDescriptorExtensions.GetDescriptor(Shield, bool)
+  fullName: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield, bool)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Describes an untyped shield without executing it.
+  example: []
+  syntax:
+    content: public static ShieldDescriptor GetDescriptor(this Shield shield, bool includeTransparent)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+      description: The shield to describe.
+    - id: includeTransparent
+      type: System.Boolean
+      description: Whether to include transparent infrastructure decorators such as structured logging.
+    return:
+      type: Kevlar.Testing.ShieldDescriptor
+    content.vb: Public Shared Function GetDescriptor(shield As Shield, includeTransparent As Boolean) As ShieldDescriptor
+  overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
+  nameWithType.vb: ShieldDescriptorExtensions.GetDescriptor(Shield, Boolean)
+  fullName.vb: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield, Boolean)
+  name.vb: GetDescriptor(Shield, Boolean)
 - uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
   commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{`0})
   id: GetDescriptor``1(Kevlar.Shield{``0})
@@ -73,7 +108,7 @@ items:
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: Describes a typed shield without executing it.
+  summary: Describes a typed shield without executing it, excluding transparent decorators.
   example: []
   syntax:
     content: public static ShieldDescriptor GetDescriptor<TResult>(this Shield<TResult> shield)
@@ -89,6 +124,41 @@ items:
   nameWithType.vb: ShieldDescriptorExtensions.GetDescriptor(Of TResult)(Shield(Of TResult))
   fullName.vb: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Of TResult)(Kevlar.Shield(Of TResult))
   name.vb: GetDescriptor(Of TResult)(Shield(Of TResult))
+- uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0},System.Boolean)
+  commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{`0},System.Boolean)
+  id: GetDescriptor``1(Kevlar.Shield{``0},System.Boolean)
+  isExtensionMethod: true
+  parent: Kevlar.Testing.ShieldDescriptorExtensions
+  langs:
+  - csharp
+  - vb
+  name: GetDescriptor<TResult>(Shield<TResult>, bool)
+  nameWithType: ShieldDescriptorExtensions.GetDescriptor<TResult>(Shield<TResult>, bool)
+  fullName: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(Kevlar.Shield<TResult>, bool)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Describes a typed shield without executing it.
+  example: []
+  syntax:
+    content: public static ShieldDescriptor GetDescriptor<TResult>(this Shield<TResult> shield, bool includeTransparent)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield{{TResult}}
+      description: The shield to describe.
+    - id: includeTransparent
+      type: System.Boolean
+      description: Whether to include transparent infrastructure decorators such as structured logging.
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.Testing.ShieldDescriptor
+    content.vb: Public Shared Function GetDescriptor(Of TResult)(shield As Shield(Of TResult), includeTransparent As Boolean) As ShieldDescriptor
+  overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
+  nameWithType.vb: ShieldDescriptorExtensions.GetDescriptor(Of TResult)(Shield(Of TResult), Boolean)
+  fullName.vb: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Of TResult)(Kevlar.Shield(Of TResult), Boolean)
+  name.vb: GetDescriptor(Of TResult)(Shield(Of TResult), Boolean)
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -384,6 +454,17 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
   parent: Kevlar
