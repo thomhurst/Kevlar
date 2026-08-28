@@ -89,8 +89,10 @@ var uiRetryShield = Shield.Retry(options =>
 
 Do not synchronously block while waiting for the shield: a single-threaded context must remain
 free to run the scheduled work.
-Hedged delegates are serialized by a single UI thread, and cancellation can prevent work that is
-still queued from starting. The `async` scheduled lambda accepts either a `Task`- or
+Only individual UI-thread segments are serialized; async hedge attempts can interleave when one
+reaches an incomplete `await`. Use an explicit async gate if each whole attempt must complete before
+another starts. Cancellation can prevent work that is still queued from starting. The `async`
+scheduled lambda accepts either a `Task`- or
 `ValueTask`-returning UI method; result-bearing variants preserve `TResult` through the unwrapped
 `Task<TResult>`.
 
