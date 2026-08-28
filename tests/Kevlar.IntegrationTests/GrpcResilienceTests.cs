@@ -8,6 +8,7 @@ using Kevlar.IntegrationTests.Grpc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.IntegrationTests;
@@ -874,6 +875,27 @@ public class GrpcResilienceTests
         var response = await call.ResponseAsync;
 
         await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Named_Reloading_Shield_Is_Rejected_For_Streaming_Operations()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Retry:MaxRetries"] = "1",
+                ["Retry:Backoff"] = "None",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddReloadingShield("grpc-stream", configuration);
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .AddShieldStreamingInterceptor("grpc-stream");
+        await using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<Resilience.ResilienceClient>();
+
+        _ = await Assert.That(() => client.ClientStream()).Throws<NotSupportedException>();
     }
 
     [Test]

@@ -101,10 +101,11 @@ public static class KevlarServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// Changes are debounced for 250 milliseconds by default. Each successful replacement has
-    /// fresh circuit-breaker, rate-limiter, and concurrency-limiter state. Resolve the keyed
-    /// <see cref="IShieldProvider"/> to observe future replacements, or call
-    /// <see cref="IKevlarRegistry.GetShield(string)"/> once per operation. Reloading names do not
-    /// register a keyed <see cref="Shield"/>, preventing consumers from retaining a stale snapshot.
+    /// fresh circuit-breaker, rate-limiter, and concurrency-limiter state. The registry returns a
+    /// stable forwarding <see cref="Shield"/> whose executions, inspections, and fluent copies use
+    /// the latest valid publication. Resolve the keyed <see cref="IShieldProvider"/> and read
+    /// <see cref="IShieldProvider.Current"/> once per operation when an explicit immutable snapshot
+    /// is required. Reloading names do not register a keyed <see cref="Shield"/>.
     /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed so future reloads
     /// remain active.
     /// </remarks>
@@ -257,10 +258,11 @@ public static class KevlarServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// Changes are debounced for 250 milliseconds by default. Each successful replacement has
-    /// fresh strategy state. Resolve the keyed
-    /// <see cref="IShieldProvider{TResult}"/> to observe future replacements, or call
-    /// <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> once per operation. Reloading names
-    /// do not register a keyed <see cref="Shield{TResult}"/>, preventing stale injection.
+    /// fresh strategy state. The registry returns a stable forwarding
+    /// <see cref="Shield{TResult}"/> whose executions, inspections, and fluent copies use the latest
+    /// valid publication. Resolve the keyed <see cref="IShieldProvider{TResult}"/> and read
+    /// <see cref="IShieldProvider{TResult}.Current"/> once per operation when an explicit immutable
+    /// snapshot is required. Reloading names do not register a keyed <see cref="Shield{TResult}"/>.
     /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed.
     /// </remarks>
     public static IServiceCollection AddReloadingShield<TResult>(

@@ -16,6 +16,16 @@ internal interface IReloadingProvider : IDisposable
         Action<object> validatePublication);
 }
 
+internal interface ILiveShieldProvider : IShieldProvider
+{
+    Shield Live { get; }
+}
+
+internal interface ILiveShieldProvider<TResult> : IShieldProvider<TResult>
+{
+    Shield<TResult> Live { get; }
+}
+
 internal sealed class ReloadingShieldProvider(
     Func<Shield> factory,
     Func<IChangeToken> reloadTokenFactory,
@@ -28,8 +38,11 @@ internal sealed class ReloadingShieldProvider(
         onReloadFailure,
         debounceDelay,
         timeProvider),
-        IShieldProvider
+        ILiveShieldProvider
 {
+    private Shield? _live;
+
+    public Shield Live => LazyInitializer.EnsureInitialized(ref _live, () => new Shield(() => Current))!;
 }
 
 internal sealed class ReloadingShieldProvider<TResult>(
@@ -44,8 +57,12 @@ internal sealed class ReloadingShieldProvider<TResult>(
         onReloadFailure,
         debounceDelay,
         timeProvider),
-        IShieldProvider<TResult>
+        ILiveShieldProvider<TResult>
 {
+    private Shield<TResult>? _live;
+
+    public Shield<TResult> Live =>
+        LazyInitializer.EnsureInitialized(ref _live, () => new Shield<TResult>(() => Current))!;
 }
 
 internal sealed class OptionsReloadingShieldProvider<
@@ -64,9 +81,12 @@ internal sealed class OptionsReloadingShieldProvider<
             }
         }) ?? NullDisposable.Instance,
         onReloadFailure)
-    , IShieldProvider
+    , ILiveShieldProvider
     where TOptions : class
 {
+    private Shield? _live;
+
+    public Shield Live => LazyInitializer.EnsureInitialized(ref _live, () => new Shield(() => Current))!;
 }
 
 internal sealed class OptionsReloadingShieldProvider<
@@ -86,9 +106,13 @@ internal sealed class OptionsReloadingShieldProvider<
             }
         }) ?? NullDisposable.Instance,
         onReloadFailure)
-    , IShieldProvider<TResult>
+    , ILiveShieldProvider<TResult>
     where TOptions : class
 {
+    private Shield<TResult>? _live;
+
+    public Shield<TResult> Live =>
+        LazyInitializer.EnsureInitialized(ref _live, () => new Shield<TResult>(() => Current))!;
 }
 
 internal abstract class ReloadingProvider<TShield> : IReloadingProvider

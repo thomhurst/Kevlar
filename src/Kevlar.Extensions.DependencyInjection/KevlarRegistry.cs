@@ -432,6 +432,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return true;
         }
 
+        if (value is ILiveShieldProvider<TResult> liveProvider)
+        {
+            shield = liveProvider.Live;
+            return true;
+        }
+
         if (value is IShieldProvider<TResult> provider)
         {
             shield = provider.Current;
@@ -462,6 +468,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         if (value is Shield direct)
         {
             shield = direct;
+            return true;
+        }
+
+        if (value is ILiveShieldProvider liveProvider)
+        {
+            shield = liveProvider.Live;
             return true;
         }
 

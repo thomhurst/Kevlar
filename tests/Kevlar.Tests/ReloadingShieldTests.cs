@@ -1,4 +1,5 @@
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -88,15 +89,153 @@ public class ReloadingShieldTests
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var first = shieldProvider.Current;
+        var live = registry.GetShield("dynamic");
 
         configuration["Retry:MaxRetries"] = "4";
         configuration.Reload();
 
         var second = shieldProvider.Current;
+        var attempts = 0;
+        _ = await live.ExecuteOutcomeAsync<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException("failure");
+        });
+        var retry = (RetryStrategyDescriptor)live.GetDescriptor().Strategies.Single();
+
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
         await Assert.That(first.ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
         await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
-        await Assert.That(ReferenceEquals(registry.GetShield("dynamic"), second)).IsTrue();
+        await Assert.That(ReferenceEquals(live, registry.GetShield("dynamic"))).IsTrue();
+        await Assert.That(ReferenceEquals(live, second)).IsFalse();
+        await Assert.That(live.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
+        await Assert.That(retry.MaxRetries).IsEqualTo(4);
+        await Assert.That(attempts).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task Registry_Forwarders_Preserve_The_Current_Pipeline_When_Transformed()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = registry.GetShield("dynamic");
+        var typedLive = registry.GetShield<int>("typed");
+
+        var appended = live.Timeout(TimeSpan.FromSeconds(1));
+        var named = live.WithName("copy");
+        var typed = live.For<int>();
+        var wrapped = live.Wrap(Shield.Timeout(TimeSpan.FromSeconds(2)));
+        var composed = Shield.Compose(Shield.Timeout(TimeSpan.FromSeconds(3)), live);
+        var typedAppended = typedLive.Timeout(TimeSpan.FromSeconds(4));
+        var typedNamed = typedLive.WithName("typed-copy");
+        var typedWrapped = typedLive.Wrap(Shield.For<int>().Timeout(TimeSpan.FromSeconds(5)));
+        var typedComposed = Shield<int>.Compose(
+            Shield.For<int>().Timeout(TimeSpan.FromSeconds(6)),
+            typedLive);
+
+        await Assert.That(live.Name).IsEqualTo("dynamic");
+        await Assert.That(appended.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(named.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(named.Name).IsEqualTo("copy");
+        await Assert.That(typed.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(wrapped.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(composed.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedLive.Name).IsEqualTo("typed");
+        await Assert.That(typedAppended.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedNamed.GetDescriptor().Strategies.Count).IsEqualTo(1);
+        await Assert.That(typedNamed.Name).IsEqualTo("typed-copy");
+        await Assert.That(typedWrapped.GetDescriptor().Strategies.Count).IsEqualTo(2);
+        await Assert.That(typedComposed.GetDescriptor().Strategies.Count).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Registry_Forwarder_State_Snapshot_Uses_The_Current_Pipeline()
+    {
+        var configuration = BuildConfiguration(
+            ("CircuitBreaker:ConsecutiveFailures", "1"),
+            ("CircuitBreaker:BreakDuration", "00:00:01"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = registry.GetShield("dynamic");
+        var typedLive = registry.GetShield<int>("typed");
+
+        var snapshot = live.GetStateSnapshot();
+        var typedSnapshot = typedLive.GetStateSnapshot();
+
+        await Assert.That(snapshot.Strategies).HasSingleItem();
+        await Assert.That(snapshot.Strategies[0]).IsTypeOf<CircuitBreakerStateSnapshot>();
+        await Assert.That(typedSnapshot.Strategies).HasSingleItem();
+        await Assert.That(typedSnapshot.Strategies[0]).IsTypeOf<CircuitBreakerStateSnapshot>();
+    }
+
+    [Test]
+    public async Task Registry_Forwarders_Conservatively_Report_Potential_Reinvocation()
+    {
+        var configuration = BuildConfiguration();
+        using var services = new ServiceCollection()
+            .AddReloadingShield("untyped", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+
+        await Assert.That(registry.GetShield("untyped").InvokesContinuationAtMostOnce).IsFalse();
+        await Assert.That(registry.GetShield<int>("typed").InvokesContinuationAtMostOnce).IsFalse();
+    }
+
+    [Test]
+    public async Task Registry_Forwarders_Cover_All_Execution_Shapes()
+    {
+        var configuration = BuildConfiguration();
+        using var services = new ServiceCollection()
+            .AddReloadingShield("untyped", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shield = registry.GetShield("untyped");
+        var typed = registry.GetShield<int>("typed");
+
+        await Assert.That(await shield.ExecuteAsync<int, int>(1, static (state, _) => new(state)))
+            .IsEqualTo(1);
+        await Assert.That(await shield.ExecuteWithContextAsync<int>(static _ => new(2)))
+            .IsEqualTo(2);
+        await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+        await shield.ExecuteAsync(0, static (_, _) => ValueTask.CompletedTask);
+        await shield.ExecuteWithContextAsync(static _ => ValueTask.CompletedTask);
+        await Assert.That((await shield.ExecuteOutcomeAsync<int, int>(3, static (state, _) => new(state))).Result)
+            .IsEqualTo(3);
+        await Assert.That((await shield.ExecuteOutcomeAsync(static _ => ValueTask.CompletedTask)).IsSuccess)
+            .IsTrue();
+        await Assert.That((await shield.ExecuteOutcomeAsync(0, static (_, _) => ValueTask.CompletedTask)).IsSuccess)
+            .IsTrue();
+        await Assert.That(shield.ExecuteOutcome<int>(static _ => 4).Result).IsEqualTo(4);
+        await Assert.That(shield.ExecuteOutcome(5, static (state, _) => state).Result).IsEqualTo(5);
+        await Assert.That(shield.ExecuteOutcome(static _ => { }).IsSuccess).IsTrue();
+        await Assert.That(shield.ExecuteOutcome(0, static (_, _) => { }).IsSuccess).IsTrue();
+        await Assert.That(shield.Execute<int>(static _ => 6)).IsEqualTo(6);
+        await Assert.That(shield.Execute(7, static (state, _) => state)).IsEqualTo(7);
+        await Assert.That(shield.ExecuteWithContext<int>(static _ => 8)).IsEqualTo(8);
+        shield.Execute(static _ => { });
+        shield.Execute(0, static (_, _) => { });
+        shield.ExecuteWithContext(static _ => { });
+
+        await Assert.That(await typed.ExecuteAsync(9, static (state, _) => new(state))).IsEqualTo(9);
+        await Assert.That(await typed.ExecuteWithContextAsync(static _ => new ValueTask<int>(10))).IsEqualTo(10);
+        await Assert.That((await typed.ExecuteOutcomeAsync(static _ => new ValueTask<int>(11))).Result)
+            .IsEqualTo(11);
+        await Assert.That((await typed.ExecuteOutcomeAsync(12, static (state, _) => new(state))).Result)
+            .IsEqualTo(12);
+        await Assert.That(typed.ExecuteOutcome(static _ => 13).Result).IsEqualTo(13);
+        await Assert.That(typed.ExecuteOutcome(14, static (state, _) => state).Result).IsEqualTo(14);
+        await Assert.That(typed.Execute(static _ => 15)).IsEqualTo(15);
+        await Assert.That(typed.Execute(16, static (state, _) => state)).IsEqualTo(16);
+        await Assert.That(typed.ExecuteWithContext(static _ => 17)).IsEqualTo(17);
     }
 
     [Test]
@@ -148,6 +287,7 @@ public class ReloadingShieldTests
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var live = services.GetRequiredKeyedService<IShieldProvider<HttpResponseMessage>>("dynamic");
         var first = live.Current;
+        var forwarding = registry.GetShield<HttpResponseMessage>("dynamic");
         var attempts = 0;
 
         await Assert.That(async () => await first.ExecuteAsync(_ =>
@@ -165,17 +305,19 @@ public class ReloadingShieldTests
         configuration.Reload();
 
         var second = live.Current;
-        using var response = await second.ExecuteAsync(_ =>
+        using var response = await forwarding.ExecuteAsync(_ =>
         {
             attempts++;
             return new ValueTask<HttpResponseMessage>(new HttpResponseMessage());
         });
 
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
-        await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), second))
+        await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), forwarding))
             .IsTrue();
+        await Assert.That(ReferenceEquals(forwarding, second)).IsFalse();
         await Assert.That(first.ToString()).Contains("Retry(0, no delay)");
         await Assert.That(second.ToString()).Contains("Retry(4, no delay)");
+        await Assert.That(forwarding.ToString()).Contains("Retry(4, no delay)");
         await Assert.That(attempts).IsEqualTo(2);
     }
 

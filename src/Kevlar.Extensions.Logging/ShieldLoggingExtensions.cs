@@ -28,6 +28,7 @@ public static class ShieldLoggingExtensions
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
         if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
         if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        shield = shield.CurrentSnapshot;
 
         return new Shield(
             Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),
@@ -57,6 +58,7 @@ public static class ShieldLoggingExtensions
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
         if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
         if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        shield = shield.CurrentSnapshot;
 
         return new Shield<TResult>(
             Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),

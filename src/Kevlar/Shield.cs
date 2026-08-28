@@ -25,8 +25,10 @@ public sealed class Shield : IShieldLifecycle
     internal readonly IShieldDecorator[] AppliedDecorators;
     private readonly bool _hasVoidFallback;
     private readonly StrategyOwnerSet _strategyOwners;
+    private readonly Func<Shield>? _currentSnapshot;
+    private readonly string? _name;
 
-    Strategy[] IShieldLifecycle.Strategies => Strategies;
+    Strategy[] IShieldLifecycle.Strategies => CurrentSnapshot.Strategies;
 
     internal Shield(
         Strategy[] strategies,
@@ -40,7 +42,7 @@ public sealed class Shield : IShieldLifecycle
         _strategyOwners = GetStrategyOwners(strategies);
         Head = BuildChain(strategies, _strategyOwners);
         Ambient = ambient;
-        Name = name;
+        _name = name;
         Time = timeProvider;
         AppliedDecorators = appliedDecorators ?? [];
 
@@ -54,27 +56,42 @@ public sealed class Shield : IShieldLifecycle
         }
     }
 
+    internal Shield(Func<Shield> currentSnapshot)
+        : this([], null, null, null)
+    {
+        _currentSnapshot = currentSnapshot;
+    }
+
     /// <summary>The shield's diagnostic name, if assigned via <c>WithName</c>.</summary>
-    public string? Name { get; }
+    public string? Name => _currentSnapshot is { } currentSnapshot
+        ? currentSnapshot().Name
+        : _name;
+
+    internal Shield CurrentSnapshot => _currentSnapshot?.Invoke() ?? this;
 
     /// <summary>A shield with no strategies: executions pass straight through.</summary>
     public static Shield Empty { get; } = new([], null, null, null);
 
-    internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
+    internal OutcomeJudge JudgeOrDefault => CurrentSnapshot.Ambient ?? OutcomeJudge.Default;
 
     internal OutcomeJudge FallbackJudgeOrDefault =>
-        Ambient is null || ReferenceEquals(Ambient, OutcomeJudge.Default)
+        CurrentSnapshot.Ambient is not { } ambient || ReferenceEquals(ambient, OutcomeJudge.Default)
             ? OutcomeJudge.FallbackDefault
-            : Ambient;
+            : ambient;
 
-    internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
+    internal TimeProvider TimeOrSystem => CurrentSnapshot.Time ?? TimeProvider.System;
 
     /// <summary>
     /// Gets whether every strategy guarantees invoking the execution continuation at most once.
     /// Custom strategies may opt in through <see cref="Strategy.InvokesContinuationAtMostOnce"/>.
     /// </summary>
+    /// <remarks>
+    /// A live-forwarding shield reports <see langword="false"/> because a later publication may
+    /// introduce retry, hedging, or another multi-attempt strategy.
+    /// </remarks>
     public bool InvokesContinuationAtMostOnce =>
-        Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
+        _currentSnapshot is null
+        && Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
 
     // ── Static factories ────────────────────────────────────────────────────────────────
 
@@ -267,6 +284,7 @@ public sealed class Shield : IShieldLifecycle
         {
             var shield = shields[i];
             Throw.IfNull(shield, nameof(shields));
+            shield = shield.CurrentSnapshot;
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
@@ -290,6 +308,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask<T> ExecuteAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteAsync(action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
@@ -298,6 +321,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask<T> ExecuteAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteAsync(state, action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
@@ -310,6 +338,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(parentContext, action);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithParentContextAsync(Head, Name, action, static (a, context) => a(context), parentContext);
     }
@@ -326,6 +359,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(parentContext, state, action);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithParentContextAsync(Head, Name, state, action, parentContext);
     }
@@ -342,6 +380,15 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextAsync(
             Head,
@@ -367,6 +414,16 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(onCompleted, nameof(onCompleted));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(
+                state,
+                initializeProperties,
+                action,
+                onCompleted,
+                cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextAsync(
             Head,
@@ -399,6 +456,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask ExecuteAsync(Func<CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteAsync(action, cancellationToken);
+        }
+
         return StripResult(ShieldEngine.ExecuteAsync(
             Head,
             TimeOrSystem,
@@ -416,6 +478,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask ExecuteAsync<TState>(TState state, Func<TState, CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteAsync(state, action, cancellationToken);
+        }
+
         return StripResult(ShieldEngine.ExecuteAsync(
             Head,
             TimeOrSystem,
@@ -437,6 +504,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(parentContext, action);
+        }
+
         return StripResult(ShieldEngine.ExecuteWithParentContextAsync(
             Head,
             Name,
@@ -461,6 +533,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(parentContext, state, action);
+        }
+
         return StripResult(ShieldEngine.ExecuteWithParentContextAsync(
             Head,
             Name,
@@ -485,6 +562,15 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+        }
+
         return StripResult(ShieldEngine.ExecuteWithContextAsync(
             Head,
             TimeOrSystem,
@@ -513,6 +599,16 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(onCompleted, nameof(onCompleted));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContextAsync(
+                state,
+                initializeProperties,
+                action,
+                onCompleted,
+                cancellationToken);
+        }
+
         return StripResult(ShieldEngine.ExecuteWithContextAsync(
             Head,
             TimeOrSystem,
@@ -550,6 +646,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcomeAsync(action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
@@ -561,6 +662,11 @@ public sealed class Shield : IShieldLifecycle
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcomeAsync(state, action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
@@ -571,6 +677,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcomeAsync(action, cancellationToken);
+        }
+
         return StripOutcome(ShieldEngine.ExecuteOutcomeAsync(
             Head,
             TimeOrSystem,
@@ -594,6 +705,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcomeAsync(state, action, cancellationToken);
+        }
+
         return StripOutcome(ShieldEngine.ExecuteOutcomeAsync(
             Head,
             TimeOrSystem,
@@ -613,6 +729,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcome(action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeSync(
             Head,
@@ -633,6 +754,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcome(state, action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
@@ -643,6 +769,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcome(action, cancellationToken);
+        }
+
         return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, action, static (a, token) =>
         {
             a(token);
@@ -660,6 +791,11 @@ public sealed class Shield : IShieldLifecycle
         CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteOutcome(state, action, cancellationToken);
+        }
+
         return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, (state, action), static (s, token) =>
         {
             s.action(s.state, token);
@@ -674,6 +810,11 @@ public sealed class Shield : IShieldLifecycle
     public T Execute<T>(Func<CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().Execute(action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
@@ -682,6 +823,11 @@ public sealed class Shield : IShieldLifecycle
     public T Execute<T, TState>(TState state, Func<TState, CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().Execute(state, action, cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
@@ -694,6 +840,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContext(parentContext, action);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithParentContextSync(
             Head,
@@ -715,6 +866,11 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContext(parentContext, state, action);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithParentContextSync(Head, Name, state, action, parentContext);
     }
@@ -731,6 +887,15 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            return currentSnapshot().ExecuteWithContext(
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+        }
+
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextSync(
             Head,
@@ -761,6 +926,12 @@ public sealed class Shield : IShieldLifecycle
     public void Execute(Action<CancellationToken> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            currentSnapshot().Execute(action, cancellationToken);
+            return;
+        }
+
         ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) =>
         {
             a(token);
@@ -772,6 +943,12 @@ public sealed class Shield : IShieldLifecycle
     public void Execute<TState>(TState state, Action<TState, CancellationToken> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            currentSnapshot().Execute(state, action, cancellationToken);
+            return;
+        }
+
         ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, (state, action), static (s, token) =>
         {
             s.action(s.state, token);
@@ -787,6 +964,12 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            currentSnapshot().ExecuteWithContext(parentContext, action);
+            return;
+        }
+
         ShieldEngine.ExecuteWithParentContextSync(
             Head,
             Name,
@@ -811,6 +994,12 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(action, nameof(action));
         Throw.IfNull(parentContext, nameof(parentContext));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            currentSnapshot().ExecuteWithContext(parentContext, state, action);
+            return;
+        }
+
         ShieldEngine.ExecuteWithParentContextSync(
             Head,
             Name,
@@ -835,6 +1024,16 @@ public sealed class Shield : IShieldLifecycle
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        if (_currentSnapshot is { } currentSnapshot)
+        {
+            currentSnapshot().ExecuteWithContext(
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+            return;
+        }
+
         ShieldEngine.ExecuteWithContextSync(
             Head,
             TimeOrSystem,
@@ -868,7 +1067,11 @@ public sealed class Shield : IShieldLifecycle
     /// Describes the pipeline, outermost strategy first, e.g.
     /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
     /// </summary>
-    public override string ToString() => Describe(Name, Strategies);
+    public override string ToString()
+    {
+        var snapshot = CurrentSnapshot;
+        return Describe(snapshot.Name, snapshot.Strategies);
+    }
 
     // ── Internals ───────────────────────────────────────────────────────────────────────
 
@@ -989,11 +1192,17 @@ public sealed class Shield : IShieldLifecycle
 
     internal Shield Append(Strategy strategy, OutcomeJudge? ambient = null)
     {
-        var strategies = new Strategy[Strategies.Length + 1];
-        Array.Copy(Strategies, strategies, Strategies.Length);
-        strategies[Strategies.Length] = strategy;
-        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
-        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
+        var snapshot = CurrentSnapshot;
+        var strategies = new Strategy[snapshot.Strategies.Length + 1];
+        Array.Copy(snapshot.Strategies, strategies, snapshot.Strategies.Length);
+        strategies[snapshot.Strategies.Length] = strategy;
+        var shield = new Shield(
+            strategies,
+            ambient ?? snapshot.Ambient,
+            snapshot.Name,
+            snapshot.Time,
+            snapshot.AppliedDecorators);
+        StrategyAppendObserver.Notify(snapshot.Strategies, strategy, snapshot.Name, shield);
         return shield;
     }
 
@@ -1001,11 +1210,17 @@ public sealed class Shield : IShieldLifecycle
         IShieldDecorator[] appliedDecorators,
         IShieldDecorator decorator)
     {
+        var snapshot = CurrentSnapshot;
         var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
         Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
         decorators[^1] = decorator;
-        var decorated = new Shield(Strategies, Ambient, Name, Time, decorators);
-        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        var decorated = new Shield(
+            snapshot.Strategies,
+            snapshot.Ambient,
+            snapshot.Name,
+            snapshot.Time,
+            decorators);
+        StrategyAppendObserver.NotifyComposition(snapshot.Strategies, snapshot.Name, decorated);
         return decorated;
     }
 

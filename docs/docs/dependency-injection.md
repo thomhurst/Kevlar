@@ -178,15 +178,19 @@ public sealed class GitHubClient(
 }
 ```
 
-Registry consumers can call `registry.GetShield("github")` once per operation to obtain the
-current snapshot. Reloading names intentionally do not register a keyed `Shield`, because such a
-singleton would silently become stale; resolve the keyed `IShieldProvider` instead. Every ordinary
-`AddShield` registration exposes both a keyed shield and an `IShieldProvider`, whose `Current`
-snapshot remains fixed.
+For a reloading name, `registry.GetShield("github")` returns a stable live-forwarding shield. It is
+safe to retain: each execution uses one current last-known-good snapshot, while `ToString()` and
+Kevlar.Testing's `GetDescriptor()` describe the current snapshot. The registry returns the same
+forwarding shield on later lookups.
+
+Reloading names intentionally do not register a keyed `Shield`. Resolve the keyed
+`IShieldProvider` when explicit snapshot semantics are useful, and read `Current` once per
+operation as above. Every ordinary `AddShield` registration exposes both a keyed shield and an
+`IShieldProvider`, whose `Current` snapshot remains fixed.
 
 The generic forms are symmetric: `AddReloadingShield<TResult>` publishes through
-`IShieldProvider<TResult>` and `registry.GetShield<TResult>(name)`. It likewise omits a keyed
-`Shield<TResult>` so consumers cannot accidentally retain a stale snapshot.
+`IShieldProvider<TResult>` and a live-forwarding `registry.GetShield<TResult>(name)`. It likewise
+omits a keyed `Shield<TResult>` so consumers cannot accidentally retain a stale snapshot.
 
 Changes are debounced for 250 milliseconds by default, coalescing file-watcher bursts into one
 rebuild. Pass a `ReloadingShieldOptions` instance to customize `DebounceDelay` or `TimeProvider`.

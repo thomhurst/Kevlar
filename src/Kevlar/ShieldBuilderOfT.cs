@@ -39,7 +39,7 @@ public sealed class ShieldBuilder<TResult>
     private readonly string[] _clauseTerms;
 
     internal ShieldBuilder(Shield<TResult> parent)
-        : this(parent, [], [], [], [])
+        : this(parent.CurrentSnapshot, [], [], [], [])
     {
     }
 

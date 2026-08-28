@@ -157,11 +157,12 @@ public class IntegrationTests
         services.AddReloadingShield("reloading", configuration);
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
+        var reloading = registry.GetShield("reloading");
 
         _ = await registry.GetShield("fixed").ExecuteOutcomeAsync<int>(Fail);
-        _ = await registry.GetShield("reloading").ExecuteOutcomeAsync<int>(Fail);
+        _ = await reloading.ExecuteOutcomeAsync<int>(Fail);
         configuration.Reload();
-        _ = await registry.GetShield("reloading").ExecuteOutcomeAsync<int>(Fail);
+        _ = await reloading.ExecuteOutcomeAsync<int>(Fail);
 
         var retryLogs = logs.Collector.GetSnapshot()
             .Where(record => record.Id == new EventId(1001, "Retry"))
