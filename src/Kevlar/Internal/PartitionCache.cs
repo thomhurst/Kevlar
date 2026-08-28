@@ -18,6 +18,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
     private readonly AsyncLocal<ReentrancyScope?> _factoryCallback = new();
     private readonly AsyncLocal<ReentrancyScope?> _creationCallback = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
+    private readonly ExecutionReentrancyGuard _executionReentrancy = new();
     private readonly Queue<Exception> _disposalFailures = new();
     private readonly List<Task> _pendingDisposals = [];
 
@@ -237,7 +238,8 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private ValueTask DisposeAsync(bool preferSynchronousDisposal)
     {
-        if (_factoryCallback.Value is { Active: true }
+        if (_executionReentrancy.Active
+            || _factoryCallback.Value is { Active: true }
             || _creationCallback.Value is { Active: true }
             || _evictionCallback.Value is { Active: true })
         {
@@ -991,7 +993,9 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         if (owned is not null)
         {
             executionTracker = new StrategyExecutionTracker();
-            shield = (TShield)shield.WithExecutionTracking(executionTracker);
+            shield = (TShield)shield.WithExecutionTracking(
+                executionTracker,
+                _executionReentrancy);
         }
 
         return new Entry(

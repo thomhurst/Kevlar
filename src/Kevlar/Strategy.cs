@@ -165,7 +165,9 @@ internal interface IShieldLifecycle
 {
     Strategy[] Strategies { get; }
 
-    IShieldLifecycle WithExecutionTracking(StrategyExecutionTracker tracker);
+    IShieldLifecycle WithExecutionTracking(
+        StrategyExecutionTracker tracker,
+        ExecutionReentrancyGuard reentrancyGuard);
 }
 
 internal interface ITransparentStrategy

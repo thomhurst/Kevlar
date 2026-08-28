@@ -1,6 +1,8 @@
 namespace Kevlar.Internal;
 
-internal sealed class ExecutionTrackingStrategy(StrategyExecutionTracker tracker)
+internal sealed class ExecutionTrackingStrategy(
+    StrategyExecutionTracker tracker,
+    ExecutionReentrancyGuard reentrancyGuard)
     : Strategy, ITransparentStrategy
 {
     protected internal override bool InvokesContinuationAtMostOnce => true;
@@ -9,19 +11,22 @@ internal sealed class ExecutionTrackingStrategy(StrategyExecutionTracker tracker
         Continuation<T, TState> next,
         KevlarContext context)
     {
+        var scope = reentrancyGuard.Enter();
         tracker.Enter();
         var execution = next.InvokeAsync(context);
 
         if (execution.IsCompletedSuccessfully)
         {
-            tracker.Exit();
+            Complete(scope);
             return execution;
         }
 
-        return CompleteAsync(execution);
+        return CompleteAsync(execution, scope);
     }
 
-    private async ValueTask<Outcome<T>> CompleteAsync<T>(ValueTask<Outcome<T>> execution)
+    private async ValueTask<Outcome<T>> CompleteAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        ExecutionReentrancyGuard.Scope scope)
     {
         try
         {
@@ -29,7 +34,13 @@ internal sealed class ExecutionTrackingStrategy(StrategyExecutionTracker tracker
         }
         finally
         {
-            tracker.Exit();
+            Complete(scope);
         }
+    }
+
+    private void Complete(ExecutionReentrancyGuard.Scope scope)
+    {
+        tracker.Exit();
+        reentrancyGuard.Exit(scope);
     }
 }
