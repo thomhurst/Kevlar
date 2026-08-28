@@ -829,14 +829,14 @@ public static class ShieldHttpClientBuilderExtensions
         private readonly Func<IServiceProvider, DelegatingHandler> _handlerFactory;
 
         public ShieldHandlerConfiguration(
-            string name,
+            string? name,
             Func<IServiceProvider, DelegatingHandler> handlerFactory)
         {
             Name = name;
             _handlerFactory = handlerFactory;
         }
 
-        public string Name { get; }
+        public string? Name { get; }
 
         public void Configure(HttpClientFactoryOptions options)
         {
@@ -844,7 +844,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         public void Configure(string? name, HttpClientFactoryOptions options)
         {
-            if (name == Name)
+            if (Name is null || name == Name)
             {
                 options.HttpMessageHandlerBuilderActions.Add(builder =>
                     builder.AdditionalHandlers.Add(_handlerFactory(builder.Services)));

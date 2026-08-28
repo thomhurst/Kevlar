@@ -1385,6 +1385,29 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Default_Shield_Configuration_Applies_To_Named_Clients()
+    {
+        var calls = 0;
+        var services = new ServiceCollection();
+        services.ConfigureHttpClientDefaults(builder =>
+            builder.AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None)));
+        services.AddHttpClient("named-default")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+            {
+                calls++;
+                return Task.FromResult(new HttpResponseMessage(
+                    calls == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+            }));
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("named-default");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task RemoveAllShields_Does_Not_Invoke_Removed_Factories()
     {
         var services = new ServiceCollection();
