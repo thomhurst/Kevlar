@@ -114,6 +114,55 @@ public class ReloadingShieldTests
     }
 
     [Test]
+    public async Task Registry_Forwarders_Cover_All_Execution_Shapes()
+    {
+        var configuration = BuildConfiguration();
+        using var services = new ServiceCollection()
+            .AddReloadingShield("untyped", ImmediateReload, configuration)
+            .AddReloadingShield<int>("typed", ImmediateReload, configuration)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shield = registry.GetShield("untyped");
+        var typed = registry.GetShield<int>("typed");
+
+        await Assert.That(await shield.ExecuteAsync<int, int>(1, static (state, _) => new(state)))
+            .IsEqualTo(1);
+        await Assert.That(await shield.ExecuteWithContextAsync<int>(static _ => new(2)))
+            .IsEqualTo(2);
+        await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+        await shield.ExecuteAsync(0, static (_, _) => ValueTask.CompletedTask);
+        await shield.ExecuteWithContextAsync(static _ => ValueTask.CompletedTask);
+        await Assert.That((await shield.ExecuteOutcomeAsync<int, int>(3, static (state, _) => new(state))).Result)
+            .IsEqualTo(3);
+        await Assert.That((await shield.ExecuteOutcomeAsync(static _ => ValueTask.CompletedTask)).IsSuccess)
+            .IsTrue();
+        await Assert.That((await shield.ExecuteOutcomeAsync(0, static (_, _) => ValueTask.CompletedTask)).IsSuccess)
+            .IsTrue();
+        await Assert.That(shield.ExecuteOutcome<int>(static _ => 4).Result).IsEqualTo(4);
+        await Assert.That(shield.ExecuteOutcome(5, static (state, _) => state).Result).IsEqualTo(5);
+        await Assert.That(shield.ExecuteOutcome(static _ => { }).IsSuccess).IsTrue();
+        await Assert.That(shield.ExecuteOutcome(0, static (_, _) => { }).IsSuccess).IsTrue();
+        await Assert.That(shield.Execute<int>(static _ => 6)).IsEqualTo(6);
+        await Assert.That(shield.Execute(7, static (state, _) => state)).IsEqualTo(7);
+        await Assert.That(shield.ExecuteWithContext<int>(static _ => 8)).IsEqualTo(8);
+        shield.Execute(static _ => { });
+        shield.Execute(0, static (_, _) => { });
+        shield.ExecuteWithContext(static _ => { });
+
+        await Assert.That(await typed.ExecuteAsync(9, static (state, _) => new(state))).IsEqualTo(9);
+        await Assert.That(await typed.ExecuteWithContextAsync(static _ => new ValueTask<int>(10))).IsEqualTo(10);
+        await Assert.That((await typed.ExecuteOutcomeAsync(static _ => new ValueTask<int>(11))).Result)
+            .IsEqualTo(11);
+        await Assert.That((await typed.ExecuteOutcomeAsync(12, static (state, _) => new(state))).Result)
+            .IsEqualTo(12);
+        await Assert.That(typed.ExecuteOutcome(static _ => 13).Result).IsEqualTo(13);
+        await Assert.That(typed.ExecuteOutcome(14, static (state, _) => state).Result).IsEqualTo(14);
+        await Assert.That(typed.Execute(static _ => 15)).IsEqualTo(15);
+        await Assert.That(typed.Execute(16, static (state, _) => state)).IsEqualTo(16);
+        await Assert.That(typed.ExecuteWithContext(static _ => 17)).IsEqualTo(17);
+    }
+
+    [Test]
     public async Task Reloads_Are_Debounced_And_Later_Windows_Rebuild_Again()
     {
         var timeProvider = new FakeTimeProvider();
