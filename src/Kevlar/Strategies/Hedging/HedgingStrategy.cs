@@ -295,7 +295,7 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         context);
                     var isWinner = !shouldHandle
-                        || suppressAdditionalAttempts
+                        || suppressAdditionalAttempts && pending.Count == 0
                         || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
                     RecordAttempt(
                         in completedAttempt,
@@ -317,7 +317,8 @@ internal sealed class HedgingStrategy : Strategy
                     await completedAttempt.DisposeAsync().ConfigureAwait(false);
                 }
 
-                if (!shouldHandle || context.Properties.SuppressAdditionalAttempts)
+                if (!shouldHandle
+                    || context.Properties.SuppressAdditionalAttempts && pending.Count == 0)
                 {
                     if (lastOutcome is { } superseded)
                     {
@@ -342,7 +343,8 @@ internal sealed class HedgingStrategy : Strategy
 
                 lastOutcome = outcome;
 
-                if (hedgesLaunched < _maxHedgedAttempts)
+                if (!context.Properties.SuppressAdditionalAttempts
+                    && hedgesLaunched < _maxHedgedAttempts)
                 {
                     pending.Add(await StartHedgeAttemptAsync(
                         next,

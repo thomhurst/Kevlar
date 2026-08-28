@@ -162,6 +162,39 @@ public class GrpcShieldTests
     }
 
     [Test]
+    public async Task RetryAfter_Suppression_Preserves_An_Already_Running_Hedge()
+    {
+        var attempts = 0;
+        var firstAttemptCompleted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = GrpcShield.WhenTransient()
+            .Hedge(1, TimeSpan.Zero)
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.DelayGenerator = GrpcShield.RetryAfter;
+            });
+
+        var result = await shield.ExecuteAsync<int>(async _ =>
+        {
+            var attempt = Interlocked.Increment(ref attempts);
+            if (attempt == 1)
+            {
+                firstAttemptCompleted.TrySetResult();
+                throw CreateException("-1");
+            }
+
+            await firstAttemptCompleted.Task;
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     [Arguments(false, 0)]
     [Arguments(true, 0)]
     [Arguments(false, 1)]
