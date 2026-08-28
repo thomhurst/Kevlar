@@ -1,11 +1,46 @@
 using Kevlar.Testing;
+using Kevlar.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
 namespace Kevlar.Testing.Tests;
 
 public class PipelineDescriptorTests
 {
+    [Test]
+    public async Task Transparent_Logging_Decorators_Are_Optional_For_Typed_And_Untyped_Shields()
+    {
+        var services = new ServiceCollection();
+        services.AddKevlarLogging();
+        services.AddShield("untyped", Shield.Retry(1, Backoff.None));
+        services.AddShield("typed", Shield.For<int>().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        var shields = new[]
+        {
+            registry.GetShield("untyped").GetDescriptor(),
+            registry.GetShield<int>("typed").GetDescriptor(),
+        };
+        var completeShields = new[]
+        {
+            registry.GetShield("untyped").GetDescriptor(includeTransparent: true),
+            registry.GetShield<int>("typed").GetDescriptor(includeTransparent: true),
+        };
+
+        foreach (var descriptor in shields)
+        {
+            descriptor.AssertStrategyOrder(StrategyKind.Retry);
+        }
+
+        foreach (var descriptor in completeShields)
+        {
+            descriptor.AssertStrategyOrder(StrategyKind.Custom, StrategyKind.Retry);
+            var logging = (CustomStrategyDescriptor)descriptor.Strategies[0];
+            await Assert.That(logging.StrategyType.Name).IsEqualTo("LoggingStrategy");
+        }
+    }
+
     [Test]
     public async Task Descriptor_Preserves_Order_Metadata_And_Safe_Configuration()
     {

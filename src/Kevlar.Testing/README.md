@@ -18,5 +18,8 @@ shield.GetDescriptor()
     .AssertContainsSingle<RetryStrategyDescriptor>();
 ```
 
+`GetDescriptor()` excludes transparent infrastructure decorators such as structured logging by
+default. Pass `includeTransparent: true` to inspect them explicitly.
+
 See the [testing guide](https://thomhurst.github.io/Kevlar/docs/testing) for descriptors,
 assertions, state snapshots, execution probes, fake time, and `TelemetryRecorder`.
