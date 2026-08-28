@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Getting Started
 
-Build and wire a production-ready shield in about ten minutes.
+Build and wire a production-ready shield in about five minutes.
 
 ## Install
 
