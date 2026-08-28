@@ -126,7 +126,10 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).
+  summary: >-
+    Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).
+
+    The queue has no built-in timeout; compose a timeout outside this strategy to bound the wait.
   example: []
   syntax:
     content: public int QueueLimit { get; set; }

@@ -42,6 +42,12 @@ items:
     If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
 
     stops and surfaces caller cancellation.
+
+    Cancellation during the retry delay surfaces an <xref href="System.OperationCanceledException" data-throw-if-not-resolved="false"></xref> with
+
+    no inner exception. The handled outcome is no longer retained, and <xref href="Kevlar.RetryOptions%601.OnRetry" data-throw-if-not-resolved="false"></xref> has
+
+    already run for the suppressed attempt.
   example: []
   syntax:
     content: public sealed class RetryOptions<TResult>
@@ -500,6 +506,14 @@ references:
   fullName: Kevlar.RetryOptions<TResult>.OnRetry
   nameWithType.vb: RetryOptions(Of TResult).OnRetry
   fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetry
+- uid: System.OperationCanceledException
+  commentId: T:System.OperationCanceledException
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.operationcanceledexception
+  name: OperationCanceledException
+  nameWithType: OperationCanceledException
+  fullName: System.OperationCanceledException
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

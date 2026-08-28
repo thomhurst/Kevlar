@@ -29,6 +29,14 @@ items:
     after timer cleanup and restoration of the caller's cancellation token. Hooks that complete
 
     synchronously add no overhead and remain compatible with synchronous <code>Execute</code>.
+
+    The strategy always awaits the delegate and translates only a direct
+
+    <xref href="System.OperationCanceledException" data-throw-if-not-resolved="false"></xref> into <xref href="Kevlar.TimeoutExceededException" data-throw-if-not-resolved="false"></xref>. A blocking
+
+    synchronous delegate that ignores cancellation cannot be timed out, and a wrapped cancellation
+
+    exception surfaces unchanged.
   example: []
   syntax:
     content: public sealed class TimeoutOptions
@@ -189,6 +197,21 @@ references:
   name: OnTimeout
   nameWithType: TimeoutOptions.OnTimeout
   fullName: Kevlar.TimeoutOptions.OnTimeout
+- uid: System.OperationCanceledException
+  commentId: T:System.OperationCanceledException
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.operationcanceledexception
+  name: OperationCanceledException
+  nameWithType: OperationCanceledException
+  fullName: System.OperationCanceledException
+- uid: Kevlar.TimeoutExceededException
+  commentId: T:Kevlar.TimeoutExceededException
+  isExternal: true
+  href: Kevlar.TimeoutExceededException.html
+  name: TimeoutExceededException
+  nameWithType: TimeoutExceededException
+  fullName: Kevlar.TimeoutExceededException
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

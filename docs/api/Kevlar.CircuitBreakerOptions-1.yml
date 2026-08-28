@@ -446,7 +446,9 @@ items:
 
     <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback. The event context is valid only
 
-    until the returned task completes.
+    until the returned task completes. A publisher arriving during an active drain waits for
+
+    the earlier handlers; an execution may therefore occupy a thread-pool thread until they return.
   example: []
   syntax:
     content: public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }

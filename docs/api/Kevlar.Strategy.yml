@@ -78,6 +78,12 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: Executes the strategy around the rest of the pipeline.
+  remarks: >-
+    Returning an incomplete value task during synchronous shield execution causes the execution
+
+    boundary to block until it completes. Custom implementations should avoid capturing a
+
+    single-threaded synchronization context and should be invoked asynchronously when they yield.
   example: []
   syntax:
     content: public abstract ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
