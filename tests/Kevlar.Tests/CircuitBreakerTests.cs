@@ -177,6 +177,43 @@ public class CircuitBreakerTests
     }
 
     [Test]
+    public async Task Explicit_Exception_Handling_Does_Not_Count_Caller_Cancellation()
+    {
+        var transitions = 0;
+        var shield = Shield.When<Exception>().CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 2;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.OnStateChanged = _ =>
+            {
+                transitions++;
+                return default;
+            };
+        });
+
+        for (var executionIndex = 0; executionIndex < 3; executionIndex++)
+        {
+            using var cancellation = new CancellationTokenSource();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var execution = shield.ExecuteAsync(async token =>
+            {
+                started.SetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                return 1;
+            }, cancellation.Token).AsTask();
+
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            cancellation.Cancel();
+            var exception = await Assert.That(async () => await execution)
+                .Throws<OperationCanceledException>();
+            await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        }
+
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
+        await Assert.That(transitions).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Ambient_Handling_Scopes_What_Trips_The_Circuit()
     {
         var shield = Shield.When<InvalidOperationException>().CircuitBreaker(1, TimeSpan.FromMinutes(1));

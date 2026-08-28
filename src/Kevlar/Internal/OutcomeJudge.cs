@@ -35,7 +35,9 @@ internal abstract class OutcomeJudge
         int strategyIndex)
     {
         if (outcome.Exception is { } exception
-            && SynchronousExecutionGuard.IsRejection(exception))
+            && (SynchronousExecutionGuard.IsRejection(exception)
+                || (exception is OperationCanceledException
+                    && context?.CancellationToken.IsCancellationRequested == true)))
         {
             return false;
         }

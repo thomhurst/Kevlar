@@ -1184,6 +1184,33 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Caller_Cancellation_Does_Not_Emit_Circuit_Transitions()
+    {
+        using var listener = new KevlarMeterListener();
+        var before = CircuitTransitionTotals(listener);
+        var shield = Shield.When<Exception>().CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+        });
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var execution = shield.ExecuteAsync(async token =>
+        {
+            started.SetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return 1;
+        }, cancellation.Token).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+        await Assert.That(async () => await execution).Throws<OperationCanceledException>();
+
+        var after = CircuitTransitionTotals(listener);
+        await Assert.That(after).IsEquivalentTo(before);
+    }
+
+    [Test]
     public async Task Hedged_Attempts_Are_Counted()
     {
         using var listener = new KevlarMeterListener();
