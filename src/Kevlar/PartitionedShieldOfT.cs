@@ -10,9 +10,11 @@ namespace Kevlar;
 /// Retention is bounded by <see cref="PartitionedShieldOptions{TKey, TResult}.MaxPartitions"/>.
 /// After the eviction callback and active executions complete, disposable strategies owned by an
 /// evicted shield are released. Shared strategy instances are disposed after their last partition
-/// owner. Do not reuse a shield after its partition is evicted. A later lookup creates a fresh
-/// partition with fresh strategy state. Partition keys are never added to metric tags or shield
-/// names automatically.
+/// owner. By default the provider owns every strategy returned by its factory; set
+/// <see cref="PartitionedShieldOptions{TKey, TResult}.OwnsStrategies"/> to
+/// <see langword="false"/> when those instances are also used outside the provider. Do not reuse a
+/// shield after its partition is evicted. A later lookup creates a fresh partition with fresh
+/// strategy state. Partition keys are never added to metric tags or shield names automatically.
 /// </remarks>
 public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDisposable
     where TKey : notnull
@@ -55,13 +57,13 @@ public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDispos
     public bool TryGetShield(TKey key, [NotNullWhen(true)] out Shield<TResult>? shield) =>
         _cache.TryGet(key, out shield);
 
-    /// <summary>Removes a retained partition. Existing users of its shield are unaffected.</summary>
+    /// <summary>Removes a retained partition and begins its configured lifecycle cleanup.</summary>
     public bool TryRemove(TKey key) => _cache.TryRemove(key);
 
     /// <summary>Asynchronously removes a retained partition.</summary>
     public ValueTask<bool> TryRemoveAsync(TKey key) => _cache.TryRemoveAsync(key);
 
-    /// <summary>Removes every retained partition. Existing users of those shields are unaffected.</summary>
+    /// <summary>Removes every retained partition and begins configured lifecycle cleanup.</summary>
     public void Clear() => _cache.Clear();
 
     /// <summary>Asynchronously removes every retained partition.</summary>
@@ -98,8 +100,9 @@ public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDispos
     public void Dispose() => _cache.Dispose();
 
     /// <summary>
-    /// Asynchronously waits for in-flight factories and executions, then disposes strategies owned
-    /// by every retained partition. Concurrent callers await the same disposal operation.
+    /// Asynchronously waits for in-flight factories, removals, and executions, then disposes
+    /// strategies owned by every retained partition. Concurrent callers await the same disposal
+    /// operation.
     /// </summary>
     public ValueTask DisposeAsync() => _cache.DisposeAsync();
 

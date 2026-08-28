@@ -49,11 +49,13 @@ opportunistic: expired entries are removed by later provider operations or an ex
 
 After `OnEvicted` completes and any execution already using the shield finishes, Kevlar releases
 the evicted shield's disposable strategies in reverse pipeline order. A strategy instance shared
-by multiple partitions or providers is disposed only after its last owner releases it. Do not
-retain and reuse a shield after its partition is evicted. A later lookup of the evicted key creates
-a new shield with fresh breaker, limiter, and queue state. Core strategies hold no long-lived
-disposable resources; this lifecycle primarily matters for custom strategies and adapters such as
-an owned `RateLimiter`.
+by multiple partition providers is disposed only after its last owner releases it. The provider
+owns every strategy returned by its factory by default. Set `OwnsStrategies = false` when the
+factory returns strategy instances also used by standalone or registry shields; the external owner
+must then dispose them. Do not retain and reuse a shield after its partition is evicted. A later
+lookup of the evicted key creates a new shield with fresh breaker, limiter, and queue state. Core
+strategies hold no long-lived disposable resources; this lifecycle primarily matters for custom
+strategies and adapters such as an owned `RateLimiter`.
 
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
@@ -88,10 +90,12 @@ explicit cache control. If the factory throws, no existing partition is evicted 
 is not cached.
 
 `PartitionedShield` implements both `IDisposable` and `IAsyncDisposable`. Disposing it rejects new
-operations, clears live partitions, waits for factories and active executions already in flight,
-and disposes owned strategies exactly once. Concurrent disposal callers await the same operation
-and observe the same failure. Keyed partition providers registered through DI are singleton-owned
-and are therefore disposed with the service provider.
+operations, clears live partitions, waits for factories, removal callbacks, and active executions
+already in flight, and disposes owned strategies exactly once. Concurrent disposal callers await
+the same operation and observe the same failure. Synchronous removal and disposal APIs prefer
+`IDisposable`; asynchronous APIs prefer `IAsyncDisposable` when a strategy implements both. Keyed
+partition providers registered through DI are singleton-owned and are therefore disposed with the
+service provider.
 
 ## Dependency injection
 

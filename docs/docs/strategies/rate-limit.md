@@ -107,7 +107,9 @@ across every shield using it, including shields returned by Kevlar's
 Partition retention follows the limiter implementation; keep attacker-controlled key cardinality
 bounded. The caller owns and disposes the partitioned limiter and its child limiters by default.
 The same `ownsLimiter: true` opt-in transfers ownership when registry disposal governs the shield
-lifetime; Kevlar always owns each returned lease.
+lifetime. A Kevlar `PartitionedShield<TKey>` also disposes factory-returned strategies by default;
+set its `OwnsStrategies` option to `false` when the same strategy is used elsewhere. Kevlar always
+owns each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then awaited `OnRejected`. Hook failures are

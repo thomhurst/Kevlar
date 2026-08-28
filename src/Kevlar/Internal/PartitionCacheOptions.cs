@@ -9,13 +9,15 @@ internal sealed class PartitionCacheOptions<TKey, TShield>
         TimeSpan? idleExpiration,
         TimeProvider timeProvider,
         Func<TKey, TShield, ValueTask>? onCreated,
-        Func<TKey, TShield, PartitionEvictionReason, ValueTask>? onEvicted)
+        Func<TKey, TShield, PartitionEvictionReason, ValueTask>? onEvicted,
+        bool ownsStrategies = true)
     {
         MaxPartitions = maxPartitions;
         IdleExpiration = idleExpiration;
         TimeProvider = timeProvider;
         OnCreated = onCreated;
         OnEvicted = onEvicted;
+        OwnsStrategies = ownsStrategies;
     }
 
     public int MaxPartitions { get; }
@@ -27,4 +29,6 @@ internal sealed class PartitionCacheOptions<TKey, TShield>
     public Func<TKey, TShield, ValueTask>? OnCreated { get; }
 
     public Func<TKey, TShield, PartitionEvictionReason, ValueTask>? OnEvicted { get; }
+
+    public bool OwnsStrategies { get; }
 }

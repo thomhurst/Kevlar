@@ -346,6 +346,82 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Externally_Owned_Strategies_Are_Not_Disposed()
+    {
+        var strategy = new DisposablePartitionStrategy();
+        var standalone = Shield.Use(strategy);
+        var provider = new PartitionedShield<string>(
+            _ => standalone,
+            new PartitionedShieldOptions<string> { OwnsStrategies = false });
+        _ = provider.GetShield("tenant");
+
+        await provider.DisposeAsync();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+        await standalone.ExecuteAsync(static _ => ValueTask.CompletedTask);
+    }
+
+    [Test]
+    public async Task DisposeAsync_Waits_For_InFlight_Removal_Callbacks()
+    {
+        var callbackEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var strategy = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(
+            _ => Shield.Use(strategy),
+            new PartitionedShieldOptions<string>
+            {
+                OnEvicted = async _ =>
+                {
+                    callbackEntered.TrySetResult();
+                    await releaseCallback.Task;
+                },
+            });
+        _ = provider.GetShield("tenant");
+        var removal = provider.TryRemoveAsync("tenant").AsTask();
+        await callbackEntered.Task;
+
+        var disposal = provider.DisposeAsync().AsTask();
+
+        await Assert.That(disposal.IsCompleted).IsFalse();
+        releaseCallback.TrySetResult();
+        await removal;
+        await disposal;
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Synchronous_Removal_And_Disposal_Prefer_IDisposable()
+    {
+        var removedStrategy = new DualDisposablePartitionStrategy();
+        var removedProvider = new PartitionedShield<string>(_ => Shield.Use(removedStrategy));
+        _ = removedProvider.GetShield("tenant");
+
+        _ = removedProvider.TryRemove("tenant");
+
+        var clearedStrategy = new DualDisposablePartitionStrategy();
+        var clearedProvider = new PartitionedShield<string>(_ => Shield.Use(clearedStrategy));
+        _ = clearedProvider.GetShield("tenant");
+
+        clearedProvider.Clear();
+
+        var disposedStrategy = new DualDisposablePartitionStrategy();
+        var disposedProvider = new PartitionedShield<string>(_ => Shield.Use(disposedStrategy));
+        _ = disposedProvider.GetShield("tenant");
+
+        disposedProvider.Dispose();
+
+        await Assert.That(removedStrategy.SyncDisposeCount).IsEqualTo(1);
+        await Assert.That(clearedStrategy.SyncDisposeCount).IsEqualTo(1);
+        await Assert.That(disposedStrategy.SyncDisposeCount).IsEqualTo(1);
+        await Assert.That(removedStrategy.AsyncDisposeCount).IsEqualTo(0);
+        await Assert.That(clearedStrategy.AsyncDisposeCount).IsEqualTo(0);
+        await Assert.That(disposedStrategy.AsyncDisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Concurrent_DisposeAsync_Callers_Observe_The_Same_Failure()
     {
         var strategy = new CoordinatedAsyncDisposableStrategy();
@@ -569,6 +645,26 @@ public class PartitionedShieldTests
             await ReleaseDispose.Task;
             DisposeCount++;
             throw new InvalidOperationException("dispose");
+        }
+    }
+
+    private sealed class DualDisposablePartitionStrategy : Strategy, IDisposable, IAsyncDisposable
+    {
+        public int SyncDisposeCount { get; private set; }
+
+        public int AsyncDisposeCount { get; private set; }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) =>
+            next.InvokeAsync(context);
+
+        public void Dispose() => SyncDisposeCount++;
+
+        public ValueTask DisposeAsync()
+        {
+            AsyncDisposeCount++;
+            return ValueTask.FromException(new InvalidOperationException("async disposal"));
         }
     }
 }

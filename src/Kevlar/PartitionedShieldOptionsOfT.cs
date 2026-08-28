@@ -22,6 +22,13 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
+    /// Gets or sets whether the provider owns and disposes strategies returned by its factory.
+    /// Defaults to <see langword="true"/>. Set to <see langword="false"/> when those strategy
+    /// instances are also used by shields outside this provider.
+    /// </summary>
+    public bool OwnsStrategies { get; set; } = true;
+
+    /// <summary>
     /// Invoked and awaited after a partition is created and retained. Return
     /// <see langword="default"/> from a synchronous callback.
     /// </summary>
@@ -49,6 +56,7 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
             onEvicted is null
                 ? null
                 : (key, shield, reason) => onEvicted(
-                    new PartitionEvictedEvent<TKey, TResult>(key, shield, reason)));
+                    new PartitionEvictedEvent<TKey, TResult>(key, shield, reason)),
+            OwnsStrategies);
     }
 }
