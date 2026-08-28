@@ -13,6 +13,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
     <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
+    <ProjectReference Include="..\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Primitives" />

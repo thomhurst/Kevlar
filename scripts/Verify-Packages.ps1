@@ -314,9 +314,9 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
-        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
+        'net10.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
+        'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
+        '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Logging' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')

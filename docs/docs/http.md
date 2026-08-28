@@ -265,11 +265,18 @@ using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
-    .AddShield(sp => sp.GetRequiredService<IKevlarRegistry>()
-        .GetShield<HttpResponseMessage>("downstream"));
+    .AddShield("downstream");
 ```
 
-`AddShield` accepts a shield instance or an `IServiceProvider` factory.
+The named overload resolves `IKevlarRegistry.GetShield<HttpResponseMessage>` for every request, so
+reload-aware registrations and dynamic registry replacements are observed without rebuilding the
+`HttpClient` handler pipeline. A missing name throws `KeyNotFoundException` on the first request.
+
+`AddShield` also accepts a shield instance, an `IServiceProvider` factory, or a per-request selector.
+Call `RemoveAllShields()` after the relevant registrations to remove Kevlar handlers from that named
+client while leaving unrelated delegating handlers intact. It also removes the
+`HttpClient.Timeout = Timeout.InfiniteTimeSpan` overrides installed by preceding standard shields,
+so an earlier custom client timeout (or the normal default) remains effective.
 
 ## Per-request options
 

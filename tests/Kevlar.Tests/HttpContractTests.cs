@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
+using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Kevlar.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -1313,6 +1314,177 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task AddShield_Name_Resolves_The_Current_Registry_Shield_Per_Request()
+    {
+        var calls = 0;
+        var services = new ServiceCollection()
+            .AddShield<HttpResponseMessage>("dynamic", Shield<HttpResponseMessage>.Empty);
+        services.AddHttpClient("dynamic")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+            {
+                calls++;
+                return Task.FromResult(new HttpResponseMessage(
+                    calls < 3 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+            }))
+            .AddShield("dynamic");
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("dynamic");
+        using var first = await client.GetAsync("http://localhost/first");
+
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        await Assert.That(registry.Remove<HttpResponseMessage>("dynamic")).IsTrue();
+        await Assert.That(registry.TryAdd(
+            "dynamic",
+            _ => HttpShield.WhenTransient().Retry(1, Backoff.None))).IsTrue();
+
+        using var second = await client.GetAsync("http://localhost/second");
+
+        await Assert.That(first.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(second.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task AddShield_Name_Reports_Missing_Registration_On_First_Request()
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient("missing")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield("missing");
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("missing");
+
+        await Assert.That(async () =>
+            {
+                using var response = await client.GetAsync("http://localhost/test");
+            })
+            .Throws<KeyNotFoundException>();
+    }
+
+    [Test]
+    public async Task AddShield_Name_Does_Not_Redecorate_The_Registry_Shield()
+    {
+        var decorator = new DescriptorCapturingDecorator();
+        var services = new ServiceCollection()
+            .AddSingleton<IShieldDecorator>(decorator)
+            .AddShield<HttpResponseMessage>("named", Shield<HttpResponseMessage>.Empty);
+        services.AddHttpClient("named")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield("named");
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("named");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(decorator.Descriptors).HasSingleItem();
+    }
+
+    [Test]
+    public async Task Default_Shield_Configuration_Applies_To_Named_Clients()
+    {
+        var calls = 0;
+        var services = new ServiceCollection();
+        services.ConfigureHttpClientDefaults(builder =>
+            builder.AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None)));
+        services.AddHttpClient("named-default")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+            {
+                calls++;
+                return Task.FromResult(new HttpResponseMessage(
+                    calls == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+            }));
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("named-default");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task RemoveAllShields_Suppresses_Default_Shield_Factories_For_The_Named_Client()
+    {
+        var services = new ServiceCollection();
+        services.ConfigureHttpClientDefaults(builder =>
+            builder.AddShield(_ => throw new InvalidOperationException("Default factory was invoked.")));
+        services.AddHttpClient("removed-default")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("removed-default");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task RemoveAllShields_Does_Not_Invoke_Removed_Factories()
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient("removed-factory")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield(_ => throw new InvalidOperationException("Removed factory was invoked."))
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("removed-factory");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task RemoveAllShields_Removes_Only_Kevlar_Handlers()
+    {
+        var observerCalls = 0;
+        var primaryCalls = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("plain")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+            {
+                primaryCalls++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }))
+            .AddHttpMessageHandler(() => new CountingDelegatingHandler(() => observerCalls++))
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None))
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None))
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("plain");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(observerCalls).IsEqualTo(1);
+        await Assert.That(primaryCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task RemoveAllShields_Restores_The_Configured_HttpClient_Timeout()
+    {
+        var expectedTimeout = TimeSpan.FromSeconds(17);
+        var services = new ServiceCollection();
+        services.AddHttpClient("timeout", client => client.Timeout = expectedTimeout)
+            .AddStandardShield()
+            .AddStandardHedgeShield()
+            .RemoveAllShields();
+
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("timeout");
+
+        await Assert.That(client.Timeout).IsEqualTo(expectedTimeout);
+    }
+
+    [Test]
     public async Task Handler_Disposal_Disposes_Inner_Handler()
     {
         var inner = new DelegateHandler((_, _) =>
@@ -1342,6 +1514,11 @@ public class HttpContractTests
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield((Shield<HttpResponseMessage>)null!))
             .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(nullBuilder!, "name"))
+            .Throws<ArgumentNullException>();
+        var nameError = await Assert.That(() => builder.AddShield((string)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(nameError!.ParamName).IsEqualTo("shieldName");
         await Assert.That(() => builder.AddShield(
                 Shield<HttpResponseMessage>.Empty,
                 null!))
@@ -1377,6 +1554,8 @@ public class HttpContractTests
                 null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardShield(nullBuilder!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.RemoveAllShields(nullBuilder!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddStandardShield((Action<StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
@@ -1557,6 +1736,17 @@ public class HttpContractTests
         {
             IsDisposed = true;
             base.Dispose(disposing);
+        }
+    }
+
+    private sealed class CountingDelegatingHandler(Action onSend) : DelegatingHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            onSend();
+            return base.SendAsync(request, cancellationToken);
         }
     }
 

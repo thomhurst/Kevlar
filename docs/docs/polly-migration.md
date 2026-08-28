@@ -293,8 +293,8 @@ kevlarHttpServices.AddHttpClient("catalog")
 | `AddStandardResilienceHandler()` | `AddStandardShield()` |
 | `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
 | `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)`; the handler-registration name has no Kevlar analogue |
-| `AddPolicyHandlerFromRegistry(name)` | `AddShield((_, sp) => sp.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(name))` so reload-aware registrations resolve per request |
-| `RemoveAllResilienceHandlers()` | no equivalent; register only the Kevlar shield handlers the client should use |
+| `AddPolicyHandlerFromRegistry(name)` | `AddShield(name)`; reload-aware registrations resolve per request |
+| `RemoveAllResilienceHandlers()` | `RemoveAllShields()` |
 | `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
 | `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
 | `HttpClientResiliencePredicates.IsTransient` | `HttpShield.IsTransient` |
@@ -740,6 +740,7 @@ Classic Polly v7 concepts translate as follows:
 | `Policy.Handle<T>().Fallback(...)` / `FallbackAsync(...)` | `Shield.When<T>().Fallback(...)`; a completed `ValueTask` recovery runs inline under synchronous `Execute` |
 | `Context["key"]` | no string indexer; define a typed `KevlarKey<T>` and use `KevlarProperties.Set`, `TryGet`, or `GetOrDefault` |
 | `AddPolicyHandler(policy)` | build a shield, then `AddShield(shield)` |
+| `AddPolicyHandlerFromRegistry(name)` | register `Shield<HttpResponseMessage>` under that name, then `AddShield(name)` |
 | `AddTransientHttpErrorPolicy(...)` / `HandleTransientHttpError()` | `HttpShield.WhenTransient()` followed by strategies |
 | `CircuitBreakerAsync(n, duration)` | `CircuitBreaker(consecutiveFailures: n, breakDuration: duration)` |
 | `AdvancedCircuitBreakerAsync(ratio, sampling, throughput, duration)` | configure `CircuitBreakerOptions.FailureRatio`, `SamplingWindow`, `MinimumThroughput`, and `BreakDuration` |
