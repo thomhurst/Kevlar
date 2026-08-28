@@ -29,6 +29,8 @@ items:
   - Kevlar.ShieldExtensions.Use(Kevlar.Shield,System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.ShieldExtensions.When(Kevlar.Shield,System.Func{System.Exception,System.Boolean})
   - Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+  - Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  - Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
   - Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
   - Kevlar.ShieldExtensions.When``1(Kevlar.Shield,System.Func{``0,System.Boolean})
   - Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)
@@ -640,6 +642,72 @@ items:
   nameWithType.vb: ShieldExtensions.When(Of TException)(Shield, Func(Of TException, Boolean))
   fullName.vb: Kevlar.ShieldExtensions.When(Of TException)(Kevlar.Shield, System.Func(Of TException, Boolean))
   name.vb: When(Of TException)(Shield, Func(Of TException, Boolean))
+- uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield)
+  id: WhenInner``1(Kevlar.Shield)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldExtensions
+  langs:
+  - csharp
+  - vb
+  name: WhenInner<TException>(Shield)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause for exceptions containing an exception of type <code class="typeparamref">TException</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder WhenInner<TException>(this Shield shield) where TException : Exception'
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Shared Function WhenInner(Of TException As Exception)(shield As Shield) As ShieldBuilder
+  overload: Kevlar.ShieldExtensions.WhenInner*
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield)
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield)
+  name.vb: WhenInner(Of TException)(Shield)
+- uid: Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  commentId: M:Kevlar.ShieldExtensions.WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  id: WhenInner``1(Kevlar.Shield,System.Func{``0,System.Boolean})
+  isExtensionMethod: true
+  parent: Kevlar.ShieldExtensions
+  langs:
+  - csharp
+  - vb
+  name: WhenInner<TException>(Shield, Func<TException, bool>)
+  nameWithType: ShieldExtensions.WhenInner<TException>(Shield, Func<TException, bool>)
+  fullName: Kevlar.ShieldExtensions.WhenInner<TException>(Kevlar.Shield, System.Func<TException, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause for exceptions containing an exception of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>. Use <xref href="Kevlar.ShieldExtensions.WithDefaultHandling(Kevlar.Shield)" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  remarks: The outer exception, ordinary inner-exception chains, and every branch of an <xref href="System.AggregateException" data-throw-if-not-resolved="false"></xref> are searched.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder WhenInner<TException>(this Shield shield, Func<TException, bool> predicate) where TException : Exception'
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: predicate
+      type: System.Func{{TException},System.Boolean}
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Shared Function WhenInner(Of TException As Exception)(shield As Shield, predicate As Func(Of TException, Boolean)) As ShieldBuilder
+  overload: Kevlar.ShieldExtensions.WhenInner*
+  nameWithType.vb: ShieldExtensions.WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
+  fullName.vb: Kevlar.ShieldExtensions.WhenInner(Of TException)(Kevlar.Shield, System.Func(Of TException, Boolean))
+  name.vb: WhenInner(Of TException)(Shield, Func(Of TException, Boolean))
 - uid: Kevlar.ShieldExtensions.When(Kevlar.Shield,System.Func{System.Exception,System.Boolean})
   commentId: M:Kevlar.ShieldExtensions.When(Kevlar.Shield,System.Func{System.Exception,System.Boolean})
   id: When(Kevlar.Shield,System.Func{System.Exception,System.Boolean})
@@ -1818,6 +1886,20 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: System.AggregateException
+  commentId: T:System.AggregateException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.aggregateexception
+  name: AggregateException
+  nameWithType: AggregateException
+  fullName: System.AggregateException
+- uid: Kevlar.ShieldExtensions.WhenInner*
+  commentId: Overload:Kevlar.ShieldExtensions.WhenInner
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenInner__1_Kevlar_Shield_
+  name: WhenInner
+  nameWithType: ShieldExtensions.WhenInner
+  fullName: Kevlar.ShieldExtensions.WhenInner
 - uid: System.Func{System.Exception,System.Boolean}
   commentId: T:System.Func{System.Exception,System.Boolean}
   parent: System

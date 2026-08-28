@@ -1,1 +1,11 @@
 #nullable enable
+Kevlar.Shield<TResult>.WhenInner<TException>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder.OrInner<TException>() -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.OrInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder<TResult>.OrInner<TException>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+static Kevlar.Shield.WhenInner<TException>() -> Kevlar.ShieldBuilder!
+static Kevlar.Shield.WhenInner<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.WhenInner<TException>(this Kevlar.Shield! shield) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.WhenInner<TException>(this Kevlar.Shield! shield, System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!

@@ -83,6 +83,10 @@ var handledShield = Shield.For<HttpResponseMessage>()
     .Retry(3);
 ```
 
+Polly v8 `PredicateBuilder.HandleInner<TException>()` maps to
+`WhenInner<TException>()` or `OrInner<TException>()`. Kevlar searches the exception itself,
+ordinary `InnerException` chains, and every `AggregateException.InnerExceptions` branch.
+
 For a direct per-strategy translation, set `HandlesException` and `HandlesResult` on that
 strategy's options. A local override replaces the ambient clause. `WithDefaultHandling()` returns later
 strategies to Kevlar's default handling.
@@ -103,11 +107,6 @@ Polly handling predicate. Retry callback counters map directly:
 | Polly v8 | Kevlar |
 |---|---|
 | `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.AttemptNumber` is zero-based (`0` before the first retry) |
-
-Polly's `HandleInner<T>`, `OrInner<T>`, and `PredicateBuilder.HandleInner<T>` have no direct
-equivalent. Use `When(exception => exception.InnerException is T)` or
-`Or<Exception>(exception => exception.InnerException is T)` for one level. If an
-`AggregateException` or a deeper chain is possible, unwrap or walk it explicitly in the predicate.
 
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar's
 retry, circuit-breaker, and hedging defaults also let execution-rejection exceptions and fatal
@@ -735,6 +734,7 @@ Classic Polly v7 concepts translate as follows:
 |---|---|
 | `Policy.Handle<T>().WaitAndRetryAsync(...)` | `Shield.When<T>().Retry(...)` |
 | `RetryForeverAsync(...)` / `WaitAndRetryForeverAsync(...)` | `Shield.When<T>().RetryForever(backoff)` |
+| `Policy.Handle<T>().OrInner<TInner>()` | `Shield.When<T>().OrInner<TInner>()` |
 | `Policy.Handle<T>().Fallback(...)` / `FallbackAsync(...)` | `Shield.When<T>().Fallback(...)`; a completed `ValueTask` recovery runs inline under synchronous `Execute` |
 | `Context["key"]` | no string indexer; define a typed `KevlarKey<T>` and use `KevlarProperties.Set`, `TryGet`, or `GetOrDefault` |
 | `AddPolicyHandler(policy)` | build a shield, then `AddShield(shield)` |

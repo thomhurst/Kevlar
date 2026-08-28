@@ -72,6 +72,23 @@ public sealed class ShieldBuilder<TResult>
             typeof(TException).Name + " matching predicate");
     }
 
+    /// <summary>Returns a new builder that also handles exceptions containing an exception of type <typeparamref name="TException"/>.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public ShieldBuilder<TResult> OrInner<TException>()
+        where TException : Exception
+        => WithException(ExceptionTraversal.Matches<TException>, "inner " + typeof(TException).Name);
+
+    /// <summary>Returns a new builder that also handles exceptions containing an exception of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public ShieldBuilder<TResult> OrInner<TException>(Func<TException, bool> predicate)
+        where TException : Exception
+    {
+        Throw.IfNull(predicate, nameof(predicate));
+        return WithException(
+            exception => ExceptionTraversal.Matches(exception, predicate),
+            "inner " + typeof(TException).Name + " matching predicate");
+    }
+
     /// <summary>Returns a new builder that also handles exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
     public ShieldBuilder<TResult> Or(Func<Exception, bool> predicate)
     {

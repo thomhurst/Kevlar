@@ -86,6 +86,18 @@ public sealed class Shield<TResult> : IShieldLifecycle
         where TException : Exception
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public ShieldBuilder<TResult> WhenInner<TException>()
+        where TException : Exception
+        => new ShieldBuilder<TResult>(this).OrInner<TException>();
+
+    /// <summary>Starts a handling clause for exceptions containing an exception of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
+    /// <remarks>The outer exception, ordinary inner-exception chains, and every branch of an <see cref="AggregateException"/> are searched.</remarks>
+    public ShieldBuilder<TResult> WhenInner<TException>(Func<TException, bool> predicate)
+        where TException : Exception
+        => new ShieldBuilder<TResult>(this).OrInner(predicate);
+
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WithDefaultHandling"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).Or(predicate);
 
