@@ -369,6 +369,64 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Callback_Creation_Is_Not_Shared_With_An_Ordinary_Waiter()
+    {
+        PartitionedShield<string>? provider = null;
+        var nestedFactoryEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseNestedFactory = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackReceivedShield = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        Shield? callbackShield = null;
+        var nestedFactoryCalls = 0;
+        provider = PartitionedShield<string>.CreateAsync(
+            async key =>
+            {
+                if (key == "nested" && Interlocked.Increment(ref nestedFactoryCalls) == 1)
+                {
+                    nestedFactoryEntered.TrySetResult();
+                    await releaseNestedFactory.Task;
+                }
+
+                return Shield.Use(new DisposablePartitionStrategy());
+            },
+            new PartitionedShieldOptions<string>
+            {
+                MaxPartitions = 1,
+                OnEvicted = async item =>
+                {
+                    if (item.Key != "first")
+                    {
+                        return;
+                    }
+
+                    callbackShield = await provider!.GetShieldAsync("nested");
+                    callbackReceivedShield.TrySetResult();
+                    await releaseCallback.Task;
+                },
+            });
+        _ = await provider.GetShieldAsync("first");
+
+        var capacityLookup = provider.GetShieldAsync("second").AsTask();
+        await nestedFactoryEntered.Task;
+        var ordinaryLookup = provider.GetShieldAsync("nested").AsTask();
+        releaseNestedFactory.TrySetResult();
+        await callbackReceivedShield.Task;
+
+        await Assert.That(ordinaryLookup.IsCompleted).IsFalse();
+        releaseCallback.TrySetResult();
+        _ = await capacityLookup;
+        var ordinaryShield = await ordinaryLookup;
+
+        await Assert.That(ReferenceEquals(callbackShield, ordinaryShield)).IsFalse();
+        await Assert.That(nestedFactoryCalls).IsEqualTo(2);
+        await provider.DisposeAsync();
+    }
+
+    [Test]
     public async Task Shared_Strategy_Is_Disposed_After_All_Providers_Release_It()
     {
         var strategy = new DisposablePartitionStrategy();
@@ -382,6 +440,38 @@ public class PartitionedShieldTests
 
         await second.DisposeAsync();
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Removing_A_Shield_Does_Not_Wait_For_Another_Shield_Sharing_Its_First_Strategy()
+    {
+        var shared = new DisposablePartitionStrategy();
+        var firstUnique = new DisposablePartitionStrategy();
+        var secondUnique = new DisposablePartitionStrategy();
+        var provider = new PartitionedShield<string>(key =>
+            Shield.Use(shared).Use(key == "first" ? firstUnique : secondUnique));
+        _ = provider.GetShield("first");
+        var second = provider.GetShield("second");
+        var executionEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseExecution = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var execution = second.ExecuteAsync(async _ =>
+        {
+            executionEntered.TrySetResult();
+            await releaseExecution.Task;
+        }).AsTask();
+        await executionEntered.Task;
+
+        _ = await provider.TryRemoveAsync("first");
+
+        await Assert.That(firstUnique.DisposeCount).IsEqualTo(1);
+        await Assert.That(shared.DisposeCount).IsEqualTo(0);
+        releaseExecution.TrySetResult();
+        await execution;
+        await provider.DisposeAsync();
+        await Assert.That(shared.DisposeCount).IsEqualTo(1);
+        await Assert.That(secondUnique.DisposeCount).IsEqualTo(1);
     }
 
     [Test]

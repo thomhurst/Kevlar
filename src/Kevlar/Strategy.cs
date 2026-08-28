@@ -164,6 +164,8 @@ internal interface IFallbackStrategyInspection
 internal interface IShieldLifecycle
 {
     Strategy[] Strategies { get; }
+
+    IShieldLifecycle WithExecutionTracking(StrategyExecutionTracker tracker);
 }
 
 internal interface ITransparentStrategy

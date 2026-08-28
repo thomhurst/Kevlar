@@ -357,7 +357,9 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
         if (!creates && !createsUnretained)
         {
-            return await creation.Task.ConfigureAwait(false);
+            var completed = await creation.Task.ConfigureAwait(false);
+            return completed ?? await GetSlowAsync(key, preferSynchronousDisposal)
+                .ConfigureAwait(false);
         }
 
         TShield shield;
@@ -384,14 +386,14 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             if (createsUnretained)
             {
                 TrackUnretained(entry, preferSynchronousDisposal);
-                return shield;
+                return entry.Shield;
             }
 
             try
             {
                 await PublishAsync(key, entry, creation, preferSynchronousDisposal)
                     .ConfigureAwait(false);
-                return shield;
+                return entry.Shield;
             }
             catch (Exception exception)
             {
@@ -485,7 +487,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
                 if (completedUnretained)
                 {
                     TrackUnretained(entry, preferSynchronousDisposal);
-                    creation.Succeed(entry.Shield);
+                    creation.Retry();
                     return;
                 }
 
@@ -968,9 +970,12 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             throw acquisitionFailure;
         }
 
-        var executionTracker = owned is null
-            ? null
-            : shield.Strategies[0].EnableExecutionTracking();
+        StrategyExecutionTracker? executionTracker = null;
+        if (owned is not null)
+        {
+            executionTracker = new StrategyExecutionTracker();
+            shield = (TShield)shield.WithExecutionTracking(executionTracker);
+        }
 
         return new Entry(
             key,
@@ -1174,12 +1179,14 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
 
     private sealed class Creation
     {
-        private readonly TaskCompletionSource<TShield> _completion =
+        private readonly TaskCompletionSource<TShield?> _completion =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task<TShield> Task => _completion.Task;
+        public Task<TShield?> Task => _completion.Task;
 
         public void Succeed(TShield shield) => _completion.TrySetResult(shield);
+
+        public void Retry() => _completion.TrySetResult(null);
 
         public void Fail(Exception exception)
         {
