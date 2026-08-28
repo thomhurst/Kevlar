@@ -10,6 +10,7 @@ items:
   - Kevlar.PartitionedShieldOptions`2.MaxPartitions
   - Kevlar.PartitionedShieldOptions`2.OnCreated
   - Kevlar.PartitionedShieldOptions`2.OnEvicted
+  - Kevlar.PartitionedShieldOptions`2.OwnsStrategies
   - Kevlar.PartitionedShieldOptions`2.TimeProvider
   langs:
   - csharp
@@ -143,6 +144,36 @@ items:
   overload: Kevlar.PartitionedShieldOptions`2.TimeProvider*
   nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).TimeProvider
   fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`2.OwnsStrategies
+  commentId: P:Kevlar.PartitionedShieldOptions`2.OwnsStrategies
+  id: OwnsStrategies
+  parent: Kevlar.PartitionedShieldOptions`2
+  langs:
+  - csharp
+  - vb
+  name: OwnsStrategies
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets or sets whether the provider owns and disposes strategies returned by its factory.
+
+    Defaults to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>. Set to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when those strategy
+
+    instances are also used by shields outside this provider.
+  example: []
+  syntax:
+    content: public bool OwnsStrategies { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property OwnsStrategies As Boolean
+  overload: Kevlar.PartitionedShieldOptions`2.OwnsStrategies*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
 - uid: Kevlar.PartitionedShieldOptions`2.OnCreated
   commentId: P:Kevlar.PartitionedShieldOptions`2.OnCreated
   id: OnCreated
@@ -528,6 +559,26 @@ references:
   name: TimeProvider
   nameWithType: TimeProvider
   fullName: System.TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`2.OwnsStrategies*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`2.OwnsStrategies
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_OwnsStrategies
+  name: OwnsStrategies
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
 - uid: Kevlar.PartitionedShieldOptions`2.OnCreated*
   commentId: Overload:Kevlar.PartitionedShieldOptions`2.OnCreated
   isExternal: true

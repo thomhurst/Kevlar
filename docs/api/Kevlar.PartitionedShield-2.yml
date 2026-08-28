@@ -42,11 +42,15 @@ items:
 
     evicted shield are released. Shared strategy instances are disposed after their last partition
 
-    owner. Do not reuse a shield after its partition is evicted. A later lookup creates a fresh
+    owner. By default the provider owns every strategy returned by its factory; set
 
-    partition with fresh strategy state. Partition keys are never added to metric tags or shield
+    <xref href="Kevlar.PartitionedShieldOptions%602.OwnsStrategies" data-throw-if-not-resolved="false"></xref> to
 
-    names automatically.
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when those instances are also used outside the provider. Do not reuse a
+
+    shield after its partition is evicted. A later lookup creates a fresh partition with fresh
+
+    strategy state. Partition keys are never added to metric tags or shield names automatically.
   example: []
   syntax:
     content: 'public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDisposable where TKey : notnull'
@@ -235,7 +239,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Removes a retained partition. Existing users of its shield are unaffected.
+  summary: Removes a retained partition and begins its configured lifecycle cleanup.
   example: []
   syntax:
     content: public bool TryRemove(TKey key)
@@ -289,7 +293,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Removes every retained partition. Existing users of those shields are unaffected.
+  summary: Removes every retained partition and begins configured lifecycle cleanup.
   example: []
   syntax:
     content: public void Clear()
@@ -409,9 +413,11 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Asynchronously waits for in-flight factories and executions, then disposes strategies owned
+    Asynchronously waits for in-flight factories, removals, and executions, then disposes
 
-    by every retained partition. Concurrent callers await the same disposal operation.
+    strategies owned by every retained partition. Concurrent callers await the same disposal
+
+    operation.
   example: []
   syntax:
     content: public ValueTask DisposeAsync()
@@ -612,6 +618,15 @@ references:
   fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.MaxPartitions
   nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
   fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).MaxPartitions
+- uid: Kevlar.PartitionedShieldOptions`2.OwnsStrategies
+  commentId: P:Kevlar.PartitionedShieldOptions`2.OwnsStrategies
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-2.html#Kevlar_PartitionedShieldOptions_2_OwnsStrategies
+  name: OwnsStrategies
+  nameWithType: PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  fullName: Kevlar.PartitionedShieldOptions<TKey, TResult>.OwnsStrategies
+  nameWithType.vb: PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey, TResult).OwnsStrategies
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
