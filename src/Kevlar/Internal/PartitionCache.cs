@@ -97,7 +97,7 @@ internal sealed class PartitionCache<TKey, TShield>
     public TShield Get(TKey key)
     {
         ValidateKey(key);
-        if (TryGetWarm(key, out var shield))
+        if (TryGetWarm(key, out var shield, out _))
         {
             return shield;
         }
@@ -109,7 +109,7 @@ internal sealed class PartitionCache<TKey, TShield>
     {
         ValidateKey(key);
 
-        if (TryGetWarm(key, out var shield))
+        if (TryGetWarm(key, out var shield, out _))
         {
             return new ValueTask<TShield>(shield);
         }
@@ -120,20 +120,14 @@ internal sealed class PartitionCache<TKey, TShield>
     public bool TryGet(TKey key, out TShield? shield)
     {
         ValidateKey(key);
-        if (_idleExpiration is null)
+        if (TryGetWarm(key, out shield, out var pruneDue))
         {
-            lock (_gate)
-            {
-                if (_entries.TryGetValue(key, out var entry))
-                {
-                    Touch(entry, now: 0);
-                    shield = entry.Shield;
-                    return true;
-                }
+            return true;
+        }
 
-                shield = null;
-                return false;
-            }
+        if (!pruneDue)
+        {
+            return false;
         }
 
         shield = TryGetSlowAsync(key).AsTask().GetAwaiter().GetResult();
@@ -652,18 +646,29 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private long Timestamp() => _idleExpiration is null ? 0 : _timeProvider.GetTimestamp();
 
-    private bool TryGetWarm(TKey key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out TShield? shield)
+    private bool TryGetWarm(
+        TKey key,
+        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out TShield? shield,
+        out bool pruneDue)
     {
-        if (_idleExpiration is null)
+        lock (_gate)
         {
-            lock (_gate)
+            var now = Timestamp();
+            if (_idleExpiration is { } idleExpiration
+                && _leastRecentlyUsed is { } leastRecentlyUsed
+                && _timeProvider.GetElapsedTime(leastRecentlyUsed.LastAccess, now) >= idleExpiration)
             {
-                if (_entries.TryGetValue(key, out var existing))
-                {
-                    Touch(existing, now: 0);
-                    shield = existing.Shield;
-                    return true;
-                }
+                shield = null;
+                pruneDue = true;
+                return false;
+            }
+
+            pruneDue = false;
+            if (_entries.TryGetValue(key, out var existing))
+            {
+                Touch(existing, now);
+                shield = existing.Shield;
+                return true;
             }
         }
 

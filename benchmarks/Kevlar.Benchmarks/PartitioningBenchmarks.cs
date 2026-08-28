@@ -16,6 +16,12 @@ public class PartitioningBenchmarks
 
     private readonly PartitionedShield<int> _warm = new(
         static _ => Shield.Retry(0, Backoff.None));
+    private readonly PartitionedShield<int> _warmWithIdleExpiration = new(
+        static _ => Shield.Retry(0, Backoff.None),
+        new PartitionedShieldOptions<int>
+        {
+            IdleExpiration = TimeSpan.FromMinutes(10),
+        });
     private readonly PartitionedShield<int> _evicting = new(
         static _ => Shield.Retry(0, Backoff.None),
         new PartitionedShieldOptions<int> { MaxPartitions = 1 });
@@ -26,11 +32,16 @@ public class PartitioningBenchmarks
     {
         _ = ConcurrentWarm.GetShield(42);
         _ = _warm.GetShield(42);
+        _ = _warmWithIdleExpiration.GetShield(42);
         _ = _evicting.GetShield(0);
     }
 
-    [BenchmarkCategory("WarmLookup"), Benchmark]
+    [BenchmarkCategory("WarmLookup"), Benchmark(Baseline = true)]
     public Shield Warm_Lookup() => _warm.GetShield(42);
+
+    [BenchmarkCategory("WarmLookup"), Benchmark]
+    public Shield Warm_Lookup_With_Idle_Expiration() =>
+        _warmWithIdleExpiration.GetShield(42);
 
     [BenchmarkCategory("WarmLookupContended"), Benchmark(OperationsPerInvoke = ConcurrentLookupsPerInvoke)]
     public int Warm_Concurrent_Lookups()
