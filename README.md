@@ -140,7 +140,8 @@ state-sharing rules.
 
 ## HTTP and dependency injection
 
-`Kevlar.Extensions.Http` provides a ready-to-use `HttpClientFactory` pipeline:
+`Kevlar.Extensions.Http` provides a ready-to-use `HttpClientFactory` pipeline. In an ASP.NET Core
+app using `Microsoft.NET.Sdk.Web`:
 
 ```csharp
 using Microsoft.AspNetCore.Builder;
