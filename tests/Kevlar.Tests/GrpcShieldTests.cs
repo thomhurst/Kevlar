@@ -25,7 +25,7 @@ public class GrpcShieldTests
         {
             attemptsStarted.Signal();
             return ++attempts == 1
-                ? ValueTask.FromException<int>(CreateException("02500"))
+                ? ValueTask.FromException<int>(CreateException("2500"))
                 : new ValueTask<int>(42);
         }).AsTask();
 
@@ -42,6 +42,7 @@ public class GrpcShieldTests
     [Test]
     [Arguments("-1")]
     [Arguments("invalid")]
+    [Arguments("01")]
     public async Task RetryAfter_Suppresses_Invalid_Or_Negative_Pushback(string value)
     {
         var attempts = 0;
@@ -67,7 +68,6 @@ public class GrpcShieldTests
     {
         await Assert.That(GrpcShield.IsTransient(CreateException(pushback: null))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("0"))).IsTrue();
-        await Assert.That(GrpcShield.IsTransient(CreateException("01"))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("2147483647"))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("-1"))).IsTrue();
         await Assert.That(GrpcShield.IsTransient(CreateException("invalid"))).IsTrue();

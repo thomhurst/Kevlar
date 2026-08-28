@@ -83,6 +83,10 @@ public static class GrpcShield
                 NumberStyles.AllowLeadingSign,
                 CultureInfo.InvariantCulture,
                 out var milliseconds)
+            || !string.Equals(
+                value,
+                milliseconds.ToString(CultureInfo.InvariantCulture),
+                StringComparison.Ordinal)
             || milliseconds < 0)
         {
             return RetryPushback.Stop;
