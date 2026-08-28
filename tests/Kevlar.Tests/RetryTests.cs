@@ -227,6 +227,30 @@ public class RetryTests
     }
 
     [Test]
+    public async Task OnRetry_Can_Suppress_The_Pending_Retry()
+    {
+        var attempts = 0;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.OnRetry = retry =>
+            {
+                retry.SuppressAdditionalAttempts();
+                return default;
+            };
+        });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task DelayGenerator_Overrides_Backoff()
     {
         var attempts = 0;

@@ -146,10 +146,11 @@ internal sealed class RetryStrategy : Strategy
                 RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
                 if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
                 {
-                    if (_inspectTerminalOutcome
-                        && _maxRetries == 0
-                        && !context.Properties.SuppressAdditionalAttempts
-                        && !context.CancellationToken.IsCancellationRequested)
+                    if (ShouldInspectTerminalOutcome(
+                        in outcome,
+                        retriesUsed: 0,
+                        context,
+                        strategyIndex))
                     {
                         return InspectCompletedTerminalOutcomeAsync(
                             outcome,
@@ -211,10 +212,11 @@ internal sealed class RetryStrategy : Strategy
 
                 if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
                 {
-                    if (_inspectTerminalOutcome
-                        && retriesUsed >= _maxRetries
-                        && !context.Properties.SuppressAdditionalAttempts
-                        && !context.CancellationToken.IsCancellationRequested)
+                    if (ShouldInspectTerminalOutcome(
+                        in outcome,
+                        retriesUsed,
+                        context,
+                        strategyIndex))
                     {
                         await InspectTerminalOutcomeAsync(
                             outcome,
@@ -278,6 +280,11 @@ internal sealed class RetryStrategy : Strategy
                         delay,
                         outcome,
                         context).ConfigureAwait(false);
+                }
+
+                if (context.Properties.SuppressAdditionalAttempts)
+                {
+                    return outcome;
                 }
 
                 await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);
@@ -382,6 +389,17 @@ internal sealed class RetryStrategy : Strategy
         && !context.Properties.SuppressAdditionalAttempts
         && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
         && !context.CancellationToken.IsCancellationRequested;
+
+    private bool ShouldInspectTerminalOutcome<T>(
+        in Outcome<T> outcome,
+        int retriesUsed,
+        KevlarContext context,
+        int strategyIndex) =>
+        _inspectTerminalOutcome
+        && retriesUsed >= _maxRetries
+        && !context.Properties.SuppressAdditionalAttempts
+        && !context.CancellationToken.IsCancellationRequested
+        && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex);
 
     private ValueTask<TimeSpan?> InvokeDelayGeneratorAsync<T>(
         Delegate generator,
