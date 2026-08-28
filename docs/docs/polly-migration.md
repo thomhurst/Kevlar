@@ -104,6 +104,11 @@ Polly handling predicate. Retry callback counters map directly:
 |---|---|
 | `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.AttemptNumber` is zero-based (`0` before the first retry) |
 
+Polly's `HandleInner<T>`, `OrInner<T>`, and `PredicateBuilder.HandleInner<T>` have no direct
+equivalent. Use `When(exception => exception.InnerException is T)` or
+`Or<Exception>(exception => exception.InnerException is T)` for one level. If an
+`AggregateException` or a deeper chain is possible, unwrap or walk it explicitly in the predicate.
+
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar's
 retry, circuit-breaker, and hedging defaults also let execution-rejection exceptions and fatal
 runtime exceptions propagate. Fallback is the terminal recovery strategy, so its default additionally
@@ -197,7 +202,7 @@ neither context may be retained.
 | `ResilienceProperties` | `KevlarProperties` |
 | `ResiliencePropertyKey<T>` | `KevlarKey<T>` |
 | `ResilienceContext.OperationKey` | `KevlarKeys.OperationKey` in `KevlarProperties` |
-| `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName` / `KevlarContext.ShieldName` |
+| `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName`; the value is exposed as `KevlarContext.ShieldName` |
 | Top-level `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
 | Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteWithContextAsync(parentContext, callback)` |
 | `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
@@ -206,6 +211,12 @@ Do not retain either library's pooled context beyond the current callback or exe
 
 Use the `onCompleted` overload of `ExecuteWithContextAsync` to copy final
 `KevlarProperties` into caller-owned state before the context returns to the pool.
+
+Kevlar has one shield name and no separate `pipeline.instance` telemetry dimension. Encode an
+instance identifier into `WithName` for general telemetry, and re-key dashboards grouped by
+Polly's `pipeline.instance` to `kevlar.shield.name`. For `kevlar.strategy.events` and
+`kevlar.attempt.duration` only, `KevlarKeys.OperationKey` is also available as the optional
+`kevlar.operation.key` dimension; other instruments do not emit it.
 
 ## Registry and dependency injection
 
@@ -252,6 +263,10 @@ as follows:
 Kevlar's dynamic names are string-keyed and registry-only; keyed DI services still must be declared
 before the service provider is built. Both providers expose non-throwing lookup forms.
 
+`IKevlarRegistry.GetShield(name)` returns the shield snapshot current at that call. A previously
+resolved shield does not change when `AddReloadingShield` publishes a replacement, so resolve it
+from the registry for each operation that must observe configuration reloads.
+
 ## HTTP
 
 The standard handlers have corresponding `IHttpClientBuilder` extensions:
@@ -276,7 +291,9 @@ kevlarHttpServices.AddHttpClient("catalog")
 |---|---|
 | `AddStandardResilienceHandler()` | `AddStandardShield()` |
 | `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
-| `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)` |
+| `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)`; the handler-registration name has no Kevlar analogue |
+| `AddPolicyHandlerFromRegistry(name)` | `AddShield((_, sp) => sp.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(name))` so reload-aware registrations resolve per request |
+| `RemoveAllResilienceHandlers()` | no equivalent; register only the Kevlar shield handlers the client should use |
 | `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
 | `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
 | `HttpClientResiliencePredicates.IsTransient` | `HttpShield.IsTransient` |
@@ -660,6 +677,7 @@ if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
 | hedging `ActionGenerator` | `HedgeOptions.ActionGenerator` delegate |
 | circuit `BreakDurationGenerator` returning `ValueTask<TimeSpan>` | `BreakDurationGenerator` returning `ValueTask<TimeSpan>` |
 | hedging `DelayGenerator` returning `ValueTask<TimeSpan>` | `HedgeOptions.DelayGenerator` returning `ValueTask<TimeSpan>`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
+| hedging `Delay = TimeSpan.FromSeconds(-1)` to disable scheduled hedges | `Delay = Timeout.InfiniteTimeSpan`; other negative values are rejected |
 | `OnRetry` / `OnTimeout` / `OnHedging` / `OnFallback` / `OnRejected` returning `ValueTask` | `OnRetry` / `OnTimeout` / `OnHedge` / `OnFallback` / `OnRejected` returning `ValueTask` |
 | `OnOpened` / `OnClosed` / `OnHalfOpened` | one `OnStateChanged` callback returning `ValueTask` |
 
@@ -673,6 +691,7 @@ Kevlar combines both roles in `CircuitBreakerMonitor`. One monitor can bind to m
 strategies: manual controls fan out, `State` reports the worst bound state, and `StateChanged`
 fires for each breaker's transitions. Multi-breaker fan-out was delivered in
 [issue #350](https://github.com/thomhurst/Kevlar/issues/350).
+`CircuitBreakerManualControl.CloseAsync()` maps to `CircuitBreakerMonitor.ResetAsync()`.
 
 ## Rate limiting
 
@@ -715,7 +734,9 @@ Classic Polly v7 concepts translate as follows:
 | Polly v7 | Kevlar |
 |---|---|
 | `Policy.Handle<T>().WaitAndRetryAsync(...)` | `Shield.When<T>().Retry(...)` |
+| `RetryForeverAsync(...)` / `WaitAndRetryForeverAsync(...)` | `Shield.When<T>().RetryForever(backoff)` |
 | `Policy.Handle<T>().Fallback(...)` / `FallbackAsync(...)` | `Shield.When<T>().Fallback(...)`; a completed `ValueTask` recovery runs inline under synchronous `Execute` |
+| `Context["key"]` | no string indexer; define a typed `KevlarKey<T>` and use `KevlarProperties.Set`, `TryGet`, or `GetOrDefault` |
 | `AddPolicyHandler(policy)` | build a shield, then `AddShield(shield)` |
 | `AddTransientHttpErrorPolicy(...)` / `HandleTransientHttpError()` | `HttpShield.WhenTransient()` followed by strategies |
 | `CircuitBreakerAsync(n, duration)` | `CircuitBreaker(consecutiveFailures: n, breakDuration: duration)` |
