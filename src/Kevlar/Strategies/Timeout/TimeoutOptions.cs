@@ -6,6 +6,10 @@ namespace Kevlar;
 /// <see cref="Timeout"/> for that execution. When a timeout wins, <see cref="OnTimeout"/> runs
 /// after timer cleanup and restoration of the caller's cancellation token. Hooks that complete
 /// synchronously add no overhead and remain compatible with synchronous <c>Execute</c>.
+/// The strategy always awaits the delegate and translates only a direct
+/// <see cref="OperationCanceledException"/> into <see cref="TimeoutExceededException"/>. A blocking
+/// synchronous delegate that ignores cancellation cannot be timed out, and a wrapped cancellation
+/// exception surfaces unchanged.
 /// </remarks>
 public sealed class TimeoutOptions
 {

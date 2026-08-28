@@ -50,6 +50,11 @@ public abstract class Strategy
     /// <typeparam name="TState">Caller-supplied state threaded through the pipeline without allocation.</typeparam>
     /// <param name="next">The remainder of the pipeline, ending in the user's delegate.</param>
     /// <param name="context">The ambient execution context.</param>
+    /// <remarks>
+    /// Returning an incomplete value task during synchronous shield execution causes the execution
+    /// boundary to block until it completes. Custom implementations should avoid capturing a
+    /// single-threaded synchronization context and should be invoked asynchronously when they yield.
+    /// </remarks>
     public abstract ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context);
 
     /// <summary>

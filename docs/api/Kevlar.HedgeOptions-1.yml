@@ -31,6 +31,10 @@ items:
     <xref href="Kevlar.HedgeOptions%601" data-throw-if-not-resolved="false"></xref> and <xref href="Kevlar.HedgeOptions" data-throw-if-not-resolved="false"></xref> are standalone sibling types
 
     with matching shared property names and defaults.
+
+    If no attempt produces an acceptable outcome, the final outcome processed by the coordinator
+
+    surfaces; selection among attempts already completed is not chronological.
   example: []
   syntax:
     content: public sealed class HedgeOptions<TResult>
@@ -265,9 +269,13 @@ items:
   summary: >-
     Time to wait before launching the next attempt while the current ones are still running.
 
-    <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> launches all attempts at once;
+    <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> removes timer staggering and starts scheduling the original and
 
-    any negative value hedges only on failure and is normalized to
+    all additional attempts, even when the original completes synchronously. Callbacks and
+
+    cancellation checks can still delay or prevent an additional delegate from starting. Any
+
+    negative value hedges only on failure and is normalized to
 
     <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref>.
 

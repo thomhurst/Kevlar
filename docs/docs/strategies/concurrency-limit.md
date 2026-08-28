@@ -56,6 +56,9 @@ Cancelling a queued execution frees its queue place when the asynchronous wait o
 Queued cancellation is not rejection and invokes neither rejection hook. A pre-cancelled caller is
 stopped at the shield boundary before the limiter runs.
 
+`ConcurrencyLimit` has no queue timeout. To bound time spent waiting for a slot, compose a timeout
+outside it: `Shield.Timeout(queueBudget).ConcurrencyLimit(maxConcurrency, queueLimit: queueLimit)`.
+
 ## Why concurrency limits
 
 This is the classic *bulkhead* pattern, named after ship compartments: a breach floods one compartment, not the hull. Give each downstream dependency its own concurrency-limited shield and a slow dependency saturates *its* 10 slots — while the rest of your service keeps breathing. Kevlar names the strategy for what it does rather than the metaphor.

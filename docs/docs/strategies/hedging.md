@@ -113,6 +113,12 @@ zero/infinite meanings apply. Generator exceptions fail the execution and cancel
   next attempt **only when the previous one fails**.
 - Any delay: a handled failure always launches the next attempt *immediately*, without waiting out the rest of the delay.
 
+Zero delay removes timer staggering and starts scheduling the primary plus all
+`MaxHedgedAttempts`, even when the primary delegate completes synchronously. Each additional
+delegate still waits for its callbacks and cancellation checks, so a yielding callback can delay or
+prevent its start. If no attempt produces an acceptable outcome, the final outcome processed by the
+coordinator surfaces; do not rely on chronological completion order when several are already done.
+
 ## The rules
 
 :::warning Your delegate runs concurrently

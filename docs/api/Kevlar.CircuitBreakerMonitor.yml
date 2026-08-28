@@ -53,7 +53,16 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Forces every bound circuit open. Executions are rejected until <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> is called.
+  summary: >-
+    Forces every bound circuit open. Executions are rejected until <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> is called.
+
+    A non-reentrant caller blocks until transition observers complete; use
+
+    <xref href="Kevlar.CircuitBreakerMonitor.IsolateAsync" data-throw-if-not-resolved="false"></xref> when an <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref>
+
+    callback may yield. A call made from a transition observer queues its transition and returns
+
+    before that queued transition reaches observers.
   example: []
   syntax:
     content: public void Isolate()
@@ -104,7 +113,16 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Closes every bound circuit and clears all failure metrics.
+  summary: >-
+    Closes every bound circuit and clears all failure metrics. A non-reentrant caller blocks
+
+    until transition observers complete; use <xref href="Kevlar.CircuitBreakerMonitor.ResetAsync" data-throw-if-not-resolved="false"></xref> when an
+
+    <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref> callback may yield. A call made from a
+
+    transition observer queues its transition and returns before that queued transition reaches
+
+    observers.
   example: []
   syntax:
     content: public void Reset()
@@ -464,6 +482,34 @@ references:
     href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
   - name: (
   - name: )
+- uid: Kevlar.CircuitBreakerMonitor.IsolateAsync
+  commentId: M:Kevlar.CircuitBreakerMonitor.IsolateAsync
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_IsolateAsync
+  name: IsolateAsync()
+  nameWithType: CircuitBreakerMonitor.IsolateAsync()
+  fullName: Kevlar.CircuitBreakerMonitor.IsolateAsync()
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerMonitor.IsolateAsync
+    name: IsolateAsync
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_IsolateAsync
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerMonitor.IsolateAsync
+    name: IsolateAsync
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_IsolateAsync
+  - name: (
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions.OnStateChanged
+  commentId: P:Kevlar.CircuitBreakerOptions.OnStateChanged
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_OnStateChanged
+  name: OnStateChanged
+  nameWithType: CircuitBreakerOptions.OnStateChanged
+  fullName: Kevlar.CircuitBreakerOptions.OnStateChanged
 - uid: Kevlar.CircuitBreakerMonitor.Isolate*
   commentId: Overload:Kevlar.CircuitBreakerMonitor.Isolate
   isExternal: true
@@ -583,13 +629,6 @@ references:
   name: CircuitState
   nameWithType: CircuitState
   fullName: Kevlar.CircuitState
-- uid: Kevlar.CircuitBreakerOptions.OnStateChanged
-  commentId: P:Kevlar.CircuitBreakerOptions.OnStateChanged
-  isExternal: true
-  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_OnStateChanged
-  name: OnStateChanged
-  nameWithType: CircuitBreakerOptions.OnStateChanged
-  fullName: Kevlar.CircuitBreakerOptions.OnStateChanged
 - uid: Kevlar.CircuitBreakerMonitor.Isolate
   commentId: M:Kevlar.CircuitBreakerMonitor.Isolate
   isExternal: true

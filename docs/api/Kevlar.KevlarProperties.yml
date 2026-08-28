@@ -27,6 +27,10 @@ items:
     custom data between the caller, execution delegate, and strategy callbacks. The bag is
 
     pooled with its context and must not be retained beyond the current callback or delegate.
+
+    A completion callback receives this same live bag immediately before it is recycled; copy
+
+    required values into caller-owned state rather than retaining the bag.
   example: []
   syntax:
     content: public sealed class KevlarProperties
