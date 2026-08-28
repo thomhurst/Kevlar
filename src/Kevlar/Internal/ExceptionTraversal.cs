@@ -5,65 +5,49 @@ internal static class ExceptionTraversal
 {
     public static bool Matches<TException>(Exception exception)
         where TException : Exception
-    {
-        if (exception is TException)
-        {
-            return true;
-        }
-
-        return MatchesInner<TException>(exception);
-    }
+        => MatchesCore<TException>(exception, predicate: null);
 
     public static bool Matches<TException>(Exception exception, Func<TException, bool> predicate)
         where TException : Exception
-    {
-        if (exception is TException typed && predicate(typed))
-        {
-            return true;
-        }
+        => MatchesCore(exception, predicate);
 
-        return MatchesInner(exception, predicate);
-    }
-
-    private static bool MatchesInner<TException>(Exception exception)
-        where TException : Exception
-    {
-        if (exception is AggregateException aggregate)
-        {
-            foreach (var inner in aggregate.InnerExceptions)
-            {
-                if (Matches<TException>(inner))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        return exception.InnerException is { } innerException
-            && Matches<TException>(innerException);
-    }
-
-    private static bool MatchesInner<TException>(
+    private static bool MatchesCore<TException>(
         Exception exception,
-        Func<TException, bool> predicate)
+        Func<TException, bool>? predicate)
         where TException : Exception
     {
-        if (exception is AggregateException aggregate)
+        Stack<Exception>? pendingBranches = null;
+
+        while (true)
         {
-            foreach (var inner in aggregate.InnerExceptions)
+            if (exception is TException typed && (predicate is null || predicate(typed)))
             {
-                if (Matches(inner, predicate))
-                {
-                    return true;
-                }
+                return true;
             }
 
-            return false;
-        }
+            if (exception is AggregateException aggregate && aggregate.InnerExceptions.Count > 0)
+            {
+                for (var index = aggregate.InnerExceptions.Count - 1; index > 0; index--)
+                {
+                    (pendingBranches ??= new()).Push(aggregate.InnerExceptions[index]);
+                }
 
-        return exception.InnerException is { } innerException
-            && Matches(innerException, predicate);
+                exception = aggregate.InnerExceptions[0];
+                continue;
+            }
+
+            if (exception.InnerException is { } innerException)
+            {
+                exception = innerException;
+                continue;
+            }
+
+            if (pendingBranches is null || pendingBranches.Count == 0)
+            {
+                return false;
+            }
+
+            exception = pendingBranches.Pop();
+        }
     }
 }

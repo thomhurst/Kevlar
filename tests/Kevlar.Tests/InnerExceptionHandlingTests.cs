@@ -31,6 +31,20 @@ public class InnerExceptionHandlingTests
     }
 
     [Test]
+    public async Task WhenInner_Handles_Deep_Ordinary_Chains_Without_Recursion()
+    {
+        Exception exception = new IOException("target");
+        for (var index = 0; index < 50_000; index++)
+        {
+            exception = new InvalidOperationException("wrapper", exception);
+        }
+
+        var shield = Shield.WhenInner<IOException>().Retry(1, Backoff.None);
+
+        await Assert.That(await CountAttemptsAsync(shield, exception)).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task WhenInner_Does_Not_Match_Unrelated_Inner_Exceptions()
     {
         var shield = Shield.WhenInner<IOException>().Retry(1, Backoff.None);
