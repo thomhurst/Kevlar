@@ -290,7 +290,7 @@ kevlarHttpServices.AddHttpClient("catalog")
 | `AddStandardResilienceHandler()` | `AddStandardShield()` |
 | `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
 | `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)`; the handler-registration name has no Kevlar analogue |
-| `AddPolicyHandlerFromRegistry(name)` | `AddShield(sp => sp.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(name))` |
+| `AddPolicyHandlerFromRegistry(name)` | `AddShield((_, sp) => sp.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(name))` so reload-aware registrations resolve per request |
 | `RemoveAllResilienceHandlers()` | no equivalent; register only the Kevlar shield handlers the client should use |
 | `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
 | `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
