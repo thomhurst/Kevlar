@@ -205,7 +205,7 @@ neither context may be retained.
 | `ResiliencePipelineBuilder.Name` / `InstanceName` | `WithName`; the value is exposed as `KevlarContext.ShieldName` |
 | Top-level `ExecuteAsync(callback, context)` | `ExecuteWithContextAsync(callback)` |
 | Nested `inner.ExecuteAsync(callback, context)` | `inner.ExecuteWithContextAsync(parentContext, callback)` |
-| `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
+| `ContinueOnCapturedContext` | no context flag; capture `TaskScheduler.FromCurrentSynchronizationContext()` on the UI thread and schedule each delegate or hook invocation explicitly |
 
 Do not retain either library's pooled context beyond the current callback or execution delegate.
 

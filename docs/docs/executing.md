@@ -49,6 +49,53 @@ Your delegate receives a `CancellationToken` that combines your outer token with
 
 Kevlar invokes the first user delegate inline when no preceding strategy defers execution, so it initially sees the caller's current `SynchronizationContext`. A queued limiter execution and other deferred work may first invoke the delegate with no `SynchronizationContext`. Internal asynchronous continuations use `ConfigureAwait(false)` and do not marshal back to the caller's context; a later retry, fallback, timeout callback, or hedge may likewise run with no `SynchronizationContext`. Your own delegate controls whether its own awaits capture a context.
 
+When every attempt must enter a UI context, capture its scheduler on the UI thread before calling
+Kevlar, then schedule the delegate explicitly:
+
+<!-- doc-test-ignore: viewModel represents the application's UI-bound implementation. -->
+```csharp
+var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+
+await shield.ExecuteAsync(
+    ct => Task.Factory.StartNew(
+            async () => await viewModel.RefreshAsync(ct),
+            ct,
+            TaskCreationOptions.DenyChildAttach,
+            uiScheduler)
+        .Unwrap(),
+    cancellationToken);
+```
+
+Kevlar invokes this wrapper again for every retry or hedge, so each attempt is scheduled onto the
+captured context. Capture the scheduler only while running on the intended UI context. Strategy
+hooks return `ValueTask`; make the hook itself `async` and await the scheduled `Task`:
+
+<!-- doc-test-ignore: viewModel represents the application's UI-bound implementation. -->
+```csharp
+var uiRetryShield = Shield.Retry(options =>
+{
+    options.OnRetry = async retry =>
+    {
+        var ct = retry.Context.CancellationToken;
+        await Task.Factory.StartNew(
+                async () => await viewModel.ShowRetryAsync(retry.AttemptNumber, ct),
+                ct,
+                TaskCreationOptions.DenyChildAttach,
+                uiScheduler)
+            .Unwrap();
+    };
+});
+```
+
+Do not synchronously block while waiting for the shield: a single-threaded context must remain
+free to run the scheduled work.
+Only individual UI-thread segments are serialized; async hedge attempts can interleave when one
+reaches an incomplete `await`. Use an explicit async gate if each whole attempt must complete before
+another starts. Cancellation can prevent work that is still queued from starting. The `async`
+scheduled lambda accepts either a `Task`- or
+`ValueTask`-returning UI method; result-bearing variants preserve `TResult` through the unwrapped
+`Task<TResult>`.
+
 `ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
 
 Synchronous `Execute` never pumps a `SynchronizationContext`. Retry delays and limiter queues block
