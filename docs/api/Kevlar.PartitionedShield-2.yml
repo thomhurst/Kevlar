@@ -38,11 +38,15 @@ items:
   remarks: >-
     Retention is bounded by <xref href="Kevlar.PartitionedShieldOptions%602.MaxPartitions" data-throw-if-not-resolved="false"></xref>.
 
-    After the eviction callback, disposable strategies owned by an evicted shield are disposed. Do
+    After the eviction callback and active executions complete, disposable strategies owned by an
 
-    not reuse a shield after its partition is evicted. A later lookup creates a fresh partition with
+    evicted shield are released. Shared strategy instances are disposed after their last partition
 
-    fresh strategy state. Partition keys are never added to metric tags or shield names automatically.
+    owner. Do not reuse a shield after its partition is evicted. A later lookup creates a fresh
+
+    partition with fresh strategy state. Partition keys are never added to metric tags or shield
+
+    names automatically.
   example: []
   syntax:
     content: 'public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDisposable where TKey : notnull'
@@ -404,7 +408,10 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Asynchronously disposes strategies owned by every retained partition.
+  summary: >-
+    Asynchronously waits for in-flight factories and executions, then disposes strategies owned
+
+    by every retained partition. Concurrent callers await the same disposal operation.
   example: []
   syntax:
     content: public ValueTask DisposeAsync()

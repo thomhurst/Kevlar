@@ -47,18 +47,21 @@ partition is evicted before that limit can be exceeded. `IdleExpiration` is opti
 opportunistic: expired entries are removed by later provider operations or an explicit
 `PruneExpired()` call; no timer or background worker is retained.
 
-After `OnEvicted` completes, Kevlar disposes disposable strategies owned by the evicted shield.
-Do not retain and reuse a shield after its partition is evicted. A later lookup of the evicted key
-creates a new shield with fresh breaker, limiter, and queue state. Core strategies hold no
-long-lived disposable resources; this lifecycle primarily matters for custom strategies and
-adapters such as an owned `RateLimiter`.
+After `OnEvicted` completes and any execution already using the shield finishes, Kevlar releases
+the evicted shield's disposable strategies in reverse pipeline order. A strategy instance shared
+by multiple partitions or providers is disposed only after its last owner releases it. Do not
+retain and reuse a shield after its partition is evicted. A later lookup of the evicted key creates
+a new shield with fresh breaker, limiter, and queue state. Core strategies hold no long-lived
+disposable resources; this lifecycle primarily matters for custom strategies and adapters such as
+an owned `RateLimiter`.
 
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
 eviction callback is awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
-lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
-`Cleared` reason; idle expiry uses `Expiration`.
+lookup creates and retains the partition normally. Its owned strategies are released when the
+callback finishes. Explicit `TryRemove` and `Clear` removals use the `Cleared` reason; idle expiry
+uses `Expiration`.
 
 ```csharp
 var observed = new PartitionedShield<string>(
@@ -84,9 +87,11 @@ lifecycle status. `TryGetShield`, `TryRemove`, `Clear`, and their async cleanup 
 explicit cache control. If the factory throws, no existing partition is evicted and the failed key
 is not cached.
 
-`PartitionedShield` implements both `IDisposable` and `IAsyncDisposable`. Disposing it clears live
-partitions and disposes their owned strategies exactly once. Keyed partition providers registered
-through DI are singleton-owned and are therefore disposed with the service provider.
+`PartitionedShield` implements both `IDisposable` and `IAsyncDisposable`. Disposing it rejects new
+operations, clears live partitions, waits for factories and active executions already in flight,
+and disposes owned strategies exactly once. Concurrent disposal callers await the same operation
+and observe the same failure. Keyed partition providers registered through DI are singleton-owned
+and are therefore disposed with the service provider.
 
 ## Dependency injection
 

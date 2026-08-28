@@ -8,9 +8,11 @@ namespace Kevlar;
 /// </summary>
 /// <remarks>
 /// Retention is bounded by <see cref="PartitionedShieldOptions{TKey, TResult}.MaxPartitions"/>.
-/// After the eviction callback, disposable strategies owned by an evicted shield are disposed. Do
-/// not reuse a shield after its partition is evicted. A later lookup creates a fresh partition with
-/// fresh strategy state. Partition keys are never added to metric tags or shield names automatically.
+/// After the eviction callback and active executions complete, disposable strategies owned by an
+/// evicted shield are released. Shared strategy instances are disposed after their last partition
+/// owner. Do not reuse a shield after its partition is evicted. A later lookup creates a fresh
+/// partition with fresh strategy state. Partition keys are never added to metric tags or shield
+/// names automatically.
 /// </remarks>
 public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDisposable
     where TKey : notnull
@@ -95,7 +97,10 @@ public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDispos
     /// <summary>Disposes strategies owned by every retained partition.</summary>
     public void Dispose() => _cache.Dispose();
 
-    /// <summary>Asynchronously disposes strategies owned by every retained partition.</summary>
+    /// <summary>
+    /// Asynchronously waits for in-flight factories and executions, then disposes strategies owned
+    /// by every retained partition. Concurrent callers await the same disposal operation.
+    /// </summary>
     public ValueTask DisposeAsync() => _cache.DisposeAsync();
 
     private static Func<TKey, ValueTask<Shield<TResult>>> Wrap(Func<TKey, Shield<TResult>> factory)
