@@ -78,8 +78,6 @@ stateful strategies: calls made through the same shield share its circuit breake
   through `KevlarDiagnostics.OnCallbackError`, logging, or `Kevlar.Testing.TelemetryRecorder`.
   Built-in analyzers catch cancellation and pipeline mistakes at compile time.
 
-The core package targets `netstandard2.0`, `net8.0`, and `net10.0`.
-
 ## Runnable samples
 
 Every sample is a small `net8.0;net10.0` application with a `--smoke` mode used by CI:
@@ -160,6 +158,11 @@ configuration-bound shields and `IKevlarRegistry`.
 
 ## Packages
 
+Kevlar is a focused Polly alternative for teams that prefer immutable pipelines, explicit
+reading-order composition, and allocation-conscious hot paths. It is not API-compatible with
+Polly; the [migration guide](https://thomhurst.github.io/Kevlar/docs/polly-migration) maps the
+concepts side by side.
+
 | Package | What it adds |
 |---|---|
 | [`Kevlar`](https://www.nuget.org/packages/Kevlar) | Core strategies, Shield API, and diagnostics-only analyzers |
@@ -170,6 +173,31 @@ configuration-bound shields and `IKevlarRegistry`.
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
 | [`Kevlar.Testing`](https://www.nuget.org/packages/Kevlar.Testing) | Pipeline assertions, state snapshots and deterministic time helpers |
+
+## Requirements, targets and support
+
+| Package | Target frameworks |
+|---|---|
+| `Kevlar` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Chaos` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.Grpc` | `netstandard2.0`; `netstandard2.1`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.Http` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.Logging` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.RateLimiting` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Testing` | `netstandard2.0`; `net8.0`; `net10.0` |
+
+The analyzers bundled with `Kevlar` run in Visual Studio 2022 17.8 or later and the .NET 8.0.100
+SDK or later. Older compiler hosts skip the analyzer assets; the runtime library remains
+available. `Kevlar.Testing` supports callback recording on `netstandard2.0`, but deterministic time
+and metric capture require .NET 8 or later.
+
+The core package depends on `Reservoir` `[1.4.0, 2.0.0)` on every target. Its `netstandard2.0`
+asset also uses `Microsoft.Bcl.AsyncInterfaces`, `Microsoft.Bcl.TimeProvider`, and
+`System.Threading.Tasks.Extensions`. See the [support policy](https://thomhurst.github.io/Kevlar/docs/support-policy)
+for integration-package dependency floors, package lockstep, and the release support window.
+
+Kevlar is licensed under the [MIT License](https://github.com/thomhurst/Kevlar/blob/main/LICENSE).
 
 ## Where next?
 
