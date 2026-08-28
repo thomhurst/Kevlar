@@ -63,15 +63,16 @@ TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 await shield.ExecuteAsync(
     ct => new ValueTask(Task.Factory.StartNew(
         () => UpdateUiAsync(ct),
-        CancellationToken.None,
+        ct,
         TaskCreationOptions.DenyChildAttach,
         uiScheduler).Unwrap()),
     cancellationToken);
 ```
 
-Capture the scheduler on the UI thread. Pass Kevlar's effective `ct` into the UI operation, as
-shown. Apply the same explicit dispatch inside any UI-affine fallback or notification hook. This is
-an allocation-bearing opt-in at the call site; ordinary execution retains its zero-allocation,
+Capture the scheduler on the UI thread. Pass Kevlar's effective `ct` to both the dispatch and the UI
+operation, as shown, so timeout or hedge cancellation can stop work that is still queued. Apply the
+same explicit dispatch inside any UI-affine fallback or notification hook. This is an
+allocation-bearing opt-in at the call site; ordinary execution retains its zero-allocation,
 context-free continuation behavior.
 
 `ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
