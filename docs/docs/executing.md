@@ -67,9 +67,27 @@ await shield.ExecuteAsync(
 ```
 
 Kevlar invokes this wrapper again for every retry or hedge, so each attempt is scheduled onto the
-captured context. Capture the scheduler only while running on the intended UI context. Apply the
-same wrapper to a strategy hook when that hook also touches UI state. Do not synchronously block
-while waiting for the shield: a single-threaded context must remain free to run the scheduled work.
+captured context. Capture the scheduler only while running on the intended UI context. Strategy
+hooks return `ValueTask`; make the hook itself `async` and await the scheduled `Task`:
+
+<!-- doc-test-ignore: viewModel represents the application's UI-bound implementation. -->
+```csharp
+var uiRetryShield = Shield.Retry(options =>
+{
+    options.OnRetry = async retry =>
+    {
+        await Task.Factory.StartNew(
+                async () => await viewModel.ShowRetryAsync(retry.AttemptNumber),
+                retry.Context.CancellationToken,
+                TaskCreationOptions.DenyChildAttach,
+                uiScheduler)
+            .Unwrap();
+    };
+});
+```
+
+Do not synchronously block while waiting for the shield: a single-threaded context must remain
+free to run the scheduled work.
 Hedged delegates are serialized by a single UI thread, and cancellation can prevent work that is
 still queued from starting. The `async` scheduled lambda accepts either a `Task`- or
 `ValueTask`-returning UI method; result-bearing variants preserve `TResult` through the unwrapped
