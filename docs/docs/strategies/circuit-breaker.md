@@ -105,8 +105,9 @@ the circuit closes or is reset.
 
 :::info Unhandled exceptions don't move the circuit
 An exception outside the breaker's handling clause says nothing about downstream health — it counts
-as neither success nor failure. This includes caller cancellation unless the clause explicitly
-handles it. An unhandled half-open probe releases the probe slot without closing the circuit.
+as neither success nor failure. Caller cancellation is always unhandled while the caller's token is
+signaled, even when the clause matches `OperationCanceledException`. An unhandled half-open probe
+releases the probe slot without closing the circuit.
 :::
 
 ## Observing and controlling: `CircuitBreakerMonitor`

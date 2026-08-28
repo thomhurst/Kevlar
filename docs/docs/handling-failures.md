@@ -36,6 +36,12 @@ var allKevlarOutcomes = Shield.For<string>()
     .FallbackTo("unavailable");
 ```
 
+Caller cancellation is stronger than every handling clause. When the active caller token is
+cancelled and execution produces an `OperationCanceledException`, no reactive strategy handles the
+outcome—even under `When<Exception>()`—and the cancellation surfaces to the caller. An explicit
+clause can still handle a spontaneous `OperationCanceledException` when the caller token is not
+cancelled.
+
 When you execute with `ExecuteOutcomeAsync`, use `outcome.TryGetResult(out var result)` to
 consume a successful result without throwing. If it returns `false`, the final captured failure
 remains available through `outcome.Exception`.

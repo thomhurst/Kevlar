@@ -138,6 +138,44 @@ public class FallbackContractTests
     }
 
     [Test]
+    public async Task Caller_Cancellation_Is_Not_Handled_By_Explicit_Exception_Fallback()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var fallbackCalls = 0;
+        var notificationCalls = 0;
+        var shield = Shield.For<int>()
+            .When<Exception>()
+            .Fallback(
+                (_, _) =>
+                {
+                    fallbackCalls++;
+                    return new ValueTask<int>(-1);
+                },
+                options => options.OnFallback = _ =>
+                {
+                    notificationCalls++;
+                    return default;
+                });
+
+        var execution = shield.ExecuteAsync(async token =>
+        {
+            started.SetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return 1;
+        }, cancellation.Token).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+        var caught = await CaptureCancellationAsync(execution);
+
+        await Assert.That(caught).IsNotNull();
+        await Assert.That(caught!.CancellationToken).IsEqualTo(cancellation.Token);
+        await Assert.That(fallbackCalls).IsEqualTo(0);
+        await Assert.That(notificationCalls).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Fallback_Outside_Timeout_Receives_Restored_Caller_Token()
     {
         var timeProvider = new FakeTimeProvider();
