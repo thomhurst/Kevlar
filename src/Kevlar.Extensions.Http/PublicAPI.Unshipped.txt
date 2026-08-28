@@ -1,1 +1,3 @@
 #nullable enable
+static Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

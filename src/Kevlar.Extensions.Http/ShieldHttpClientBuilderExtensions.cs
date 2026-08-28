@@ -1,4 +1,5 @@
 using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
@@ -30,6 +31,50 @@ public static class ShieldHttpClientBuilderExtensions
                 Decorate(services, shield, builder.Name),
                 new ShieldHttpHandlerOptions(),
                 CreateDecorator(services, builder.Name)));
+    }
+
+    /// <summary>
+    /// Sends this client's requests through the named result-aware shield registered with
+    /// <see cref="KevlarServiceCollectionExtensions.AddShield{TResult}(IServiceCollection, string, Shield{TResult})"/>.
+    /// The registry is queried for every request so reloads and dynamic replacements are observed.
+    /// </summary>
+    public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, string shieldName)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldName is null)
+        {
+            throw new ArgumentNullException(nameof(shieldName));
+        }
+
+        return builder.AddShield((_, services) =>
+            services.GetRequiredService<IKevlarRegistry>().GetShield<HttpResponseMessage>(shieldName));
+    }
+
+    /// <summary>
+    /// Removes previously registered <see cref="ShieldDelegatingHandler"/> instances from this
+    /// client's handler pipeline while preserving other delegating handlers.
+    /// </summary>
+    public static IHttpClientBuilder RemoveAllShields(this IHttpClientBuilder builder)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        return builder.ConfigureAdditionalHttpMessageHandlers(static (handlers, _) =>
+        {
+            for (var index = handlers.Count - 1; index >= 0; index--)
+            {
+                if (handlers[index] is ShieldDelegatingHandler)
+                {
+                    handlers.RemoveAt(index);
+                }
+            }
+        });
     }
 
     /// <summary>Sends this client's requests through the given shield with replay and routing options.</summary>

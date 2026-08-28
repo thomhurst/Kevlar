@@ -10,6 +10,7 @@ items:
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
@@ -20,6 +21,7 @@ items:
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
   - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   langs:
   - csharp
   - vb
@@ -76,6 +78,71 @@ items:
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
   fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
   name.vb: AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  isExtensionMethod: true
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield(IHttpClientBuilder, string)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, string)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
+  summary: >-
+    Sends this client's requests through the named result-aware shield registered with
+
+    <xref href="Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield%60%601(Microsoft.Extensions.DependencyInjection.IServiceCollection%2cSystem.String%2cKevlar.Shield%7b%60%600%7d)" data-throw-if-not-resolved="false"></xref>.
+
+    The registry is queried for every request so reloads and dynamic replacements are observed.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, string shieldName)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldName
+      type: System.String
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldName As String) As IHttpClientBuilder
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, String)
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, String)
+  name.vb: AddShield(IHttpClientBuilder, String)
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  id: RemoveAllShields(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  isExtensionMethod: true
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: RemoveAllShields(IHttpClientBuilder)
+  nameWithType: ShieldHttpClientBuilderExtensions.RemoveAllShields(IHttpClientBuilder)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
+  summary: >-
+    Removes previously registered <xref href="Kevlar.Extensions.Http.ShieldDelegatingHandler" data-throw-if-not-resolved="false"></xref> instances from this
+
+    client's handler pipeline while preserving other delegating handlers.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder RemoveAllShields(this IHttpClientBuilder builder)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function RemoveAllShields(builder As IHttpClientBuilder) As IHttpClientBuilder
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields*
 - uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
@@ -912,6 +979,103 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
+- uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
+  commentId: M:Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{`0})
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Microsoft_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield__1_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield___0__
+  name: AddShield<TResult>(IServiceCollection, string, Shield<TResult>)
+  nameWithType: KevlarServiceCollectionExtensions.AddShield<TResult>(IServiceCollection, string, Shield<TResult>)
+  fullName: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield<TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Kevlar.Shield<TResult>)
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddShield(Of TResult)(IServiceCollection, String, Shield(Of TResult))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Kevlar.Shield(Of TResult))
+  name.vb: AddShield(Of TResult)(IServiceCollection, String, Shield(Of TResult))
+  spec.csharp:
+  - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
+    name: AddShield
+    isExternal: true
+    href: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Microsoft_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield__1_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield___0__
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: (
+  - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    name: IServiceCollection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: string
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
+    name: AddShield
+    isExternal: true
+    href: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Microsoft_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield__1_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield___0__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: (
+  - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    name: IServiceCollection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: String
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
+  commentId: T:Kevlar.Extensions.Http.ShieldDelegatingHandler
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldDelegatingHandler.html
+  name: ShieldDelegatingHandler
+  nameWithType: ShieldDelegatingHandler
+  fullName: Kevlar.Extensions.Http.ShieldDelegatingHandler
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields*
+  commentId: Overload:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields
+  isExternal: true
+  href: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.html#Microsoft_Extensions_DependencyInjection_ShieldHttpClientBuilderExtensions_RemoveAllShields_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
+  name: RemoveAllShields
+  nameWithType: ShieldHttpClientBuilderExtensions.RemoveAllShields
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.RemoveAllShields
 - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
   commentId: T:Kevlar.Extensions.Http.ShieldHttpHandlerOptions
   parent: Kevlar.Extensions.Http
