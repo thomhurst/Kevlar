@@ -22,8 +22,17 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
+    /// Gets or sets whether the provider owns and disposes strategies returned by its factory.
+    /// Defaults to <see langword="true"/>. Set to <see langword="false"/> when those strategy
+    /// instances are also used by shields outside this provider.
+    /// </summary>
+    public bool OwnsStrategies { get; set; } = true;
+
+    /// <summary>
     /// Invoked and awaited after a partition is created and retained. Return
-    /// <see langword="default"/> from a synchronous callback.
+    /// <see langword="default"/> from a synchronous callback. Disposing this provider from its own
+    /// callback is rejected to prevent a lifecycle deadlock. Owned strategies remain alive until
+    /// the callback and the creating lookup complete, even if the partition is concurrently evicted.
     /// </summary>
     public Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>? OnCreated { get; set; }
 
@@ -31,7 +40,8 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     /// Invoked and awaited after a partition is removed from the provider and before an
     /// automatically evicted partition's slot is reused. A cold lookup reentered from this
     /// callback may return an unretained shield when the invoking eviction owns all available
-    /// capacity. Return <see langword="default"/> from a synchronous callback.
+    /// capacity. Disposing this provider from either lifecycle callback is rejected to prevent a
+    /// lifecycle deadlock. Return <see langword="default"/> from a synchronous callback.
     /// </summary>
     public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted { get; set; }
 
@@ -49,6 +59,7 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
             onEvicted is null
                 ? null
                 : (key, shield, reason) => onEvicted(
-                    new PartitionEvictedEvent<TKey, TResult>(key, shield, reason)));
+                    new PartitionEvictedEvent<TKey, TResult>(key, shield, reason)),
+            OwnsStrategies);
     }
 }

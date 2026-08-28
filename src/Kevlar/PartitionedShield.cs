@@ -7,12 +7,16 @@ namespace Kevlar;
 /// Selects and retains an independent untyped <see cref="Shield"/> for each partition key.
 /// </summary>
 /// <remarks>
-/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey}.MaxPartitions"/>. Eviction
-/// removes only the provider's reference: callers that already hold the old shield, including
-/// active executions, continue normally. A later lookup creates a fresh partition with fresh
-/// strategy state. Partition keys are never added to metric tags or shield names automatically.
+/// Retention is bounded by <see cref="PartitionedShieldOptions{TKey}.MaxPartitions"/>. After the
+/// eviction callback and active executions complete, disposable strategies owned by an evicted
+/// shield are released. Shared strategy instances are disposed after their last partition owner.
+/// By default the provider owns every strategy returned by its factory; set
+/// <see cref="PartitionedShieldOptions{TKey}.OwnsStrategies"/> to <see langword="false"/> when those
+/// instances are also used outside the provider. Do not reuse a shield after its partition is
+/// evicted. A later lookup creates a fresh partition with fresh strategy state. Partition keys are
+/// never added to metric tags or shield names automatically.
 /// </remarks>
-public sealed class PartitionedShield<TKey>
+public sealed class PartitionedShield<TKey> : IDisposable, IAsyncDisposable
     where TKey : notnull
 {
     private readonly PartitionCache<TKey, Shield> _cache;
@@ -53,13 +57,13 @@ public sealed class PartitionedShield<TKey>
     public bool TryGetShield(TKey key, [NotNullWhen(true)] out Shield? shield) =>
         _cache.TryGet(key, out shield);
 
-    /// <summary>Removes a retained partition. Existing users of its shield are unaffected.</summary>
+    /// <summary>Removes a retained partition and begins its configured lifecycle cleanup.</summary>
     public bool TryRemove(TKey key) => _cache.TryRemove(key);
 
     /// <summary>Asynchronously removes a retained partition.</summary>
     public ValueTask<bool> TryRemoveAsync(TKey key) => _cache.TryRemoveAsync(key);
 
-    /// <summary>Removes every retained partition. Existing users of those shields are unaffected.</summary>
+    /// <summary>Removes every retained partition and begins configured lifecycle cleanup.</summary>
     public void Clear() => _cache.Clear();
 
     /// <summary>Asynchronously removes every retained partition.</summary>
@@ -91,6 +95,16 @@ public sealed class PartitionedShield<TKey>
     public long EvictionCount => _cache.EvictionCount;
 
     internal PartitionCacheState CaptureState() => _cache.CaptureState();
+
+    /// <summary>Disposes strategies owned by every retained partition.</summary>
+    public void Dispose() => _cache.Dispose();
+
+    /// <summary>
+    /// Asynchronously waits for in-flight factories, removals, and executions, then disposes
+    /// strategies owned by every retained partition. Concurrent callers await the same disposal
+    /// operation.
+    /// </summary>
+    public ValueTask DisposeAsync() => _cache.DisposeAsync();
 
     private static Func<TKey, ValueTask<Shield>> Wrap(Func<TKey, Shield> factory)
     {

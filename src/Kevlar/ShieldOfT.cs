@@ -24,6 +24,19 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     Strategy[] IShieldLifecycle.Strategies => CurrentSnapshot.Strategies;
 
+    IShieldLifecycle IShieldLifecycle.WithExecutionTracking(
+        StrategyExecutionTracker tracker,
+        ExecutionReentrancyGuard reentrancyGuard)
+    {
+        var snapshot = CurrentSnapshot;
+        return new Shield<TResult>(
+            [new ExecutionTrackingStrategy(tracker, reentrancyGuard), .. snapshot.Strategies],
+            snapshot.Ambient,
+            snapshot.Name,
+            snapshot.Time,
+            snapshot.AppliedDecorators);
+    }
+
     internal Shield(
         Strategy[] strategies,
         OutcomeJudge? ambient,

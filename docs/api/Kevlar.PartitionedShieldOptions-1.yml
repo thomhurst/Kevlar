@@ -10,6 +10,7 @@ items:
   - Kevlar.PartitionedShieldOptions`1.MaxPartitions
   - Kevlar.PartitionedShieldOptions`1.OnCreated
   - Kevlar.PartitionedShieldOptions`1.OnEvicted
+  - Kevlar.PartitionedShieldOptions`1.OwnsStrategies
   - Kevlar.PartitionedShieldOptions`1.TimeProvider
   langs:
   - csharp
@@ -142,6 +143,36 @@ items:
   overload: Kevlar.PartitionedShieldOptions`1.TimeProvider*
   nameWithType.vb: PartitionedShieldOptions(Of TKey).TimeProvider
   fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`1.OwnsStrategies
+  commentId: P:Kevlar.PartitionedShieldOptions`1.OwnsStrategies
+  id: OwnsStrategies
+  parent: Kevlar.PartitionedShieldOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OwnsStrategies
+  nameWithType: PartitionedShieldOptions<TKey>.OwnsStrategies
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OwnsStrategies
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets or sets whether the provider owns and disposes strategies returned by its factory.
+
+    Defaults to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>. Set to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> when those strategy
+
+    instances are also used by shields outside this provider.
+  example: []
+  syntax:
+    content: public bool OwnsStrategies { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property OwnsStrategies As Boolean
+  overload: Kevlar.PartitionedShieldOptions`1.OwnsStrategies*
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OwnsStrategies
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OwnsStrategies
 - uid: Kevlar.PartitionedShieldOptions`1.OnCreated
   commentId: P:Kevlar.PartitionedShieldOptions`1.OnCreated
   id: OnCreated
@@ -159,7 +190,11 @@ items:
   summary: >-
     Invoked and awaited after a partition is created and retained. Return
 
-    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback. Disposing this provider from its own
+
+    callback is rejected to prevent a lifecycle deadlock. Owned strategies remain alive until
+
+    the callback and the creating lookup complete, even if the partition is concurrently evicted.
   example: []
   syntax:
     content: public Func<PartitionCreatedEvent<TKey>, ValueTask>? OnCreated { get; set; }
@@ -191,7 +226,9 @@ items:
 
     callback may return an unretained shield when the invoking eviction owns all available
 
-    capacity. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
+    capacity. Disposing this provider from either lifecycle callback is rejected to prevent a
+
+    lifecycle deadlock. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
     content: public Func<PartitionEvictedEvent<TKey>, ValueTask>? OnEvicted { get; set; }
@@ -527,6 +564,26 @@ references:
   name: TimeProvider
   nameWithType: TimeProvider
   fullName: System.TimeProvider
+- uid: Kevlar.PartitionedShieldOptions`1.OwnsStrategies*
+  commentId: Overload:Kevlar.PartitionedShieldOptions`1.OwnsStrategies
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions-1.html#Kevlar_PartitionedShieldOptions_1_OwnsStrategies
+  name: OwnsStrategies
+  nameWithType: PartitionedShieldOptions<TKey>.OwnsStrategies
+  fullName: Kevlar.PartitionedShieldOptions<TKey>.OwnsStrategies
+  nameWithType.vb: PartitionedShieldOptions(Of TKey).OwnsStrategies
+  fullName.vb: Kevlar.PartitionedShieldOptions(Of TKey).OwnsStrategies
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
 - uid: Kevlar.PartitionedShieldOptions`1.OnCreated*
   commentId: Overload:Kevlar.PartitionedShieldOptions`1.OnCreated
   isExternal: true

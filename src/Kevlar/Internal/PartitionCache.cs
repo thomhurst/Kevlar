@@ -1,8 +1,8 @@
 namespace Kevlar.Internal;
 
-internal sealed class PartitionCache<TKey, TShield>
+internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposable
     where TKey : notnull
-    where TShield : class
+    where TShield : class, IShieldLifecycle
 {
     private readonly Lock _gate = new();
     private readonly SemaphoreSlim _mutationGate = new(initialCount: 1, maxCount: 1);
@@ -14,7 +14,14 @@ internal sealed class PartitionCache<TKey, TShield>
     private readonly TimeProvider _timeProvider;
     private readonly Func<TKey, TShield, ValueTask>? _onCreated;
     private readonly Func<TKey, TShield, PartitionEvictionReason, ValueTask>? _onEvicted;
+    private readonly bool _ownsStrategies;
+    private readonly AsyncLocal<ReentrancyScope?> _factoryCallback = new();
+    private readonly AsyncLocal<ReentrancyScope?> _creationCallback = new();
+    private readonly AsyncLocal<ReentrancyScope?> _strategyDisposal = new();
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
+    private readonly ExecutionReentrancyGuard _executionReentrancy = new();
+    private readonly Queue<Exception> _disposalFailures = new();
+    private readonly List<Task> _pendingDisposals = [];
 
     private Entry? _leastRecentlyUsed;
     private Entry? _mostRecentlyUsed;
@@ -24,6 +31,10 @@ internal sealed class PartitionCache<TKey, TShield>
     private long _capacityEvictionCount;
     private long _expirationEvictionCount;
     private long _clearedEvictionCount;
+    private TaskCompletionSource<bool>? _operationCompletion;
+    private TaskCompletionSource<bool>? _disposeCompletion;
+    private int _activeOperations;
+    private int _disposed;
 
     public PartitionCache(
         Func<TKey, ValueTask<TShield>> factory,
@@ -47,6 +58,7 @@ internal sealed class PartitionCache<TKey, TShield>
         _timeProvider = options.TimeProvider;
         _onCreated = options.OnCreated;
         _onEvicted = options.OnEvicted;
+        _ownsStrategies = options.OwnsStrategies;
         _entries = new Dictionary<TKey, Entry>(comparer);
         _creations = new Dictionary<TKey, Creation>(comparer);
     }
@@ -96,17 +108,28 @@ internal sealed class PartitionCache<TKey, TShield>
 
     public TShield Get(TKey key)
     {
+        ThrowIfDisposed();
         ValidateKey(key);
         if (TryGetWarm(key, out var shield, out _))
         {
             return shield;
         }
 
-        return GetSlowAsync(key).AsTask().GetAwaiter().GetResult();
+        BeginOperation();
+        try
+        {
+            return GetSlowAsync(key, preferSynchronousDisposal: true)
+                .AsTask().GetAwaiter().GetResult();
+        }
+        finally
+        {
+            CompleteOperation();
+        }
     }
 
     public ValueTask<TShield> GetAsync(TKey key)
     {
+        ThrowIfDisposed();
         ValidateKey(key);
 
         if (TryGetWarm(key, out var shield, out _))
@@ -114,11 +137,13 @@ internal sealed class PartitionCache<TKey, TShield>
             return new ValueTask<TShield>(shield);
         }
 
-        return GetSlowAsync(key);
+        BeginOperation();
+        return CompleteGetAsync(key);
     }
 
     public bool TryGet(TKey key, out TShield? shield)
     {
+        ThrowIfDisposed();
         ValidateKey(key);
         if (TryGetWarm(key, out shield, out var pruneDue))
         {
@@ -130,32 +155,156 @@ internal sealed class PartitionCache<TKey, TShield>
             return false;
         }
 
-        shield = TryGetSlowAsync(key).AsTask().GetAwaiter().GetResult();
+        BeginOperation();
+        try
+        {
+            shield = TryGetSlowAsync(key, preferSynchronousDisposal: true)
+                .AsTask().GetAwaiter().GetResult();
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+
         return shield is not null;
     }
 
-    public bool TryRemove(TKey key) =>
-        TryRemoveAsync(key).AsTask().GetAwaiter().GetResult();
+    public bool TryRemove(TKey key)
+    {
+        ValidateKey(key);
+        BeginOperation();
+        try
+        {
+            return TryRemoveSlowAsync(key, preferSynchronousDisposal: true)
+                .AsTask().GetAwaiter().GetResult();
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
 
     public ValueTask<bool> TryRemoveAsync(TKey key)
     {
         ValidateKey(key);
-        return TryRemoveSlowAsync(key);
+        BeginOperation();
+        return CompleteTryRemoveAsync(key);
     }
 
-    public void Clear() => ClearAsync().AsTask().GetAwaiter().GetResult();
+    public void Clear()
+    {
+        BeginOperation();
+        try
+        {
+            ClearSlowAsync(preferSynchronousDisposal: true).AsTask().GetAwaiter().GetResult();
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
 
-    public ValueTask ClearAsync() => ClearSlowAsync();
+    public ValueTask ClearAsync()
+    {
+        BeginOperation();
+        return CompleteClearAsync();
+    }
 
-    public int PruneExpired() =>
-        PruneExpiredAsync().AsTask().GetAwaiter().GetResult();
+    public int PruneExpired()
+    {
+        BeginOperation();
+        try
+        {
+            return _idleExpiration is null
+                ? 0
+                : PruneExpiredSlowAsync(preferSynchronousDisposal: true)
+                    .AsTask().GetAwaiter().GetResult();
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
 
-    public ValueTask<int> PruneExpiredAsync() =>
-        _idleExpiration is null
-            ? new ValueTask<int>(0)
-            : PruneExpiredSlowAsync();
+    public ValueTask<int> PruneExpiredAsync()
+    {
+        BeginOperation();
+        return CompletePruneExpiredAsync();
+    }
 
-    private async ValueTask<TShield> GetSlowAsync(TKey key)
+    public void Dispose() => DisposeAsync(preferSynchronousDisposal: true)
+        .AsTask().GetAwaiter().GetResult();
+
+    public ValueTask DisposeAsync() => DisposeAsync(preferSynchronousDisposal: false);
+
+    private ValueTask DisposeAsync(bool preferSynchronousDisposal)
+    {
+        if (_executionReentrancy.Active
+            || _factoryCallback.Value is { Active: true }
+            || _creationCallback.Value is { Active: true }
+            || _strategyDisposal.Value is { Active: true }
+            || _evictionCallback.Value is { Active: true })
+        {
+            return new ValueTask(Task.FromException(new InvalidOperationException(
+                "A partition provider cannot be disposed from its own factory or lifecycle callback.")));
+        }
+
+        var created = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var completion = Interlocked.CompareExchange(ref _disposeCompletion, created, null);
+        if (completion is not null)
+        {
+            return new ValueTask(completion.Task);
+        }
+
+        Volatile.Write(ref _disposed, 1);
+        _ = CompleteDisposalAsync(created, preferSynchronousDisposal);
+        return new ValueTask(created.Task);
+    }
+
+    private async Task CompleteDisposalAsync(
+        TaskCompletionSource<bool> completion,
+        bool preferSynchronousDisposal)
+    {
+        try
+        {
+            await GetOperationCompletionTask().ConfigureAwait(false);
+            await ClearSlowAsync(preferSynchronousDisposal).ConfigureAwait(false);
+            Task[] pendingDisposals;
+            lock (_gate)
+            {
+                pendingDisposals = _pendingDisposals.ToArray();
+            }
+
+            await Task.WhenAll(pendingDisposals).ConfigureAwait(false);
+            Exception[] failures;
+            lock (_gate)
+            {
+                failures = _disposalFailures.ToArray();
+                _disposalFailures.Clear();
+            }
+
+            if (failures.Length == 1)
+            {
+                throw failures[0];
+            }
+
+            if (failures.Length > 1)
+            {
+                throw new AggregateException(failures);
+            }
+
+            completion.TrySetResult(true);
+        }
+        catch (Exception exception)
+        {
+            completion.TrySetException(exception);
+        }
+    }
+
+    private async ValueTask<TShield> GetSlowAsync(
+        TKey key,
+        bool preferSynchronousDisposal)
     {
         Creation creation;
         var creates = false;
@@ -168,6 +317,7 @@ internal sealed class PartitionCache<TKey, TShield>
         {
             lock (_gate)
             {
+                ThrowIfDisposed();
                 expired = PruneExpiredUnderLock();
                 ReserveSlots(expired);
                 if (_entries.TryGetValue(key, out var existing))
@@ -190,6 +340,7 @@ internal sealed class PartitionCache<TKey, TShield>
                     _creations.Add(key, creation);
                     creates = true;
                 }
+
             }
 
         }
@@ -201,6 +352,7 @@ internal sealed class PartitionCache<TKey, TShield>
         await NotifyAutomaticEvictionsAsync(
                 expired,
                 PartitionEvictionReason.Expiration,
+                preferSynchronousDisposal,
                 creates ? creation : null)
             .ConfigureAwait(false);
 
@@ -211,14 +363,19 @@ internal sealed class PartitionCache<TKey, TShield>
 
         if (!creates && !createsUnretained)
         {
-            return await creation.Task.ConfigureAwait(false);
+            var completed = await creation.Task.ConfigureAwait(false);
+            return completed ?? await GetSlowAsync(key, preferSynchronousDisposal)
+                .ConfigureAwait(false);
         }
 
         TShield shield;
+        Entry entry;
         try
         {
-            shield = await _factory(key).ConfigureAwait(false)
+            shield = await CreateShieldAsync(key).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The partition factory returned null.");
+            entry = await CreateEntryAsync(key, shield, preferSynchronousDisposal)
+                .ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -230,24 +387,38 @@ internal sealed class PartitionCache<TKey, TShield>
             throw;
         }
 
-        if (createsUnretained)
-        {
-            return shield;
-        }
-
         try
         {
-            await PublishAsync(key, shield, creation).ConfigureAwait(false);
-            return shield;
+            if (createsUnretained)
+            {
+                TrackUnretained(entry, preferSynchronousDisposal);
+                return entry.Shield;
+            }
+
+            try
+            {
+                await PublishAsync(key, entry, creation, preferSynchronousDisposal)
+                    .ConfigureAwait(false);
+                return entry.Shield;
+            }
+            catch (Exception exception)
+            {
+                FailCreation(key, creation, exception);
+                await DisposeEvictedAsync(entry, preferSynchronousDisposal).ConfigureAwait(false);
+                throw;
+            }
         }
-        catch (Exception exception)
+        finally
         {
-            FailCreation(key, creation, exception);
-            throw;
+            entry.ReleaseCreationLease();
         }
     }
 
-    private async ValueTask PublishAsync(TKey key, TShield shield, Creation creation)
+    private async ValueTask PublishAsync(
+        TKey key,
+        Entry entry,
+        Creation creation,
+        bool preferSynchronousDisposal)
     {
         var ownedReservations = 0;
         try
@@ -267,7 +438,7 @@ internal sealed class PartitionCache<TKey, TShield>
                     {
                         if (ownedReservations > 0)
                         {
-                            Publish(key, shield, creation);
+                            Publish(key, entry);
                             _reservedSlots -= ownedReservations;
                             ownedReservations = 0;
                             PulseCapacityChanged();
@@ -295,7 +466,7 @@ internal sealed class PartitionCache<TKey, TShield>
                                 }
                                 else if (_entries.Count + _reservedSlots < _maximumPartitions)
                                 {
-                                    Publish(key, shield, creation);
+                                    Publish(key, entry);
                                     published = true;
                                 }
                                 else if (_leastRecentlyUsed is { } eviction)
@@ -321,7 +492,8 @@ internal sealed class PartitionCache<TKey, TShield>
 
                 if (completedUnretained)
                 {
-                    creation.Succeed(shield);
+                    TrackUnretained(entry, preferSynchronousDisposal);
+                    creation.Retry();
                     return;
                 }
 
@@ -334,22 +506,29 @@ internal sealed class PartitionCache<TKey, TShield>
                 await NotifyEvictedAsync(
                         expired,
                         PartitionEvictionReason.Expiration,
+                        preferSynchronousDisposal,
+                        ownsReservation: true,
                         blockedCreation: creation)
+                    .ConfigureAwait(false);
+                await DisposeEvictedAsync(expired, preferSynchronousDisposal)
                     .ConfigureAwait(false);
                 if (capacityEviction is not null)
                 {
                     await NotifyEvictedAsync(
                             capacityEviction,
                             PartitionEvictionReason.Capacity,
+                            preferSynchronousDisposal,
                             ownsReservation: true,
                             blockedCreation: creation)
+                        .ConfigureAwait(false);
+                    await DisposeEvictedAsync(capacityEviction, preferSynchronousDisposal)
                         .ConfigureAwait(false);
                 }
 
                 if (published)
                 {
-                    await NotifyCreatedAsync(key, shield).ConfigureAwait(false);
-                    creation.Succeed(shield);
+                    await NotifyCreatedAsync(key, entry.Shield).ConfigureAwait(false);
+                    creation.Succeed(entry.Shield);
                     return;
                 }
             }
@@ -360,7 +539,9 @@ internal sealed class PartitionCache<TKey, TShield>
         }
     }
 
-    private async ValueTask<TShield?> TryGetSlowAsync(TKey key)
+    private async ValueTask<TShield?> TryGetSlowAsync(
+        TKey key,
+        bool preferSynchronousDisposal)
     {
         TShield? shield = null;
         List<Entry>? expired;
@@ -383,12 +564,17 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
+        await NotifyAutomaticEvictionsAsync(
+                expired,
+                PartitionEvictionReason.Expiration,
+                preferSynchronousDisposal)
             .ConfigureAwait(false);
         return shield;
     }
 
-    private async ValueTask<bool> TryRemoveSlowAsync(TKey key)
+    private async ValueTask<bool> TryRemoveSlowAsync(
+        TKey key,
+        bool preferSynchronousDisposal)
     {
         Entry? removed = null;
         List<Entry>? expired;
@@ -411,17 +597,25 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
+        await NotifyAutomaticEvictionsAsync(
+                expired,
+                PartitionEvictionReason.Expiration,
+                preferSynchronousDisposal)
             .ConfigureAwait(false);
         if (removed is not null)
         {
-            await NotifyEvictedAsync(removed, PartitionEvictionReason.Cleared).ConfigureAwait(false);
+            await NotifyEvictedAsync(
+                    removed,
+                    PartitionEvictionReason.Cleared,
+                    preferSynchronousDisposal)
+                .ConfigureAwait(false);
+            await DisposeEvictedAsync(removed, preferSynchronousDisposal).ConfigureAwait(false);
         }
 
         return removed is not null;
     }
 
-    private async ValueTask ClearSlowAsync()
+    private async ValueTask ClearSlowAsync(bool preferSynchronousDisposal)
     {
         Entry[] removed;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
@@ -443,11 +637,16 @@ internal sealed class PartitionCache<TKey, TShield>
 
         foreach (var entry in removed)
         {
-            await NotifyEvictedAsync(entry, PartitionEvictionReason.Cleared).ConfigureAwait(false);
+            await NotifyEvictedAsync(
+                    entry,
+                    PartitionEvictionReason.Cleared,
+                    preferSynchronousDisposal)
+                .ConfigureAwait(false);
+            await DisposeEvictedAsync(entry, preferSynchronousDisposal).ConfigureAwait(false);
         }
     }
 
-    private async ValueTask<int> PruneExpiredSlowAsync()
+    private async ValueTask<int> PruneExpiredSlowAsync(bool preferSynchronousDisposal)
     {
         List<Entry>? expired;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
@@ -464,7 +663,10 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Expiration)
+        await NotifyAutomaticEvictionsAsync(
+                expired,
+                PartitionEvictionReason.Expiration,
+                preferSynchronousDisposal)
             .ConfigureAwait(false);
         return expired?.Count ?? 0;
     }
@@ -496,19 +698,47 @@ internal sealed class PartitionCache<TKey, TShield>
             return;
         }
 
+        var previousScope = _creationCallback.Value;
+        var scope = new ReentrancyScope(previousScope);
+        _creationCallback.Value = scope;
         try
         {
-            await _onCreated(key, shield).ConfigureAwait(false);
+            try
+            {
+                await _onCreated(key, shield).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Lifecycle observers must not change partition behavior.
+            }
         }
-        catch
+        finally
         {
-            // Lifecycle observers must not change partition behavior.
+            scope.Deactivate();
+            _creationCallback.Value = previousScope;
+        }
+    }
+
+    private async ValueTask<TShield> CreateShieldAsync(TKey key)
+    {
+        var previousScope = _factoryCallback.Value;
+        var scope = new ReentrancyScope(previousScope);
+        _factoryCallback.Value = scope;
+        try
+        {
+            return await _factory(key).ConfigureAwait(false);
+        }
+        finally
+        {
+            scope.Deactivate();
+            _factoryCallback.Value = previousScope;
         }
     }
 
     private async ValueTask NotifyEvictedAsync(
         List<Entry>? entries,
         PartitionEvictionReason reason,
+        bool preferSynchronousDisposal,
         bool ownsReservation = false,
         Creation? blockedCreation = null)
     {
@@ -519,7 +749,12 @@ internal sealed class PartitionCache<TKey, TShield>
 
         foreach (var entry in entries)
         {
-            await NotifyEvictedAsync(entry, reason, ownsReservation, blockedCreation)
+            await NotifyEvictedAsync(
+                    entry,
+                    reason,
+                    preferSynchronousDisposal,
+                    ownsReservation,
+                    blockedCreation)
                 .ConfigureAwait(false);
         }
     }
@@ -527,6 +762,7 @@ internal sealed class PartitionCache<TKey, TShield>
     private async ValueTask NotifyEvictedAsync(
         Entry entry,
         PartitionEvictionReason reason,
+        bool preferSynchronousDisposal,
         bool ownsReservation = false,
         Creation? blockedCreation = null)
     {
@@ -534,6 +770,7 @@ internal sealed class PartitionCache<TKey, TShield>
         var scope = new EvictionCallbackScope(
             ownsReservation,
             blockedCreation,
+            preferSynchronousDisposal,
             previousScope);
         _evictionCallback.Value = scope;
         try
@@ -564,14 +801,17 @@ internal sealed class PartitionCache<TKey, TShield>
         }
         finally
         {
-            scope.Deactivate();
+            var unretained = scope.DeactivateAndTakeUnretained();
             _evictionCallback.Value = previousScope;
+            await DisposeEvictedAsync(unretained, scope.PreferSynchronousDisposal)
+                .ConfigureAwait(false);
         }
     }
 
     private async ValueTask NotifyAutomaticEvictionsAsync(
         List<Entry>? entries,
         PartitionEvictionReason reason,
+        bool preferSynchronousDisposal,
         Creation? blockedCreation = null)
     {
         try
@@ -579,9 +819,11 @@ internal sealed class PartitionCache<TKey, TShield>
             await NotifyEvictedAsync(
                     entries,
                     reason,
+                    preferSynchronousDisposal,
                     ownsReservation: true,
                     blockedCreation: blockedCreation)
                 .ConfigureAwait(false);
+            await DisposeEvictedAsync(entries, preferSynchronousDisposal).ConfigureAwait(false);
         }
         finally
         {
@@ -589,9 +831,14 @@ internal sealed class PartitionCache<TKey, TShield>
         }
     }
 
-    private void Publish(TKey key, TShield shield, Creation creation)
+    private void Publish(TKey key, Entry entry)
     {
-        var entry = new Entry(key, shield, Timestamp());
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw new ObjectDisposedException(typeof(PartitionCache<TKey, TShield>).Name);
+        }
+
+        entry.LastAccess = Timestamp();
         _entries.Add(key, entry);
         AddMostRecentlyUsed(entry);
         _createdCount++;
@@ -710,6 +957,176 @@ internal sealed class PartitionCache<TKey, TShield>
         Unlink(entry);
     }
 
+    private ValueTask DisposeEvictedAsync(Entry entry, bool preferSynchronousDisposal) =>
+        DisposeEvictedAsync([entry], preferSynchronousDisposal);
+
+    private async ValueTask<Entry> CreateEntryAsync(
+        TKey key,
+        TShield shield,
+        bool preferSynchronousDisposal)
+    {
+        List<Strategy>? owned = null;
+        Exception? acquisitionFailure = null;
+        foreach (var strategy in shield.Strategies)
+        {
+            if (_ownsStrategies
+                && (strategy is IDisposable || strategy is IAsyncDisposable)
+                && !ContainsReference(owned, strategy))
+            {
+                if (StrategyOwnership.TryAcquire(strategy))
+                {
+                    (owned ??= []).Add(strategy);
+                }
+                else
+                {
+                    acquisitionFailure ??= new InvalidOperationException(
+                        "A partition cannot publish a strategy whose disposal has started.");
+                }
+            }
+        }
+
+        if (acquisitionFailure is not null)
+        {
+            await ReleaseOwnedStrategiesAsync(owned ?? [], preferSynchronousDisposal)
+                .ConfigureAwait(false);
+            throw acquisitionFailure;
+        }
+
+        StrategyExecutionTracker? executionTracker = null;
+        if (owned is not null)
+        {
+            executionTracker = new StrategyExecutionTracker();
+            shield = (TShield)shield.WithExecutionTracking(
+                executionTracker,
+                _executionReentrancy);
+        }
+
+        return new Entry(
+            key,
+            shield,
+            lastAccess: 0,
+            executionTracker,
+            owned?.ToArray() ?? []);
+    }
+
+    private static bool ContainsReference(List<Strategy>? strategies, Strategy candidate)
+    {
+        if (strategies is not null)
+        {
+            foreach (var strategy in strategies)
+            {
+                if (ReferenceEquals(strategy, candidate))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private async ValueTask DisposeEvictedAsync(
+        IReadOnlyList<Entry>? entries,
+        bool preferSynchronousDisposal)
+    {
+        if (entries is null)
+        {
+            return;
+        }
+
+        foreach (var entry in entries)
+        {
+            if (!entry.TryBeginDisposal())
+            {
+                continue;
+            }
+
+            if (!entry.CreationLeaseActive
+                && (entry.ExecutionTracker is null
+                    || entry.ExecutionTracker.ActiveExecutions == 0))
+            {
+                await ReleaseOwnedStrategiesAsync(
+                        entry.OwnedStrategies,
+                        preferSynchronousDisposal)
+                    .ConfigureAwait(false);
+                continue;
+            }
+
+            TrackPendingDisposal(DisposeWhenInactiveAsync(entry, preferSynchronousDisposal));
+        }
+    }
+
+    private async Task DisposeWhenInactiveAsync(Entry entry, bool preferSynchronousDisposal)
+    {
+        while (entry.CreationLeaseActive
+            || entry.ExecutionTracker is { ActiveExecutions: not 0 })
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
+        }
+
+        await ReleaseOwnedStrategiesAsync(entry.OwnedStrategies, preferSynchronousDisposal)
+            .ConfigureAwait(false);
+    }
+
+    private void TrackPendingDisposal(Task pending)
+    {
+        lock (_gate)
+        {
+            _pendingDisposals.RemoveAll(static task => task.IsCompleted);
+            _pendingDisposals.Add(pending);
+        }
+    }
+
+    private async ValueTask ReleaseOwnedStrategiesAsync(
+        IReadOnlyList<Strategy> strategies,
+        bool preferSynchronousDisposal)
+    {
+        for (var index = strategies.Count - 1; index >= 0; index--)
+        {
+            var strategy = strategies[index];
+            if (StrategyOwnership.Release(strategy))
+            {
+                await DisposeStrategyAsync(strategy, preferSynchronousDisposal).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async ValueTask DisposeStrategyAsync(
+        Strategy strategy,
+        bool preferSynchronousDisposal)
+    {
+        var previousScope = _strategyDisposal.Value;
+        var scope = new ReentrancyScope(previousScope);
+        _strategyDisposal.Value = scope;
+        try
+        {
+            if (preferSynchronousDisposal && strategy is IDisposable synchronousDisposable)
+            {
+                synchronousDisposable.Dispose();
+            }
+            else if (strategy is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                ((IDisposable)strategy).Dispose();
+            }
+        }
+        catch (Exception exception)
+        {
+            lock (_gate)
+            {
+                _disposalFailures.Enqueue(exception);
+            }
+        }
+        finally
+        {
+            scope.Deactivate();
+            _strategyDisposal.Value = previousScope;
+        }
+    }
+
     private void Unlink(Entry entry)
     {
         if (entry.Previous is null)
@@ -750,27 +1167,58 @@ internal sealed class PartitionCache<TKey, TShield>
         }
     }
 
-    private sealed class Entry(TKey key, TShield shield, long lastAccess)
+    private sealed class Entry(
+        TKey key,
+        TShield shield,
+        long lastAccess,
+        StrategyExecutionTracker? executionTracker,
+        Strategy[] ownedStrategies)
     {
+        private int _creationLease = 1;
+        private int _disposalStarted;
+
         public TKey Key { get; } = key;
 
         public TShield Shield { get; } = shield;
+
+        public StrategyExecutionTracker? ExecutionTracker { get; } = executionTracker;
+
+        public Strategy[] OwnedStrategies { get; } = ownedStrategies;
 
         public long LastAccess { get; set; } = lastAccess;
 
         public Entry? Previous { get; set; }
 
         public Entry? Next { get; set; }
+
+        public bool CreationLeaseActive => Volatile.Read(ref _creationLease) != 0;
+
+        public void ReleaseCreationLease() => Volatile.Write(ref _creationLease, 0);
+
+        public bool TryBeginDisposal() =>
+            Interlocked.Exchange(ref _disposalStarted, 1) == 0;
+    }
+
+    private sealed class ReentrancyScope(ReentrancyScope? parent)
+    {
+        private int _active = 1;
+
+        public bool Active => Volatile.Read(ref _active) != 0
+            || parent is { Active: true };
+
+        public void Deactivate() => Volatile.Write(ref _active, 0);
     }
 
     private sealed class Creation
     {
-        private readonly TaskCompletionSource<TShield> _completion =
+        private readonly TaskCompletionSource<TShield?> _completion =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task<TShield> Task => _completion.Task;
+        public Task<TShield?> Task => _completion.Task;
 
         public void Succeed(TShield shield) => _completion.TrySetResult(shield);
+
+        public void Retry() => _completion.TrySetResult(null);
 
         public void Fail(Exception exception)
         {
@@ -782,20 +1230,154 @@ internal sealed class PartitionCache<TKey, TShield>
     private sealed class EvictionCallbackScope(
         bool ownsReservation,
         Creation? blockedCreation,
+        bool preferSynchronousDisposal,
         EvictionCallbackScope? parent)
     {
         private int _active = 1;
+        private List<Entry>? _unretained;
 
-        public bool Active => Volatile.Read(ref _active) != 0;
+        public bool Active => Volatile.Read(ref _active) != 0
+            || parent is { Active: true };
 
         public bool OwnsReservation => ownsReservation
             || parent is { Active: true, OwnsReservation: true };
+
+        public bool PreferSynchronousDisposal => preferSynchronousDisposal;
 
         public bool Blocks(Creation creation) =>
             ReferenceEquals(blockedCreation, creation)
             || parent is { Active: true } && parent.Blocks(creation);
 
-        public void Deactivate() => Volatile.Write(ref _active, 0);
+        public bool TryAddUnretained(Entry entry)
+        {
+            lock (this)
+            {
+                if (_active != 0)
+                {
+                    (_unretained ??= []).Add(entry);
+                    return true;
+                }
+            }
+
+            return parent?.TryAddUnretained(entry) == true;
+        }
+
+        public Entry[]? DeactivateAndTakeUnretained()
+        {
+            lock (this)
+            {
+                Volatile.Write(ref _active, 0);
+                var entries = _unretained?.ToArray();
+                _unretained = null;
+                return entries;
+            }
+        }
+    }
+
+    private void TrackUnretained(Entry entry, bool preferSynchronousDisposal)
+    {
+        if (_evictionCallback.Value is { } scope && scope.TryAddUnretained(entry))
+        {
+            return;
+        }
+
+        TrackPendingDisposal(DisposeEvictedAsync(entry, preferSynchronousDisposal).AsTask());
+    }
+
+    private async ValueTask<TShield> CompleteGetAsync(TKey key)
+    {
+        try
+        {
+            return await GetSlowAsync(key, preferSynchronousDisposal: false)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
+
+    private async ValueTask<bool> CompleteTryRemoveAsync(TKey key)
+    {
+        try
+        {
+            return await TryRemoveSlowAsync(key, preferSynchronousDisposal: false)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
+
+    private async ValueTask CompleteClearAsync()
+    {
+        try
+        {
+            await ClearSlowAsync(preferSynchronousDisposal: false).ConfigureAwait(false);
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
+
+    private async ValueTask<int> CompletePruneExpiredAsync()
+    {
+        try
+        {
+            return _idleExpiration is null
+                ? 0
+                : await PruneExpiredSlowAsync(preferSynchronousDisposal: false)
+                    .ConfigureAwait(false);
+        }
+        finally
+        {
+            CompleteOperation();
+        }
+    }
+
+    private void BeginOperation()
+    {
+        lock (_gate)
+        {
+            ThrowIfDisposed();
+            _activeOperations++;
+        }
+    }
+
+    private void CompleteOperation()
+    {
+        TaskCompletionSource<bool>? completion = null;
+        lock (_gate)
+        {
+            if (--_activeOperations == 0)
+            {
+                completion = _operationCompletion;
+                _operationCompletion = null;
+            }
+        }
+
+        completion?.TrySetResult(true);
+    }
+
+    private Task GetOperationCompletionTask()
+    {
+        lock (_gate)
+        {
+            return _activeOperations == 0
+                ? Task.CompletedTask
+                : (_operationCompletion ??= new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously)).Task;
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw new ObjectDisposedException(typeof(PartitionCache<TKey, TShield>).Name);
+        }
     }
 
 }

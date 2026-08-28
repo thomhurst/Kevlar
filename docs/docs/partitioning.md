@@ -47,17 +47,32 @@ partition is evicted before that limit can be exceeded. `IdleExpiration` is opti
 opportunistic: expired entries are removed by later provider operations or an explicit
 `PruneExpired()` call; no timer or background worker is retained.
 
-Eviction removes only the provider's reference to a shield. An execution already using that shield
-continues normally and is not cancelled. A later lookup of the evicted key creates a new shield
-with fresh breaker, limiter, and queue state. This makes capacity eviction deterministic without
-coupling cache lifetime to execution lifetime.
+After `OnEvicted` completes and any execution already using the shield finishes, Kevlar releases
+the evicted shield's disposable strategies in reverse pipeline order. A strategy instance shared
+by multiple partition providers is disposed only after its last owner releases it. The provider
+owns every strategy returned by its factory by default. Set `OwnsStrategies = false` when the
+factory returns strategy instances also used by standalone or registry shields; the external owner
+must then dispose them. Do not retain and reuse a shield after its partition is evicted. A later
+lookup of the evicted key creates a new shield with fresh breaker, limiter, and queue state. Core
+strategies hold no long-lived disposable resources; this lifecycle primarily matters for custom
+strategies and adapters such as an owned `RateLimiter`.
+
+When an owned partition contains disposable strategies, each shield execution allocates one small
+async-flow lifetime token. The token must be unique so provider disposal can distinguish the exact
+protected execution from detached tasks and concurrent later executions. Set
+`OwnsStrategies = false` to avoid provider lifetime tracking when another component owns and
+disposes those strategies.
 
 Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
 synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
-eviction callback is awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
+owned strategies of a newly published shield remain alive until `OnCreated` and the creating lookup
+complete, even if another operation evicts that partition concurrently. The eviction callback is
+awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
-lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
-`Cleared` reason; idle expiry uses `Expiration`.
+lookup creates and retains the partition normally. Its owned strategies are released when the
+callback finishes. Explicit `TryRemove` and `Clear` removals use the `Cleared` reason; idle expiry
+uses `Expiration`. Disposing a provider from its own `OnCreated` or `OnEvicted` callback is rejected
+because the provider must wait for that callback before disposal can complete.
 
 ```csharp
 var observed = new PartitionedShield<string>(
@@ -82,6 +97,14 @@ var observed = new PartitionedShield<string>(
 lifecycle status. `TryGetShield`, `TryRemove`, `Clear`, and their async cleanup variants provide
 explicit cache control. If the factory throws, no existing partition is evicted and the failed key
 is not cached.
+
+`PartitionedShield` implements both `IDisposable` and `IAsyncDisposable`. Disposing it rejects new
+operations, clears live partitions, waits for factories, removal callbacks, and active executions
+already in flight, and disposes owned strategies exactly once. Concurrent disposal callers await
+the same operation and observe the same failure. Synchronous removal and disposal APIs prefer
+`IDisposable`; asynchronous APIs prefer `IAsyncDisposable` when a strategy implements both. Keyed
+partition providers registered through DI are singleton-owned and are therefore disposed with the
+service provider.
 
 ## Dependency injection
 
