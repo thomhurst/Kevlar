@@ -77,9 +77,8 @@ shared build properties file:
 Security fixes target the latest stable minor release in the current major line. After a new major
 version reaches general availability, the previous major continues receiving security fixes for
 six months. Older minors in a supported major must upgrade to that major's latest minor to receive
-the fix. Pre-release builds are not supported. See the repository
-[security policy](https://github.com/thomhurst/Kevlar/blob/main/SECURITY.md) for the current matrix
-and private reporting process.
+the fix. Pre-release builds are not supported. Report vulnerabilities through GitHub's
+[private security advisory form](https://github.com/thomhurst/Kevlar/security/advisories/new).
 
 ## Release cadence
 

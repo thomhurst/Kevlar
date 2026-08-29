@@ -34,9 +34,9 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
 
-if ($sidebarSource -notmatch "'getting-started',\s*'upgrading',\s*'polly-migration'")
+if ($sidebarSource -notmatch "'getting-started',\s*'polly-migration'")
 {
-    $errors.Add("Documentation sidebar must place 'upgrading' between 'getting-started' and 'polly-migration'.")
+    $errors.Add("Documentation sidebar must place 'polly-migration' after 'getting-started'.")
 }
 $timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)(?:(?:global::)?System\.)?TimeoutException(?:>|&gt;)|\bis\s+(?:(?:global::)?System\.)?TimeoutException\b|\bcatch\s*\(\s*(?:(?:global::)?System\.)?TimeoutException\b)'
 $timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
@@ -125,41 +125,14 @@ $deadApiPatterns = @(
     '\bRateLimiterRejectedEvent\b'
 )
 $deadApiPattern = [regex]($deadApiPatterns -join '|')
-$upgradingPath = [IO.Path]::GetFullPath((Join-Path $resolvedDocsPath 'upgrading.md'))
 foreach ($document in @((Get-Item -LiteralPath (Join-Path $repositoryRoot 'README.md'))) + $documents)
 {
     $documentLines = @(Get-Content -LiteralPath $document.FullName)
     $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $document.FullName).Replace('\', '/')
-    $startMarkers = @($documentLines | Select-String -Pattern '^<!-- upgrade-from-0\.x:start -->$')
-    $endMarkers = @($documentLines | Select-String -Pattern '^<!-- upgrade-from-0\.x:end -->$')
-    if ($startMarkers.Count -ne $endMarkers.Count -or $startMarkers.Count -gt 1)
-    {
-        $errors.Add("$relativePath has unbalanced or duplicate upgrade-table markers: $($startMarkers.Count) start and $($endMarkers.Count) end markers.")
-    }
-    elseif ($startMarkers.Count -eq 1 -and $startMarkers[0].LineNumber -ge $endMarkers[0].LineNumber)
-    {
-        $errors.Add("$relativePath upgrade-table markers are out of order.")
-    }
-    elseif ([IO.Path]::GetFullPath($document.FullName) -eq $upgradingPath -and $startMarkers.Count -eq 0)
-    {
-        $errors.Add('upgrading.md is missing its upgrade-table marker pair.')
-    }
-
-    $insideUpgradeTable = $false
     for ($lineIndex = 0; $lineIndex -lt $documentLines.Count; $lineIndex++)
     {
         $line = $documentLines[$lineIndex]
-        if ($line -eq '<!-- upgrade-from-0.x:start -->')
-        {
-            $insideUpgradeTable = $true
-            continue
-        }
-        if ($line -eq '<!-- upgrade-from-0.x:end -->')
-        {
-            $insideUpgradeTable = $false
-            continue
-        }
-        if (-not $insideUpgradeTable -and $deadApiPattern.IsMatch($line))
+        if ($deadApiPattern.IsMatch($line))
         {
             $errors.Add("$relativePath`:$($lineIndex + 1) contains a dead pre-release API name.")
         }
@@ -490,28 +463,17 @@ $hardwareMentionPattern = [regex]'(?i)(?:\b(?:AMD\s+)?(?:Ryzen|EPYC)\b|\bIntel\s
 foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md')
 {
     $insideFence = $false
-    $insideUpgradeTable = $false
 
     for ($lineIndex = 0; $lineIndex -lt $document.Lines.Count; $lineIndex++)
     {
         $line = $document.Lines[$lineIndex]
-        if ($line -eq '<!-- upgrade-from-0.x:start -->')
-        {
-            $insideUpgradeTable = $true
-            continue
-        }
-        if ($line -eq '<!-- upgrade-from-0.x:end -->')
-        {
-            $insideUpgradeTable = $false
-            continue
-        }
         if ($line -match '^\s*```')
         {
             $insideFence = -not $insideFence
             continue
         }
 
-        if ($insideFence -or $insideUpgradeTable)
+        if ($insideFence)
         {
             continue
         }

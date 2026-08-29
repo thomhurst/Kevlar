@@ -77,11 +77,6 @@ if ($assets.Count -eq 0)
 }
 
 $previousTag = Get-PreviousReleaseTag
-if ($Tag -eq 'v1.0.0' -and [string]::IsNullOrWhiteSpace($Headline))
-{
-    $Headline = 'Kevlar 1.0 establishes the stable Shield API. See [Upgrading from 0.x](https://thomhurst.github.io/Kevlar/docs/upgrading).'
-}
-
 if ($DryRun)
 {
     $body = Get-GeneratedReleaseBody $previousTag

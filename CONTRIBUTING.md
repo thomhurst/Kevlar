@@ -8,8 +8,9 @@ Thanks for helping improve Kevlar. By participating, you agree to follow the
 - Search existing issues and pull requests.
 - Use a bug report for incorrect behavior, a feature request for a new contract, and a question
   for usage help.
-- For security vulnerabilities, follow [SECURITY.md](SECURITY.md) instead of opening a public
-  issue.
+- Report security vulnerabilities through GitHub's
+  [private security advisory form](https://github.com/thomhurst/Kevlar/security/advisories/new)
+  instead of opening a public issue.
 - Keep one behavior change per pull request. Link the issue it resolves.
 
 ## Local setup

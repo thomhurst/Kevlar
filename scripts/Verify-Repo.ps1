@@ -8,7 +8,6 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $errors = [System.Collections.Generic.List[string]]::new()
 $requiredFiles = @(
     'CONTRIBUTING.md'
-    'SECURITY.md'
     'CODE_OF_CONDUCT.md'
     '.github/PULL_REQUEST_TEMPLATE.md'
     '.github/ISSUE_TEMPLATE/bug_report.yml'
@@ -41,7 +40,6 @@ if ($badgeCount -lt 5)
 
 $requiredReadmeLinks = @(
     'CONTRIBUTING.md'
-    'SECURITY.md'
     'CODE_OF_CONDUCT.md'
 )
 
