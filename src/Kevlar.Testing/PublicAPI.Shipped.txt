@@ -189,3 +189,5 @@ Kevlar.Testing.HandlingClauseDescriptor.IsContextAware.get -> bool
 Kevlar.Testing.StrategyDescriptor.HandlingClause.get -> Kevlar.Testing.HandlingClauseDescriptor?
 Kevlar.Testing.TelemetryEventRecord.IsCancelled.get -> bool
 Kevlar.Testing.TelemetryEventRecord.IsWinner.get -> bool
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield, bool includeTransparent) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield, bool includeTransparent) -> Kevlar.Testing.ShieldDescriptor!
