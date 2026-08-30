@@ -654,12 +654,16 @@ $analysisCategories = @(
     'Performance'
     'Reliability'
     'Security'
+    'SingleFile'
+    'Style'
     'Usage'
 )
 $warningBuildProperties = @(
     '-p:AnalysisLevel=latest'
     '-p:AnalysisMode=Default'
+    '-p:CodeAnalysisTreatWarningsAsErrors=true'
     '-p:EnableNETAnalyzers=true'
+    '-p:EnforceCodeStyleInBuild=true'
     '-p:MSBuildTreatWarningsAsErrors=true'
     '-p:NoWarn='
     '-p:Nullable=enable'
