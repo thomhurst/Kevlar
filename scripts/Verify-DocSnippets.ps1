@@ -66,6 +66,7 @@ $analysisCategoryPattern = $analysisCategories -join '|'
 $forbiddenDocumentationPatterns = [ordered]@{
     'doc-test-ignore' = 'doc-test-ignore'
     'warning pragma' = '(?m)^\s*#pragma\s+warning\s+disable\b'
+    'source diagnostic suppression' = '(?i)\b(?:UnconditionalSuppressMessage|SuppressMessage)(?:Attribute)?\b'
     'disabled nullable warnings' = '(?im)^\s*#nullable\s+disable\b|(?is)<Nullable\b[^>]*>\s*(?:disable|annotations)\s*</Nullable>'
     'NoWarn' = '(?i)<NoWarn\b'
     'WarningsNotAsErrors' = '(?i)\bWarningsNotAsErrors\b'
