@@ -85,6 +85,19 @@ $forbiddenDocumentationPatterns = [ordered]@{
     'generated-code setting' = '(?im)^\s*generated_code\s*=\s*true\b'
 }
 
+function Expand-CSharpUnicodeEscapes
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$Text
+    )
+
+    return [regex]::Replace(
+        $Text,
+        '\\(?:u(?<code>[0-9A-Fa-f]{4})|U(?<code>[0-9A-Fa-f]{8}))',
+        { param($match) [char]::ConvertFromUtf32([Convert]::ToInt32($match.Groups['code'].Value, 16)) })
+}
+
 $harnessPaths = @(
     $projectPath
     (Join-Path $repositoryRoot 'tests/Kevlar.DocTests/Program.cs')
@@ -111,7 +124,7 @@ while ($configurationDirectory.FullName.StartsWith($repositoryRoot, [StringCompa
 
 foreach ($harnessPath in $harnessPaths)
 {
-    $harnessText = Get-Content -Raw -LiteralPath $harnessPath
+    $harnessText = Expand-CSharpUnicodeEscapes (Get-Content -Raw -LiteralPath $harnessPath)
     foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
     {
         if ($harnessText -match $forbiddenPattern.Value)
@@ -146,7 +159,7 @@ foreach ($documentPath in $documentPaths)
 {
     $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $documentPath).Replace('\', '/')
     $lines = Get-Content -LiteralPath $documentPath
-    $documentText = $lines -join "`n"
+    $documentText = Expand-CSharpUnicodeEscapes ($lines -join "`n")
     foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
     {
         if ($documentText -match $forbiddenPattern.Value)
@@ -657,9 +670,10 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 [void]$builder.AppendLine('#endif')
 
 $generatedSource = $builder.ToString()
+$normalizedGeneratedSource = Expand-CSharpUnicodeEscapes $generatedSource
 foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
 {
-    if ($generatedSource -match $forbiddenPattern.Value)
+    if ($normalizedGeneratedSource -match $forbiddenPattern.Value)
     {
         throw "Generated documentation source contains forbidden $($forbiddenPattern.Key)."
     }
@@ -947,7 +961,8 @@ function Assert-EffectiveAnalyzerConfiguration
             continue
         }
 
-        $configurationText = Get-Content -Raw -LiteralPath $configurationPath
+        $configurationText = Expand-CSharpUnicodeEscapes (
+            Get-Content -Raw -LiteralPath $configurationPath)
         foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
         {
             if ($configurationText -match $forbiddenPattern.Value)
