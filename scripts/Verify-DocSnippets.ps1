@@ -102,7 +102,16 @@ function Expand-CSharpUnicodeEscapes
     return [regex]::Replace(
         $Text,
         '\\(?:u(?<code>[0-9A-Fa-f]{4})|U(?<code>[0-9A-Fa-f]{8}))',
-        { param($match) [char]::ConvertFromUtf32([Convert]::ToInt32($match.Groups['code'].Value, 16)) })
+        {
+            param($match)
+            $codePoint = [Convert]::ToInt32($match.Groups['code'].Value, 16)
+            if ($match.Value[1] -ceq 'u')
+            {
+                return [string][char]$codePoint
+            }
+
+            return [char]::ConvertFromUtf32($codePoint)
+        })
 }
 
 $harnessPaths = @(
