@@ -847,12 +847,23 @@ function Assert-EffectiveAnalyzerConfiguration
     }
 
     $projectDirectory = Split-Path $projectPath -Parent
-    foreach ($compilerArgument in $compilerArguments | Where-Object { $_ -match '(?i)\.cs"?$' })
+    foreach ($compilerArgument in $compilerArguments)
     {
         $sourceArgument = $compilerArgument.Trim('"')
-        if ($sourceArgument -match '^(?:/|-)[A-Za-z][A-Za-z0-9]*:')
+        if ($sourceArgument.StartsWith('-') `
+            -or ([OperatingSystem]::IsWindows() -and $sourceArgument.StartsWith('/')))
         {
             continue
+        }
+
+        if ($sourceArgument.StartsWith('/'))
+        {
+            $slashArgument = $sourceArgument.Substring(1)
+            if ($slashArgument -notmatch '[/\\]' `
+                -or $slashArgument -match '^[A-Za-z][A-Za-z0-9]*:')
+            {
+                continue
+            }
         }
 
         $compilerSourcePath = [IO.Path]::GetFullPath($sourceArgument, $projectDirectory)
