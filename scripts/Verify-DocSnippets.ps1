@@ -699,7 +699,7 @@ function Assert-EffectiveAnalyzerConfiguration
         [string]$Framework
     )
 
-    $queriedPropertyNames = @('Configuration', 'TargetFramework') +
+    $queriedPropertyNames = @('Configuration', 'TargetFramework', 'MSBuildSDKsPath') +
         @($warningBuildPropertyValues.Keys)
     $queryArguments = @(
         'msbuild'
@@ -728,6 +728,11 @@ function Assert-EffectiveAnalyzerConfiguration
     foreach ($propertyName in $queriedPropertyNames)
     {
         $actualValue = $configuration.Properties.PSObject.Properties[$propertyName].Value
+        if ($propertyName -eq 'MSBuildSDKsPath')
+        {
+            continue
+        }
+
         if ($propertyName -eq 'NoWarn')
         {
             $unexpectedNoWarnIds = @(
@@ -757,6 +762,16 @@ function Assert-EffectiveAnalyzerConfiguration
 
     $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
         @($configuration.Items.EditorConfigFiles)
+    $sdkAnalyzerConfigurationDirectory = [IO.Path]::GetFullPath(
+        (Join-Path $configuration.Properties.MSBuildSDKsPath 'Microsoft.NET.Sdk/analyzers/build/config'))
+    $pathComparison = if ([OperatingSystem]::IsWindows())
+    {
+        [StringComparison]::OrdinalIgnoreCase
+    }
+    else
+    {
+        [StringComparison]::Ordinal
+    }
     foreach ($configurationItem in $configurationItems)
     {
         $configurationPath = $configurationItem.FullPath
@@ -766,8 +781,11 @@ function Assert-EffectiveAnalyzerConfiguration
             continue
         }
 
-        $normalizedConfigurationPath = $configurationPath.Replace('\', '/')
-        if ($normalizedConfigurationPath -match '(?i)/Sdks/Microsoft\.NET\.Sdk/analyzers/build/config/analysislevel_[^/]+\.globalconfig$')
+        $configurationFullPath = [IO.Path]::GetFullPath($configurationPath)
+        $configurationDirectory = [IO.Path]::GetDirectoryName($configurationFullPath)
+        $configurationFileName = [IO.Path]::GetFileName($configurationFullPath)
+        if ($configurationDirectory.Equals($sdkAnalyzerConfigurationDirectory, $pathComparison) `
+            -and $configurationFileName -match '(?i)^analysislevel_[^/\\]+\.globalconfig$')
         {
             continue
         }
