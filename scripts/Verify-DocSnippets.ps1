@@ -633,6 +633,25 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 [void]$builder.AppendLine('}')
 [void]$builder.AppendLine('}')
 [void]$builder.AppendLine('#endif')
+[void]$builder.AppendLine('#if DOCUMENTATION_ANALYZER_CANARY')
+[void]$builder.AppendLine('namespace Kevlar.DocTests')
+[void]$builder.AppendLine('{')
+[void]$builder.AppendLine('internal static class AnalyzerCanary')
+[void]$builder.AppendLine('{')
+[void]$builder.AppendLine('    public static void Rethrow(Exception exception)')
+[void]$builder.AppendLine('    {')
+[void]$builder.AppendLine('        try')
+[void]$builder.AppendLine('        {')
+[void]$builder.AppendLine('            throw exception;')
+[void]$builder.AppendLine('        }')
+[void]$builder.AppendLine('        catch (Exception caught)')
+[void]$builder.AppendLine('        {')
+[void]$builder.AppendLine('            throw caught;')
+[void]$builder.AppendLine('        }')
+[void]$builder.AppendLine('    }')
+[void]$builder.AppendLine('}')
+[void]$builder.AppendLine('}')
+[void]$builder.AppendLine('#endif')
 
 $generatedSource = $builder.ToString()
 foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
@@ -897,6 +916,53 @@ function Assert-ExpectedDocumentationDiagnostics
     }
 }
 
+function Assert-ExpectedAnalyzerCanary
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$BuildOutput,
+
+        [Parameter(Mandatory)]
+        [string]$Framework
+    )
+
+    $diagnosticPattern = '(?m)^(?<path>.+?)\((?<line>[0-9]+),(?<column>[0-9]+)\): error (?<id>[A-Z]+[0-9]+):'
+    $diagnostics = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $pathComparison = if ([OperatingSystem]::IsWindows())
+    {
+        [StringComparison]::OrdinalIgnoreCase
+    }
+    else
+    {
+        [StringComparison]::Ordinal
+    }
+    foreach ($errorLine in [regex]::Matches($BuildOutput, '(?m)^(?<text>.*: error .*)$'))
+    {
+        if (-not [regex]::IsMatch($errorLine.Groups['text'].Value, $diagnosticPattern))
+        {
+            throw "Unexpected analyzer canary build failure: $($errorLine.Groups['text'].Value)"
+        }
+    }
+
+    foreach ($match in [regex]::Matches($BuildOutput, $diagnosticPattern))
+    {
+        $diagnosticPath = [IO.Path]::GetFullPath($match.Groups['path'].Value)
+        $diagnosticId = $match.Groups['id'].Value
+        if (-not $diagnosticPath.Equals([IO.Path]::GetFullPath($generatedPath), $pathComparison) `
+            -or $diagnosticId -ne 'CA2200')
+        {
+            throw "Unexpected $diagnosticId at $diagnosticPath while validating SDK analyzers for $Framework."
+        }
+
+        [void]$diagnostics.Add("$diagnosticPath|$($match.Groups['line'].Value)|$($match.Groups['column'].Value)|$diagnosticId")
+    }
+
+    if ($diagnostics.Count -ne 1)
+    {
+        throw "Expected one CA2200 analyzer canary error on $Framework; found $($diagnostics.Count)."
+    }
+}
+
 & dotnet restore $projectPath --configfile $nugetConfigPath `
     "-p:KevlarPackageVersion=$Version" `
     "-p:GeneratedSnippetsPath=$generatedPath" `
@@ -937,6 +1003,26 @@ foreach ($framework in @('net8.0', 'net10.0'))
     {
         throw "Documentation snippet project failed for $framework with exit code $LASTEXITCODE."
     }
+
+    $analyzerCanaryArguments = $buildArguments + '-p:DefineConstants=DOCUMENTATION_ANALYZER_CANARY'
+    $analyzerCanaryOutput = (& dotnet @analyzerCanaryArguments 2>&1 | Out-String)
+    $analyzerCanaryExitCode = $LASTEXITCODE
+    if ($analyzerCanaryExitCode -eq 0)
+    {
+        throw "Documentation analyzer canary unexpectedly built without errors for $framework."
+    }
+
+    try
+    {
+        Assert-ExpectedAnalyzerCanary -BuildOutput $analyzerCanaryOutput -Framework $framework
+    }
+    catch
+    {
+        Write-Host ($analyzerCanaryOutput.TrimEnd())
+        throw
+    }
+
+    Write-Host "Validated the exact CA2200 SDK analyzer canary error on $framework."
 
     if ($diagnosticSnippetCount -gt 0)
     {
