@@ -659,27 +659,33 @@ foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
 "@)
 
 $implicitUsings = if ($NoImplicitUsings) { 'disable' } else { 'enable' }
-$warningBuildProperties = @(
-    '-p:AnalysisLevel=latest'
-    '-p:AnalysisMode=Default'
-    '-p:CodeAnalysisRuleSet='
-    '-p:CodeAnalysisTreatWarningsAsErrors=true'
-    '-p:EnableNETAnalyzers=true'
-    '-p:EnforceCodeStyleInBuild=true'
-    '-p:MSBuildTreatWarningsAsErrors=true'
-    '-p:NoWarn='
-    '-p:Nullable=enable'
-    '-p:RunAnalyzers=true'
-    '-p:RunAnalyzersDuringBuild=true'
-    '-p:TreatWarningsAsErrors=true'
-    '-p:WarningLevel=9999'
-    '-p:WarningsNotAsErrors='
-)
+$warningBuildPropertyValues = [ordered]@{
+    AnalysisLevel = 'latest'
+    AnalysisMode = 'Default'
+    CodeAnalysisRuleSet = ''
+    CodeAnalysisTreatWarningsAsErrors = 'true'
+    EnableNETAnalyzers = 'true'
+    EnforceCodeStyleInBuild = 'true'
+    MSBuildTreatWarningsAsErrors = 'true'
+    NoWarn = ''
+    Nullable = 'enable'
+    RunAnalyzers = 'true'
+    RunAnalyzersDuringBuild = 'true'
+    TreatWarningsAsErrors = 'true'
+    WarningLevel = '9999'
+    WarningsNotAsErrors = ''
+}
 foreach ($analysisCategory in $analysisCategories)
 {
-    $warningBuildProperties += "-p:AnalysisLevel$analysisCategory="
-    $warningBuildProperties += "-p:AnalysisMode$analysisCategory="
+    $warningBuildPropertyValues["AnalysisLevel$analysisCategory"] = ''
+    $warningBuildPropertyValues["AnalysisMode$analysisCategory"] = ''
 }
+$warningBuildPropertyValues.AnalysisLevelStyle = 'latest'
+$warningBuildPropertyValues.AnalysisModeStyle = 'Default'
+$warningBuildProperties = @(
+    $warningBuildPropertyValues.GetEnumerator() |
+        ForEach-Object { "-p:$($_.Key)=$($_.Value)" }
+)
 $documentationBuildProperties = @(
     "-p:KevlarPackageVersion=$Version"
     "-p:GeneratedSnippetsPath=$generatedPath"
@@ -693,9 +699,13 @@ function Assert-EffectiveAnalyzerConfiguration
         [string]$Framework
     )
 
+    $queriedPropertyNames = @('Configuration', 'TargetFramework') +
+        @($warningBuildPropertyValues.Keys)
     $queryArguments = @(
         'msbuild'
         $projectPath
+        '-target:Compile'
+        "-getProperty:$($queriedPropertyNames -join ',')"
         '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles'
         '-p:Configuration=Release'
         "-p:TargetFramework=$Framework"
@@ -715,6 +725,36 @@ function Assert-EffectiveAnalyzerConfiguration
         throw "Failed to parse documentation analyzer configuration for $Framework.`n$queryOutput"
     }
 
+    foreach ($propertyName in $queriedPropertyNames)
+    {
+        $actualValue = $configuration.Properties.PSObject.Properties[$propertyName].Value
+        if ($propertyName -eq 'NoWarn')
+        {
+            $unexpectedNoWarnIds = @(
+                $actualValue -split '[,;]' |
+                    ForEach-Object Trim |
+                    Where-Object { $_ -and $_ -notin @('1701', '1702', '8002') }
+            )
+            if ($unexpectedNoWarnIds.Count -gt 0)
+            {
+                throw "Documentation build property NoWarn suppresses unexpected diagnostics '$($unexpectedNoWarnIds -join ', ')' for $Framework."
+            }
+
+            continue
+        }
+
+        $expectedValue = switch ($propertyName)
+        {
+            'Configuration' { 'Release' }
+            'TargetFramework' { $Framework }
+            default { $warningBuildPropertyValues[$propertyName] }
+        }
+        if (-not [string]::Equals($actualValue, $expectedValue, [StringComparison]::OrdinalIgnoreCase))
+        {
+            throw "Documentation build property $propertyName evaluated to '$actualValue' instead of '$expectedValue' for $Framework."
+        }
+    }
+
     $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
         @($configuration.Items.EditorConfigFiles)
     foreach ($configurationItem in $configurationItems)
@@ -722,6 +762,12 @@ function Assert-EffectiveAnalyzerConfiguration
         $configurationPath = $configurationItem.FullPath
         if ([string]::IsNullOrWhiteSpace($configurationPath) `
             -or -not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
+        {
+            continue
+        }
+
+        $normalizedConfigurationPath = $configurationPath.Replace('\', '/')
+        if ($normalizedConfigurationPath -match '(?i)/Sdks/Microsoft\.NET\.Sdk/analyzers/build/config/analysislevel_[^/]+\.globalconfig$')
         {
             continue
         }
