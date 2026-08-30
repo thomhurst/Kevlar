@@ -106,28 +106,8 @@ function Expand-CSharpUnicodeEscapes
 }
 
 $harnessPaths = @(
-    $projectPath
     (Join-Path $repositoryRoot 'tests/Kevlar.DocTests/Program.cs')
 )
-$configurationDirectory = Get-Item -LiteralPath (Split-Path $projectPath -Parent)
-while ($configurationDirectory.FullName.StartsWith($repositoryRoot, [StringComparison]::OrdinalIgnoreCase))
-{
-    foreach ($configurationName in @(
-        'Directory.Build.props'
-        'Directory.Build.targets'
-        '.editorconfig'
-        '.globalconfig'
-    ))
-    {
-        $configurationPath = Join-Path $configurationDirectory.FullName $configurationName
-        if (Test-Path -LiteralPath $configurationPath -PathType Leaf)
-        {
-            $harnessPaths += $configurationPath
-        }
-    }
-
-    $configurationDirectory = $configurationDirectory.Parent
-}
 
 foreach ($harnessPath in $harnessPaths)
 {
