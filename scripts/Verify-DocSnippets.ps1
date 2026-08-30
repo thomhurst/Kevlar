@@ -678,6 +678,7 @@ foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
 "@)
 
 $implicitUsings = if ($NoImplicitUsings) { 'disable' } else { 'enable' }
+$allowedBaselineNoWarnIds = @('1701', '1702', '8002')
 $warningBuildPropertyValues = [ordered]@{
     AnalysisLevel = 'latest'
     AnalysisMode = 'Default'
@@ -758,7 +759,7 @@ function Assert-EffectiveAnalyzerConfiguration
             $unexpectedNoWarnIds = @(
                 $actualValue -split '[,;]' |
                     ForEach-Object Trim |
-                    Where-Object { $_ -and $_ -notin @('1701', '1702', '8002') }
+                    Where-Object { $_ -and $_ -notin $allowedBaselineNoWarnIds }
             )
             if ($unexpectedNoWarnIds.Count -gt 0)
             {
@@ -794,6 +795,52 @@ function Assert-EffectiveAnalyzerConfiguration
         $configuration.Items.CscCommandLineArgs |
             ForEach-Object Identity
     )
+    $warningLevelArguments = @(
+        $compilerArguments |
+            Where-Object { $_ -match '^(?:/|-)warn:' }
+    )
+    if ($warningLevelArguments.Count -ne 1 `
+        -or $warningLevelArguments[0] -notmatch '^(?i)(?:/|-)warn:9999$')
+    {
+        throw "Documentation compiler warning level is not exactly 9999 for $Framework."
+    }
+
+    if (-not ($compilerArguments | Where-Object { $_ -match '^(?i)(?:/|-)warnaserror\+$' }))
+    {
+        throw "Documentation compiler does not treat every warning as an error for $Framework."
+    }
+
+    $forbiddenCompilerSwitch = $compilerArguments |
+        Where-Object { $_ -match '^(?i)(?:/|-)(?:ruleset:|skipanalyzers\+|warnaserror-)' } |
+        Select-Object -First 1
+    if ($null -ne $forbiddenCompilerSwitch)
+    {
+        throw "Documentation compiler uses forbidden switch '$forbiddenCompilerSwitch' for $Framework."
+    }
+
+    foreach ($noWarnArgument in $compilerArguments | Where-Object { $_ -match '^(?i)(?:/|-)nowarn:' })
+    {
+        $unexpectedNoWarnIds = @(
+            $noWarnArgument.Substring($noWarnArgument.IndexOf(':') + 1) -split '[,;]' |
+                ForEach-Object Trim |
+                Where-Object { $_ -and $_ -notin $allowedBaselineNoWarnIds }
+        )
+        if ($unexpectedNoWarnIds.Count -gt 0)
+        {
+            throw "Documentation compiler suppresses unexpected diagnostics '$($unexpectedNoWarnIds -join ', ')' for $Framework."
+        }
+    }
+
+    $nullableArguments = @(
+        $compilerArguments |
+            Where-Object { $_ -match '^(?:/|-)nullable:' }
+    )
+    if ($nullableArguments.Count -ne 1 `
+        -or $nullableArguments[0] -notmatch '^(?i)(?:/|-)nullable:enable$')
+    {
+        throw "Documentation compiler nullable context is not exactly enable for $Framework."
+    }
+
     $compilerAnalyzerPaths = @(
         $compilerArguments |
             ForEach-Object {
@@ -829,10 +876,9 @@ function Assert-EffectiveAnalyzerConfiguration
     $sdkAnalyzerConfigurationDirectory = Join-Path $sdkAnalyzerDirectory 'build/config'
     foreach ($configurationPath in $compilerAnalyzerConfigurationPaths)
     {
-        if ([string]::IsNullOrWhiteSpace($configurationPath) `
-            -or -not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
+        if (-not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
         {
-            continue
+            throw "Documentation compiler analyzer configuration no longer exists at $configurationPath for $Framework."
         }
 
         $configurationFullPath = [IO.Path]::GetFullPath($configurationPath)
