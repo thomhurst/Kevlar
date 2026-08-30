@@ -862,10 +862,10 @@ function Assert-EffectiveAnalyzerConfiguration
 
     $warningLevelArguments = @(
         $compilerArguments |
-            Where-Object { $_ -match '^(?:/|-)warn:' }
+            Where-Object { $_ -match '^(?i)(?:/|-)(?:w|warn):' }
     )
     if ($warningLevelArguments.Count -ne 1 `
-        -or $warningLevelArguments[0] -notmatch '^(?i)(?:/|-)warn:9999$')
+        -or $warningLevelArguments[0] -notmatch '^(?i)(?:/|-)(?:w|warn):9999$')
     {
         throw "Documentation compiler warning level is not exactly 9999 for $Framework."
     }
