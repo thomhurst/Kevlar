@@ -42,6 +42,13 @@ $allowedExternalPackages = @(
     'Microsoft.Extensions.Configuration.Json'
     'Microsoft.Extensions.TimeProvider.Testing'
 )
+$trustedAnalyzerPackageIds = [System.Collections.Generic.HashSet[string]]::new(
+    [string[]]@(
+        'Kevlar'
+        'Microsoft.Extensions.Telemetry.Abstractions'
+        'System.Text.Json'
+    ),
+    [StringComparer]::OrdinalIgnoreCase)
 $supportedDiagnosticIds = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@(
         'KEV001', 'KEV002', 'KEV003', 'KEV004', 'KEV005', 'KEV006', 'KEV007'
@@ -1125,6 +1132,12 @@ else
 $trustedPackageAnalyzerPaths = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
 foreach ($library in $projectAssets.libraries.GetEnumerator() | Where-Object { $_.Value.type -eq 'package' })
 {
+    $packageId = $library.Key.Substring(0, $library.Key.LastIndexOf('/'))
+    if (-not $trustedAnalyzerPackageIds.Contains($packageId))
+    {
+        continue
+    }
+
     foreach ($file in $library.Value.files | Where-Object { $_ -match '(?i)^analyzers[/\\].*\.dll$' })
     {
         foreach ($packageFolder in $projectAssets.packageFolders.Keys)
