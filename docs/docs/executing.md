@@ -16,9 +16,9 @@ Multi-attempt [hedging](strategies/hedging.md) and asynchronous strategy callbac
 
 `Task` and `ValueTask` delegates both work — your existing `Task`-returning methods flow straight in, no wrapping:
 
-<!-- doc-test-ignore: Method declaration uses an ellipsis for the application implementation. -->
 ```csharp
-Task<User> LoadUserAsync(int id, CancellationToken ct) => ...;   // ordinary Task method
+Task<User> LoadUserAsync(int id, CancellationToken ct) =>
+    Task.FromResult(new User()); // ordinary Task method
 
 var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
 ```
@@ -52,7 +52,6 @@ Kevlar invokes the first user delegate inline when no preceding strategy defers 
 When every attempt must enter a UI context, capture its scheduler on the UI thread before calling
 Kevlar, then schedule the delegate explicitly:
 
-<!-- doc-test-ignore: viewModel represents the application's UI-bound implementation. -->
 ```csharp
 var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
@@ -70,15 +69,17 @@ Kevlar invokes this wrapper again for every retry or hedge, so each attempt is s
 captured context. Capture the scheduler only while running on the intended UI context. Strategy
 hooks return `ValueTask`; make the hook itself `async` and await the scheduled `Task`:
 
-<!-- doc-test-ignore: viewModel represents the application's UI-bound implementation. -->
 ```csharp
+var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+
 var uiRetryShield = Shield.Retry(options =>
 {
     options.OnRetry = async retry =>
     {
         var ct = retry.Context.CancellationToken;
+        var attemptNumber = retry.AttemptNumber;
         await Task.Factory.StartNew(
-                async () => await viewModel.ShowRetryAsync(retry.AttemptNumber, ct),
+                async () => await viewModel.ShowRetryAsync(attemptNumber, ct),
                 ct,
                 TaskCreationOptions.DenyChildAttach,
                 uiScheduler)
@@ -186,7 +187,11 @@ When you only need to *read* the context — the shield name, the effective toke
 
 ```csharp
 var name = await shield.ExecuteWithContextAsync(
-    static context => new ValueTask<string?>(context.ShieldName),
+    static context =>
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<string?>(context.ShieldName);
+    },
     cancellationToken);
 ```
 
@@ -203,10 +208,18 @@ var nestedResult = await Shield.Empty.ExecuteWithContextAsync(async parentContex
 {
     var asyncResult = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(
         parentContext,
-        static childContext => new ValueTask<int>(childContext.ShieldName?.Length ?? 0));
+        static childContext =>
+        {
+            childContext.CancellationToken.ThrowIfCancellationRequested();
+            return new ValueTask<int>(childContext.ShieldName?.Length ?? 0);
+        });
     var syncResult = Shield.Empty.ExecuteWithContext(
         parentContext,
-        static childContext => childContext.ShieldName?.Length ?? 0);
+        static childContext =>
+        {
+            childContext.CancellationToken.ThrowIfCancellationRequested();
+            return childContext.ShieldName?.Length ?? 0;
+        });
     return asyncResult + syncResult;
 });
 ```
@@ -261,16 +274,23 @@ For hedging, the callback sees properties from the winning attempt.
 
 When a failure is an expected outcome rather than an exceptional one, skip the throw/catch entirely and inspect the outcome:
 
+<!-- doc-test-declaration -->
 ```csharp
-Outcome<User> outcome = await shield.ExecuteOutcomeAsync(ct => LoadAsync(ct));
-
-if (outcome.TryGetResult(out var user))
+static async ValueTask<User> LoadWithoutThrowingAsync(
+    Shield shield,
+    StubCache cache,
+    ILogger logger)
 {
-    return user;
-}
+    Outcome<User> outcome = await shield.ExecuteOutcomeAsync(ct => LoadAsync(ct));
 
-logger.LogError(outcome.Exception, "gave up loading user");
-return cached;
+    if (outcome.TryGetResult(out var user))
+    {
+        return user;
+    }
+
+    logger.LogError(outcome.Exception, "gave up loading user");
+    return cache.GetUser();
+}
 ```
 
 `TryGetResult` returns `true` exactly when the outcome succeeded. Its nullability annotation

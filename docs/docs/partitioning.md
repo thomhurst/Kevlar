@@ -111,8 +111,11 @@ service provider.
 `AddPartitionedShield` registers a named provider as a keyed singleton. The factory receives the
 application service provider and the partition key.
 
-<!-- doc-test-ignore: EndpointClient and SendAsync are application-specific. -->
+<!-- doc-test-tail-declaration: split-before=public sealed class EndpointClient -->
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddPartitionedShield<Uri>(
     "endpoints",
     (serviceProvider, endpoint) => Shield.When<HttpRequestException>()
@@ -131,14 +134,21 @@ public sealed class EndpointClient(
         shields.GetShield(endpoint)
             .ExecuteAsync(token => SendCoreAsync(endpoint, token), cancellationToken)
             .AsTask();
+
+    private static Task<HttpResponseMessage> SendCoreAsync(
+        Uri endpoint,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
 }
 ```
 
 Typed providers use two generic arguments. This multi-tenant example isolates fallback and breaker
 state per tenant while sharing one bounded provider:
 
-<!-- doc-test-ignore: TenantRequest is application-specific. -->
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddPartitionedShield<string, TenantResult>(
     "tenants",
     (serviceProvider, tenantId) => Shield.For<TenantResult>()

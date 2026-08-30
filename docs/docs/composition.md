@@ -9,7 +9,7 @@ sidebar_position: 4
 **The first strategy in a chain is the outermost** — the same rule as ASP.NET middleware:
 
 ```csharp
-Shield
+var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // 1. total budget around everything below
     .Retry(3)                            // 2. retries happen inside that budget
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))  // 3. breaker sees each attempt
@@ -113,14 +113,13 @@ Proactive strategies — timeout, rate limit, concurrency limit — never consul
 
 Writing a new clause mid-chain replaces the previous one from that point on:
 
-<!-- doc-test-ignore: Uses an ellipsis to illustrate a fallback body defined by the application. -->
 ```csharp
-Shield
+var shield = Shield
     .When<HttpRequestException>()
     .Retry(3)                      // retries HttpRequestException
-    .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDur)   // breaker also counts HttpRequestException
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDuration) // breaker also counts HttpRequestException
     .When<TimeoutExceededException>()
-    .Fallback(...);                // fallback reacts to TimeoutExceededException only
+    .Fallback(static _ => ValueTask.CompletedTask); // fallback reacts to TimeoutExceededException only
 ```
 
 `Wrap` and `Compose` are scope boundaries. A reactive strategy added afterwards uses its default
@@ -143,13 +142,13 @@ var shield = Shield.Timeout(TimeSpan.FromSeconds(30))
 
 One ordering is always a bug: a `Fallback` chained *after* (inside) a retry, hedge or circuit breaker that shares its handling clause. The fallback recovers every failure before the outer strategy sees one, silently disabling it. Kevlar refuses to build that chain:
 
-<!-- doc-test-run: invalid-composition -->
+<!-- doc-test-diagnostic: KEV003 -->
 ```csharp
-Shield.For<int>().Retry(3).FallbackTo(-1);
+var invalid = Shield.For<int>().Retry(3).FallbackTo(-1);
 // InvalidOperationException: … makes Retry(3, …) unreachable.
 // Chain the Fallback first (the first strategy is the outermost) …
 
-Shield.For<int>().FallbackTo(-1).Retry(3);   // ✔ retry runs inside, fallback recovers after it gives up
+var valid = Shield.For<int>().FallbackTo(-1).Retry(3); // ✔ retry runs inside, fallback recovers after it gives up
 ```
 
 A fallback with its own *narrower* clause is still allowed inside — that's a deliberate layered recovery, not a mistake.

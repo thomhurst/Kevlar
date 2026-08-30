@@ -9,9 +9,9 @@ A token-bucket limiter: `Permits` executions per `Window`, with bursts and optio
 See the [exceptions reference](../exceptions.md) for `RateLimitExceededException` and `RetryAfter`.
 
 ```csharp
-Shield.RateLimit(100, perWindow: TimeSpan.FromSeconds(1));   // 100/s, burst = 100
+var fixedRate = Shield.RateLimit(100, perWindow: TimeSpan.FromSeconds(1)); // 100/s, burst = 100
 
-Shield.RateLimit(o =>
+var configuredRate = Shield.RateLimit(o =>
 {
     o.Permits = 100;                       // default 100
     o.Window = TimeSpan.FromSeconds(1);    // default 1s
@@ -34,29 +34,40 @@ to Kevlar core:
 dotnet add package Kevlar.Extensions.RateLimiting
 ```
 
+<!-- doc-test-declaration -->
 ```csharp
 using Kevlar.Extensions.RateLimiting;
 using System.Threading.RateLimiting;
 
-using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+public sealed class RateLimitedDependency : IDisposable
 {
-    PermitLimit = 100,
-    Window = TimeSpan.FromSeconds(1),
-    QueueLimit = 20,
-    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-});
-
-var shield = Shield.Empty.UseRateLimiter(limiter, options =>
-{
-    options.PermitCount = 1;
-    options.OnRejected = rejection =>
+    private readonly FixedWindowRateLimiter _limiter = new(new FixedWindowRateLimiterOptions
     {
-        Console.WriteLine(rejection.RetryAfter);
-        return default;
-    };
-});
+        PermitLimit = 100,
+        Window = TimeSpan.FromSeconds(1),
+        QueueLimit = 20,
+        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+    });
+    private readonly Shield _shield;
 
-await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+    public RateLimitedDependency()
+    {
+        _shield = Shield.Empty.UseRateLimiter(_limiter, options =>
+        {
+            options.PermitCount = 1;
+            options.OnRejected = rejection =>
+            {
+                Console.WriteLine(rejection.RetryAfter);
+                return default;
+            };
+        });
+    }
+
+    public ValueTask ExecuteAsync(CancellationToken cancellationToken = default) =>
+        _shield.ExecuteAsync(static _ => ValueTask.CompletedTask, cancellationToken);
+
+    public void Dispose() => _limiter.Dispose();
+}
 ```
 
 The caller owns the `RateLimiter` by default. Pass `ownsLimiter: true` when a shield registered in
@@ -70,34 +81,49 @@ metadata is copied before disposal. `MetadataName.RetryAfter` becomes
 Fixed-window, sliding-window, concurrency, chained, and custom limiters all use the same adapter.
 For a limiter owned behind another abstraction, supply asynchronous acquisition directly:
 
-<!-- doc-test-ignore: AcquireTenantLeaseAsync is supplied by the application's limiter abstraction. -->
 ```csharp
+using Kevlar.Extensions.RateLimiting;
+
 var shield = Shield.Empty.UseRateLimiter(
-    static (permitCount, context) =>
+    (permitCount, context) =>
         AcquireTenantLeaseAsync(permitCount, context.CancellationToken));
 ```
 
 Use `PartitionedRateLimiter<KevlarContext>` when partition selection depends on execution metadata:
 
+<!-- doc-test-declaration -->
 ```csharp
 using Kevlar.Extensions.RateLimiting;
 
-var tenantKey = new KevlarKey<string>("tenant");
-using var limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context =>
-    RateLimitPartition.Get(
-        context.Properties.GetOrDefault(tenantKey, "default"),
-        static _ => new ConcurrencyLimiter(new ConcurrencyLimiterOptions
-        {
-            PermitLimit = 10,
-            QueueLimit = 20,
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-        })));
-var shield = Shield.Empty.UseRateLimiter(limiter);
+public sealed class TenantLimitedDependency : IDisposable
+{
+    private static readonly KevlarKey<string> _tenantKey = new("tenant");
+    private readonly PartitionedRateLimiter<KevlarContext> _limiter;
+    private readonly Shield _shield;
 
-await shield.ExecuteWithContextAsync(
-    "tenant-42",
-    (tenant, properties) => properties.Set(tenantKey, tenant),
-    static (_, context) => new ValueTask(Task.Delay(1, context.CancellationToken)));
+    public TenantLimitedDependency()
+    {
+        _limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context =>
+            RateLimitPartition.Get(
+                context.Properties.GetOrDefault(_tenantKey, "default"),
+                static _ => new ConcurrencyLimiter(new ConcurrencyLimiterOptions
+                {
+                    PermitLimit = 10,
+                    QueueLimit = 20,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                })));
+        _shield = Shield.Empty.UseRateLimiter(_limiter);
+    }
+
+    public ValueTask ExecuteAsync(string tenant, CancellationToken cancellationToken = default) =>
+        _shield.ExecuteWithContextAsync(
+            tenant,
+            static (value, properties) => properties.Set(_tenantKey, value),
+            static (_, context) => new ValueTask(Task.Delay(1, context.CancellationToken)),
+            cancellationToken);
+
+    public void Dispose() => _limiter.Dispose();
+}
 ```
 
 The partition callback receives the live pooled `KevlarContext`; read it only during the callback

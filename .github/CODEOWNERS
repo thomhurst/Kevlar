@@ -2,7 +2,6 @@
 # change, including new paths, for owner review.
 * @thomhurst
 
-# Security and release automation are called out for visibility even though the default applies.
-/SECURITY.md @thomhurst
+# Release automation is called out for visibility even though the default applies.
 /.github/workflows/ @thomhurst
 /scripts/ @thomhurst

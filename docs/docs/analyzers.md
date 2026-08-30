@@ -14,20 +14,10 @@ or the .NET 8.0.100 SDK or later to run them. The package places them in its `ro
 band, so older compiler hosts skip them instead of reporting `CS9057`; the Kevlar runtime library
 remains available. Update the compiler host when those projects should also run Kevlar's analyzers.
 
-## Disabling analyzers
+## Keep analyzers enabled
 
-To use the runtime library without its bundled analyzers, exclude the analyzer asset on the
-`Kevlar` package reference:
-
-<!-- doc-test-project-fragment -->
-```xml
-<ItemGroup>
-  <PackageReference Include="Kevlar" ExcludeAssets="analyzers" />
-</ItemGroup>
-```
-
-If the reference already has `ExcludeAssets`, add `analyzers` to its semicolon-separated value.
-Prefer per-rule suppression when most analyzer coverage remains useful.
+Treat bundled analyzers as part of Kevlar's safety contract. Do not exclude analyzer assets or
+lower diagnostic severities; fix each reported hazard or make safe intent explicit in code.
 
 The analyzers report only hazards that are provable from the current expression or a stable local
 initializer. They do not guess what a factory method returns or follow a local that is reassigned.
@@ -70,6 +60,7 @@ The warning-level safety rules remain enabled by default.
 Kevlar cancels the token passed to an execution delegate when the caller cancels, a timeout expires,
 or a hedge loses. Work that ignores the token can continue after the shield has returned.
 
+<!-- doc-test-diagnostic: KEV001 -->
 ```csharp
 await shield.ExecuteAsync(ct => client.GetAsync(url));        // KEV001
 await shield.ExecuteAsync(ct => client.GetAsync(url, ct));    // clean
@@ -85,7 +76,7 @@ Synchronous `Execute` throws for a shield containing a hedge with a known `MaxHe
 zero, so use `ExecuteAsync` or remove hedging:
 
 ```csharp
-var hedged = Shield.Hedge(2, delay: TimeSpan.FromMilliseconds(50));
+var hedged = Shield.For<User>().Hedge(2, delay: TimeSpan.FromMilliseconds(50));
 
 var value = await hedged.ExecuteAsync(ct => LoadAsync(ct));   // clean
 ```
@@ -123,6 +114,7 @@ executions. Constructing one immediately before `Execute`, `ExecuteAsync`, or
 `ExecuteOutcomeAsync` discards that state after one call, so a circuit never accumulates failures
 and limiter capacity is not shared:
 
+<!-- doc-test-diagnostic: KEV004 -->
 ```csharp
 // KEV004: a new circuit exists for only this call.
 await Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
@@ -156,6 +148,7 @@ A fallback on non-generic `Shield` can recover void executions only. A shield co
 every result-returning execution at the execution boundary, before the delegate or any strategy
 runs—even when the delegate would have succeeded:
 
+<!-- doc-test-diagnostic: KEV005 -->
 ```csharp
 var shield = Shield.Fallback(static _ => ValueTask.CompletedTask);
 
@@ -182,6 +175,7 @@ those attempts only by their exceptions, so every attempt it starts runs to comp
 real dependency — and a losing hedge has still done its work. Duplicate writes, charges, or sends are
 observable unless the action is idempotent:
 
+<!-- doc-test-diagnostic: KEV006 -->
 ```csharp
 var shield = Shield.Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromMilliseconds(50)); // KEV006
 ```
@@ -195,8 +189,8 @@ var shield = Shield.For<HttpResponseMessage>()
     .Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
 ```
 
-If the untyped shape is deliberate — the action is a genuinely idempotent read — suppress the
-warning at that site with a pragma that records why.
+Use a typed shield even for genuinely idempotent reads. This keeps result selection explicit and
+avoids normalizing an unsafe shape through suppression.
 
 The rule reports every `Hedge` overload that returns the untyped `Shield`: the static
 `Shield.Hedge(...)` factories, the `ShieldExtensions.Hedge(...)` chaining methods, and
@@ -214,7 +208,7 @@ Builders are immutable — every `When…`/`Or…` returns a *new* builder and l
 untouched — so a dropped builder is simply lost, including a dropped `Or…` that looks like it is
 extending a clause in place:
 
-<!-- doc-test-ignore: Deliberately dead clauses that the analyzer is expected to flag. -->
+<!-- doc-test-diagnostic: KEV007*3 -->
 ```csharp
 Shield.When<HttpRequestException>();                          // KEV007 — nothing consumes it
 var clause = Shield.When<HttpRequestException>().Or<TimeoutExceededException>();  // KEV007 — never used
@@ -228,7 +222,7 @@ The second is a clause that a later `When…` or `WithDefaultHandling()` replace
 strategies — timeout, rate limit, concurrency limit — sat in between. Proactive strategies never
 consult clauses, so the first clause never applied to anything:
 
-<!-- doc-test-ignore: Deliberately dead clauses that the analyzer is expected to flag. -->
+<!-- doc-test-diagnostic: KEV007 -->
 ```csharp
 var shield = Shield
     .When<HttpRequestException>()                 // KEV007 — only the timeout saw this clause
@@ -258,7 +252,7 @@ Shields — and the clause builders they hand back — are immutable. Every flue
 *new* value and leaves its receiver untouched, so a chaining call written as a statement configures
 nothing:
 
-<!-- doc-test-ignore: A deliberately discarded chain that the analyzer is expected to flag. -->
+<!-- doc-test-diagnostic: KEV008 -->
 ```csharp
 var shield = Shield.Timeout(TimeSpan.FromSeconds(5));
 shield.Retry(3);                                   // KEV008 — the retry is thrown away
@@ -368,13 +362,13 @@ A local `HandlesException` or `HandlesResult` override also makes the policy exp
 does not report proactive strategies, an explicit `WithDefaultHandling()` reset, or opaque configuration
 that the analyzer cannot prove still uses the default.
 
-`KEV011` is an opt-in informational design hint, not a warning. After enabling it, keep the default
-when it is deliberate and suppress the hint at that site with a reason:
+`KEV011` is an opt-in informational design hint, not a warning. After enabling it, make deliberate
+default handling explicit with `WithDefaultHandling()` so future changes remain warning-clean:
 
 ```csharp
-#pragma warning disable KEV011 // This boundary deliberately retries every ordinary exception.
-var shield = Shield.Retry(3);
-#pragma warning restore KEV011
+var shield = Shield.Empty
+    .WithDefaultHandling()
+    .Retry(3);
 ```
 
 ## KEV012: async configuration with synchronous Execute
@@ -385,13 +379,12 @@ throws `NotSupportedException` at that call. `KEV012` reports the statically vis
 `async` lambda, an `async` anonymous method, or a method group naming an `async` method assigned to
 a hook or fallback recovery on a shield that is then passed to `Execute`:
 
+<!-- doc-test-diagnostic: KEV012 -->
 ```csharp
-#pragma warning disable KEV012 // Deliberately demonstrates the unsafe form.
 var shield = Shield.Retry(options =>
     options.OnRetry = async _ => await Task.Yield());
 
 var value = shield.Execute(static _ => 42); // KEV012 and NotSupportedException at runtime
-#pragma warning restore KEV012
 ```
 
 Use `ExecuteAsync`, or make the delegate complete synchronously. A non-`async` lambda that returns
@@ -432,14 +425,13 @@ var shield = Shield.Retry(options => options.OnRetry = item =>
 
 Deferred or discarded work that captures the event itself is reported:
 
+<!-- doc-test-diagnostic: KEV014 -->
 ```csharp
-#pragma warning disable KEV014 // Deliberately demonstrates the unsafe form.
 var shield = Shield.Retry(options => options.OnRetry = item =>
 {
     _ = Task.Run(() => Console.WriteLine(item.Context.ShieldName)); // KEV014
     return default;
 });
-#pragma warning restore KEV014
 ```
 
 `KEV014` reports `Task.Run` and `ThreadPool.QueueUserWorkItem` calls, and discarded `Task` or
@@ -448,21 +440,16 @@ hook, using the event after an `await` inside an `async` hook is not deferred wo
 reported. Deferred access can race with context pooling and observe state from a later execution,
 so this diagnostic is a warning.
 
-## Suppression
+## Zero-tolerance diagnostics
 
-Suppress one reviewed site with ordinary C# warning pragmas and record why the analyzer cannot see
-the wider invariant:
+Keep every Kevlar diagnostic enabled. When intent is safe but implicit, express that intent in code
+so reviewers and analyzers see the same policy:
 
 ```csharp
-#pragma warning disable KEV004 // This isolated circuit is intentional in a one-shot diagnostic.
-var value = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromSeconds(1)).Execute(_ => 1);
-#pragma warning restore KEV004
+var shield = Shield.Empty
+    .WithDefaultHandling()
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
-To suppress a rule project-wide, append its ID to `NoWarn`:
-
-```xml
-<NoWarn>$(NoWarn);KEV004</NoWarn>
-```
-
-Prefer a narrow pragma. Project-wide suppression can hide newly introduced unsafe call sites.
+Do not add warning pragmas, `NoWarn`, or severity overrides. A suppression hides future regressions
+at the same site; explicit configuration keeps intent checked as APIs and analyzers evolve.

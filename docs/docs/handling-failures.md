@@ -71,14 +71,13 @@ continues that clause on the returned builder. The compiler therefore enforces
 A clause applies to the strategy it is attached to *and* to every reactive strategy chained after
 it, until you write a new clause, call `WithDefaultHandling()`, or compose with `Wrap`/`Compose`:
 
-<!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
-Shield
+var shield = Shield
     .When<HttpRequestException>()      // clause #1
     .Retry(3)                          //   ← uses clause #1
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDuration) // ← also clause #1
     .When<TimeoutExceededException>()  // clause #2 replaces #1 from here on
-    .Fallback(...);                    //   ← uses clause #2
+    .Fallback(static _ => ValueTask.CompletedTask); // ← uses clause #2
 ```
 
 This is why most chains only need one clause, written once at the top—and why you never repeat a
@@ -175,7 +174,7 @@ Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` w
 Typed builders add result alternatives with `OrResult(predicate)` / `OrResultEquals(value)`, and two shorthands for the most common check of all:
 
 ```csharp
-Shield.For<User?>().WhenResultIsNull().Retry(2);      // retry when the result is null
+var nullableResult = Shield.For<User?>().WhenResultIsNull().Retry(2); // retry when result is null
 // mid-chain: .OrResultIsNull() adds the same check to an existing clause
 ```
 
@@ -188,8 +187,8 @@ empty struct are usually legitimate results rather than failures. The built-in a
 question as the informational hint [`KEV010`](analyzers.md#kev010-default-result-clause-on-a-value-type):
 
 ```csharp
-Shield.For<int>().WhenResultIsDefault().Retry(2);     // Is 0 really the failure?
-Shield.For<int>().WhenResultEquals(-1).Retry(2);      // clean: the failing value, spelled out
+var defaultResult = Shield.For<int>().WhenResultIsDefault().Retry(2); // Is 0 really failure?
+var explicitResult = Shield.For<int>().WhenResultEquals(-1).Retry(2); // failing value is explicit
 ```
 
 All four are named after the `WhenResult` / `OrResult` family precisely so they cannot be confused
@@ -243,7 +242,7 @@ Use an options predicate when one reactive strategy needs different handling wit
 ambient clause for its neighbors:
 
 ```csharp
-var shield = Shield.When<HttpRequestException>()
+var shield = Shield.For<HttpResponseMessage>().When<HttpRequestException>()
     .Retry(3) // ambient clause
     .CircuitBreaker(options =>
     {
@@ -274,7 +273,6 @@ Timeouts, rate limits and concurrency limits don't care why something failed —
 
 Custom strategies opt into ambient handling through the `Use` factory overload:
 
-<!-- doc-test-ignore: RetryOnceStrategy is defined on the Custom Strategies page. -->
 ```csharp
 var shield = Shield.When<HttpRequestException>()
     .Use(clause => new RetryOnceStrategy(clause));

@@ -4,6 +4,7 @@
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="$(GeneratedSnippetsPath)" Link="GeneratedSnippets.g.cs" />
+    <Compile Include="$(GeneratedSnippetsPath)" Link="DocumentationSnippets.cs" />
     <Protobuf Include="Protos\orders.proto" GrpcServices="Client" />
   </ItemGroup>
 

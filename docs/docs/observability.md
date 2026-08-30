@@ -262,7 +262,8 @@ Telemetry cost depends on the runtime, pipeline, listener, exporter, and deploym
 
 The `Kevlar` package includes compile-time checks for resilience mistakes automatically.
 
-See [Analyzer rules](analyzers.md) for the complete current rule set, rationale, safe alternatives, conservative analysis limits, and suppression guidance.
+See [Analyzer rules](analyzers.md) for the complete current rule set, rationale, safe alternatives,
+conservative analysis limits, and zero-tolerance diagnostic guidance.
 
 ## Callbacks
 

@@ -10,15 +10,19 @@ slug: /intro
 Strategies execute in reading order: the first strategy is the outermost. A `When...` handling
 clause is ambient across later reactive strategies until another clause replaces or resets it.
 
+<!-- doc-test-declaration -->
 ```csharp
 using Kevlar;
 
-var shield = Shield
+private static readonly Shield _userShield = Shield
     .Timeout(TimeSpan.FromSeconds(30))                    // total budget for the whole operation
     .Retry(3)                                             // exponential backoff + equal jitter, out of the box
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
-var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
+public static ValueTask<User> LoadResilientUserAsync(
+    int id,
+    CancellationToken cancellationToken) =>
+    _userShield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
 ```
 
 Build a shield once, reuse it everywhere. Shields are **immutable and thread-safe**.

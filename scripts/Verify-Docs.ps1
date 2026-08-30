@@ -458,6 +458,7 @@ $partitionLinkPattern = [regex]'\[[^\]]*(?:AddPartitionedShield|PartitionedVoidS
 $partitionMentionPattern = [regex]'\b(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)\b'
 $analyzerLinkPattern = [regex]'\[[^\]]*KEV\d{3}[^\]]*\]\((?:\.\./)*analyzers\.md(?:#[^)]+)?\)'
 $analyzerMentionPattern = [regex]'\bKEV\d{3}\b'
+$analyzerDiagnosticDirectivePattern = [regex]'^\s*<!--\s*doc-test-diagnostic:\s*[^>]+-->\s*$'
 $hardwareMentionPattern = [regex]'(?i)(?:\b(?:AMD\s+)?(?:Ryzen|EPYC)\b|\bIntel\s+(?:Core(?:\s+Ultra)?|Xeon)\b|\bApple\s+(?:silicon|M\d)\b|\b(?:Qualcomm\s+)?Snapdragon\b|\b(?:AWS\s+)?Graviton\d*\b|\bARM\s+Neoverse\b|\bi[3579](?:-\s*|\s+)?\d{4,5}[A-Z]*\b)'
 
 foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md')
@@ -494,7 +495,8 @@ foreach ($document in $visibleDocuments)
         if ($document.Path -ne 'analyzers.md')
         {
             $withoutAnalyzerLinks = $analyzerLinkPattern.Replace($line, '')
-            if ($analyzerMentionPattern.IsMatch($withoutAnalyzerLinks))
+            $withoutDiagnosticDirective = $analyzerDiagnosticDirectivePattern.Replace($withoutAnalyzerLinks, '')
+            if ($analyzerMentionPattern.IsMatch($withoutDiagnosticDirective))
             {
                 $errors.Add("Analyzer rule duplicated outside analyzers.md at $($document.Path):$($lineIndex + 1).")
             }

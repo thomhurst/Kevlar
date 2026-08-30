@@ -12,9 +12,10 @@ Unlike a [retry](retry.md), hedging doesn't wait for the first attempt to *fail*
 
 ```csharp
 // Fire a second attempt if the first hasn't answered within 100ms.
-Shield.Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100));
+var fixedHedge = Shield.For<HttpResponseMessage>()
+    .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100));
 
-Shield.Hedge(o =>
+var configuredHedge = Shield.For<HttpResponseMessage>().Hedge(o =>
 {
     o.MaxHedgedAttempts = 1;                  // default 1 (plus the original attempt)
     o.Delay = TimeSpan.FromSeconds(1);         // default 1s
@@ -88,7 +89,7 @@ approximately 100ms and 400ms. A handled failure still launches the next attempt
 
 ```csharp
 var hedgeDelay = new KevlarKey<TimeSpan>("hedge-delay");
-var adaptiveHedge = Shield.Hedge(options =>
+var adaptiveHedge = Shield.For<int>().Hedge(options =>
 {
     options.MaxHedgedAttempts = 2;
     options.DelayGenerator = hedge => new(
@@ -166,7 +167,7 @@ Hedging trades extra load for lower tail latency. It shines for:
 Avoid it for writes that aren't idempotent (you may execute them twice!) and for dependencies that are slow because they're *overloaded* — hedging feeds the overload. Over HTTP, `Kevlar.Extensions.Http` enforces the first rule: POST, PATCH, and custom methods stay single-attempt until explicitly opted in per request with `AllowReplay()`, handler-wide with `AllowUnsafeMethodReplay`, or through a `RequestFactory`, typically alongside an idempotency key — see [method safety](../http.md#method-safety). Pair it with a [circuit breaker](circuit-breaker.md) or [rate limit](rate-limit.md) when in doubt:
 
 ```csharp
-var shield = Shield
+var shield = Shield.For<HttpResponseMessage>()
     .Timeout(TimeSpan.FromSeconds(2))
     .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100))
     .CircuitBreaker(o => o.FailureRatio = 0.5);

@@ -84,8 +84,8 @@ allocations.
 ## Documentation
 
 User documentation lives under `docs/docs`; navigation is explicit in `docs/sidebars.ts`. Every C#
-fence in README and the documentation is compiled unless an adjacent `doc-test-ignore` comment
-gives a concrete reason. Use `doc-test-run` for safe behavioral samples.
+fence in README and the documentation is compiled. Use `doc-test-run` for safe behavioral samples
+and `doc-test-diagnostic` for examples that must produce an exact analyzer diagnostic.
 
 ```powershell
 Push-Location docs
@@ -107,7 +107,8 @@ dotnet pack Kevlar.slnx -c Release -p:Version=0.0.0-local
 
 Complete snippets need no directive. Declaration-only and mixed examples use
 `doc-test-declaration`, `doc-test-tail-declaration`, or `doc-test-strategy-member`. An intentionally
-incomplete example must have an adjacent `doc-test-ignore` comment with a concrete reason.
+diagnostic example uses `doc-test-diagnostic: ID` or `doc-test-diagnostic: ID*count`. Incomplete
+examples and warning suppressions are forbidden.
 
 ## Package and publish compatibility
 
