@@ -1115,7 +1115,7 @@ foreach ($library in $projectAssets.libraries.GetEnumerator() | Where-Object { $
         foreach ($packageFolder in $projectAssets.packageFolders.Keys)
         {
             [void]$trustedPackageAnalyzerPaths.Add(
-                [IO.Path]::GetFullPath((Join-Path $packageFolder (Join-Path $library.Key $file))))
+                [IO.Path]::GetFullPath((Join-Path $packageFolder (Join-Path $library.Value.path $file))))
         }
     }
 }
