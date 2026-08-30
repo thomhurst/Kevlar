@@ -765,3 +765,5 @@ foreach ($framework in @('net8.0', 'net10.0'))
         Write-Host "Validated $diagnosticSnippetCount diagnostic C# examples with $expectedDiagnosticCount exact errors on $framework."
     }
 }
+
+exit 0
