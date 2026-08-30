@@ -12,10 +12,12 @@ See the [exceptions reference](../exceptions.md) for `CircuitOpenException` and 
 
 ```csharp
 // Simple: open after N consecutive failures
-Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+var consecutive = Shield.CircuitBreaker(
+    consecutiveFailures: 5,
+    breakDuration: TimeSpan.FromSeconds(30));
 
 // Sampling: open when ≥50% of calls fail within a rolling window
-Shield.CircuitBreaker(o =>
+var sampling = Shield.CircuitBreaker(o =>
 {
     o.FailureRatio = 0.5;
     o.MinimumThroughput = 20;

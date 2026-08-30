@@ -121,7 +121,6 @@ so the executable documentation check cannot leak work.
 
 <!-- doc-test-run: testing-advance-before-schedule -->
 ```csharp
-#pragma warning disable CA2007 // Negative example deliberately uses Task.WhenAny as a test timeout.
 using Kevlar.Testing;
 using Microsoft.Extensions.Time.Testing;
 
@@ -143,7 +142,7 @@ await ShieldExecution.WaitForPendingAsync(execution,
     () => Volatile.Read(ref attempts) == 1,
     "the retry delay scheduled after the early advance");
 var timeout = Task.Delay(TimeSpan.FromSeconds(1));
-if (!ReferenceEquals(await Task.WhenAny(execution, timeout), timeout))
+if (!ReferenceEquals(await Task.WhenAny(execution, timeout).ConfigureAwait(false), timeout))
 {
     throw new InvalidOperationException("The retry unexpectedly completed without another advance.");
 }
@@ -157,7 +156,6 @@ catch (OperationCanceledException)
 {
     // Expected cleanup after proving the task stayed pending.
 }
-#pragma warning restore CA2007
 ```
 
 `WithTimeProvider` returns a new immutable shield. Copies share stateful strategy instances;

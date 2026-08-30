@@ -36,8 +36,9 @@ overload described in [HTTP resilience](http.md).
 The fallback is outermost, so it can recover after retry, breaker, and timeout have finished. The
 handling clause is explicit: programming and authentication failures are not retried or replaced.
 
+<!-- doc-test-declaration -->
 ```csharp
-var databaseShield = Shield.For<int>()
+private static readonly Shield<int> _databaseShield = Shield.For<int>()
     .When<TimeoutExceededException>()
     .Or<IOException>()
     .FallbackTo(-1)
@@ -49,13 +50,14 @@ var databaseShield = Shield.For<int>()
         breakDuration: TimeSpan.FromSeconds(30))
     .Timeout(TimeSpan.FromSeconds(2));
 
-var rowCount = await databaseShield.ExecuteAsync(
-    static async cancellationToken =>
-    {
-        await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken);
-        return 42;
-    },
-    cancellationToken);
+public static ValueTask<int> QueryRowCountAsync(CancellationToken cancellationToken) =>
+    _databaseShield.ExecuteAsync(
+        static async cancellationToken =>
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken);
+            return 42;
+        },
+        cancellationToken);
 ```
 
 Treat `-1` as a deliberate degraded result and surface it to callers and telemetry; do not make a
@@ -66,8 +68,9 @@ fallback indistinguishable from fresh data.
 For an idempotent message handler, place dead-letter publication outside the retrying work. The
 fallback runs only after the inner policies cannot deliver the message:
 
+<!-- doc-test-declaration -->
 ```csharp
-var consumerShield = Shield
+private static readonly Shield _consumerShield = Shield
     .When<MessagingException>()
     .Or<TimeoutExceededException>()
     .Fallback((exception, token) => deadLetter.PublishAsync(exception, token))
@@ -79,9 +82,10 @@ var consumerShield = Shield
         breakDuration: TimeSpan.FromSeconds(20))
     .Timeout(TimeSpan.FromSeconds(10));
 
-await consumerShield.ExecuteAsync(
-    token => bus.PublishAsync(message, token),
-    cancellationToken);
+public static ValueTask ConsumeAsync(object message, CancellationToken cancellationToken) =>
+    _consumerShield.ExecuteAsync(
+        token => bus.PublishAsync(message, token),
+        cancellationToken);
 ```
 
 The broker's visibility timeout must exceed the total Kevlar budget. Make the handler idempotent,

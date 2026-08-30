@@ -6,7 +6,7 @@ sidebar_position: 12
 
 You ship a library that talks to something flaky — an HTTP API, a database, a queue — and you want *your users* to decide how resilient those calls are. The integration surface is one parameter:
 
-<!-- doc-test-ignore: Library type depends on the author's Report model and FetchReportAsync transport. -->
+<!-- doc-test-declaration -->
 ```csharp
 public sealed class ReportsClient
 {
@@ -22,6 +22,12 @@ public sealed class ReportsClient
     public ValueTask<Report> GetReportAsync(string id, CancellationToken ct = default) =>
         _shield.ExecuteAsync((_http, id),
             static (s, token) => FetchReportAsync(s._http, s.id, token), ct);
+
+    private static ValueTask<Report> FetchReportAsync(
+        HttpClient http,
+        string id,
+        CancellationToken ct) =>
+        new(new Report());
 }
 ```
 
@@ -49,7 +55,6 @@ And for testing, you don't need a mock: `Shield.Empty` is the no-op, and fault i
 
 If your library ships a reactive custom strategy, accept its active handling through the `Use` factory rather than baking exception rules into the package:
 
-<!-- doc-test-ignore: LibraryRetryStrategy is supplied by the library author. -->
 ```csharp
 var shield = Shield.When<HttpRequestException>()
     .Use(clause => new LibraryRetryStrategy(clause));
@@ -76,10 +81,15 @@ Kevlar keeps the wrapper inside pipeline execution, but `Outcome<T>.Exception`,
 
 If callers should be able to react to *result values* — retry on `null`, hedge on an error status — accept a `Shield<T>` instead:
 
-<!-- doc-test-ignore: Constructor fragment intended to appear inside the library's ProfileClient type. -->
+<!-- doc-test-declaration -->
 ```csharp
-public ProfileClient(Shield<Profile?>? shield = null)
-    => _shield = shield ?? Shield<Profile?>.Empty;
+public sealed class ProfileClient
+{
+    public Shield<Profile?> Shield { get; }
+
+    public ProfileClient(Shield<Profile?>? shield = null)
+        => Shield = shield ?? Kevlar.Shield<Profile?>.Empty;
+}
 ```
 
 ```csharp
@@ -91,10 +101,19 @@ var client = new ProfileClient(
 
 `Shield.Empty` is the right default when resilience is genuinely optional. If your library *should* retry out of the box, default to a real shield instead — and think about where its state lives:
 
-<!-- doc-test-ignore: Constructor fragment intended to appear inside the library's ReportsClient type. -->
+<!-- doc-test-declaration -->
 ```csharp
-public ReportsClient(HttpClient http, Shield? shield = null)
-    => _shield = shield ?? Shield.Retry(3).Timeout(TimeSpan.FromSeconds(10));
+public sealed class ReportsClient
+{
+    public HttpClient Http { get; }
+    public Shield Shield { get; }
+
+    public ReportsClient(HttpClient http, Shield? shield = null)
+    {
+        Http = http;
+        Shield = shield ?? Kevlar.Shield.Retry(3).Timeout(TimeSpan.FromSeconds(10));
+    }
+}
 ```
 
 Built per instance like this, each client gets fresh strategy state. Hoist the default into a `static readonly` field and every client that falls back to it shares one instance — which matters the moment the default includes a circuit breaker or rate limit, because [state lives with the shield instance](composition.md#the-state-sharing-rule). Per-instance breakers guard each client separately; a shared one trips for all of them together. Pick deliberately and say which in your docs.

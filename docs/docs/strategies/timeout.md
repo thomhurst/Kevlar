@@ -10,9 +10,9 @@ See the [exceptions reference](../exceptions.md) for the exact timeout catch con
 API reference: [`TimeoutOptions`](pathname:///api/Kevlar.TimeoutOptions.html).
 
 ```csharp
-Shield.Timeout(TimeSpan.FromSeconds(10));
+var fixedTimeout = Shield.Timeout(TimeSpan.FromSeconds(10));
 
-Shield.Timeout(o =>
+var configuredTimeout = Shield.Timeout(o =>
 {
     o.Timeout = TimeSpan.FromSeconds(10);          // default 30s
     o.OnTimeout = e =>
@@ -113,7 +113,7 @@ on a hook. See [synchronous execution compatibility](../executing.md#synchronous
 The classic pattern — position determines meaning:
 
 ```csharp
-Shield
+var scopedTimeout = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // TOTAL budget: all retries must fit inside
     .Retry(3)
     .Timeout(TimeSpan.FromSeconds(5));   // PER-ATTEMPT budget: each try gets 5s

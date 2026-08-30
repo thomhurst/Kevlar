@@ -56,32 +56,34 @@ For result-producing recovery, build a typed shield with `Shield.For<TResult>()`
 
 ## Three shapes
 
-<!-- doc-test-ignore: Alternative fluent fragments require the typed builder introduced by the surrounding prose. -->
 ```csharp
 // 1. A constant value (FallbackTo avoids null/delegate overload ambiguity):
-.FallbackTo(Config.Default)
+var constantFallback = Shield.For<Config>()
+    .FallbackTo(Config.Default);
 
 // 2. Computed (async), no failure context needed:
-.Fallback(ct => new ValueTask<Config>(cache.Get()))
+var computedFallback = Shield.For<Config>()
+    .Fallback(ct => new ValueTask<Config>(cache.Get()));
 
 // 3. Computed with access to the failure:
-.Fallback((outcome, ct) =>
-{
-    logger.LogError(outcome.Exception, "Using cached config");
-    return new ValueTask<Config>(cache.Get());
-})
+var outcomeAwareFallback = Shield.For<Config>()
+    .Fallback((outcome, ct) =>
+    {
+        logger.LogError(outcome.Exception, "Using cached config");
+        return new ValueTask<Config>(cache.Get());
+    });
 ```
 
 Every value and factory shape also has an options configurator for fallback notifications:
 
-<!-- doc-test-ignore: Fluent fragment requires the typed builder introduced by the surrounding prose. -->
 ```csharp
-.FallbackTo(Config.Default,
-    options => options.OnFallback = e =>
-    {
-        metrics.Increment("config.fallback");
-        return default;
-    })
+var shield = Shield.For<Config>()
+    .FallbackTo(Config.Default,
+        options => options.OnFallback = e =>
+        {
+            metrics.Increment("config.fallback");
+            return default;
+        });
 ```
 
 `FallbackTo` handles constant values; `Fallback` handles computed and outcome-aware factories. Each
@@ -100,7 +102,6 @@ Fallback factory failures are preserved as the pipeline outcome.
 
 `OnFallback` returns `ValueTask`, so synchronous and awaited notification work share one lambda:
 
-<!-- doc-test-ignore: Illustrative logger and audit dependencies are application services. -->
 ```csharp
 var shield = Shield.For<Config>()
     .When<HttpRequestException>()

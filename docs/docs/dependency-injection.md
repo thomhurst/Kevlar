@@ -35,14 +35,19 @@ types such as `IKevlarRegistry` or `IShieldProvider`.
 
 ## Consuming via the registry
 
-<!-- doc-test-ignore: Application client type requires the host's FetchUserAsync implementation. -->
+<!-- doc-test-declaration -->
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+
 public sealed class GitHubClient(IKevlarRegistry registry)
 {
     private readonly Shield _shield = registry.GetShield("github");
 
     public Task<User> GetUserAsync(string id, CancellationToken ct) =>
         _shield.ExecuteAsync(ct2 => FetchUserAsync(id, ct2), ct).AsTask();
+
+    private static Task<User> FetchUserAsync(string id, CancellationToken ct) =>
+        Task.FromResult(new User());
 }
 ```
 
@@ -163,8 +168,11 @@ services.AddReloadingShield(
 
 Consume the keyed provider and read `Current` once per operation:
 
-<!-- doc-test-ignore: Application client type requires the host's FetchUserAsync implementation. -->
+<!-- doc-test-declaration -->
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
 public sealed class GitHubClient(
     [FromKeyedServices("github")] IShieldProvider provider)
 {
@@ -175,6 +183,9 @@ public sealed class GitHubClient(
             ct2 => FetchUserAsync(id, ct2),
             ct).AsTask();
     }
+
+    private static Task<User> FetchUserAsync(string id, CancellationToken ct) =>
+        Task.FromResult(new User());
 }
 ```
 
@@ -245,7 +256,7 @@ public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
 `WithName` stamps a name onto the shield itself, which then shows up as `KevlarContext.ShieldName` in [custom strategies](custom-strategies.md) and callbacks — useful for logging and metrics:
 
 ```csharp
-Shield.Retry(3).WithName("github");
+var namedShield = Shield.Retry(3).WithName("github");
 ```
 
 `AddShield("github", …)` registers under that DI name either way; `WithName` is about observability inside the pipeline.

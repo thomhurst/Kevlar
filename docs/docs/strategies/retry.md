@@ -11,10 +11,11 @@ See the [exceptions reference](../exceptions.md) for failures the default retry 
 ## Quick forms
 
 ```csharp
-Shield.Retry(3);                                          // exponential + equal jitter (250ms base, 30s cap)
-Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(1)));
-Shield.Retry(3, Backoff.Linear(TimeSpan.FromMilliseconds(500)));
-Shield.RetryForever(Backoff.Exponential(TimeSpan.FromSeconds(1), maxDelay: TimeSpan.FromMinutes(1)));
+var exponential = Shield.Retry(3); // equal jitter, 250ms base, 30s cap
+var constant = Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(1)));
+var linear = Shield.Retry(3, Backoff.Linear(TimeSpan.FromMilliseconds(500)));
+var forever = Shield.RetryForever(
+    Backoff.Exponential(TimeSpan.FromSeconds(1), maxDelay: TimeSpan.FromMinutes(1)));
 ```
 
 The count is **retries, not attempts**: `Retry(3)` makes up to 4 total attempts — the initial call
@@ -86,7 +87,7 @@ _ = Backoff.Default;                             // what bare Retry(n) uses
 API reference: [`RetryOptions`](pathname:///api/Kevlar.RetryOptions.html) and [`RetryOptions<T>`](pathname:///api/Kevlar.RetryOptions-1.html).
 
 ```csharp
-Shield.Retry(o =>
+var retry = Shield.Retry(o =>
 {
     o.MaxRetries = 5;
     o.Backoff = Backoff.Custom(attempt => TimeSpan.FromMilliseconds(100 * attempt));
@@ -188,7 +189,7 @@ Whatever the current [handling clause](../handling-failures.md) says is a failur
 exceptions under the default, or the outcomes selected by your `When`/`WhenResult` clause:
 
 ```csharp
-Shield
+var retry = Shield
     .When<HttpRequestException>()
     .Or<TimeoutExceededException>()
     .Retry(5);
@@ -201,7 +202,7 @@ unspecified outcome kinds are not handled.
 ## Placement in the chain
 
 ```csharp
-Shield
+var scopedRetry = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // total budget: retries must fit inside
     .Retry(3)
     .Timeout(TimeSpan.FromSeconds(5));   // each attempt gets 5s, and Retry sees the TimeoutExceededException

@@ -149,6 +149,7 @@ await contextShield.ExecuteWithContextAsync(
     },
     static (state, context) =>
     {
+        context.CancellationToken.ThrowIfCancellationRequested();
         if (context.ShieldName != "catalog"
             || context.Properties.GetOrDefault(state.tenantKey, "missing") != state.tenant
             || context.Properties.GetOrDefault(KevlarKeys.OperationKey, "missing") != state.operation)
@@ -616,11 +617,11 @@ pollyPrimary.TrySetCanceled();
 var pollyHedgeResult = await pollyHedgeExecution;
 
 var kevlarHedgeClock = new FakeTimeProvider();
-var kevlarHedgeOptions = new HedgeOptions();
-var kevlarHedge = Shield.Hedge(static _ => { }).WithTimeProvider(kevlarHedgeClock);
+var kevlarHedgeOptions = new HedgeOptions<int>();
+var kevlarHedge = Shield.For<int>().Hedge(static _ => { }).WithTimeProvider(kevlarHedgeClock);
 var kevlarPrimary = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
 var kevlarHedgeAttempts = 0;
-var kevlarHedgeExecution = kevlarHedge.ExecuteAsync<int>(_ =>
+var kevlarHedgeExecution = kevlarHedge.ExecuteAsync(_ =>
     Interlocked.Increment(ref kevlarHedgeAttempts) == 1
         ? new ValueTask<int>(kevlarPrimary.Task)
         : new ValueTask<int>(42)).AsTask();
@@ -659,11 +660,12 @@ var pollyLimiterResult = await pollyLimiter.ExecuteAsync<int>(static _ => new Va
 var kevlarLimiterOptions = new ConcurrencyLimitOptions();
 var kevlarLimiter = Shield.ConcurrencyLimit(static _ => { });
 var kevlarLimiterResult = await kevlarLimiter.ExecuteAsync<int>(static _ => new ValueTask<int>(42));
+var secondKevlarLimiterResult = await kevlarLimiter.ExecuteAsync<int>(static _ => new ValueTask<int>(42));
 
 if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
     pollyLimiterOptions.DefaultRateLimiterOptions.QueueLimit != 0 || pollyLimiterResult != 42 ||
     kevlarLimiterOptions.MaxConcurrency != 10 || kevlarLimiterOptions.QueueLimit != 0 ||
-    kevlarLimiterResult != 42)
+    kevlarLimiterResult != 42 || secondKevlarLimiterResult != 42)
 {
     throw new InvalidOperationException("Concurrency defaults changed.");
 }

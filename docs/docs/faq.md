@@ -64,7 +64,6 @@ Kevlar throws `TimeoutExceededException`; it is deliberately distinct from
 `System.TimeoutException` so a resilience timeout cannot be confused with an exception produced by
 the protected dependency. Catch the Kevlar type or include it in a handling clause:
 
-<!-- doc-test-ignore: LoadAsync is the application's protected operation. -->
 ```csharp
 try
 {

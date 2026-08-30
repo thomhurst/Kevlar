@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Grpc.Net.Client;
 using Kevlar;
@@ -19,8 +20,6 @@ internal static class Program
 {
     public static Task Main() => SnippetCatalog.RunAsync();
 }
-
-#pragma warning disable CS0162, CS0169, CS0219, CS0414, CS0649, CS1998
 
 internal abstract class SnippetContext
 {
@@ -40,7 +39,9 @@ internal abstract class SnippetContext
     protected static readonly StubPublisher deadLetter = new();
     protected static readonly StubBus bus = new();
     protected static readonly StubMetrics metrics = new();
+    protected static readonly StubAudit audit = new();
     protected static readonly StubClient client = new();
+    protected static readonly StubViewModel viewModel = new();
     protected static readonly HttpClient httpClient = new(new StubHttpHandler());
     protected static readonly HttpClient http = httpClient;
     protected static readonly GrpcChannel channel = GrpcChannel.ForAddress("https://grpc.example.test");
@@ -48,6 +49,12 @@ internal abstract class SnippetContext
     protected static readonly IKevlarRegistry registry = null!;
     protected static readonly StubBuilder builder = new();
     protected static readonly KevlarContext context = null!;
+    private static readonly RateLimiter _tenantLimiter = new ConcurrencyLimiter(
+        new ConcurrencyLimiterOptions
+        {
+            PermitLimit = 10,
+            QueueLimit = 0,
+        });
 
     protected static ValueTask<User> LoadUserAsync(int _, CancellationToken __) => new(new User());
 
@@ -56,6 +63,8 @@ internal abstract class SnippetContext
     protected static ValueTask<User> FetchAsync(CancellationToken _) => new(new User());
 
     protected static ValueTask SaveAsync(CancellationToken _) => ValueTask.CompletedTask;
+
+    protected static ValueTask CallAsync(CancellationToken _) => ValueTask.CompletedTask;
 
     protected static int ComputeSync(CancellationToken _) => 42;
 
@@ -66,6 +75,11 @@ internal abstract class SnippetContext
     protected static ValueTask<User> GetUserAsync(CancellationToken _) => new(new User());
 
     protected static ValueTask<int> SucceedAsync(CancellationToken _) => new(42);
+
+    protected static ValueTask<RateLimitLease> AcquireTenantLeaseAsync(
+        int permitCount,
+        CancellationToken cancellationToken) =>
+        _tenantLimiter.AcquireAsync(permitCount, cancellationToken);
 
     protected static HttpResponseMessage CachedResponse() => new(HttpStatusCode.OK);
 }
@@ -86,6 +100,8 @@ internal sealed class Profile;
 
 internal sealed class Report;
 
+internal sealed class TenantResult;
+
 internal sealed class MessagingException : Exception;
 
 internal sealed class StubCache
@@ -94,6 +110,8 @@ internal sealed class StubCache
         new(new HttpResponseMessage(HttpStatusCode.OK));
 
     public Config Get() => Config.Default;
+
+    public User GetUser() => new();
 }
 
 internal sealed class StubPublisher
@@ -111,6 +129,19 @@ internal sealed class StubMetrics
     public void Record(CircuitState _) { }
 
     public void Increment(string _) { }
+}
+
+internal sealed class StubAudit
+{
+    public ValueTask RecordFallbackAsync<T>(Outcome<T> _, CancellationToken __) =>
+        ValueTask.CompletedTask;
+}
+
+internal sealed class StubViewModel
+{
+    public Task RefreshAsync(CancellationToken _) => Task.CompletedTask;
+
+    public Task ShowRetryAsync(int _, CancellationToken __) => Task.CompletedTask;
 }
 
 internal sealed class StubClient
@@ -143,6 +174,25 @@ internal sealed class ProfileClient
 {
     public ProfileClient(Shield<Profile?>? _ = null) { }
 }
+
+internal class RetryOnceStrategy(HandlingClause handling) : Strategy
+{
+    protected override HandlingClause? Handling => handling;
+
+    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context)
+    {
+        var strategyIndex = context.StrategyIndex;
+        var outcome = await next.InvokeAsync(context);
+        return handling.ShouldHandle(in outcome, context, 0, strategyIndex)
+            ? await next.InvokeAsync(context)
+            : outcome;
+    }
+}
+
+internal sealed class LibraryRetryStrategy(HandlingClause handling)
+    : RetryOnceStrategy(handling);
 
 internal static class Assert
 {

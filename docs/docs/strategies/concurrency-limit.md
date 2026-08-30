@@ -9,9 +9,9 @@ Concurrency isolation: cap how many executions run at once, so one misbehaving d
 See the [exceptions reference](../exceptions.md) for `ConcurrencyLimitExceededException`.
 
 ```csharp
-Shield.ConcurrencyLimit(maxConcurrency: 10, queueLimit: 20);
+var fixedLimit = Shield.ConcurrencyLimit(maxConcurrency: 10, queueLimit: 20);
 
-Shield.ConcurrencyLimit(o =>
+var configuredLimit = Shield.ConcurrencyLimit(o =>
 {
     o.MaxConcurrency = 10;   // default 10
     o.QueueLimit = 20;         // default 0 — reject immediately when full
@@ -76,9 +76,9 @@ As with all stateful strategies, the slots live with the shield instance — sha
 Concurrency limits are proactive: they don't consult [handling clauses](../handling-failures.md). Remember the first strategy is outermost, so ordering decides who holds a slot for how long:
 
 ```csharp
-Shield.ConcurrencyLimit(10).Retry(3);   // concurrency limit wraps the retry loop:
+var loopLimited = Shield.ConcurrencyLimit(10).Retry(3); // limit wraps retry loop:
                                 //   one slot held for the WHOLE loop, delays included
-Shield.Retry(3).ConcurrencyLimit(10);   // retry wraps the concurrency limit:
+var attemptLimited = Shield.Retry(3).ConcurrencyLimit(10); // retry wraps limit:
                                 //   each attempt acquires (and releases) a slot
 ```
 
