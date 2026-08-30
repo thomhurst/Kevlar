@@ -686,10 +686,14 @@ $allowedBaselineNoWarnIds = @('1701', '1702', '8002')
 $warningBuildPropertyValues = [ordered]@{
     AnalysisLevel = 'latest'
     AnalysisMode = 'Default'
+    ArtifactsPath = (Join-Path $repositoryRoot 'artifacts')
     CodeAnalysisRuleSet = ''
     CodeAnalysisTreatWarningsAsErrors = 'true'
     EnableNETAnalyzers = 'true'
     EnforceCodeStyleInBuild = 'true'
+    ImportDirectoryBuildProps = 'false'
+    ImportDirectoryBuildTargets = 'false'
+    LangVersion = 'latest'
     MSBuildTreatWarningsAsErrors = 'true'
     NoWarn = ''
     Nullable = 'enable'
@@ -697,6 +701,7 @@ $warningBuildPropertyValues = [ordered]@{
     RunAnalyzers = 'true'
     RunAnalyzersDuringBuild = 'true'
     TreatWarningsAsErrors = 'true'
+    UseArtifactsOutput = 'true'
     WarningLevel = '9999'
     WarningsNotAsErrors = ''
 }
@@ -1107,10 +1112,12 @@ function Assert-ExpectedAnalyzerCanary
     }
 }
 
-& dotnet restore $projectPath --configfile $nugetConfigPath `
-    "-p:KevlarPackageVersion=$Version" `
-    "-p:GeneratedSnippetsPath=$generatedPath" `
-    "-p:ImplicitUsings=$implicitUsings"
+$restoreArguments = @(
+    'restore'
+    $projectPath
+    '--configfile', $nugetConfigPath
+) + $documentationBuildProperties
+& dotnet @restoreArguments
 
 if ($LASTEXITCODE -ne 0)
 {
