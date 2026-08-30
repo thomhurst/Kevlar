@@ -902,7 +902,7 @@ function Assert-EffectiveAnalyzerConfiguration
     }
 
     $forbiddenCompilerSwitch = $compilerArguments |
-        Where-Object { $_ -match '^(?i)(?:/|-)(?:ruleset:|skipanalyzers\+|warnaserror-)' } |
+        Where-Object { $_ -match '^(?i)(?:/|-)(?:ruleset:|skipanalyzers(?:\+)?$|warnaserror-)' } |
         Select-Object -First 1
     if ($null -ne $forbiddenCompilerSwitch)
     {
