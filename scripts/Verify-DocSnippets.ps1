@@ -714,15 +714,12 @@ function Assert-EffectiveAnalyzerConfiguration
         throw "Failed to parse documentation analyzer configuration for $Framework.`n$queryOutput"
     }
 
-    $seenConfigurationPaths = [System.Collections.Generic.HashSet[string]]::new(
-        [StringComparer]::OrdinalIgnoreCase)
     $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
         @($configuration.Items.EditorConfigFiles)
     foreach ($configurationItem in $configurationItems)
     {
         $configurationPath = $configurationItem.FullPath
         if ([string]::IsNullOrWhiteSpace($configurationPath) `
-            -or -not $seenConfigurationPaths.Add($configurationPath) `
             -or -not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
         {
             continue
