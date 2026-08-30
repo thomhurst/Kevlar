@@ -753,7 +753,7 @@ function Assert-EffectiveAnalyzerConfiguration
     $queryArguments = @(
         'msbuild'
         $projectPath
-        '-target:Compile'
+        '-target:Build'
         "-getProperty:$($queriedPropertyNames -join ',')"
         '-getItem:CscCommandLineArgs'
         '-p:Configuration=Release'
