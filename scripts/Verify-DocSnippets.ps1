@@ -45,6 +45,7 @@ $allowedExternalPackages = @(
 $forbiddenDocumentationPatterns = [ordered]@{
     'doc-test-ignore' = 'doc-test-ignore'
     'warning pragma' = '(?m)^\s*#pragma\s+warning\s+disable\b'
+    'disabled nullable warnings' = '(?im)^\s*#nullable\s+disable\b|(?is)<Nullable\b[^>]*>\s*disable\s*</Nullable>'
     'NoWarn' = '(?i)<NoWarn\b'
     'WarningsNotAsErrors' = '(?i)\bWarningsNotAsErrors\b'
     'disabled diagnostic severity' = '(?i)dotnet_diagnostic\.[^.\s=]+\.severity\s*=\s*(?:none|silent)\b'
