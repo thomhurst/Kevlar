@@ -699,7 +699,7 @@ function Assert-EffectiveAnalyzerConfiguration
         [string]$Framework
     )
 
-    $queriedPropertyNames = @('Configuration', 'TargetFramework', 'MSBuildSDKsPath') +
+    $queriedPropertyNames = @('Configuration', 'TargetFramework', 'MSBuildToolsPath') +
         @($warningBuildPropertyValues.Keys)
     $queryArguments = @(
         'msbuild'
@@ -728,7 +728,7 @@ function Assert-EffectiveAnalyzerConfiguration
     foreach ($propertyName in $queriedPropertyNames)
     {
         $actualValue = $configuration.Properties.PSObject.Properties[$propertyName].Value
-        if ($propertyName -eq 'MSBuildSDKsPath')
+        if ($propertyName -eq 'MSBuildToolsPath')
         {
             continue
         }
@@ -763,7 +763,7 @@ function Assert-EffectiveAnalyzerConfiguration
     $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
         @($configuration.Items.EditorConfigFiles)
     $sdkAnalyzerConfigurationDirectory = [IO.Path]::GetFullPath(
-        (Join-Path $configuration.Properties.MSBuildSDKsPath 'Microsoft.NET.Sdk/analyzers/build/config'))
+        (Join-Path $configuration.Properties.MSBuildToolsPath 'Sdks/Microsoft.NET.Sdk/analyzers/build/config'))
     $pathComparison = if ([OperatingSystem]::IsWindows())
     {
         [StringComparison]::OrdinalIgnoreCase
