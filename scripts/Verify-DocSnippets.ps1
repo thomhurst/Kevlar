@@ -470,6 +470,7 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 
     [void]$builder.AppendLine('    public static async Task<object?> RunAsync()')
     [void]$builder.AppendLine('    {')
+    [void]$builder.AppendLine('        await Task.CompletedTask;')
     if (-not [string]::IsNullOrWhiteSpace($source))
     {
         [void]$builder.AppendLine("#line $($snippet.Line) `"$($snippet.SourcePath)`"")
