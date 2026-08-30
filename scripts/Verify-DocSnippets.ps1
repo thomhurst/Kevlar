@@ -832,6 +832,29 @@ function Assert-EffectiveAnalyzerConfiguration
         throw "Documentation compiler uses unvalidated response file '$responseFileArgument' for $Framework."
     }
 
+    $projectDirectory = Split-Path $projectPath -Parent
+    foreach ($compilerArgument in $compilerArguments | Where-Object { $_ -match '(?i)\.cs"?$' })
+    {
+        $sourceArgument = $compilerArgument.Trim('"')
+        if ($sourceArgument -match '^(?:/|-)[A-Za-z][A-Za-z0-9]*:')
+        {
+            continue
+        }
+
+        $compilerSourcePath = [IO.Path]::GetFullPath($sourceArgument, $projectDirectory)
+        if (-not (Test-Path -LiteralPath $compilerSourcePath -PathType Leaf))
+        {
+            throw "Documentation compiler source no longer exists at $compilerSourcePath for $Framework."
+        }
+
+        $compilerSource = Expand-CSharpUnicodeEscapes (
+            Get-Content -Raw -LiteralPath $compilerSourcePath)
+        if ($compilerSource -match $forbiddenDocumentationPatterns['source diagnostic suppression'])
+        {
+            throw "Documentation compiler source contains a diagnostic suppression in $compilerSourcePath."
+        }
+    }
+
     $warningLevelArguments = @(
         $compilerArguments |
             Where-Object { $_ -match '^(?:/|-)warn:' }
