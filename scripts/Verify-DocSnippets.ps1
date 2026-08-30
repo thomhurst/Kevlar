@@ -71,6 +71,7 @@ $forbiddenDocumentationPatterns = [ordered]@{
     'WarningsNotAsErrors' = '(?i)\bWarningsNotAsErrors\b'
     'disabled diagnostic severity' = '(?i)(?:dotnet_diagnostic\.[^.\s=]+|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*(?:none|silent)\b'
     'downgraded warning severity' = '(?i)(?:dotnet_diagnostic\.(?!KEV(?:009|010|011)\.severity\b)[^.\s=]+|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*suggestion\b'
+    'analyzer scope exclusion' = '(?im)^\s*dotnet_code_quality(?:\.[^.\s=]+)*\.(?:analyzed_symbol_kinds|api_surface|excluded_symbol_names|excluded_type_names_with_derived_types)\s*='
     'disabled warnings-as-errors' = '(?is)<TreatWarningsAsErrors\b[^>]*>\s*false\s*</TreatWarningsAsErrors>'
     'disabled analyzer execution' = '(?is)<(?<property>EnableNETAnalyzers|RunAnalyzers|RunAnalyzersDuringBuild)\b[^>]*>\s*false\s*</\k<property>>'
     'disabled analyzer level' = "(?is)<(?<property>AnalysisLevel(?:$analysisCategoryPattern)?)\b[^>]*>\s*(?:(?:none|[0-3](?:\.[0-9]+)?|4(?:\.0+)?)(?:-[^<\s]+)?|[^<\s]+-(?:none|AllDisabledByDefault))\s*</\k<property>>"
