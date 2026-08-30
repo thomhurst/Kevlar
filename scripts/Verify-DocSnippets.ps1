@@ -45,17 +45,17 @@ $allowedExternalPackages = @(
 $supportedDiagnosticIds = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@(
         'KEV001', 'KEV002', 'KEV003', 'KEV004', 'KEV005', 'KEV006', 'KEV007'
-        'KEV008', 'KEV009', 'KEV010', 'KEV011', 'KEV012', 'KEV014'
+        'KEV008', 'KEV012', 'KEV014'
     ),
     [StringComparer]::Ordinal)
 $forbiddenDocumentationPatterns = [ordered]@{
     'doc-test-ignore' = 'doc-test-ignore'
     'warning pragma' = '(?m)^\s*#pragma\s+warning\s+disable\b'
-    'disabled nullable warnings' = '(?im)^\s*#nullable\s+disable\b|(?is)<Nullable\b[^>]*>\s*disable\s*</Nullable>'
+    'disabled nullable warnings' = '(?im)^\s*#nullable\s+disable\b|(?is)<Nullable\b[^>]*>\s*(?:disable|annotations)\s*</Nullable>'
     'NoWarn' = '(?i)<NoWarn\b'
     'WarningsNotAsErrors' = '(?i)\bWarningsNotAsErrors\b'
     'disabled diagnostic severity' = '(?i)(?:dotnet_diagnostic\.[^.\s=]+|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*(?:none|silent)\b'
-    'downgraded warning severity' = '(?i)(?:dotnet_diagnostic\.KEV(?:00[1-8]|012|014)|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*suggestion\b'
+    'downgraded warning severity' = '(?i)(?:dotnet_diagnostic\.(?!KEV(?:009|010|011)\.severity\b)[^.\s=]+|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*suggestion\b'
     'disabled warnings-as-errors' = '(?is)<TreatWarningsAsErrors\b[^>]*>\s*false\s*</TreatWarningsAsErrors>'
     'disabled analyzer execution' = '(?is)<(?<property>RunAnalyzers|RunAnalyzersDuringBuild)\b[^>]*>\s*false\s*</\k<property>>'
     'disabled compiler warnings' = '(?is)<WarningLevel\b[^>]*>\s*0\s*</WarningLevel>'
