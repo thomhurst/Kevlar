@@ -688,6 +688,7 @@ $warningBuildPropertyValues = [ordered]@{
     MSBuildTreatWarningsAsErrors = 'true'
     NoWarn = ''
     Nullable = 'enable'
+    ProvideCommandLineArgs = 'true'
     RunAnalyzers = 'true'
     RunAnalyzersDuringBuild = 'true'
     TreatWarningsAsErrors = 'true'
@@ -725,7 +726,7 @@ function Assert-EffectiveAnalyzerConfiguration
         $projectPath
         '-target:Compile'
         "-getProperty:$($queriedPropertyNames -join ',')"
-        '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles,Analyzer'
+        '-getItem:CscCommandLineArgs'
         '-p:Configuration=Release'
         "-p:TargetFramework=$Framework"
     ) + $documentationBuildProperties
@@ -789,9 +790,18 @@ function Assert-EffectiveAnalyzerConfiguration
     }
     $sdkAnalyzerDirectory = [IO.Path]::GetFullPath(
         (Join-Path $configuration.Properties.MSBuildToolsPath 'Sdks/Microsoft.NET.Sdk/analyzers'))
-    $effectiveAnalyzerPaths = @(
-        $configuration.Items.Analyzer |
-            ForEach-Object { [IO.Path]::GetFullPath($_.FullPath) }
+    $compilerArguments = @(
+        $configuration.Items.CscCommandLineArgs |
+            ForEach-Object Identity
+    )
+    $compilerAnalyzerPaths = @(
+        $compilerArguments |
+            ForEach-Object {
+                if ($_ -match '^(?:/|-)analyzer:(?<path>.+)$')
+                {
+                    [IO.Path]::GetFullPath($Matches.path.Trim('"'))
+                }
+            }
     )
     foreach ($sdkAnalyzerName in @(
         'Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll'
@@ -799,7 +809,7 @@ function Assert-EffectiveAnalyzerConfiguration
     ))
     {
         $expectedAnalyzerPath = Join-Path $sdkAnalyzerDirectory $sdkAnalyzerName
-        if (-not ($effectiveAnalyzerPaths | Where-Object {
+        if (-not ($compilerAnalyzerPaths | Where-Object {
             $_.Equals($expectedAnalyzerPath, $pathComparison)
         }))
         {
@@ -807,12 +817,18 @@ function Assert-EffectiveAnalyzerConfiguration
         }
     }
 
-    $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
-        @($configuration.Items.EditorConfigFiles)
+    $compilerAnalyzerConfigurationPaths = @(
+        $compilerArguments |
+            ForEach-Object {
+                if ($_ -match '^(?:/|-)analyzerconfig:(?<path>.+)$')
+                {
+                    [IO.Path]::GetFullPath($Matches.path.Trim('"'))
+                }
+            }
+    )
     $sdkAnalyzerConfigurationDirectory = Join-Path $sdkAnalyzerDirectory 'build/config'
-    foreach ($configurationItem in $configurationItems)
+    foreach ($configurationPath in $compilerAnalyzerConfigurationPaths)
     {
-        $configurationPath = $configurationItem.FullPath
         if ([string]::IsNullOrWhiteSpace($configurationPath) `
             -or -not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
         {
