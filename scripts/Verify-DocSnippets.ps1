@@ -679,6 +679,64 @@ foreach ($analysisCategory in $analysisCategories)
     $warningBuildProperties += "-p:AnalysisLevel$analysisCategory="
     $warningBuildProperties += "-p:AnalysisMode$analysisCategory="
 }
+$documentationBuildProperties = @(
+    "-p:KevlarPackageVersion=$Version"
+    "-p:GeneratedSnippetsPath=$generatedPath"
+    "-p:ImplicitUsings=$implicitUsings"
+) + $warningBuildProperties
+
+function Assert-EffectiveAnalyzerConfiguration
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$Framework
+    )
+
+    $queryArguments = @(
+        'msbuild'
+        $projectPath
+        '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles'
+        "-p:TargetFramework=$Framework"
+    ) + $documentationBuildProperties
+    $queryOutput = (& dotnet @queryArguments 2>&1 | Out-String)
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to inspect documentation analyzer configuration for $Framework.`n$queryOutput"
+    }
+
+    try
+    {
+        $configuration = $queryOutput | ConvertFrom-Json
+    }
+    catch
+    {
+        throw "Failed to parse documentation analyzer configuration for $Framework.`n$queryOutput"
+    }
+
+    $seenConfigurationPaths = [System.Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::OrdinalIgnoreCase)
+    $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
+        @($configuration.Items.EditorConfigFiles)
+    foreach ($configurationItem in $configurationItems)
+    {
+        $configurationPath = $configurationItem.FullPath
+        if ([string]::IsNullOrWhiteSpace($configurationPath) `
+            -or -not $seenConfigurationPaths.Add($configurationPath) `
+            -or -not (Test-Path -LiteralPath $configurationPath -PathType Leaf))
+        {
+            continue
+        }
+
+        $configurationText = Get-Content -Raw -LiteralPath $configurationPath
+        foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
+        {
+            if ($configurationText -match $forbiddenPattern.Value)
+            {
+                throw "Documentation analyzer configuration contains forbidden $($forbiddenPattern.Key) in $configurationPath."
+            }
+        }
+    }
+}
 
 function Assert-ExpectedDocumentationDiagnostics
 {
@@ -769,6 +827,8 @@ if ($LASTEXITCODE -ne 0)
 
 foreach ($framework in @('net8.0', 'net10.0'))
 {
+    Assert-EffectiveAnalyzerConfiguration -Framework $framework
+
     $buildArguments = @(
         'build'
         $projectPath
@@ -776,11 +836,8 @@ foreach ($framework in @('net8.0', 'net10.0'))
         '--framework', $framework
         '--no-restore'
         '--no-incremental'
-        "-p:KevlarPackageVersion=$Version"
-        "-p:GeneratedSnippetsPath=$generatedPath"
-        "-p:ImplicitUsings=$implicitUsings"
     )
-    $buildArguments += $warningBuildProperties
+    $buildArguments += $documentationBuildProperties
     $buildOutput = (& dotnet @buildArguments 2>&1 | Out-String)
     $buildExitCode = $LASTEXITCODE
     Write-Host ($buildOutput.TrimEnd())
