@@ -796,6 +796,14 @@ function Assert-EffectiveAnalyzerConfiguration
         $configuration.Items.CscCommandLineArgs |
             ForEach-Object Identity
     )
+    $responseFileArgument = $compilerArguments |
+        Where-Object { $_ -match '^@' } |
+        Select-Object -First 1
+    if ($null -ne $responseFileArgument)
+    {
+        throw "Documentation compiler uses unvalidated response file '$responseFileArgument' for $Framework."
+    }
+
     $warningLevelArguments = @(
         $compilerArguments |
             Where-Object { $_ -match '^(?:/|-)warn:' }
