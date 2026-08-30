@@ -58,7 +58,7 @@ $forbiddenDocumentationPatterns = [ordered]@{
     'downgraded warning severity' = '(?i)(?:dotnet_diagnostic\.(?!KEV(?:009|010|011)\.severity\b)[^.\s=]+|dotnet_analyzer_diagnostic(?:\.category-[^.\s=]+)?)\.severity\s*=\s*suggestion\b'
     'disabled warnings-as-errors' = '(?is)<TreatWarningsAsErrors\b[^>]*>\s*false\s*</TreatWarningsAsErrors>'
     'disabled analyzer execution' = '(?is)<(?<property>EnableNETAnalyzers|RunAnalyzers|RunAnalyzersDuringBuild)\b[^>]*>\s*false\s*</\k<property>>'
-    'disabled analyzer level' = '(?is)<(?<property>AnalysisLevel(?:[A-Za-z]+)?)\b[^>]*>\s*(?:(?:none|[0-3](?:\.[0-9]+)?|4(?:\.0+)?)(?:-[^<\s]+)?|[^<\s]+-none)\s*</\k<property>>'
+    'disabled analyzer level' = '(?is)<(?<property>AnalysisLevel(?:[A-Za-z]+)?)\b[^>]*>\s*(?:(?:none|[0-3](?:\.[0-9]+)?|4(?:\.0+)?)(?:-[^<\s]+)?|[^<\s]+-(?:none|AllDisabledByDefault))\s*</\k<property>>'
     'disabled analyzer mode' = '(?is)<(?<property>AnalysisMode(?:[A-Za-z]+)?)\b[^>]*>\s*(?:none|AllDisabledByDefault)\s*</\k<property>>'
     'disabled compiler warnings' = '(?is)<WarningLevel\b[^>]*>\s*0\s*</WarningLevel>'
     'excluded Kevlar analyzers' = '(?is)<PackageReference\b(?=[^>]*\b(?:Include|Update)\s*=\s*["'']Kevlar["''])(?=[^>]*\bExcludeAssets\s*=\s*["''][^"'']*\banalyzers\b)[^>]*>'
