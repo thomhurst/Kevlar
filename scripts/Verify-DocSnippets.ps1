@@ -697,6 +697,7 @@ function Assert-EffectiveAnalyzerConfiguration
         'msbuild'
         $projectPath
         '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles'
+        '-p:Configuration=Release'
         "-p:TargetFramework=$Framework"
     ) + $documentationBuildProperties
     $queryOutput = (& dotnet @queryArguments 2>&1 | Out-String)
