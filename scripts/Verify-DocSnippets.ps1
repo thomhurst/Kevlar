@@ -706,7 +706,7 @@ function Assert-EffectiveAnalyzerConfiguration
         $projectPath
         '-target:Compile'
         "-getProperty:$($queriedPropertyNames -join ',')"
-        '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles'
+        '-getItem:GlobalAnalyzerConfigFiles,EditorConfigFiles,Analyzer'
         '-p:Configuration=Release'
         "-p:TargetFramework=$Framework"
     ) + $documentationBuildProperties
@@ -760,10 +760,6 @@ function Assert-EffectiveAnalyzerConfiguration
         }
     }
 
-    $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
-        @($configuration.Items.EditorConfigFiles)
-    $sdkAnalyzerConfigurationDirectory = [IO.Path]::GetFullPath(
-        (Join-Path $configuration.Properties.MSBuildToolsPath 'Sdks/Microsoft.NET.Sdk/analyzers/build/config'))
     $pathComparison = if ([OperatingSystem]::IsWindows())
     {
         [StringComparison]::OrdinalIgnoreCase
@@ -772,6 +768,29 @@ function Assert-EffectiveAnalyzerConfiguration
     {
         [StringComparison]::Ordinal
     }
+    $sdkAnalyzerDirectory = [IO.Path]::GetFullPath(
+        (Join-Path $configuration.Properties.MSBuildToolsPath 'Sdks/Microsoft.NET.Sdk/analyzers'))
+    $effectiveAnalyzerPaths = @(
+        $configuration.Items.Analyzer |
+            ForEach-Object { [IO.Path]::GetFullPath($_.FullPath) }
+    )
+    foreach ($sdkAnalyzerName in @(
+        'Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll'
+        'Microsoft.CodeAnalysis.NetAnalyzers.dll'
+    ))
+    {
+        $expectedAnalyzerPath = Join-Path $sdkAnalyzerDirectory $sdkAnalyzerName
+        if (-not ($effectiveAnalyzerPaths | Where-Object {
+            $_.Equals($expectedAnalyzerPath, $pathComparison)
+        }))
+        {
+            throw "Documentation build is missing SDK analyzer $sdkAnalyzerName for $Framework."
+        }
+    }
+
+    $configurationItems = @($configuration.Items.GlobalAnalyzerConfigFiles) +
+        @($configuration.Items.EditorConfigFiles)
+    $sdkAnalyzerConfigurationDirectory = Join-Path $sdkAnalyzerDirectory 'build/config'
     foreach ($configurationItem in $configurationItems)
     {
         $configurationPath = $configurationItem.FullPath
