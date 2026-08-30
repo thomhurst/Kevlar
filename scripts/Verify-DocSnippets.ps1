@@ -644,6 +644,37 @@ foreach ($forbiddenPattern in $forbiddenDocumentationPatterns.GetEnumerator())
 "@)
 
 $implicitUsings = if ($NoImplicitUsings) { 'disable' } else { 'enable' }
+$analysisCategories = @(
+    'Design'
+    'Documentation'
+    'Globalization'
+    'Interoperability'
+    'Maintainability'
+    'Naming'
+    'Performance'
+    'Reliability'
+    'Security'
+    'Usage'
+)
+$warningBuildProperties = @(
+    '-p:AnalysisLevel=latest'
+    '-p:AnalysisMode=Default'
+    '-p:EnableNETAnalyzers=true'
+    '-p:MSBuildTreatWarningsAsErrors=true'
+    '-p:NoWarn='
+    '-p:Nullable=enable'
+    '-p:RunAnalyzers=true'
+    '-p:RunAnalyzersDuringBuild=true'
+    '-p:TreatWarningsAsErrors=true'
+    '-p:WarningLevel=9999'
+    '-p:WarningsNotAsErrors='
+)
+foreach ($analysisCategory in $analysisCategories)
+{
+    $warningBuildProperties += "-p:AnalysisLevel$analysisCategory="
+    $warningBuildProperties += "-p:AnalysisMode$analysisCategory="
+}
+
 function Assert-ExpectedDocumentationDiagnostics
 {
     param(
@@ -744,6 +775,7 @@ foreach ($framework in @('net8.0', 'net10.0'))
         "-p:GeneratedSnippetsPath=$generatedPath"
         "-p:ImplicitUsings=$implicitUsings"
     )
+    $buildArguments += $warningBuildProperties
     $buildOutput = (& dotnet @buildArguments 2>&1 | Out-String)
     $buildExitCode = $LASTEXITCODE
     Write-Host ($buildOutput.TrimEnd())
