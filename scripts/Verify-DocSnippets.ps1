@@ -714,6 +714,30 @@ $documentationBuildProperties = @(
     "-p:ImplicitUsings=$implicitUsings"
 ) + $warningBuildProperties
 
+function Test-PathWithinDirectory
+{
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+
+        [Parameter(Mandatory)]
+        [string]$Directory
+    )
+
+    $relativePath = [IO.Path]::GetRelativePath($Directory, $Path)
+    $comparison = if ([OperatingSystem]::IsWindows())
+    {
+        [StringComparison]::OrdinalIgnoreCase
+    }
+    else
+    {
+        [StringComparison]::Ordinal
+    }
+    return -not [IO.Path]::IsPathRooted($relativePath) `
+        -and -not [string]::Equals($relativePath, '..', $comparison) `
+        -and -not $relativePath.StartsWith("..$([IO.Path]::DirectorySeparatorChar)", $comparison)
+}
+
 function Assert-EffectiveAnalyzerConfiguration
 {
     param(
@@ -790,8 +814,9 @@ function Assert-EffectiveAnalyzerConfiguration
     {
         [StringComparison]::Ordinal
     }
+    $selectedSdkDirectory = [IO.Path]::GetFullPath($configuration.Properties.MSBuildToolsPath)
     $sdkAnalyzerDirectory = [IO.Path]::GetFullPath(
-        (Join-Path $configuration.Properties.MSBuildToolsPath 'Sdks/Microsoft.NET.Sdk/analyzers'))
+        (Join-Path $selectedSdkDirectory 'Sdks/Microsoft.NET.Sdk/analyzers'))
     $compilerArguments = @(
         $configuration.Items.CscCommandLineArgs |
             ForEach-Object Identity
@@ -859,6 +884,27 @@ function Assert-EffectiveAnalyzerConfiguration
                 }
             }
     )
+    $dotnetRoot = [IO.Directory]::GetParent(
+        [IO.Directory]::GetParent($configuration.Properties.MSBuildToolsPath).FullName).FullName
+    $dotnetPacksDirectory = Join-Path $dotnetRoot 'packs'
+    foreach ($compilerAnalyzerPath in $compilerAnalyzerPaths)
+    {
+        $relativePackPath = if (Test-PathWithinDirectory `
+            -Path $compilerAnalyzerPath `
+            -Directory $dotnetPacksDirectory)
+        {
+            [IO.Path]::GetRelativePath($dotnetPacksDirectory, $compilerAnalyzerPath).Replace('\', '/')
+        }
+        if ($trustedPackageAnalyzerPaths.Contains($compilerAnalyzerPath) `
+            -or (Test-PathWithinDirectory -Path $compilerAnalyzerPath -Directory $selectedSdkDirectory) `
+            -or ($relativePackPath -match '(?i)(?:^|/)analyzers/'))
+        {
+            continue
+        }
+
+        throw "Documentation compiler uses unexpected analyzer $compilerAnalyzerPath for $Framework."
+    }
+
     foreach ($sdkAnalyzerName in @(
         'Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll'
         'Microsoft.CodeAnalysis.NetAnalyzers.dll'
@@ -1042,6 +1088,34 @@ function Assert-ExpectedAnalyzerCanary
 if ($LASTEXITCODE -ne 0)
 {
     throw "Documentation snippet restore failed with exit code $LASTEXITCODE."
+}
+
+$projectAssetsPath = Join-Path $repositoryRoot 'artifacts/obj/Kevlar.DocTests/project.assets.json'
+if (-not (Test-Path -LiteralPath $projectAssetsPath -PathType Leaf))
+{
+    throw "Documentation package assets were not generated at $projectAssetsPath."
+}
+
+$projectAssets = Get-Content -Raw -LiteralPath $projectAssetsPath | ConvertFrom-Json -AsHashtable
+$pathComparer = if ([OperatingSystem]::IsWindows())
+{
+    [StringComparer]::OrdinalIgnoreCase
+}
+else
+{
+    [StringComparer]::Ordinal
+}
+$trustedPackageAnalyzerPaths = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
+foreach ($library in $projectAssets.libraries.GetEnumerator() | Where-Object { $_.Value.type -eq 'package' })
+{
+    foreach ($file in $library.Value.files | Where-Object { $_ -match '(?i)^analyzers[/\\].*\.dll$' })
+    {
+        foreach ($packageFolder in $projectAssets.packageFolders.Keys)
+        {
+            [void]$trustedPackageAnalyzerPaths.Add(
+                [IO.Path]::GetFullPath((Join-Path $packageFolder (Join-Path $library.Key $file))))
+        }
+    }
 }
 
 foreach ($framework in @('net8.0', 'net10.0'))
