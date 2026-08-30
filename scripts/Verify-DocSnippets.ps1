@@ -104,10 +104,16 @@ function Expand-CSharpUnicodeEscapes
         '\\(?:u(?<code>[0-9A-Fa-f]{4})|U(?<code>[0-9A-Fa-f]{8}))',
         {
             param($match)
-            $codePoint = [Convert]::ToInt32($match.Groups['code'].Value, 16)
+            $codePoint = [Convert]::ToUInt32($match.Groups['code'].Value, 16)
             if ($match.Value[1] -ceq 'u')
             {
                 return [string][char]$codePoint
+            }
+
+            if ($codePoint -gt 0x10FFFF `
+                -or ($codePoint -ge 0xD800 -and $codePoint -le 0xDFFF))
+            {
+                return $match.Value
             }
 
             return [char]::ConvertFromUtf32($codePoint)
