@@ -661,6 +661,7 @@ $analysisCategories = @(
 $warningBuildProperties = @(
     '-p:AnalysisLevel=latest'
     '-p:AnalysisMode=Default'
+    '-p:CodeAnalysisRuleSet='
     '-p:CodeAnalysisTreatWarningsAsErrors=true'
     '-p:EnableNETAnalyzers=true'
     '-p:EnforceCodeStyleInBuild=true'
