@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar;
@@ -367,6 +368,9 @@ public readonly struct Continuation<T, TState>
         }
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private static async ValueTask<Outcome<T>> AwaitStrategyAsync(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
