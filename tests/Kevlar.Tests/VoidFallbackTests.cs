@@ -1,3 +1,5 @@
+using System.Threading.Tasks.Sources;
+
 namespace Kevlar.Tests;
 
 /// <summary>
@@ -192,6 +194,18 @@ public class VoidFallbackTests
     }
 
     [Test]
+    public async Task Synchronous_ValueTaskSource_Fallback_Is_Consumed_Once()
+    {
+        var source = new CompletionTrackingSource();
+        var shield = Shield.When<InvalidOperationException>()
+            .Fallback((_, _) => new ValueTask(source, token: 0));
+
+        await shield.ExecuteAsync(_ => throw new InvalidOperationException());
+
+        await Assert.That(source.ConsumptionCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task The_Static_Factory_Starts_A_Pipeline_With_A_Fallback()
     {
         Exception? seenException = null;
@@ -258,5 +272,23 @@ public class VoidFallbackTests
         await Assert.That(shield.ToString()).StartsWith("Fallback");
         await Assert.That(attempts).IsEqualTo(3);
         await Assert.That(recovered).IsTrue();
+    }
+
+    private sealed class CompletionTrackingSource : IValueTaskSource
+    {
+        private int _consumptionCount;
+
+        public int ConsumptionCount => Volatile.Read(ref _consumptionCount);
+
+        public void GetResult(short token) => Interlocked.Increment(ref _consumptionCount);
+
+        public ValueTaskSourceStatus GetStatus(short token) => ValueTaskSourceStatus.Succeeded;
+
+        public void OnCompleted(
+            Action<object?> continuation,
+            object? state,
+            short token,
+            ValueTaskSourceOnCompletedFlags flags) =>
+            throw new InvalidOperationException("Source completed synchronously.");
     }
 }

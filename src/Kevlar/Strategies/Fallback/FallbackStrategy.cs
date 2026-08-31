@@ -246,9 +246,13 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
                     "FallbackOptions recovery delegate");
             }
 
-            return fallback.IsCompletedSuccessfully
-                ? new ValueTask<Outcome<T>>(Outcome<T>.FromResult(default!))
-                : AwaitFallbackAsync<T>(fallback);
+            if (!fallback.IsCompletedSuccessfully)
+            {
+                return AwaitFallbackAsync<T>(fallback);
+            }
+
+            fallback.GetAwaiter().GetResult();
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(default!));
         }
         catch (Exception fallbackFailure)
         {
