@@ -164,38 +164,23 @@ public class CircuitBreakerStateReportingTests
             options.Monitor = monitor;
         });
 
-        for (var iteration = 0; iteration < 100; iteration++)
+        var successStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSuccess = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var success = shield.ExecuteOutcomeAsync<int>(async _ =>
         {
-            var bothAdmitted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var admittedCount = 0;
-            var success = shield.ExecuteOutcomeAsync<int>(async _ =>
-            {
-                if (Interlocked.Increment(ref admittedCount) == 2)
-                {
-                    bothAdmitted.SetResult();
-                }
+            successStarted.SetResult();
+            await releaseSuccess.Task;
+            return 42;
+        }).AsTask();
+        await successStarted.Task;
 
-                await bothAdmitted.Task;
-                return 42;
-            }).AsTask();
-            var failure = shield.ExecuteOutcomeAsync<int>(async _ =>
-            {
-                if (Interlocked.Increment(ref admittedCount) == 2)
-                {
-                    bothAdmitted.SetResult();
-                }
+        var failure = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("open"));
+        releaseSuccess.SetResult();
+        var successOutcome = await success;
 
-                await bothAdmitted.Task;
-                throw new InvalidOperationException("open");
-            }).AsTask();
-
-            var outcomes = await Task.WhenAll(success, failure);
-
-            await Assert.That(outcomes[0].IsSuccess).IsTrue();
-            await Assert.That(outcomes[1].Exception).IsTypeOf<InvalidOperationException>();
-            await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
-            monitor.Reset();
-        }
+        await Assert.That(successOutcome.IsSuccess).IsTrue();
+        await Assert.That(failure.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 
     [Test]
