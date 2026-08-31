@@ -311,11 +311,13 @@ internal sealed class CircuitBreakerCore
         admissionGeneration = 0;
         rejection = null;
 
-        if (_state == CircuitState.Closed)
+        var observedGeneration = Volatile.Read(ref _admissionGeneration);
+        if (_state == CircuitState.Closed
+            && observedGeneration == Volatile.Read(ref _admissionGeneration))
         {
             // Closed executions reserve no exclusive state. A concurrent transition increments
             // the generation so its in-flight outcome cannot affect the new circuit generation.
-            admissionGeneration = Volatile.Read(ref _admissionGeneration);
+            admissionGeneration = observedGeneration;
             return true;
         }
 
@@ -746,7 +748,7 @@ internal sealed class CircuitBreakerCore
         lock (_gate)
         {
             CancelPendingOpening();
-            _admissionGeneration++;
+            Interlocked.Increment(ref _admissionGeneration);
             ResetMetrics();
             _probeInFlight = false;
             _lastException = null;
@@ -904,7 +906,7 @@ internal sealed class CircuitBreakerCore
         _state = next;
         if (next is CircuitState.Open or CircuitState.Isolated)
         {
-            _admissionGeneration++;
+            Interlocked.Increment(ref _admissionGeneration);
         }
         else if (next == CircuitState.Closed)
         {

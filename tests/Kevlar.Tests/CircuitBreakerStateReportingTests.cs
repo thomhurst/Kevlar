@@ -166,17 +166,28 @@ public class CircuitBreakerStateReportingTests
 
         for (var iteration = 0; iteration < 100; iteration++)
         {
-            using var bothAdmitted = new Barrier(participantCount: 2);
-            var success = Task.Run(async () => await shield.ExecuteOutcomeAsync<int>(_ =>
+            var bothAdmitted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var admittedCount = 0;
+            var success = shield.ExecuteOutcomeAsync<int>(async _ =>
             {
-                bothAdmitted.SignalAndWait();
-                return new ValueTask<int>(42);
-            }));
-            var failure = Task.Run(async () => await shield.ExecuteOutcomeAsync<int>(_ =>
+                if (Interlocked.Increment(ref admittedCount) == 2)
+                {
+                    bothAdmitted.SetResult();
+                }
+
+                await bothAdmitted.Task;
+                return 42;
+            }).AsTask();
+            var failure = shield.ExecuteOutcomeAsync<int>(async _ =>
             {
-                bothAdmitted.SignalAndWait();
+                if (Interlocked.Increment(ref admittedCount) == 2)
+                {
+                    bothAdmitted.SetResult();
+                }
+
+                await bothAdmitted.Task;
                 throw new InvalidOperationException("open");
-            }));
+            }).AsTask();
 
             var outcomes = await Task.WhenAll(success, failure);
 
