@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Kevlar.Internal;
 
 /// <summary>Boundary plumbing shared by <see cref="Shield"/> and <see cref="Shield{TResult}"/>.</summary>
@@ -539,6 +541,9 @@ internal static class ShieldEngine
         return continuation.InvokeAsync(context);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private static async ValueTask<Outcome<T>> InvokeAsync<TState, T>(AsyncCallback<TState, T> callback, KevlarContext context)
     {
         try
@@ -565,6 +570,9 @@ internal static class ShieldEngine
         }
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private static async ValueTask<T> AwaitAsync<T>(ValueTask<Outcome<T>> pipeline, KevlarContext context, long startedAt)
     {
         try
