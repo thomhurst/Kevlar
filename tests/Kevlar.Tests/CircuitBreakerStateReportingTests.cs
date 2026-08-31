@@ -154,6 +154,36 @@ public class CircuitBreakerStateReportingTests
     }
 
     [Test]
+    public async Task Concurrent_Closed_Success_Does_Not_Override_Opening()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+        });
+
+        var successStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSuccess = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var success = shield.ExecuteOutcomeAsync<int>(async _ =>
+        {
+            successStarted.SetResult();
+            await releaseSuccess.Task;
+            return 42;
+        }).AsTask();
+        await successStarted.Task;
+
+        var failure = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("open"));
+        releaseSuccess.SetResult();
+        var successOutcome = await success;
+
+        await Assert.That(successOutcome.IsSuccess).IsTrue();
+        await Assert.That(failure.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
     public async Task Stale_Failure_Does_Not_Reopen_HalfOpen()
     {
         var timeProvider = new FakeTimeProvider();
