@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 using Reservoir;
 
@@ -176,6 +177,9 @@ internal sealed class TimeoutStrategy : Strategy
             timeout);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> AwaitAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
