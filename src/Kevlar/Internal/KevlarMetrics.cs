@@ -157,6 +157,17 @@ internal static class KevlarMetrics
         return KevlarTelemetry.IsEventEnabled(context);
     }
 
+    public static bool TimeoutIgnoredEnabled(KevlarContext context)
+    {
+#if NET8_0_OR_GREATER
+        if (Timeouts.Enabled)
+        {
+            return true;
+        }
+#endif
+        return KevlarTelemetry.IsEventEnabled(context);
+    }
+
 #if NET9_0_OR_GREATER
     public static bool CircuitStateEnabled => CircuitStateGauge.Enabled || CircuitInstances.Enabled;
     public static bool ConcurrencyStateEnabled =>
