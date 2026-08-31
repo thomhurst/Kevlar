@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -183,6 +184,9 @@ internal sealed class RetryStrategy : Strategy
         }
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,

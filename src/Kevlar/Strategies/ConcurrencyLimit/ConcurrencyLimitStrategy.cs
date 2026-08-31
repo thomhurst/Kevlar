@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -182,6 +183,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         return new ValueTask<Outcome<T>>(outcome);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> AwaitExecutionAsync<T>(ValueTask<Outcome<T>> execution)
     {
         try

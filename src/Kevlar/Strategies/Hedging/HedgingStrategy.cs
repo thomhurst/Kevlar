@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 using Reservoir;
 
@@ -191,6 +192,9 @@ internal sealed class HedgingStrategy : Strategy
             strategyIndex);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,

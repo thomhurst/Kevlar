@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -54,6 +55,9 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
             : AwaitOutcomeAsync(execution, context, strategyIndex);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,

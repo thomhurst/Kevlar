@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -96,6 +97,9 @@ internal sealed class CircuitBreakerStrategy : Strategy
             : AwaitOutcomeAsync(execution, context, admissionGeneration);
     }
 
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
     private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
