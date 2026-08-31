@@ -37,7 +37,6 @@ internal sealed class CircuitBreakerCore
     private TimestampOrigin? _systemTimestampOrigin;
     private RatioBucket? _currentRatioBucket;
     private double _currentBucketStart = double.NaN;
-    private double _currentBucketEnd = double.NaN;
     private int _currentBucketIndex;
     private int _systemRatioFastPathEnabled = 1;
 
@@ -438,7 +437,7 @@ internal sealed class CircuitBreakerCore
         var providerTimestamp = Stopwatch.GetTimestamp();
         var elapsedTimestamp = unchecked(providerTimestamp - origin.ProviderTimestamp);
         var timestamp = origin.TimelineTimestamp + (elapsedTimestamp * origin.TimestampScale);
-        if (timestamp >= Volatile.Read(ref _currentBucketEnd)
+        if (timestamp >= bucket.EndTimestamp
             || Volatile.Read(ref _systemRatioFastPathEnabled) == 0
             || _state != CircuitState.Closed
             || admissionGeneration != Volatile.Read(ref _admissionGeneration))
@@ -856,7 +855,7 @@ internal sealed class CircuitBreakerCore
         if (double.IsNaN(_currentBucketStart))
         {
             _currentBucketStart = timestamp;
-            currentBucket = new RatioBucket();
+            currentBucket = CreateRatioBucket();
             _ratioBuckets[_currentBucketIndex] = currentBucket;
         }
         else
@@ -878,24 +877,23 @@ internal sealed class CircuitBreakerCore
                 _currentBucketStart = advance == BucketCount
                     ? timestamp
                     : _currentBucketStart + (advance * _bucketDurationTimestampUnits);
-                currentBucket = new RatioBucket();
+                currentBucket = CreateRatioBucket();
                 _ratioBuckets[_currentBucketIndex] = currentBucket;
             }
         }
 
         Volatile.Write(ref _currentRatioBucket, currentBucket);
-        Volatile.Write(
-            ref _currentBucketEnd,
-            _currentBucketStart + _bucketDurationTimestampUnits);
         return currentBucket!;
     }
+
+    private RatioBucket CreateRatioBucket() =>
+        new(_currentBucketStart + _bucketDurationTimestampUnits);
 
     private void ResetMetrics()
     {
         Volatile.Write(ref _consecutiveFailures, 0);
         Volatile.Write(ref _currentRatioBucket, null);
         _currentBucketStart = double.NaN;
-        Volatile.Write(ref _currentBucketEnd, double.NaN);
         _currentBucketIndex = 0;
         Array.Clear(_ratioBuckets, 0, BucketCount);
     }
@@ -972,6 +970,13 @@ internal sealed class CircuitBreakerCore
 
     private sealed class RatioBucket
     {
+        public RatioBucket(double endTimestamp)
+        {
+            EndTimestamp = endTimestamp;
+        }
+
+        public double EndTimestamp { get; }
+
         public long Failures;
 
         public long Successes;
