@@ -38,7 +38,7 @@ internal sealed class CircuitBreakerCore
     private double _currentBucketStart = double.NaN;
     private int _currentBucketIndex;
 
-    private CircuitState _state = CircuitState.Closed;
+    private volatile CircuitState _state = CircuitState.Closed;
     private double _latestTimestamp;
     private double _openUntilTimestamp;
     private int _consecutiveFailures;
@@ -310,6 +310,14 @@ internal sealed class CircuitBreakerCore
         transition = null;
         admissionGeneration = 0;
         rejection = null;
+
+        if (_state == CircuitState.Closed)
+        {
+            // Closed executions reserve no exclusive state. A concurrent transition increments
+            // the generation so its in-flight outcome cannot affect the new circuit generation.
+            admissionGeneration = Volatile.Read(ref _admissionGeneration);
+            return true;
+        }
 
         lock (_gate)
         {
