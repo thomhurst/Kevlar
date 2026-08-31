@@ -103,7 +103,8 @@ internal sealed class TimeoutStrategy : Strategy
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
-        var startedAt = context.TimeProvider.GetTimestamp();
+        var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
+        var startedAt = recordTimeoutIgnored ? context.TimeProvider.GetTimestamp() : 0;
 
         try
         {
@@ -141,7 +142,15 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitAsync(execution, context, priorToken, timeoutSource, timer, timeout, startedAt);
+            return AwaitAsync(
+                execution,
+                context,
+                priorToken,
+                timeoutSource,
+                timer,
+                timeout,
+                startedAt,
+                recordTimeoutIgnored);
         }
 
         var outcome = execution.Result;
@@ -153,7 +162,8 @@ internal sealed class TimeoutStrategy : Strategy
                 priorToken,
                 timeoutSource,
                 timer,
-                startedAt));
+                startedAt,
+                recordTimeoutIgnored));
         }
 
         return CompleteCancellationAsync(
@@ -173,7 +183,8 @@ internal sealed class TimeoutStrategy : Strategy
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout,
-        long startedAt)
+        long startedAt,
+        bool recordTimeoutIgnored)
     {
         Outcome<T> outcome;
 
@@ -195,7 +206,8 @@ internal sealed class TimeoutStrategy : Strategy
                 priorToken,
                 timeoutSource,
                 timer,
-                startedAt);
+                startedAt,
+                recordTimeoutIgnored);
         }
 
         return await CompleteCancellationAsync(
@@ -214,14 +226,15 @@ internal sealed class TimeoutStrategy : Strategy
         CancellationToken priorToken,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
-        long startedAt)
+        long startedAt,
+        bool recordTimeoutIgnored)
     {
         context.CancellationToken = priorToken;
         timer?.Dispose();
         var timeoutIgnored = !priorToken.IsCancellationRequested && timeoutSource.IsCancellationRequested;
         timeoutSource.Dispose();
 
-        if (timeoutIgnored)
+        if (timeoutIgnored && recordTimeoutIgnored)
         {
             KevlarMetrics.TimeoutIgnored(
                 context,
