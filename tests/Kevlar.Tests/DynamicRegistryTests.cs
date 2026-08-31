@@ -394,27 +394,12 @@ public class DynamicRegistryTests
                 (_, _) => Shield.Use(Interlocked.Increment(ref factoryCalls) == 1 ? first : second))
             .BuildServiceProvider();
         var provider = services.GetRequiredKeyedService<IShieldProvider>("active");
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var current = provider.Current;
-        var execution = current.ExecuteAsync(async _ =>
-        {
-            started.SetResult();
-            await release.Task;
-        }).AsTask();
-        await started.Task;
+        var (retired, disposedDuringExecution) = ExerciseReloadDuringExecution(
+            provider,
+            monitor,
+            first);
 
-        monitor.Set("active", new ReloadOptions());
-        var retired = new WeakReference(current);
-        current = null!;
-        Collect(retired);
-        monitor.Set("active", new ReloadOptions());
-
-        await Assert.That(first.DisposeCount).IsEqualTo(0);
-
-        release.SetResult();
-        await execution;
-        execution = null!;
+        await Assert.That(disposedDuringExecution).IsFalse();
         Collect(retired);
         monitor.Set("active", new ReloadOptions());
 
@@ -1234,6 +1219,43 @@ public class DynamicRegistryTests
         var reference = new WeakReference(current);
         monitor.Set(name, new ReloadOptions());
         return reference;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (WeakReference Retired, bool DisposedDuringExecution) ExerciseReloadDuringExecution(
+        IShieldProvider provider,
+        MutableOptionsMonitor<ReloadOptions> monitor,
+        DisposableStrategy strategy)
+    {
+        var (execution, retired, release) = StartReloadExecution(provider, monitor);
+        Collect(retired);
+        monitor.Set("active", new ReloadOptions());
+        var disposedDuringExecution = strategy.DisposeCount != 0;
+
+        release.SetResult();
+        execution.GetAwaiter().GetResult();
+        return (retired, disposedDuringExecution);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (Task Execution, WeakReference Retired, TaskCompletionSource Release) StartReloadExecution(
+        IShieldProvider provider,
+        MutableOptionsMonitor<ReloadOptions> monitor)
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var current = provider.Current;
+        var execution = current.ExecuteAsync(
+            (started, release),
+            static async (state, _) =>
+            {
+                state.started.SetResult();
+                await state.release.Task;
+            }).AsTask();
+        started.Task.GetAwaiter().GetResult();
+        monitor.Set("active", new ReloadOptions());
+
+        return (execution, new WeakReference(current), release);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
