@@ -33,10 +33,12 @@ internal sealed class CircuitBreakerCore
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
     private readonly AsyncLocal<TransitionPublication?>? _ambientPublication;
 
-    private readonly long[] _bucketFailures = new long[BucketCount];
-    private readonly long[] _bucketSuccesses = new long[BucketCount];
+    private readonly RatioBucket?[] _ratioBuckets = new RatioBucket?[BucketCount];
+    private TimestampOrigin? _systemTimestampOrigin;
+    private RatioBucket? _currentRatioBucket;
     private double _currentBucketStart = double.NaN;
     private int _currentBucketIndex;
+    private int _systemRatioFastPathEnabled = 1;
 
     private volatile CircuitState _state = CircuitState.Closed;
     private double _latestTimestamp;
@@ -396,14 +398,59 @@ internal sealed class CircuitBreakerCore
         KevlarContext context,
         long admissionGeneration)
     {
+        if (TryRecordRatioSuccessFast(timeProvider, admissionGeneration))
+        {
+            return;
+        }
+
         Publish(RecordSuccessCore(timeProvider, context, admissionGeneration));
     }
 
     public ValueTask RecordSuccessAsync(
         TimeProvider timeProvider,
         KevlarContext context,
-        long admissionGeneration) =>
-        PublishAsync(RecordSuccessCore(timeProvider, context, admissionGeneration));
+        long admissionGeneration)
+    {
+        return TryRecordRatioSuccessFast(timeProvider, admissionGeneration)
+            ? default
+            : PublishAsync(RecordSuccessCore(timeProvider, context, admissionGeneration));
+    }
+
+    private bool TryRecordRatioSuccessFast(
+        TimeProvider timeProvider,
+        long admissionGeneration)
+    {
+        if (_failureRatio is null
+            || Volatile.Read(ref _systemRatioFastPathEnabled) == 0
+            || !ReferenceEquals(timeProvider, TimeProvider.System))
+        {
+            return false;
+        }
+
+        var origin = Volatile.Read(ref _systemTimestampOrigin);
+        var bucket = Volatile.Read(ref _currentRatioBucket);
+        if (origin is null || bucket is null)
+        {
+            return false;
+        }
+
+        var providerTimestamp = Stopwatch.GetTimestamp();
+        var elapsedTimestamp = unchecked(providerTimestamp - origin.ProviderTimestamp);
+        var timestamp = origin.TimelineTimestamp + (elapsedTimestamp * origin.TimestampScale);
+        if (timestamp >= bucket.EndTimestamp
+            || Volatile.Read(ref _systemRatioFastPathEnabled) == 0
+            || _state != CircuitState.Closed
+            || admissionGeneration != Volatile.Read(ref _admissionGeneration))
+        {
+            return false;
+        }
+
+        // Bucket instances are never reused. A concurrent rollover or reset can detach this
+        // bucket, making a late increment harmless instead of racing an in-place clear.
+        Volatile.Write(ref _consecutiveFailures, 0);
+        Interlocked.Increment(ref bucket.Successes);
+        return true;
+    }
 
     private TransitionPublication? RecordSuccessCore(
         TimeProvider timeProvider,
@@ -427,10 +474,11 @@ internal sealed class CircuitBreakerCore
 
             if (_state == CircuitState.Closed)
             {
-                _consecutiveFailures = 0;
+                Volatile.Write(ref _consecutiveFailures, 0);
                 if (_failureRatio is not null)
                 {
-                    _bucketSuccesses[AdvanceBucket(timeProvider)]++;
+                    var bucket = AdvanceBucket(timeProvider);
+                    Interlocked.Increment(ref bucket.Successes);
                 }
             }
 
@@ -763,41 +811,52 @@ internal sealed class CircuitBreakerCore
         double timestamp,
         out CircuitBreakerFailureStatistics statistics)
     {
-        _consecutiveFailures++;
+        var consecutiveFailures = Interlocked.Increment(ref _consecutiveFailures);
         if (_consecutiveFailureLimit is { } limit)
         {
             statistics = new CircuitBreakerFailureStatistics(
                 FailureRate: 1,
-                FailureCount: _consecutiveFailures,
-                ConsecutiveFailures: _consecutiveFailures);
-            return _consecutiveFailures >= limit;
+                FailureCount: consecutiveFailures,
+                ConsecutiveFailures: consecutiveFailures);
+            return consecutiveFailures >= limit;
         }
 
         var bucket = AdvanceBucket(timestamp);
-        _bucketFailures[bucket]++;
+        bucket.Failures++;
 
         long failures = 0, total = 0;
         for (var i = 0; i < BucketCount; i++)
         {
-            failures += _bucketFailures[i];
-            total += _bucketFailures[i] + _bucketSuccesses[i];
+            var sample = _ratioBuckets[i];
+            if (sample is null)
+            {
+                continue;
+            }
+
+            var bucketFailures = sample.Failures;
+            failures += bucketFailures;
+            total += bucketFailures + Interlocked.Read(ref sample.Successes);
         }
 
         var failureRate = (double)failures / total;
         statistics = new CircuitBreakerFailureStatistics(
             failureRate,
             failures,
-            _consecutiveFailures);
+            consecutiveFailures);
         return total >= _minimumThroughput && failureRate >= _failureRatio!.Value;
     }
 
-    private int AdvanceBucket(TimeProvider timeProvider) => AdvanceBucket(GetCurrentTimestamp(timeProvider));
+    private RatioBucket AdvanceBucket(TimeProvider timeProvider) =>
+        AdvanceBucket(GetCurrentTimestamp(timeProvider));
 
-    private int AdvanceBucket(double timestamp)
+    private RatioBucket AdvanceBucket(double timestamp)
     {
+        var currentBucket = _currentRatioBucket;
         if (double.IsNaN(_currentBucketStart))
         {
             _currentBucketStart = timestamp;
+            currentBucket = CreateRatioBucket();
+            _ratioBuckets[_currentBucketIndex] = currentBucket;
         }
         else
         {
@@ -811,37 +870,54 @@ internal sealed class CircuitBreakerCore
                 for (var i = 1; i <= advance; i++)
                 {
                     var index = (_currentBucketIndex + i) % BucketCount;
-                    _bucketFailures[index] = 0;
-                    _bucketSuccesses[index] = 0;
+                    _ratioBuckets[index] = null;
                 }
 
                 _currentBucketIndex = (_currentBucketIndex + advance) % BucketCount;
                 _currentBucketStart = advance == BucketCount
                     ? timestamp
                     : _currentBucketStart + (advance * _bucketDurationTimestampUnits);
+                currentBucket = CreateRatioBucket();
+                _ratioBuckets[_currentBucketIndex] = currentBucket;
             }
         }
 
-        return _currentBucketIndex;
+        Volatile.Write(ref _currentRatioBucket, currentBucket);
+        return currentBucket!;
     }
+
+    private RatioBucket CreateRatioBucket() =>
+        new(_currentBucketStart + _bucketDurationTimestampUnits);
 
     private void ResetMetrics()
     {
-        _consecutiveFailures = 0;
+        Volatile.Write(ref _consecutiveFailures, 0);
+        Volatile.Write(ref _currentRatioBucket, null);
         _currentBucketStart = double.NaN;
         _currentBucketIndex = 0;
-        Array.Clear(_bucketFailures, 0, BucketCount);
-        Array.Clear(_bucketSuccesses, 0, BucketCount);
+        Array.Clear(_ratioBuckets, 0, BucketCount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCurrentTimestamp(TimeProvider timeProvider)
     {
+        if (!ReferenceEquals(timeProvider, TimeProvider.System))
+        {
+            // Alternate providers share a normalized timeline protected by _gate. Once one is
+            // observed, keep every provider on that path so their epochs cannot diverge.
+            Volatile.Write(ref _systemRatioFastPathEnabled, 0);
+        }
+
         var timestamp = timeProvider.GetTimestamp();
         if (!_timestampOrigins.TryGetValue(timeProvider, out var origin))
         {
             origin = new TimestampOrigin(timeProvider, timestamp, _latestTimestamp);
             _timestampOrigins.Add(timeProvider, origin);
+            if (ReferenceEquals(timeProvider, TimeProvider.System))
+            {
+                Volatile.Write(ref _systemTimestampOrigin, origin);
+            }
+
             return _latestTimestamp;
         }
 
@@ -890,6 +966,20 @@ internal sealed class CircuitBreakerCore
         public double TimelineTimestamp { get; }
 
         public double TimestampScale { get; }
+    }
+
+    private sealed class RatioBucket
+    {
+        public RatioBucket(double endTimestamp)
+        {
+            EndTimestamp = endTimestamp;
+        }
+
+        public double EndTimestamp { get; }
+
+        public long Failures;
+
+        public long Successes;
     }
 
     private TransitionPublication ChangeState(

@@ -388,6 +388,51 @@ public class CircuitBreakerEdgeCaseTests
     }
 
     [Test]
+    public async Task Ratio_Mode_Counts_Concurrent_Successes_Exactly()
+    {
+        const int workerCount = 4;
+        const int successesPerWorker = 100;
+        const int expectedSuccesses = workerCount * successesPerWorker;
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.FailureRatio = 0.5;
+            options.MinimumThroughput = expectedSuccesses * 2;
+            options.SamplingWindow = TimeSpan.FromMinutes(1);
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+        });
+        var readyWorkers = 0;
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var workers = Enumerable.Range(0, workerCount).Select(_ => Task.Run(async () =>
+        {
+            if (Interlocked.Increment(ref readyWorkers) == workerCount)
+            {
+                start.SetResult();
+            }
+
+            await start.Task;
+            for (var success = 0; success < successesPerWorker; success++)
+            {
+                await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
+            }
+        }));
+        await Task.WhenAll(workers);
+
+        for (var failure = 1; failure < expectedSuccesses; failure++)
+        {
+            await shield.ExecuteOutcomeAsync<int>(static _ => throw new InvalidOperationException());
+        }
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+
+        await shield.ExecuteOutcomeAsync<int>(static _ => throw new InvalidOperationException());
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
     public async Task Reset_Closes_The_Circuit_And_Clears_Failure_History()
     {
         var monitor = new CircuitBreakerMonitor();
