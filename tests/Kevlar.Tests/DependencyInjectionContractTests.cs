@@ -359,14 +359,14 @@ public class DependencyInjectionContractTests
             })
             .BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
-        using var ready = new CountdownEvent(WorkerCount);
-        using var start = new ManualResetEventSlim();
+        using var resolutionEntered = new CountdownEvent(WorkerCount);
+        var workerThreads = new Thread[WorkerCount];
         var resolutions = Enumerable.Range(0, WorkerCount)
-            .Select(_worker => Task.Factory.StartNew(
+            .Select(worker => Task.Factory.StartNew(
                 () =>
                 {
-                    ready.Signal();
-                    start.Wait();
+                    workerThreads[worker] = Thread.CurrentThread;
+                    resolutionEntered.Signal();
                     try
                     {
                         _ = registry.GetShield("failing");
@@ -382,13 +382,17 @@ public class DependencyInjectionContractTests
                 TaskScheduler.Default))
             .ToArray();
 
-        ready.Wait();
-        start.Set();
         await factoryEntered.Task;
-        await Task.Delay(100);
+        resolutionEntered.Wait();
+        // A signalled worker can still be descheduled before entering Lazy.Value.
+        var allWorkersBlockedInResolution = SpinWait.SpinUntil(
+            () => workerThreads.All(
+                thread => (thread.ThreadState & ThreadState.WaitSleepJoin) != 0),
+            TimeSpan.FromSeconds(5));
         releaseFailure.Set();
         var failures = await Task.WhenAll(resolutions);
 
+        await Assert.That(allWorkersBlockedInResolution).IsTrue();
         await Assert.That(factoryCalls).IsEqualTo(1);
         await Assert.That(failures.All(exception => ReferenceEquals(exception, failure))).IsTrue();
         await Assert.That(registry.GetShield("failing")).IsSameReferenceAs(Shield.Empty);
