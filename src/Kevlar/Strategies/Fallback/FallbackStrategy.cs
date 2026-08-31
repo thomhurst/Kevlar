@@ -179,23 +179,38 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     public override string Describe() => "Fallback";
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var strategyIndex = context.StrategyIndex;
-        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+        var execution = next.InvokeAsync(context);
+        return execution.IsCompletedSuccessfully
+            ? HandleOutcome(execution.Result, context, strategyIndex)
+            : AwaitOutcomeAsync(execution, context, strategyIndex);
+    }
 
+    private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        int strategyIndex)
+    {
+        var outcome = await execution.ConfigureAwait(false);
+        return await HandleOutcome(outcome, context, strategyIndex).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> HandleOutcome<T>(Outcome<T> outcome, KevlarContext context, int strategyIndex)
+    {
         if (outcome.Exception is not { } exception
             || !_judge.ShouldHandle(in outcome, context, attempt: 0, strategyIndex))
         {
-            return outcome;
+            return new ValueTask<Outcome<T>>(outcome);
         }
 
         if (typeof(T) != typeof(Nothing))
         {
-            return Outcome<T>.FromException(new InvalidOperationException(
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new InvalidOperationException(
                 "Fallback on a non-generic Shield applies only to void executions. " +
                 "For executions that return a value, build a result-aware shield with " +
-                "Shield.For<T>() and use its Fallback overloads."));
+                "Shield.For<T>() and use its Fallback overloads.")));
         }
 
         KevlarMetrics.Fallback(context, _telemetryName, in outcome);
@@ -203,14 +218,23 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
         if (_onFallback is not null)
         {
             var fallbackEvent = new FallbackEvent(exception, context);
-            await CallbackInvoker.InvokeAsync(
+            var notification = CallbackInvoker.InvokeAsync(
                 _onFallback,
                 fallbackEvent,
                 CallbackErrorKind.Fallback,
                 context,
-                "FallbackOptions.OnFallback").ConfigureAwait(false);
+                "FallbackOptions.OnFallback");
+            if (!notification.IsCompletedSuccessfully)
+            {
+                return AwaitNotificationAsync<T>(notification, exception, context);
+            }
         }
 
+        return InvokeFallback<T>(exception, context);
+    }
+
+    private ValueTask<Outcome<T>> InvokeFallback<T>(Exception exception, KevlarContext context)
+    {
         try
         {
             var fallback = _fallback(exception, context.CancellationToken);
@@ -222,12 +246,39 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
                     "FallbackOptions recovery delegate");
             }
 
-            await fallback.ConfigureAwait(false);
-            return Outcome<T>.FromResult(default!);
+            if (!fallback.IsCompletedSuccessfully)
+            {
+                return AwaitFallbackAsync<T>(fallback);
+            }
+
+            fallback.GetAwaiter().GetResult();
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(default!));
         }
         catch (Exception fallbackFailure)
         {
-            return Outcome<T>.FromException(fallbackFailure);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(fallbackFailure));
+        }
+    }
+
+    private async ValueTask<Outcome<T>> AwaitNotificationAsync<T>(
+        ValueTask notification,
+        Exception exception,
+        KevlarContext context)
+    {
+        await notification.ConfigureAwait(false);
+        return await InvokeFallback<T>(exception, context).ConfigureAwait(false);
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitFallbackAsync<T>(ValueTask execution)
+    {
+        try
+        {
+            await execution.ConfigureAwait(false);
+            return Outcome<T>.FromResult(default!);
+        }
+        catch (Exception exception)
+        {
+            return Outcome<T>.FromException(exception);
         }
     }
 }

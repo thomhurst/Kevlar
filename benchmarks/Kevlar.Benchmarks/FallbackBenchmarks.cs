@@ -8,7 +8,8 @@ namespace Kevlar.Benchmarks;
 /// <summary>
 /// Fallback strategy: the pass-through path (execution succeeds, fallback unused) and
 /// the triggered path (execution throws, fallback value substituted).
-/// Polly only offers fallback on typed pipelines, so both sides use typed pipelines.
+/// Polly only offers fallback on typed pipelines, so comparative groups use typed pipelines.
+/// Kevlar's void pass-through is measured against an empty void shield.
 /// </summary>
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -20,6 +21,8 @@ public class FallbackBenchmarks
     private static readonly Shield<int> KevlarFallback = Shield.For<int>()
         .When<InvalidOperationException>()
         .FallbackTo(7);
+
+    private static readonly Shield KevlarVoidFallback = Shield.Fallback(static _ => default);
 
     private static readonly Shield<int> KevlarCompletedAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
@@ -50,6 +53,13 @@ public class FallbackBenchmarks
 
     [BenchmarkCategory("PassThrough"), Benchmark]
     public ValueTask<int> Polly_PassThrough() => PollyFallback.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("VoidPassThrough"), Benchmark(Baseline = true)]
+    public ValueTask Kevlar_EmptyVoid() => Shield.Empty.ExecuteAsync(static _ => ValueTask.CompletedTask);
+
+    [BenchmarkCategory("VoidPassThrough"), Benchmark]
+    public ValueTask Kevlar_VoidPassThrough() =>
+        KevlarVoidFallback.ExecuteAsync(static _ => ValueTask.CompletedTask);
 
     [BenchmarkCategory("Triggered"), Benchmark(Baseline = true)]
     public ValueTask<int> Kevlar_Triggered() => KevlarFallback.ExecuteAsync(static _ => throw PrimaryError);
