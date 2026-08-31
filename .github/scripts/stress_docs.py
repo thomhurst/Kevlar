@@ -38,17 +38,36 @@ def fmt_duration(value):
     )
     if total_seconds >= 60:
         return f"{total_seconds / 60:g} minutes"
+    if total_seconds == 1:
+        return "1 second"
     return f"{total_seconds:g} seconds"
 
 
-def build_page(data, commit):
-    results = {result["library"]: result for result in data["results"]}
-    if set(results) != {"Kevlar", "Polly"}:
-        raise ValueError("Expected exactly one Kevlar result and one Polly result")
+def fmt_seconds(value):
+    if value >= 1:
+        return f"{value:.2f} s"
+    return f"{value * 1000:.2f} ms"
 
-    kevlar = results["Kevlar"]
-    polly = results["Polly"]
-    throughput_ratio = kevlar["operationsPerSecond"] / polly["operationsPerSecond"]
+
+SCENARIO_LABELS = {
+    "SharedRatioPipeline": "Shared timeout → retry → ratio breaker",
+    "TimeoutRetryPipeline": "Shared timeout → retry",
+    "PerWorkerRatioPipeline": "Per-worker timeout → retry → ratio breaker",
+}
+
+
+def build_page(data, commit):
+    results = data["results"]
+    worker_counts = sorted({result["workers"] for result in results})
+    workers_description = " and ".join(str(workers) for workers in worker_counts)
+    grouped = {}
+    for result in results:
+        key = (result["scenario"], result["workers"])
+        grouped.setdefault(key, {})[result["library"]] = result
+
+    if not grouped or any(set(pair) != {"Kevlar", "Polly"} for pair in grouped.values()):
+        raise ValueError("Expected one Kevlar and one Polly result per scenario")
+
     timestamp = datetime.fromisoformat(data["timestamp"]).strftime("%Y-%m-%d %H:%M UTC")
     run_commit = commit or data.get("commit", "")[:7]
     suffix = f" (commit `{run_commit}`)" if run_commit else ""
@@ -73,33 +92,49 @@ def build_page(data, commit):
         "",
         "## Latest result",
         "",
-        "| Library | Throughput | Operations | Allocated | Allocated/op | Managed heap (before / after) | GC collections (0 / 1 / 2) |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
 
-    for library in ("Kevlar", "Polly"):
-        result = results[library]
+    for (scenario, workers), pair in grouped.items():
+        for library in ("Kevlar", "Polly"):
+            result = pair[library]
+            cpu = result["cpuSeconds"] / result["elapsedSeconds"] * 100
+            lines.append(
+                f"| {SCENARIO_LABELS.get(scenario, scenario)} | {workers} | {library} | "
+                f"{fmt_count(result['operationsPerSecond'])} ops/s | {cpu:.0f}% | "
+                f"{fmt_bytes(result['allocatedBytes'])} | {result['bytesPerOperation']:.2f} B | "
+                f"{fmt_seconds(result['gcPauseSeconds'])} | "
+                f"{result['gen0Collections']} / "
+                f"{result['gen1Collections']} / {result['gen2Collections']} | "
+                f"{fmt_count(result['lockContentions'])} |"
+            )
+
+    lines += [
+        "",
+        "## Comparisons",
+        "",
+        "| Scenario | Workers | Kevlar / Polly throughput |",
+        "|---|---:|---:|",
+    ]
+
+    for (scenario, workers), pair in grouped.items():
+        ratio = pair["Kevlar"]["operationsPerSecond"] / pair["Polly"]["operationsPerSecond"]
         lines.append(
-            f"| {library} | {fmt_count(result['operationsPerSecond'])} ops/s | "
-            f"{fmt_count(result['operations'])} | {fmt_bytes(result['allocatedBytes'])} | "
-            f"{result['bytesPerOperation']:.2f} B | "
-            f"{fmt_bytes(result['managedBytesBefore'])} / {fmt_bytes(result['managedBytesAfter'])} | "
-            f"{result['gen0Collections']} / "
-            f"{result['gen1Collections']} / {result['gen2Collections']} |"
+            f"| {SCENARIO_LABELS.get(scenario, scenario)} | {workers} | **{ratio:.2f}×** |"
         )
 
     lines += [
         "",
-        f"Kevlar completed **{throughput_ratio:.2f}×** as many operations per second as Polly in this run.",
-        "",
         "## Method",
         "",
-        f"- {data['workers']} parallel workers; "
+        f"- {workers_description} parallel workers; "
         f"{fmt_duration(data['totalDuration'])} total measured time, split equally "
-        f"between libraries across {data.get('measurementRounds', 1)} alternating rounds.",
-        f"- Each pipeline warmed for {fmt_duration(data['warmup'])} before measurement.",
-        "- Each operation returns `42` successfully through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).",
-        "- Process-wide allocation counters include all worker threads. GC counts are captured separately for each phase.",
+        f"between scenarios and libraries across {data.get('measurementRounds', 1)} alternating rounds.",
+        f"- Each scenario and library warmed for {fmt_duration(data['warmup'])} before measurement.",
+        "- Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).",
+        "- Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.",
+        "- Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.",
         f"- Peak working set for the shared process: {fmt_bytes(data['peakWorkingSetBytes'])}.",
         "",
         "## Environment",
