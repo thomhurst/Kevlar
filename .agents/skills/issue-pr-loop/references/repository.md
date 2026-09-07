@@ -1,5 +1,7 @@
 # Kevlar
 
+Before heavy local work, follow [the shared performance lock workflow](../../../../scripts/PerformanceLock.md). Reserve `performance` through the current shared `C:/git/Dekaf/scripts/AgentLocks.ps1`, using `$performanceLocks` separately from this repository's `$agentLocks`. Acquire it after the item lock and release it first. Repository-local Redis namespaces do not provide cross-repository isolation.
+
 Read [AGENTS.md](../../../../AGENTS.md) for commands, test matrix, commit style, and docs conventions.
 
 - Preserve supported target frameworks from the project files. Forward cancellation and preserve analyzer `KEV001` semantics when changing execution overloads.
