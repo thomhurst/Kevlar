@@ -18,6 +18,10 @@ on:
         description: 'Benchmark filter (e.g. *Retry*, *Pipeline*)'
         required: false
         default: '*'
+      comparison_ref:
+        description: 'Optional baseline commit SHA for an A-B-A comparison against the dispatched commit'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -31,6 +35,7 @@ concurrency:
 jobs:
   run-benchmarks:
     name: Run Benchmarks
+    if: inputs.comparison_ref == ''
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -71,6 +76,37 @@ jobs:
           name: benchmark-results
           path: benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/**
           retention-days: 30
+
+  compare-benchmarks:
+    name: A-B-A Benchmarks
+    if: github.event_name == 'workflow_dispatch' && inputs.comparison_ref != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run baseline, candidate, and baseline on the same runner
+        env:
+          BASELINE_SHA: ${{ inputs.comparison_ref }}
+          CANDIDATE_SHA: ${{ github.sha }}
+          BENCHMARK_FILTER: ${{ inputs.benchmark_filter || '*' }}
+        run: python3 .github/scripts/benchmark_aba.py
+
+      - name: Upload comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-aba-results
+          path: ${{ runner.temp }}/benchmark-aba/results/
+          retention-days: 30
+          if-no-files-found: error
 
   benchmark-history:
     name: Store Benchmark History
