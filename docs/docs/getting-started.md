@@ -53,7 +53,7 @@ then edit its project file to target .NET Framework and enable the language feat
 The HTTP example also needs the explicit `using System.Net.Http;` shown above because .NET
 Framework does not supply that implicit using. Expect MSBuild to generate binding redirects for the
 transitive compatibility dependencies: `Microsoft.Bcl.AsyncInterfaces` 8.0.0,
-`Microsoft.Bcl.TimeProvider` 8.0.1, `Reservoir` 1.4.0,
+`Microsoft.Bcl.TimeProvider` 8.0.1, `Reservoir` 1.7.0,
 `System.Runtime.CompilerServices.Unsafe` 6.1.2, `System.Threading.Tasks.Extensions` 4.6.3, and
 `System.ValueTuple` 4.5.0.
 

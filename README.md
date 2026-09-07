@@ -216,7 +216,7 @@ SDK or later. Older compiler hosts skip the analyzer assets; the runtime library
 available. `Kevlar.Testing` supports callback recording on `netstandard2.0`, but deterministic time
 and metric capture require .NET 8 or later.
 
-The core package depends on `Reservoir` `[1.4.0, 2.0.0)` on every target. Its `netstandard2.0`
+The core package depends on `Reservoir` `[1.7.0, 2.0.0)` on every target. Its `netstandard2.0`
 asset also uses `Microsoft.Bcl.AsyncInterfaces`, `Microsoft.Bcl.TimeProvider`, and
 `System.Threading.Tasks.Extensions`. See the [support policy](https://thomhurst.github.io/Kevlar/docs/support-policy)
 for integration-package dependency floors, package lockstep, and the release support window.

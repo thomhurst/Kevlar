@@ -43,7 +43,7 @@ application. Test-only and build-only dependencies are not part of this package 
 | `System.Runtime.CompilerServices.Unsafe` | `6.1.2` | `Kevlar.Chaos` |
 | `Grpc.Core.Api` | `2.83.0` | `Kevlar.Extensions.Grpc` |
 | `Grpc.Net.ClientFactory` | `2.83.0` | `Kevlar.Extensions.Grpc` |
-| `Reservoir` | `[1.4.0, 2.0.0)` | `Kevlar` |
+| `Reservoir` | `[1.7.0, 2.0.0)` | `Kevlar` |
 
 Package verification rejects accidental dependency floors above major version 8, except for the
 documented gRPC and Reservoir version lines. Raising a floor is a compatibility decision and must
