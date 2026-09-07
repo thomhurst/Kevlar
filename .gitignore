@@ -63,3 +63,20 @@ BenchmarkResults/
 docs/static/api/
 docs/playwright-report/
 docs/test-results/
+
+# Root-level agent workflow output; source-tree fixtures remain visible.
+/.artifacts/
+/*.log
+/*.nettrace
+/pr-body.md
+/*-pr-body.md
+/review-disposition.md
+/*-review-disposition.md
+/review-validation.md
+/*-review-validation.md
+/rebase-validation.md
+/*-rebase-validation.md
+/comment.md
+/*-comment.md
+/issue.md
+/*-issue.md
