@@ -72,7 +72,10 @@ def main():
             repository, evidence / f"{label}-checkout.log")
         run(["dotnet", "build", str(project / "Kevlar.Benchmarks.csproj"), "-c", "Release"],
             worktree, evidence / f"{label}-build.log")
-        assets = json.loads((worktree / project / "obj/project.assets.json").read_text())
+        assets_log = evidence / f"{label}-assets-path.log"
+        run(["dotnet", "msbuild", str(project / "Kevlar.Benchmarks.csproj"),
+             "-p:Configuration=Release", "-getProperty:ProjectAssetsFile"], worktree, assets_log)
+        assets = json.loads(Path(assets_log.read_text().strip()).read_text())
         packages = sorted(key for key, value in assets["libraries"].items()
                           if value["type"] == "package")
         metadata["packages"][label] = packages
