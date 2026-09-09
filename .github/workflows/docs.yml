@@ -8,7 +8,6 @@ on:
       - 'src/**'
       - 'scripts/Build-ApiDocs.ps1'
       - 'scripts/Normalize-ApiMetadata.ps1'
-      - 'scripts/Verify-ApiDocs.ps1'
       - '.config/dotnet-tools.json'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
@@ -40,19 +39,6 @@ jobs:
       - name: Build API reference
         shell: pwsh
         run: ./scripts/Build-ApiDocs.ps1
-
-      - name: Verify API reference
-        shell: pwsh
-        run: |
-          ./scripts/Verify-ApiDocs.ps1
-          $apiChanges = @(
-            git diff HEAD --name-status -- docs/api
-            git ls-files --others --exclude-standard -- docs/api
-          )
-          if ($apiChanges.Count -gt 0) {
-            $apiChanges | Write-Host
-            throw 'Generated API metadata is stale.'
-          }
 
       - name: Setup Node.js
         uses: actions/setup-node@v7

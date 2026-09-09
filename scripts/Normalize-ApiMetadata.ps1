@@ -286,51 +286,6 @@ foreach ($metadataFile in $metadataFiles)
                 $insertionIndex++
             }
         }
-
-        $referenceStart = $finalLines.IndexOf('references:')
-        if ($namespaceAssemblies.Count -gt 1 -and
-            $referenceStart -ge 0 -and
-            $referenceStart + 1 -lt $finalLines.Count)
-        {
-            while ($finalLines.Count -gt $referenceStart + 1 -and
-                $finalLines[$finalLines.Count - 1] -eq '')
-            {
-                $finalLines.RemoveAt($finalLines.Count - 1)
-            }
-
-            $referenceBlocks = [Collections.Generic.SortedDictionary[string, string[]]]::new(
-                [StringComparer]::Ordinal)
-            $i = $referenceStart + 1
-            while ($i -lt $finalLines.Count)
-            {
-                if ($finalLines[$i] -notmatch '^- uid:\s+(?<uid>\S+)')
-                {
-                    throw "Unexpected namespace reference metadata at line $($i + 1) in '$($metadataFile.Name)'."
-                }
-
-                $uid = $Matches.uid
-                $blockStart = $i
-                $i++
-                while ($i -lt $finalLines.Count -and $finalLines[$i] -notmatch '^- uid:\s+\S+')
-                {
-                    $i++
-                }
-
-                $block = $finalLines.GetRange($blockStart, $i - $blockStart).ToArray()
-                if ($referenceBlocks.ContainsKey($uid))
-                {
-                    throw "Duplicate namespace reference '$uid' in '$($metadataFile.Name)'."
-                }
-
-                $referenceBlocks.Add($uid, $block)
-            }
-
-            $finalLines.RemoveRange($referenceStart + 1, $finalLines.Count - $referenceStart - 1)
-            foreach ($referenceBlock in $referenceBlocks.Values)
-            {
-                $finalLines.AddRange($referenceBlock)
-            }
-        }
     }
 
     $normalized = $finalLines -join "`n"

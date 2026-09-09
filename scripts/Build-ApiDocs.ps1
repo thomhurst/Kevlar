@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
-    [switch]$SkipBuild,
-    [switch]$SkipMetadata
+    [switch]$SkipBuild
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,26 +18,23 @@ foreach ($target in @($metadataPath, $outputPath))
     }
 }
 
-if (-not $SkipMetadata)
+if (-not $SkipBuild)
 {
-    if (-not $SkipBuild)
-    {
-        & dotnet build (Join-Path $repositoryRoot 'Kevlar.slnx') -c Release
-        if ($LASTEXITCODE -ne 0)
-        {
-            throw 'Release build for DocFX metadata failed.'
-        }
-    }
-
-    Remove-Item -LiteralPath $metadataPath -Recurse -Force -ErrorAction SilentlyContinue
-    & dotnet docfx metadata $configPath --warningsAsErrors --disableGitFeatures
+    & dotnet build (Join-Path $repositoryRoot 'Kevlar.slnx') -c Release
     if ($LASTEXITCODE -ne 0)
     {
-        throw 'DocFX metadata generation failed.'
+        throw 'Release build for DocFX metadata failed.'
     }
-
-    & (Join-Path $PSScriptRoot 'Normalize-ApiMetadata.ps1') -MetadataPath $metadataPath
 }
+
+Remove-Item -LiteralPath $metadataPath -Recurse -Force -ErrorAction SilentlyContinue
+& dotnet docfx metadata $configPath --warningsAsErrors --disableGitFeatures
+if ($LASTEXITCODE -ne 0)
+{
+    throw 'DocFX metadata generation failed.'
+}
+
+& (Join-Path $PSScriptRoot 'Normalize-ApiMetadata.ps1') -MetadataPath $metadataPath
 
 Remove-Item -LiteralPath $outputPath -Recurse -Force -ErrorAction SilentlyContinue
 & dotnet docfx build $configPath --warningsAsErrors
