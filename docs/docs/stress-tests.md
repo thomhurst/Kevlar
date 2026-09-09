@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-07 06:45 UTC (commit `6f8b112`).*
+*Last updated 2026-09-09 17:51 UTC (commit `325e8f7`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.42M ops/s | 100% | 6.32 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.34M ops/s | 100% | 6.76 GiB | 48.00 B | 133.91 ms | 432 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.44M ops/s | 399% | 12.39 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 556 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.63M ops/s | 397% | 13.24 GiB | 48.00 B | 336.99 ms | 849 / 8 / 0 | 3.77K |
-| Shared timeout → retry | 4 | Kevlar | 5.40M ops/s | 398% | 10.34 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 787 |
-| Shared timeout → retry | 4 | Polly | 3.68M ops/s | 398% | 9.26 GiB | 24.00 B | 219.36 ms | 593 / 8 / 0 | 848 |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 4.38M ops/s | 399% | 15.88 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 518 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.66M ops/s | 398% | 13.37 GiB | 48.00 B | 340.21 ms | 858 / 8 / 0 | 720 |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.46M ops/s | 100% | 7.54 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.37M ops/s | 100% | 6.91 GiB | 48.00 B | 130.84 ms | 441 / 8 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.26M ops/s | 399% | 12.59 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.54K |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.80M ops/s | 397% | 14.08 GiB | 48.00 B | 367.49 ms | 904 / 8 / 0 | 3.85K |
+| Shared timeout → retry | 4 | Kevlar | 4.55M ops/s | 398% | 10.02 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2.40K |
+| Shared timeout → retry | 4 | Polly | 3.87M ops/s | 398% | 9.74 GiB | 24.00 B | 226.47 ms | 626 / 8 / 0 | 1.13K |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 4.40M ops/s | 398% | 14.86 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.76K |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.82M ops/s | 398% | 14.18 GiB | 48.00 B | 295.74 ms | 910 / 8 / 0 | 847 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.80×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.69×** |
-| Shared timeout → retry | 4 | **1.47×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.65×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.79×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.52×** |
+| Shared timeout → retry | 4 | **1.17×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.56×** |
 
 ## Method
 
@@ -44,12 +44,12 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 75.33 MiB.
+- Peak working set for the shared process: 74.90 MiB.
 
 ## Environment
 
-- Ubuntu 24.04.4 LTS
-- .NET 10.0.11
+- Ubuntu 24.04.5 LTS
+- .NET 10.0.12
 - 4 logical processors visible to .NET
 
 ## Reproduce
