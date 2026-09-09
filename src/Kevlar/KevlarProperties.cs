@@ -518,6 +518,11 @@ public sealed class KevlarProperties
     {
         public AdditionalAttemptState Create() => new();
 
+        public void Destroy(AdditionalAttemptState state)
+        {
+            // The state owns no resources requiring explicit cleanup.
+        }
+
         public bool TryReset(AdditionalAttemptState state)
         {
             state.ResetForPool();

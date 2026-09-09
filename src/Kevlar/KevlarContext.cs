@@ -422,6 +422,11 @@ public sealed class KevlarContext
     {
         public KevlarContext Create() => new();
 
+        public void Destroy(KevlarContext context)
+        {
+            // The context owns only managed state; discarded instances can be collected.
+        }
+
         public bool TryReset(KevlarContext context)
         {
             context.CancellationToken = default;
