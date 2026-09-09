@@ -91,12 +91,18 @@ and `doc-test-diagnostic` for examples that must produce an exact analyzer diagn
 Push-Location docs
 npm ci
 Pop-Location
-./scripts/Verify-Repo.ps1
-./scripts/Verify-Docs.ps1
+dotnet tool restore
+./scripts/Build-ApiDocs.ps1
 Push-Location docs
 npm run build
+npx playwright install chromium
+npm run test:e2e
 Pop-Location
 ```
+
+API metadata and HTML are generated from the current Release assemblies and are not committed.
+Run `Build-ApiDocs.ps1 -SkipBuild` to reuse an existing Release build. CI and the docs deployment
+build the API reference before building the documentation site; Playwright checks the rendered pages.
 
 Package-consuming snippet checks require locally packed packages and a unique version:
 

@@ -45,7 +45,7 @@ jobs:
   docs:
     name: Documentation site
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     permissions:
       contents: read
 
@@ -72,11 +72,7 @@ jobs:
 
       - name: Build API reference
         shell: pwsh
-        run: ./scripts/Build-ApiDocs.ps1 -SkipMetadata
-
-      - name: Verify documentation structure
-        shell: pwsh
-        run: ./scripts/Verify-Docs.ps1
+        run: ./scripts/Build-ApiDocs.ps1
 
       - name: Check Markdown links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
@@ -96,12 +92,16 @@ jobs:
         run: npm ci
         working-directory: docs
 
-      - name: Verify repository community files
-        shell: pwsh
-        run: ./scripts/Verify-Repo.ps1
-
       - name: Build documentation
         run: npm run build
+        working-directory: docs
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: docs
+
+      - name: Test documentation UI
+        run: npm run test:e2e
         working-directory: docs
 
       - name: Upload documentation site
@@ -249,25 +249,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: npx --yes --package renovate -- renovate-config-validator renovate.json
 
-      - name: Build API reference
-        if: matrix.os == 'ubuntu-latest'
-        shell: pwsh
-        run: ./scripts/Build-ApiDocs.ps1 -SkipBuild
-
-      - name: Verify API reference
-        if: matrix.os == 'ubuntu-latest'
-        shell: pwsh
-        run: |
-          ./scripts/Verify-ApiDocs.ps1
-          $apiChanges = @(
-            git diff HEAD --name-status -- docs/api
-            git ls-files --others --exclude-standard -- docs/api
-          )
-          if ($apiChanges.Count -gt 0) {
-            $apiChanges | Write-Host
-            throw 'Generated API metadata is stale.'
-          }
-
       - name: Build samples from packed packages
         if: matrix.os == 'ubuntu-latest'
         env:
@@ -280,11 +261,6 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Run-SampleSmokes.ps1 -UsePackedPackages -Version $env:PACKAGE_VERSION
-
-      - name: Verify documentation structure
-        if: matrix.os == 'ubuntu-latest'
-        shell: pwsh
-        run: ./scripts/Verify-Docs.ps1
 
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'

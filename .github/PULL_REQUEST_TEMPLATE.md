@@ -10,7 +10,7 @@ Closes #
 
 - [ ] `dotnet build Kevlar.slnx -c Release`
 - [ ] Relevant unit/integration/analyzer suites
-- [ ] `./scripts/Verify-Repo.ps1` and `./scripts/Verify-Docs.ps1` for docs/community changes
+- [ ] Documentation build and Playwright tests for documentation changes
 - [ ] Before/after BenchmarkDotNet results for hot-path changes
 - [ ] Screenshot for visible documentation-site changes
 
