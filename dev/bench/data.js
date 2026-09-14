@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789408467378,
+  "lastUpdate": 1789413829321,
   "repoUrl": "https://github.com/thomhurst/Kevlar",
   "entries": {
     "Kevlar Benchmarks": [
@@ -40246,6 +40246,732 @@ window.BENCHMARK_DATA = {
             "value": 161.3285117149353,
             "unit": "ns",
             "range": "± 0.12171319068559565"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "30480171+thomhurst@users.noreply.github.com",
+            "name": "Tom Longhurst",
+            "username": "thomhurst"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b95d280ab8e34a37dbcf3e112465965d2d0e1be0",
+          "message": "chore(deps): update dependency polly.testing to 8.8.0 (#496)\n\nCo-authored-by: Renovate <renovate@whitesourcesoftware.com>",
+          "timestamp": "2026-09-14T19:41:32+01:00",
+          "tree_id": "7ab5166517bfd932b300382acdaf1c3d5fae6741",
+          "url": "https://github.com/thomhurst/Kevlar/commit/b95d280ab8e34a37dbcf3e112465965d2d0e1be0"
+        },
+        "date": 1789413828615,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.EmptyShield",
+            "value": 30.640905261039734,
+            "unit": "ns",
+            "range": "± 0.018377926081598543"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.RetryShield",
+            "value": 410.2195291519165,
+            "unit": "ns",
+            "range": "± 0.9005649034282573"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.CircuitBreakerShield",
+            "value": 415.4535884857178,
+            "unit": "ns",
+            "range": "± 0.20596112402368746"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.TimeoutShield",
+            "value": 464.81102085113525,
+            "unit": "ns",
+            "range": "± 0.6151476815012549"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.RateLimitShield",
+            "value": 318.9732666015625,
+            "unit": "ns",
+            "range": "± 0.4112991943736166"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.RateLimitShieldAsTask",
+            "value": 357.4451012611389,
+            "unit": "ns",
+            "range": "± 0.8475343467887227"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.ConcurrencyLimitShield",
+            "value": 373.5422387123108,
+            "unit": "ns",
+            "range": "± 0.3465079554525627"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.FallbackShield",
+            "value": 384.37665128707886,
+            "unit": "ns",
+            "range": "± 0.789236816500125"
+          },
+          {
+            "name": "Kevlar.Benchmarks.AsyncSuspensionBenchmarks.HedgeShield",
+            "value": 1216.3233737945557,
+            "unit": "ns",
+            "range": "± 4.61751252700562"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Zero_Latency",
+            "value": 156.64644050598145,
+            "unit": "ns",
+            "range": "± 0.11518675620126773"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Typed_Outcome",
+            "value": 109.45857965946198,
+            "unit": "ns",
+            "range": "± 0.08383534375420254"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Completed_Behavior",
+            "value": 159.80010271072388,
+            "unit": "ns",
+            "range": "± 0.12306835461132681"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Empty_Shield",
+            "value": 14.241549283266068,
+            "unit": "ns",
+            "range": "± 0.03621508348270644"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Disabled_Chaos",
+            "value": 118.3245530128479,
+            "unit": "ns",
+            "range": "± 0.13031533989282185"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ChaosBenchmarks.Excluded_Chaos",
+            "value": 124.51845836639404,
+            "unit": "ns",
+            "range": "± 0.12307178122781912"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Kevlar_IsolatedFastFail",
+            "value": 4170.998630523682,
+            "unit": "ns",
+            "range": "± 5.873340722111616"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Polly_IsolatedFastFail",
+            "value": 4233.4561767578125,
+            "unit": "ns",
+            "range": "± 8.680630562113592"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Kevlar_RatioClosedHappyPath",
+            "value": 148.62858653068542,
+            "unit": "ns",
+            "range": "± 0.17267637943437103"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Polly_RatioClosedHappyPath",
+            "value": 212.25484597682953,
+            "unit": "ns",
+            "range": "± 0.09845265893071772"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Kevlar_DynamicDurationConfigured",
+            "value": 171.77831840515137,
+            "unit": "ns",
+            "range": "± 0.15023176686734682"
+          },
+          {
+            "name": "Kevlar.Benchmarks.CircuitBreakerBenchmarks.Kevlar_AsyncCallbackConfigured",
+            "value": 169.31767749786377,
+            "unit": "ns",
+            "range": "± 0.2156596342807362"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ConcurrencyLimitBenchmarks.Kevlar_Uncontended",
+            "value": 127.11077773571014,
+            "unit": "ns",
+            "range": "± 0.13253073128473958"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ConcurrencyLimitBenchmarks.Polly_Uncontended",
+            "value": 168.58793723583221,
+            "unit": "ns",
+            "range": "± 0.08529128890233136"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ConcurrencyLimitBenchmarks.Kevlar_WithHooks_Uncontended",
+            "value": 125.48830842971802,
+            "unit": "ns",
+            "range": "± 0.16019834812605777"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_NoNotification",
+            "value": 1857.8925037384033,
+            "unit": "ns",
+            "range": "± 7.882620848427296"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_CompletedAsyncNotification",
+            "value": 1881.8540210723877,
+            "unit": "ns",
+            "range": "± 3.2143745922107754"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_YieldingAsyncNotification",
+            "value": 4350.483184814453,
+            "unit": "ns",
+            "range": "± 63.883355844582574"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_PassThrough",
+            "value": 110.8501079082489,
+            "unit": "ns",
+            "range": "± 0.1320778512358762"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Polly_PassThrough",
+            "value": 108.11398828029633,
+            "unit": "ns",
+            "range": "± 0.06246426973402982"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_SynchronousDelegate_Triggered",
+            "value": 1803.4383850097656,
+            "unit": "ns",
+            "range": "± 3.6283055673397833"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_Triggered",
+            "value": 1879.6483097076416,
+            "unit": "ns",
+            "range": "± 5.297683056181736"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Polly_Triggered",
+            "value": 1877.8288612365723,
+            "unit": "ns",
+            "range": "± 4.032361192067004"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_EmptyVoid",
+            "value": 19.990151315927505,
+            "unit": "ns",
+            "range": "± 0.028832879840764512"
+          },
+          {
+            "name": "Kevlar.Benchmarks.FallbackBenchmarks.Kevlar_VoidPassThrough",
+            "value": 128.84079384803772,
+            "unit": "ns",
+            "range": "± 0.08209147513344246"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcStreamingBenchmarks.WriteDirect",
+            "value": 1.3633506800979376,
+            "unit": "ns",
+            "range": "± 0.0007686691430538132"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcStreamingBenchmarks.WriteShielded",
+            "value": 83.59311175346375,
+            "unit": "ns",
+            "range": "± 0.37153782043442984"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcStreamingBenchmarks.ServerDirect",
+            "value": 27.95904204249382,
+            "unit": "ns",
+            "range": "± 0.06961175132970455"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcStreamingBenchmarks.ServerShielded",
+            "value": 339.4064710140228,
+            "unit": "ns",
+            "range": "± 1.3494772832445272"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcUnaryBenchmarks.Direct",
+            "value": 17.8642431050539,
+            "unit": "ns",
+            "range": "± 0.10958506326293878"
+          },
+          {
+            "name": "Kevlar.Benchmarks.GrpcUnaryBenchmarks.Shielded",
+            "value": 269.3222086429596,
+            "unit": "ns",
+            "range": "± 3.2752622659794284"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.FixedHedge",
+            "value": 3371.054723739624,
+            "unit": "ns",
+            "range": "± 3.0759854230755215"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.CompletedAsyncHook",
+            "value": 3463.6633262634277,
+            "unit": "ns",
+            "range": "± 10.754065749617116"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.YieldingAsyncHook",
+            "value": 6986.736297607422,
+            "unit": "ns",
+            "range": "± 69.01824582501696"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.GeneratedAction",
+            "value": 3748.886730194092,
+            "unit": "ns",
+            "range": "± 2.61314178594362"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.KevlarPrimaryWins",
+            "value": 242.66848468780518,
+            "unit": "ns",
+            "range": "± 0.24989271785004133"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HedgingBenchmarks.PollyPrimaryWins",
+            "value": 371.1959447860718,
+            "unit": "ns",
+            "range": "± 0.5226450809579083"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpReplayBenchmarks.BufferedContent_WithRetry",
+            "value": 2155.1162109375,
+            "unit": "ns",
+            "range": "± 6.466737544949213"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpReplayBenchmarks.RequestFactory_WithRetry",
+            "value": 1007.6899147033691,
+            "unit": "ns",
+            "range": "± 2.886687808852928"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpReplayBenchmarks.Direct_NoContent",
+            "value": 526.5935516357422,
+            "unit": "ns",
+            "range": "± 2.08971094439706"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpReplayBenchmarks.Standard_NoContent",
+            "value": 1070.2364921569824,
+            "unit": "ns",
+            "range": "± 4.985446871191909"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpStandardHedgeBenchmarks.ManualComposition",
+            "value": 3664.681770324707,
+            "unit": "ns",
+            "range": "± 23.464920842236367"
+          },
+          {
+            "name": "Kevlar.Benchmarks.HttpStandardHedgeBenchmarks.StandardRegistration",
+            "value": 3478.224090576172,
+            "unit": "ns",
+            "range": "± 12.64574680509854"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OutcomeExceptionBenchmarks.Legacy_Plain_DataLookup",
+            "value": 2.420032512396574,
+            "unit": "ns",
+            "range": "± 0.13153123340462128"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OutcomeExceptionBenchmarks.Current_Plain_TypeCheck",
+            "value": 0.5889532081782818,
+            "unit": "ns",
+            "range": "± 0.13962908612016242"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OutcomeExceptionBenchmarks.Legacy_Proxy_DataLookup",
+            "value": 1.3535903915762901,
+            "unit": "ns",
+            "range": "± 0.0056525667613870475"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OutcomeExceptionBenchmarks.Current_Proxy_TypeCheck",
+            "value": 0.8042967971414328,
+            "unit": "ns",
+            "range": "± 0.01875106629335102"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_Empty",
+            "value": 14.167330548167229,
+            "unit": "ns",
+            "range": "± 0.007895673551644217"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Polly_Empty",
+            "value": 49.82639077305794,
+            "unit": "ns",
+            "range": "± 0.06914978318146145"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptyReferenceState",
+            "value": 13.839626282453537,
+            "unit": "ns",
+            "range": "± 0.011488526060383563"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptyContextState",
+            "value": 96.78063970804214,
+            "unit": "ns",
+            "range": "± 0.1104482095284745"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptyOutcomeState",
+            "value": 9.105607233941555,
+            "unit": "ns",
+            "range": "± 0.0022833332084569555"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptyTaskOutcomeState",
+            "value": 9.343865022063255,
+            "unit": "ns",
+            "range": "± 0.0022357783100693924"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptyState",
+            "value": 12.638952374458313,
+            "unit": "ns",
+            "range": "± 0.008602375082219546"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Polly_EmptyState",
+            "value": 48.67804476618767,
+            "unit": "ns",
+            "range": "± 0.026668581348874235"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_EmptySync",
+            "value": 7.042332753539085,
+            "unit": "ns",
+            "range": "± 0.0048319411318141796"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Polly_EmptySync",
+            "value": 24.392712220549583,
+            "unit": "ns",
+            "range": "± 0.010082111363438177"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_NestedEmptyAsync",
+            "value": 184.20111203193665,
+            "unit": "ns",
+            "range": "± 0.22528740395649022"
+          },
+          {
+            "name": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_NestedEmptySync",
+            "value": 143.87983894348145,
+            "unit": "ns",
+            "range": "± 0.10505011702863544"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.Capacity_Eviction",
+            "value": 1053.7179517745972,
+            "unit": "ns",
+            "range": "± 3.3179657234754516"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.Cold_FirstCreation",
+            "value": 1037.9735136032104,
+            "unit": "ns",
+            "range": "± 7.172806988654061"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.High_Key_Concurrency",
+            "value": 12445.911254882812,
+            "unit": "ns",
+            "range": "± 249.79485840337995"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.Warm_Lookup",
+            "value": 10.971384041011333,
+            "unit": "ns",
+            "range": "± 0.012896566189750306"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.Warm_Lookup_With_Idle_Expiration",
+            "value": 37.80147820711136,
+            "unit": "ns",
+            "range": "± 0.11011095061299704"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PartitioningBenchmarks.Warm_Concurrent_Lookups",
+            "value": 67.77475905418396,
+            "unit": "ns",
+            "range": "± 0.7479515561352164"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Kevlar_RatioTimeoutRetryBreaker",
+            "value": 279.1401491165161,
+            "unit": "ns",
+            "range": "± 0.22065869337380725"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Polly_RatioTimeoutRetryBreaker",
+            "value": 530.4293656349182,
+            "unit": "ns",
+            "range": "± 1.8836379833902308"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Kevlar_TokenBucketRatioFiveStrategyChain",
+            "value": 388.66307497024536,
+            "unit": "ns",
+            "range": "± 1.2484808609277938"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Polly_TokenBucketRatioFiveStrategyChain",
+            "value": 788.1033840179443,
+            "unit": "ns",
+            "range": "± 1.63600005138118"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Kevlar_TokenBucketRatioFiveStrategyChainSync",
+            "value": 354.94683289527893,
+            "unit": "ns",
+            "range": "± 0.34885949350684664"
+          },
+          {
+            "name": "Kevlar.Benchmarks.PipelineBenchmarks.Polly_TokenBucketRatioFiveStrategyChainSync",
+            "value": 769.5954523086548,
+            "unit": "ns",
+            "range": "± 1.4865940132729139"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RateLimitBenchmarks.Kevlar_TokenBucketUncontended",
+            "value": 127.56334483623505,
+            "unit": "ns",
+            "range": "± 0.1174209776749681"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RateLimitBenchmarks.Polly_TokenBucketUncontended",
+            "value": 144.89753425121307,
+            "unit": "ns",
+            "range": "± 1.2809391445665494"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RateLimitBenchmarks.Kevlar_WithHooks_Uncontended",
+            "value": 133.5553343296051,
+            "unit": "ns",
+            "range": "± 0.769806046019036"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RateLimitBenchmarks.Kevlar_FrameworkAdapter_Uncontended",
+            "value": 130.98699593544006,
+            "unit": "ns",
+            "range": "± 0.138833784050653"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RateLimitBenchmarks.Kevlar_PartitionedFrameworkAdapter_Uncontended",
+            "value": 144.27499723434448,
+            "unit": "ns",
+            "range": "± 0.2562870637914834"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ReloadingShieldProviderBenchmarks.DirectSnapshot",
+            "value": 0.39339962787926197,
+            "unit": "ns",
+            "range": "± 0.14843011068575462"
+          },
+          {
+            "name": "Kevlar.Benchmarks.ReloadingShieldProviderBenchmarks.ReloadAwareCurrent",
+            "value": 0.5650198049843311,
+            "unit": "ns",
+            "range": "± 0.13581299585065704"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryBenchmarks.Kevlar_HappyPath",
+            "value": 106.99562013149261,
+            "unit": "ns",
+            "range": "± 0.08077312719101784"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryBenchmarks.Polly_HappyPath",
+            "value": 196.53258657455444,
+            "unit": "ns",
+            "range": "± 0.21714922581355717"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryBenchmarks.Kevlar_Recovery",
+            "value": 3156.337600708008,
+            "unit": "ns",
+            "range": "± 7.126123763530775"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryBenchmarks.Polly_Recovery",
+            "value": 3429.333480834961,
+            "unit": "ns",
+            "range": "± 5.815956728460095"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryDelayGeneratorBenchmarks.Fixed",
+            "value": 1680.105079650879,
+            "unit": "ns",
+            "range": "± 2.5178915676806004"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryDelayGeneratorBenchmarks.AsyncCompleted",
+            "value": 1796.119291305542,
+            "unit": "ns",
+            "range": "± 2.6835181638652315"
+          },
+          {
+            "name": "Kevlar.Benchmarks.RetryDelayGeneratorBenchmarks.AsyncYielding",
+            "value": 4014.278495788574,
+            "unit": "ns",
+            "range": "± 13.933227968527024"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.CircuitBreakerExecution(WorkerCount: 1)",
+            "value": 1510.692325592041,
+            "unit": "ns",
+            "range": "± 11.656322566563762"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.ConcurrencyLimitExecution(WorkerCount: 1)",
+            "value": 1457.975965499878,
+            "unit": "ns",
+            "range": "± 10.290221477811047"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.RateLimitExecution(WorkerCount: 1)",
+            "value": 1458.4119338989258,
+            "unit": "ns",
+            "range": "± 23.071709136148623"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.CircuitBreakerExecution(WorkerCount: 16)",
+            "value": 4159.406188964844,
+            "unit": "ns",
+            "range": "± 38.48518436563239"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.ConcurrencyLimitExecution(WorkerCount: 16)",
+            "value": 4034.316719055176,
+            "unit": "ns",
+            "range": "± 45.415683662747746"
+          },
+          {
+            "name": "Kevlar.Benchmarks.StateMetricsContentionBenchmarks.RateLimitExecution(WorkerCount: 16)",
+            "value": 3974.7248001098633,
+            "unit": "ns",
+            "range": "± 92.25352517216278"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.EmptyShield(ListenerEnabled: False)",
+            "value": 13.845047026872635,
+            "unit": "ns",
+            "range": "± 0.01880583950624223"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.RetryHappyPath(ListenerEnabled: False)",
+            "value": 101.58925348520279,
+            "unit": "ns",
+            "range": "± 0.5228370445134999"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.CircuitBreakerHappyPath(ListenerEnabled: False)",
+            "value": 130.62017059326172,
+            "unit": "ns",
+            "range": "± 0.4077498300446396"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.RateLimitHappyPath(ListenerEnabled: False)",
+            "value": 128.4983217716217,
+            "unit": "ns",
+            "range": "± 0.17578041887817025"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.ConcurrencyLimitHappyPath(ListenerEnabled: False)",
+            "value": 131.84680843353271,
+            "unit": "ns",
+            "range": "± 0.11685640586339056"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.EmptyShield(ListenerEnabled: True)",
+            "value": 125.75256359577179,
+            "unit": "ns",
+            "range": "± 0.31674684985418383"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.RetryHappyPath(ListenerEnabled: True)",
+            "value": 299.9695429801941,
+            "unit": "ns",
+            "range": "± 0.9452259652355244"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.CircuitBreakerHappyPath(ListenerEnabled: True)",
+            "value": 219.89886391162872,
+            "unit": "ns",
+            "range": "± 0.1454514012077573"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.RateLimitHappyPath(ListenerEnabled: True)",
+            "value": 222.49243867397308,
+            "unit": "ns",
+            "range": "± 0.06091693939751016"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TelemetryBenchmarks.ConcurrencyLimitHappyPath(ListenerEnabled: True)",
+            "value": 217.38576650619507,
+            "unit": "ns",
+            "range": "± 0.15244001489784936"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TimeoutBenchmarks.Kevlar_HappyPath",
+            "value": 163.01556956768036,
+            "unit": "ns",
+            "range": "± 0.665141845673806"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TimeoutBenchmarks.Polly_HappyPath",
+            "value": 162.0559525489807,
+            "unit": "ns",
+            "range": "± 0.1606635778551405"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TimeoutBenchmarks.Kevlar_SynchronousGenerator_HappyPath",
+            "value": 170.26258540153503,
+            "unit": "ns",
+            "range": "± 0.7768456899912392"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TimeoutBenchmarks.Kevlar_AsynchronousGenerator_HappyPath",
+            "value": 1347.1195106506348,
+            "unit": "ns",
+            "range": "± 7.117960561710941"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TimeoutBenchmarks.Kevlar_AsyncHookConfigured_HappyPath",
+            "value": 166.94676208496094,
+            "unit": "ns",
+            "range": "± 1.9953428495084589"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TypedResultBenchmarks.Kevlar_ResultJudged",
+            "value": 135.54943132400513,
+            "unit": "ns",
+            "range": "± 0.12493767231364625"
+          },
+          {
+            "name": "Kevlar.Benchmarks.TypedResultBenchmarks.Polly_ResultJudged",
+            "value": 168.89852023124695,
+            "unit": "ns",
+            "range": "± 0.6964242412273144"
           }
         ]
       }
