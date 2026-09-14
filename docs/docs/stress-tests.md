@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-14 06:45 UTC (commit `1ba8cd1`).*
+*Last updated 2026-09-14 09:59 UTC (commit `a7e0dda`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 3.12M ops/s | 100% | 7.26 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.76M ops/s | 100% | 8.85 GiB | 48.00 B | 151.79 ms | 566 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 6.49M ops/s | 398% | 11.23 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 498 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 3.49M ops/s | 398% | 17.57 GiB | 48.00 B | 386.60 ms | 1130 / 8 / 0 | 3.23K |
-| Shared timeout → retry | 4 | Kevlar | 8.36M ops/s | 399% | 9.41 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 521 |
-| Shared timeout → retry | 4 | Polly | 5.13M ops/s | 398% | 12.90 GiB | 24.00 B | 267.25 ms | 829 / 8 / 0 | 416 |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 6.30M ops/s | 399% | 15.19 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 474 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 3.57M ops/s | 398% | 17.95 GiB | 48.00 B | 380.46 ms | 1154 / 8 / 0 | 333 |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.46M ops/s | 100% | 7.54 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.36M ops/s | 100% | 6.83 GiB | 48.00 B | 111.06 ms | 437 / 8 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.72M ops/s | 398% | 14.10 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.46K |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.81M ops/s | 398% | 14.12 GiB | 48.00 B | 313.71 ms | 906 / 8 / 0 | 3.16K |
+| Shared timeout → retry | 4 | Kevlar | 5.55M ops/s | 399% | 9.69 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.92K |
+| Shared timeout → retry | 4 | Polly | 4.05M ops/s | 398% | 10.18 GiB | 24.00 B | 203.96 ms | 653 / 8 / 0 | 2 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 4.99M ops/s | 398% | 16.08 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.58K |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.87M ops/s | 398% | 14.42 GiB | 48.00 B | 321.09 ms | 925 / 8 / 0 | 2 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.77×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.86×** |
-| Shared timeout → retry | 4 | **1.63×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.77×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.81×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.68×** |
+| Shared timeout → retry | 4 | **1.37×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.74×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 77.23 MiB.
+- Peak working set for the shared process: 78.84 MiB.
 
 ## Environment
 
