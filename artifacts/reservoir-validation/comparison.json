@@ -1,0 +1,26 @@
+[
+  {
+    "Benchmark": "Kevlar.Benchmarks.HedgingBenchmarks.KevlarPrimaryWins",
+    "BeforeNs": 203.95,
+    "AfterNs": 195.73,
+    "ChangePercent": -4.03,
+    "BeforeBytes": 0,
+    "AfterBytes": 0
+  },
+  {
+    "Benchmark": "Kevlar.Benchmarks.OverheadBenchmarks.Kevlar_NestedEmptySync",
+    "BeforeNs": 127.85,
+    "AfterNs": 124.88,
+    "ChangePercent": -2.32,
+    "BeforeBytes": 0,
+    "AfterBytes": 0
+  },
+  {
+    "Benchmark": "Kevlar.Benchmarks.TimeoutBenchmarks.Kevlar_HappyPath",
+    "BeforeNs": 129.44,
+    "AfterNs": 121.1,
+    "ChangePercent": -6.45,
+    "BeforeBytes": 0,
+    "AfterBytes": 0
+  }
+]
