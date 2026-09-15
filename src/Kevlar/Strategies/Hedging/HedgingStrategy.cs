@@ -1121,6 +1121,11 @@ internal sealed class HedgingStrategy : Strategy
         {
             public OriginalActionContextCapture<T> Create() => new();
 
+            public void Destroy(OriginalActionContextCapture<T> capture)
+            {
+                // Captured resources are released before the capture returns to the pool.
+            }
+
             public bool TryReset(OriginalActionContextCapture<T> capture) => true;
         }
     }
