@@ -40,18 +40,25 @@ jobs:
       pull-requests: write
 
     env:
+      CLAUDE_REVIEW_ENABLED: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
       # Cap the write-capable helper so an injected instruction cannot spam the PR.
       CLAUDE_CODE_SCRIPT_CAPS: '{"pr-review-comment.sh":2}'
 
     steps:
+      - name: Report unconfigured optional review
+        if: env.CLAUDE_REVIEW_ENABLED != 'true'
+        run: echo 'Claude review skipped because CLAUDE_CODE_OAUTH_TOKEN is not configured.' >> "$GITHUB_STEP_SUMMARY"
+
       # Trusted base ref at the workspace root - this is what Claude runs in.
       - name: Checkout base repository
+        if: env.CLAUDE_REVIEW_ENABLED == 'true'
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
 
       # Untrusted PR head, kept in a subdirectory and exposed read-only via --add-dir.
       - name: Checkout pull request head
+        if: env.CLAUDE_REVIEW_ENABLED == 'true'
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', inputs.pr_number) }}
@@ -69,6 +76,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
+        if: env.CLAUDE_REVIEW_ENABLED == 'true'
         uses: anthropics/claude-code-action@v1
         env:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}

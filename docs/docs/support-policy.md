@@ -22,31 +22,20 @@ or implementation-dependent usage.
 
 ## Minimum dependency versions
 
-Kevlar keeps shipped dependency floors compatible with .NET 8-era applications. These are minimum
-versions, not forced runtime versions: NuGet can select a later compatible version requested by the
-application. Test-only and build-only dependencies are not part of this package contract.
+Dependency versions are managed in
+[`Directory.Packages.props`](https://github.com/thomhurst/Kevlar/blob/main/Directory.Packages.props).
+For a released version, use the dependency groups on that version's NuGet package page; the main
+branch can contain updates that have not shipped yet. Test-only and build-only dependencies in the
+central file are not part of the shipped package contract.
 
-| Dependency | Minimum version | Shipped by |
-|---|---:|---|
-| `Microsoft.Bcl.AsyncInterfaces` | `8.0.0` | `Kevlar` |
-| `Microsoft.Bcl.TimeProvider` | `8.0.1` | `Kevlar`, `Kevlar.Chaos` |
-| `Microsoft.Extensions.Configuration.Abstractions` | `8.0.0` | `Kevlar.Extensions.DependencyInjection`, `Kevlar.Extensions.Http` |
-| `Microsoft.Extensions.DependencyInjection.Abstractions` | `8.0.2` | `Kevlar.Extensions.DependencyInjection` |
-| `Microsoft.Extensions.Http` | `8.0.1` | `Kevlar.Extensions.Http` |
-| `Microsoft.Extensions.Logging` | `8.0.1` | `Kevlar.Extensions.Logging` |
-| `Microsoft.Extensions.Logging.Abstractions` | `8.0.3` | `Kevlar.Extensions.Logging` |
-| `Microsoft.Extensions.Options` | `8.0.2` | `Kevlar.Extensions.DependencyInjection` |
-| `Microsoft.Extensions.Primitives` | `8.0.0` | `Kevlar.Extensions.DependencyInjection`, `Kevlar.Extensions.Http` |
-| `Microsoft.Extensions.TimeProvider.Testing` | `8.0.0` | `Kevlar.Testing` |
-| `System.Threading.RateLimiting` | `8.0.0` | `Kevlar.Extensions.RateLimiting` |
-| `System.Threading.Tasks.Extensions` | `4.6.3` | `Kevlar`, `Kevlar.Chaos` |
-| `System.Runtime.CompilerServices.Unsafe` | `6.1.2` | `Kevlar.Chaos` |
-| `Grpc.Core.Api` | `2.83.0` | `Kevlar.Extensions.Grpc` |
-| `Grpc.Net.ClientFactory` | `2.83.0` | `Kevlar.Extensions.Grpc` |
-| `Reservoir` | `[1.9.1, 2.0.0)` | `Kevlar` |
+These are minimum versions, not forced runtime versions: NuGet can select a later compatible
+version requested by the application. CI checks the packed dependency versions against the central
+file and builds and runs package consumers on .NET 8 and .NET 10, with downgrade and dependency
+constraint warnings treated as errors. Dependency major numbers do not determine target framework
+compatibility; updates must pass the compatibility checks for the supported targets.
 
-Package verification rejects accidental dependency floors above major version 8, except for the
-documented gRPC and Reservoir version lines. Raising a floor is a compatibility decision and must
+Renovate updates interdependent gRPC packages together. Dependency updates do not require a
+separate documentation version edit. Raising a dependency floor that changes compatibility must
 be called out in release notes.
 
 ## Kevlar package lockstep

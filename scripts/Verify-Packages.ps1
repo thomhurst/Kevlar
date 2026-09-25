@@ -9,7 +9,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-. (Join-Path $PSScriptRoot 'PackageDependencyPolicy.ps1')
 
 $isCiBuild = $env:CI -eq 'true'
 $ciPropertyValue = $isCiBuild.ToString().ToLowerInvariant()
@@ -390,7 +389,6 @@ $packageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg'
 Assert-Set 'package IDs' ($packageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
 $symbolPackageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.snupkg' -File)
 Assert-Set 'symbol package IDs' ($symbolPackageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
-$actualExternalDependencyPackages = @{}
 
 foreach ($packageId in $expectedDependencies.Keys)
 {
@@ -493,22 +491,6 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 $dependencyId = $dependency.GetAttribute('id')
-                if (-not $dependencyId.StartsWith('Kevlar', [StringComparison]::Ordinal))
-                {
-                    if (-not $actualExternalDependencyPackages.ContainsKey($dependencyId))
-                    {
-                        $actualExternalDependencyPackages[$dependencyId] =
-                            [System.Collections.Generic.HashSet[string]]::new(
-                                [StringComparer]::Ordinal)
-                    }
-
-                    $actualExternalDependencyPackages[$dependencyId].Add($packageId) | Out-Null
-                }
-
-                Assert-ShippedDependencyFloor `
-                    -DependencyId $dependencyId `
-                    -DependencyVersion $dependency.GetAttribute('version') `
-                    -Context "$packageId $framework"
                 $expectedExcludedAssets = if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
                 {
                     @()
@@ -647,45 +629,6 @@ foreach ($packageId in $expectedDependencies.Keys)
     {
         $symbolArchive.Dispose()
     }
-}
-
-$supportPolicyPath = Join-Path $repositoryRoot 'docs/docs/support-policy.md'
-$documentedDependencyFloors = @{}
-foreach ($line in Get-Content -LiteralPath $supportPolicyPath)
-{
-    if ($line -notmatch '^\|\s*`(?<id>[^`]+)`\s*\|\s*`(?<version>[^`]+)`\s*\|(?<packages>[^|]+)\|$')
-    {
-        continue
-    }
-
-    $dependencyId = $Matches.id
-    if ($documentedDependencyFloors.ContainsKey($dependencyId))
-    {
-        throw "Support policy contains duplicate dependency floor '$dependencyId'."
-    }
-
-    $documentedDependencyFloors[$dependencyId] = [pscustomobject]@{
-        Version = $Matches.version
-        Packages = @(
-            [regex]::Matches($Matches.packages, '`(?<package>Kevlar(?:\.[^`]+)?)`') |
-                ForEach-Object { $_.Groups['package'].Value })
-    }
-}
-
-Assert-Set `
-    'support-policy dependency floor IDs' `
-    @($documentedDependencyFloors.Keys) `
-    @($actualExternalDependencyPackages.Keys)
-foreach ($dependencyId in $actualExternalDependencyPackages.Keys)
-{
-    Assert-Equal `
-        "support-policy $dependencyId minimum version" `
-        $documentedDependencyFloors[$dependencyId].Version `
-        $expectedDependencyVersions[$dependencyId]
-    Assert-Set `
-        "support-policy $dependencyId shipped-by packages" `
-        $documentedDependencyFloors[$dependencyId].Packages `
-        @($actualExternalDependencyPackages[$dependencyId])
 }
 
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) "kevlar-package-consumers-$([guid]::NewGuid().ToString('N'))"
@@ -1011,17 +954,8 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
-    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Primitives" Version="8.0.0" />
-    <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$configurationVersion" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$dependencyInjectionVersion" />
   </ItemGroup>
 </Project>
 "@
@@ -1029,40 +963,6 @@ sealed class ExpectedConsumerException : Exception;
         Write-TextFile $projectPath $consumerProject
         Write-TextFile (Join-Path $consumerDirectory 'Program.cs') $runtimeProgram
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
-        if ($framework -eq 'net8.0')
-        {
-            $packageListJson = (& dotnet list $projectPath package --include-transitive --format json --no-restore | Out-String)
-            if ($LASTEXITCODE -ne 0)
-            {
-                throw 'Unable to inspect the .NET 8 consumer dependency graph.'
-            }
-
-            $packageList = $packageListJson | ConvertFrom-Json
-            $resolvedPackages = @(
-                $packageList.projects.frameworks.topLevelPackages
-                $packageList.projects.frameworks.transitivePackages)
-            $expectedNet8Versions = @{
-                'Microsoft.Bcl.TimeProvider' = '8.0.1'
-                'Microsoft.Extensions.Configuration' = '8.0.0'
-                'Microsoft.Extensions.Configuration.Abstractions' = '8.0.0'
-                'Microsoft.Extensions.DependencyInjection' = '8.0.1'
-                'Microsoft.Extensions.DependencyInjection.Abstractions' = '8.0.2'
-                'Microsoft.Extensions.Http' = '8.0.1'
-                'Microsoft.Extensions.Logging' = '8.0.1'
-                'Microsoft.Extensions.Logging.Abstractions' = '8.0.3'
-                'Microsoft.Extensions.Options' = '8.0.2'
-                'Microsoft.Extensions.Primitives' = '8.0.0'
-                'System.Threading.RateLimiting' = '8.0.0'
-            }
-            foreach ($entry in $expectedNet8Versions.GetEnumerator())
-            {
-                $resolvedVersion = @($resolvedPackages |
-                    Where-Object id -eq $entry.Key |
-                    ForEach-Object resolvedVersion)
-                Assert-Equal ".NET 8 consumer $($entry.Key) version" $resolvedVersion $entry.Value
-            }
-        }
-
         Invoke-DotNet @('build', $projectPath, '-c', 'Release', '--no-restore')
         $kevlarPdbFramework = $framework
         Copy-Item `
