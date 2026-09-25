@@ -28,7 +28,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
     <PackageVersion Include="System.Threading.RateLimiting" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.0.0" />
-    <PackageVersion Include="Grpc.Core.Api" Version="2.83.0" />
+    <PackageVersion Include="Grpc.Core.Api" Version="2.84.0" />
     <PackageVersion Include="Grpc.Net.ClientFactory" Version="2.83.0" />
 
     <!-- Analyzers -->
