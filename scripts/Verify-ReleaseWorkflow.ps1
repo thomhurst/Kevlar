@@ -106,6 +106,48 @@ if ($nugetPublishScript.Contains('--skip-duplicate', [StringComparison]::Ordinal
     throw 'NuGet publication must reject conflicting duplicates after comparing payloads.'
 }
 
+. (Join-Path $PSScriptRoot 'PackageDependencyPolicy.ps1')
+$dependencyFloorCases = @(
+    @{ Id = 'Microsoft.Extensions.Options'; Version = '8.0.99'; Reject = $false }
+    @{ Id = 'Microsoft.Extensions.Options'; Version = '[8.0.2, 11.0.0)'; Reject = $false }
+    @{ Id = 'Microsoft.Extensions.Options'; Version = '9.0.0'; Reject = $true }
+    @{ Id = 'Microsoft.Extensions.Http'; Version = '10.0.11'; Reject = $true }
+    @{ Id = 'Microsoft.Extensions.TimeProvider.Testing'; Version = '[10.9.0]'; Reject = $true }
+    @{ Id = 'Microsoft.Bcl.TimeProvider'; Version = '[9.0.0, )'; Reject = $true }
+    @{ Id = 'Microsoft.Bcl.AsyncInterfaces'; Version = '10.0.0-preview.1'; Reject = $true }
+    @{ Id = 'System.Threading.RateLimiting'; Version = '9.0.0'; Reject = $true }
+    @{ Id = 'System.Threading.Tasks.Extensions'; Version = '4.6.3'; Reject = $false }
+    @{ Id = 'Grpc.Core.Api'; Version = '20.0.0'; Reject = $false }
+    @{ Id = 'Reservoir'; Version = '[10.0.0, 11.0.0)'; Reject = $false }
+    @{ Id = 'Kevlar'; Version = '[10.0.0]'; Reject = $false }
+)
+foreach ($framework in @('net8.0', '.NETCoreApp8.0', 'netstandard2.0', '.NETStandard2.0', 'netstandard2.1', '.NETStandard2.1', 'net10.0'))
+{
+    foreach ($case in $dependencyFloorCases)
+    {
+        $rejected = $false
+        try
+        {
+            Assert-ShippedDependencyFloor -TargetFramework $framework `
+                -DependencyId $case.Id -DependencyVersion $case.Version -Context 'fixture'
+        }
+        catch
+        {
+            if ($_.Exception.Message -notlike '*8.x or earlier*')
+            {
+                throw
+            }
+            $rejected = $true
+        }
+
+        if ($rejected -ne ($case.Reject -and $framework -ne 'net10.0'))
+        {
+            throw "Unexpected dependency floor result for $framework $($case.Id) $($case.Version)."
+        }
+    }
+}
+Write-Host 'Dependency floor fixtures passed for .NET 8, .NET Standard, and .NET 10.'
+
 $tagIndex = $publish.IndexOf('- name: Create and push release tag', [StringComparison]::Ordinal)
 $packageIndex = $publish.IndexOf('- name: Push to NuGet', [StringComparison]::Ordinal)
 $releaseIndex = $publish.IndexOf('- name: Create GitHub release', [StringComparison]::Ordinal)

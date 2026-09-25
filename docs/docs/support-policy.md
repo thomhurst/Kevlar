@@ -31,8 +31,18 @@ central file are not part of the shipped package contract.
 These are minimum versions, not forced runtime versions: NuGet can select a later compatible
 version requested by the application. CI checks the packed dependency versions against the central
 file and builds and runs package consumers on .NET 8 and .NET 10, with downgrade and dependency
-constraint warnings treated as errors. Dependency major numbers do not determine target framework
-compatibility; updates must pass the compatibility checks for the supported targets.
+constraint warnings treated as errors.
+
+For .NET 8 and .NET Standard assets, Microsoft.Extensions packages, Microsoft.Bcl.AsyncInterfaces,
+Microsoft.Bcl.TimeProvider, and System.Threading.RateLimiting keep minimum versions on the 8.x
+line or earlier. This lets applications use an 8.x dependency stack without upgrading those
+packages to a newer major. CI checks both the shipped dependency floors and the resolved .NET 8
+and .NET Standard consumer graphs, including transitive dependencies. The .NET 10 consumer also
+tests newer versions.
+
+Renovate can update these compatibility dependencies within the supported line. Dependencies
+already on newer lines for tests and tooling can continue updating independently. gRPC and
+Reservoir use their own version schemes and are not subject to the Microsoft package version cap.
 
 Renovate updates interdependent gRPC packages together. Dependency updates do not require a
 separate documentation version edit. Raising a dependency floor that changes compatibility must

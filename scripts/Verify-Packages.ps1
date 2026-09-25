@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'PackageDependencyPolicy.ps1')
 
 $isCiBuild = $env:CI -eq 'true'
 $ciPropertyValue = $isCiBuild.ToString().ToLowerInvariant()
@@ -491,6 +492,11 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 $dependencyId = $dependency.GetAttribute('id')
+                Assert-ShippedDependencyFloor `
+                    -TargetFramework $framework `
+                    -DependencyId $dependencyId `
+                    -DependencyVersion $dependency.GetAttribute('version') `
+                    -Context "$packageId $framework"
                 $expectedExcludedAssets = if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
                 {
                     @()
@@ -932,14 +938,21 @@ static Shield CreateRateLimitedShield(RateLimiter limiter) =>
 sealed class ExpectedConsumerException : Exception;
 '@
 
-    foreach ($framework in @('net8.0', 'net10.0'))
+    foreach ($framework in @('netstandard2.0', 'netstandard2.1', 'net8.0', 'net10.0'))
     {
         $consumerDirectory = Join-Path $temporaryRoot "runtime-$framework"
+        $isNetStandard = $framework.StartsWith('netstandard', [StringComparison]::Ordinal)
+        $consumerOutputType = if ($isNetStandard) { 'Library' } else { 'Exe' }
+        # Resolve the latest 8.x consumer packages without duplicating patch pins.
+        # The newer consumer still exercises the current test dependency versions.
+        $consumerConfigurationVersion = if ($framework -eq 'net10.0') { $configurationVersion } else { '8.*' }
+        $consumerDependencyInjectionVersion = if ($framework -eq 'net10.0') { $dependencyInjectionVersion } else { '8.*' }
         $consumerProject = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>$consumerOutputType</OutputType>
     <TargetFramework>$framework</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -954,16 +967,44 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$configurationVersion" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$dependencyInjectionVersion" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$consumerConfigurationVersion" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$consumerDependencyInjectionVersion" />
   </ItemGroup>
 </Project>
 "@
         $projectPath = Join-Path $consumerDirectory 'Consumer.csproj'
         Write-TextFile $projectPath $consumerProject
-        Write-TextFile (Join-Path $consumerDirectory 'Program.cs') $runtimeProgram
+        $consumerProgram = if ($isNetStandard)
+        {
+            'public static class PackageConsumer { public static Kevlar.Shield CreateShield() => Kevlar.Shield.Empty; }'
+        }
+        else
+        {
+            $runtimeProgram
+        }
+        Write-TextFile (Join-Path $consumerDirectory 'Program.cs') $consumerProgram
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
+        # Check the resolved graph as well as nuspec floors: an external package
+        # can otherwise pull in a newer Microsoft dependency transitively.
+        $assets = Get-Content -LiteralPath (Join-Path $consumerDirectory 'obj/project.assets.json') -Raw | ConvertFrom-Json
+        foreach ($library in $assets.libraries.PSObject.Properties)
+        {
+            if ($library.Value.type -ne 'package')
+            {
+                continue
+            }
+            $dependencyId, $dependencyVersion = $library.Name -split '/', 2
+            Assert-ShippedDependencyFloor `
+                -TargetFramework $framework `
+                -DependencyId $dependencyId `
+                -DependencyVersion $dependencyVersion `
+                -Context "$framework consumer dependency graph"
+        }
         Invoke-DotNet @('build', $projectPath, '-c', 'Release', '--no-restore')
+        if ($isNetStandard)
+        {
+            continue
+        }
         $kevlarPdbFramework = $framework
         Copy-Item `
             -LiteralPath (Join-Path $symbolRoot "lib/$kevlarPdbFramework/Kevlar.pdb") `
