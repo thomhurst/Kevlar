@@ -1,24 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["group:monorepos"],
   "packageRules": [
     {
-      "description": "Keep shipped dependency floors on .NET 8",
+      "description": "Update interdependent gRPC packages together to avoid NuGet downgrades",
       "matchManagers": ["nuget"],
-      "matchFileNames": ["Directory.Packages.props"],
-      "matchPackageNames": [
-        "Microsoft.Bcl.TimeProvider",
-        "Microsoft.Extensions.Configuration.Abstractions",
-        "Microsoft.Extensions.DependencyInjection.Abstractions",
-        "Microsoft.Extensions.Http",
-        "Microsoft.Extensions.Logging",
-        "Microsoft.Extensions.Logging.Abstractions",
-        "Microsoft.Extensions.Options",
-        "Microsoft.Extensions.Primitives",
-        "Microsoft.Extensions.TimeProvider.Testing",
-        "System.Threading.RateLimiting"
-      ],
-      "matchUpdateTypes": ["major", "minor"],
-      "enabled": false
+      "matchPackageNames": ["Grpc.*"],
+      "groupName": "gRPC packages"
     }
   ]
 }
