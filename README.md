@@ -24,7 +24,7 @@ dotnet add package Kevlar
 ```
 
 Install all coupled `Kevlar.*` packages at the same version. NuGet reports partial upgrades with
-`NU1605` or `NU1608`; see the [package lockstep policy](https://thomhurst.github.io/Kevlar/docs/support-policy#kevlar-package-lockstep).
+`NU1605` or `NU1608`.
 
 ```csharp
 using Kevlar;
@@ -218,8 +218,9 @@ and metric capture require .NET 8 or later.
 
 The core package depends on `Reservoir` `[1.9.1, 2.0.0)` on every target. Its `netstandard2.0`
 asset also uses `Microsoft.Bcl.AsyncInterfaces`, `Microsoft.Bcl.TimeProvider`, and
-`System.Threading.Tasks.Extensions`. See the [support policy](https://thomhurst.github.io/Kevlar/docs/support-policy)
-for integration-package dependency floors, package lockstep, and the release support window.
+`System.Threading.Tasks.Extensions`.
+
+Kevlar follows semantic versioning.
 
 Kevlar is licensed under the [MIT License](https://github.com/thomhurst/Kevlar/blob/main/LICENSE).
 
