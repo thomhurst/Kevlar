@@ -18,7 +18,7 @@
 
 Opt-in priority admission, including configured queue deadlines, measured **169.2 ns / 0 B** for concurrency and **187.0 ns / 0 B** for rate limiting. These are uncontended measurements, not queued throughput measurements or promises of zero allocation while waiting.
 
-The default rate queue is 8.7â€“11.3 ns (4.9â€“6.5%) slower than both controls. Performance acceptance remains blocked pending investigation. The existing rate admission algorithm is unchanged; the shared metrics registration changes from the concrete rate strategy to an internal state interface. Other default paths show small absolute deltas or baseline process variation. CPU-frequency strings reported by BDN vary between phases and do not establish the cause.
+The default rate queue is 8.7â€“11.3 ns (4.9â€“6.5%) slower than both controls. This initially blocked performance acceptance and prompted the investigations below. The existing rate admission algorithm is unchanged; the shared metrics registration changes from the concrete rate strategy to an internal state interface. Other default paths show small absolute deltas or baseline process variation. CPU-frequency strings reported by BDN vary between phases and do not establish the cause.
 
 [Focused investigation 36260120072](https://github.com/thomhurst/Kevlar/actions/runs/36260120072) captures JIT disassembly at depth four and measures the two existing rate fixtures on candidate `5d8c9831e680be9a749aaee66f9e62eb4506cebc` against the same baseline. The intervening runtime change only bounds queued timer waits to one millisecond; the measured default and uncontended paths and benchmark fixtures are unchanged. The focused run completed on an Intel Xeon Platinum 8370C / Ubuntu 24.04.5 / .NET 10.0.12 runner:
 
@@ -29,7 +29,28 @@ The default rate queue is 8.7â€“11.3 ns (4.9â€“6.5%) slower than both 
 
 Both benchmark entry methods are identical across phases after normalizing absolute process addresses. Depth-four disassembly does not follow the indirect generic dispatch into `RateLimitStrategy`; it does not prove every transitive instruction is identical. The reported transitive code sizes differ with traversal/JIT coverage.
 
-This run did not reproduce the AMD slowdown, but results from different machines are not averaged and do not rule out a machine-specific effect. A focused three-process-launch comparison of the default queued rate path will quantify process variation before acceptance. It reuses the bounded workflow input from #574; measurement defaults remain one process launch.
+This run did not reproduce the AMD slowdown, but results from different machines are not averaged and do not rule out a machine-specific effect. The three-process-launch comparison below quantified the process variation; measurement defaults remain one process launch.
+
+## Three-launch rate investigation
+
+[Run 36260700924](https://github.com/thomhurst/Kevlar/actions/runs/36260700924) compares baseline `85bb0aca` and candidate `f0854392` on AMD EPYC 7763, the same CPU model as the initial run, with three process launches per case. Default rate queue admission measured **184.9 / 182.4 / 179.0 ns**, all **0 B**. Per-process means were 177.812/178.879/196.667 ns before, 178.535/192.575/175.375 ns for the candidate, and 186.230/175.779/175.576 ns after. Slower processes occur in both controls and the candidate. The candidate's pooled mean is inside the control range, so the initial rate regression is not consistent across launches.
+
+## Fresh-main comparison and concurrency investigation
+
+After #574 merged, [run 36261056301](https://github.com/thomhurst/Kevlar/actions/runs/36261056301) compared main `091c3427aadd5f18723a832fb962b1da6ee251ec` against `76a2785a5922397514f1abd4a77d579cd78f5b7f`. The shared execution engine changed in main, so the earlier comparison alone did not cover the combined revision. This sequential A-B-A run uses AMD EPYC 7763, Ubuntu 24.04.5, .NET 10.0.12, SDK 10.0.401, BenchmarkDotNet 0.15.8, and three process launches per case. Fixtures remain unchanged and candidate fixture copying remains disabled.
+
+| Default path | Baseline before | Candidate | Baseline after | Allocation |
+|---|---:|---:|---:|---:|
+| Concurrency | 169.4 ns | 164.3 ns | 166.8 ns | 0 B |
+| Concurrency with queue capacity | 164.9 ns | 178.2 ns | 168.4 ns | 0 B |
+| Rate | 171.4 ns | 169.5 ns | 167.6 ns | 0 B |
+| Rate with queue capacity | 177.3 ns | 175.9 ns | 177.5 ns | 0 B |
+
+Candidate-only priority admission measured **163.7 ns** for concurrency and **181.7 ns** for rate, both **0 B**. These remain uncontended measurements.
+
+Rate queue performance passes this comparison. Default concurrency queue admission is 5.8-8.0% slower than the controls and blocks acceptance pending investigation. Its candidate process means are 187.919/165.832/179.892 ns, compared with 165.019/163.040/166.692 ns before and 166.621/172.320/165.815 ns after. The candidate's standard deviation is 9.16 ns; one process matches controls while two are slower. The default concurrency algorithm is unchanged; its only class diff exposes an existing rejection helper internally for the new strategy.
+
+[Focused investigation 36262202036](https://github.com/thomhurst/Kevlar/actions/runs/36262202036) retains these exact revisions and measures only the default concurrency queue fixture, with five process launches and depth-four JIT disassembly. This investigation is pending. No performance acceptance is claimed yet.
 
 ## Functional and documentation checks
 
