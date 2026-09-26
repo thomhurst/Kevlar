@@ -110,7 +110,7 @@ public class RateLimitCancellationTests
         const int burst = 2;
         const int queueLimit = 3;
         const int callerCount = 12;
-        var fakeTime = new FakeTimeProvider();
+        var fakeTime = new ControlledTimeProvider();
         var shield = Shield
             .RateLimit(options =>
             {
@@ -145,8 +145,11 @@ public class RateLimitCancellationTests
         for (var permit = 1; permit <= queueLimit; permit++)
         {
             var pending = calls.Where(call => !call.IsCompleted).ToArray();
+            // Completing one caller does not guarantee that the next caller has registered its delay.
+            await fakeTime.WaitForTimersAsync(permit);
             fakeTime.Advance(TimeSpan.FromSeconds(1));
             fakeTime.Advance(TimeSpan.FromTicks(1));
+            fakeTime.FireTimer(permit - 1);
             var expectedCompleted = callerCount - queueLimit + permit;
             var next = await WaitWithMessage(
                 Task.WhenAny(pending),
