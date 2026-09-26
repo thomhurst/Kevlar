@@ -6,6 +6,10 @@ namespace Kevlar.Internal;
 // construct a DateTimeOffset that most executions never read.
 internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, long utcTicks)
 {
+    // DIAGNOSTIC ONLY: freezes system UTC to isolate its per-timeout capture cost.
+    // This deliberately violates Deadline semantics and must never be merged.
+    private static readonly long DiagnosticUtcTicks = DateTime.UtcNow.Ticks;
+
     internal bool HasValue => utcTicks != 0;
 
     internal DateTimeOffset UtcDeadline => new(utcTicks, TimeSpan.Zero);
@@ -19,7 +23,7 @@ internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, lo
         in ExecutionDeadline parent)
     {
         var nowTicks = ReferenceEquals(timeProvider, TimeProvider.System)
-            ? DateTime.UtcNow.Ticks
+            ? DiagnosticUtcTicks
             : timeProvider.GetUtcNow().UtcDateTime.Ticks;
         var deadlineTicks = Math.Min(DateTimeOffset.MaxValue.Ticks, nowTicks + duration.Ticks);
         if (parent.HasValue && parent.UtcTicks < deadlineTicks)
