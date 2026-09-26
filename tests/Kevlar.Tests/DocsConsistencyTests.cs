@@ -83,7 +83,7 @@ public class DocsConsistencyTests
     {
         var repositoryRoot = FindRepositoryRoot();
         var packagePattern = new System.Text.RegularExpressions.Regex(
-            @"^\| \[`(?<package>Kevlar(?:\.[^`]+)?)`\]\(https://www\.nuget\.org/packages/",
+            @"^\| \[`(?<package>Kevlar(?:\.[^`]+)?)`\]\((?:https://www\.nuget\.org/packages/\k<package>/?|src/\k<package>/README\.md)\) \|",
             System.Text.RegularExpressions.RegexOptions.CultureInvariant);
         var documentedPackages = File.ReadLines(Path.Combine(repositoryRoot, "README.md"))
             .Select(line => packagePattern.Match(line))
