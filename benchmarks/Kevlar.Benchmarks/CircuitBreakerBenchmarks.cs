@@ -30,6 +30,12 @@ public class CircuitBreakerBenchmarks
         ConfigureKevlarRatioBreaker(options);
         options.OnStateChanged = static _ => default;
     });
+    private static readonly Shield KevlarSlowCallBreaker = Shield.CircuitBreaker(options =>
+    {
+        ConfigureKevlarRatioBreaker(options);
+        options.SlowCallThreshold = TimeSpan.FromSeconds(1);
+        options.SlowCallRatio = 0.5;
+    });
 
     private static readonly CircuitBreakerMonitor KevlarManualControl = new();
     private static readonly Shield KevlarOpenBreaker = Shield.CircuitBreaker(options =>
@@ -86,6 +92,10 @@ public class CircuitBreakerBenchmarks
     [BenchmarkCategory("RatioClosedHappyPath"), Benchmark]
     public ValueTask<int> Kevlar_AsyncCallbackConfigured() =>
         KevlarAsyncCallbackBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("RatioClosedHappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_SlowCallDetectionConfigured() =>
+        KevlarSlowCallBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
 
     [BenchmarkCategory("IsolatedFastFail"), Benchmark(Baseline = true)]
     public async ValueTask<bool> Kevlar_IsolatedFastFail()

@@ -47,6 +47,15 @@ public sealed class CircuitBreakerOptions<TResult>
     /// <inheritdoc cref="CircuitBreakerOptions.FailureRatio"/>
     public double? FailureRatio { get; set; }
 
+    /// <inheritdoc cref="CircuitBreakerOptions.HalfOpenProbes"/>
+    public int HalfOpenProbes { get; set; } = 1;
+
+    /// <inheritdoc cref="CircuitBreakerOptions.SlowCallThreshold"/>
+    public TimeSpan? SlowCallThreshold { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.SlowCallRatio"/>
+    public double? SlowCallRatio { get; set; }
+
     /// <inheritdoc cref="CircuitBreakerOptions.MinimumThroughput"/>
     public int MinimumThroughput { get; set; } = 10;
 
@@ -71,6 +80,9 @@ public sealed class CircuitBreakerOptions<TResult>
         HandlesException = HandlesException,
         ConsecutiveFailures = ConsecutiveFailures,
         FailureRatio = FailureRatio,
+        HalfOpenProbes = HalfOpenProbes,
+        SlowCallThreshold = SlowCallThreshold,
+        SlowCallRatio = SlowCallRatio,
         MinimumThroughput = MinimumThroughput,
         SamplingWindow = SamplingWindow,
         BreakDuration = BreakDuration,

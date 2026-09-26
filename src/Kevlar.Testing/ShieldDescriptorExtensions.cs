@@ -170,7 +170,10 @@ public static class ShieldDescriptorExtensions
             strategy.Core.BreakDuration,
             strategy.Core.HasMonitor,
             strategy.Core.HasNotification,
-            strategy.HasHandlingOverride);
+            strategy.HasHandlingOverride,
+            strategy.Core.HalfOpenProbes,
+            strategy.Core.SlowCallThreshold,
+            strategy.Core.SlowCallRatio);
 
     private static BackoffDescriptor DescribeBackoff(Backoff backoff) => new(
         backoff.Kind,

@@ -9,3 +9,9 @@ Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.get -> Kevlar.Exten
 Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.set -> void
 
 static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddKevlarValidationOnStart(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.HalfOpenProbes.get -> int
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.HalfOpenProbes.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallThreshold.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallRatio.get -> double?
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallRatio.set -> void

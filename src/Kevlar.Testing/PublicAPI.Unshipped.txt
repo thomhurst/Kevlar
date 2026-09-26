@@ -28,3 +28,8 @@ Kevlar.Testing.TimeoutScope.Execution = 1 -> Kevlar.Testing.TimeoutScope
 Kevlar.Testing.TimeoutScope.Indeterminate = 3 -> Kevlar.Testing.TimeoutScope
 Kevlar.Testing.TimeoutScope.None = 0 -> Kevlar.Testing.TimeoutScope
 override Kevlar.Testing.ShieldExplanation.ToString() -> string!
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HalfOpenProbes.get -> int
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallRatio.get -> double?
+Kevlar.Testing.CircuitBreakerStateSnapshot.ProbesInFlight.get -> int
+Kevlar.Testing.CircuitBreakerStateSnapshot.SlowCallCount.get -> long

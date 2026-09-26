@@ -638,7 +638,14 @@ public static class KevlarServiceCollectionExtensions
             {
                 ConsecutiveFailures = ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.ConsecutiveFailures)),
                 FailureRatio = ReadNullableDouble(breaker, nameof(CircuitBreakerDefinition.FailureRatio)),
+                SlowCallThreshold = ReadNullableTimeSpan(breaker, nameof(CircuitBreakerDefinition.SlowCallThreshold)),
+                SlowCallRatio = ReadNullableDouble(breaker, nameof(CircuitBreakerDefinition.SlowCallRatio)),
             };
+            if (ReadInt(breaker, nameof(CircuitBreakerDefinition.HalfOpenProbes)) is { } halfOpenProbes)
+            {
+                breakerDefinition.HalfOpenProbes = halfOpenProbes;
+            }
+
             if (ReadInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput)) is { } minimumThroughput)
             {
                 breakerDefinition.MinimumThroughput = minimumThroughput;

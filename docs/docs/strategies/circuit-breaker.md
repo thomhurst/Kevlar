@@ -36,6 +36,9 @@ API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOp
 |---|---|---|
 | `ConsecutiveFailures` | — | Simple mode: open after this many failures in a row |
 | `FailureRatio` | — | Sampling mode: open when this fraction of calls fail (0 exclusive to 1 inclusive) |
+| `HalfOpenProbes` | `1` | Completed outcomes per half-open cohort and maximum concurrent probes |
+| `SlowCallThreshold` | — | Calls taking strictly longer than this duration count as slow; requires sampling mode and `SlowCallRatio` |
+| `SlowCallRatio` | — | Open when this fraction of sampled calls is slow (0 exclusive to 1 inclusive) |
 | `MinimumThroughput` | `10` | Sampling mode: don't judge until at least this many calls landed in the window |
 | `SamplingWindow` | `30s` | Rolling window over which the ratio is measured (tracked in 10 buckets) |
 | `BreakDuration` | `15s` | How long the circuit stays open before allowing a probe |
@@ -48,6 +51,43 @@ API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOp
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value. This also applies when
 `BreakDurationGenerator` returns a non-positive duration.
+
+### Recovery probes and slow calls
+
+Increase `HalfOpenProbes` to evaluate recovery using several calls. Each half-open cohort admits
+at most that many calls, including already completed probes. Simple mode reopens on its first
+handled failure. Sampling mode reopens when failures divided by `HalfOpenProbes` reach
+`FailureRatio`; this permits an occasional failed probe below the threshold. The circuit closes
+only after the whole cohort completes below every configured threshold. Unhandled exceptions and
+caller cancellation release a slot for a replacement without counting as completed observations.
+
+Slow-call detection measures the downstream execution using the shield's `TimeProvider`. It
+observes latency without cancelling the call or changing its result:
+
+```csharp
+var latencyAware = Shield.CircuitBreaker(options =>
+{
+    options.FailureRatio = 0.5;
+    options.MinimumThroughput = 20;
+    options.SamplingWindow = TimeSpan.FromSeconds(30);
+    options.HalfOpenProbes = 4;
+    options.SlowCallThreshold = TimeSpan.FromMilliseconds(250);
+    options.SlowCallRatio = 0.75;
+});
+```
+
+Set both slow-call options together. The failure ratio and slow-call ratio are independent trip
+conditions over the same window and minimum throughput. A call that both fails and is slow counts
+once in the total, once in each applicable numerator. Successful calls and handled failures are
+measured; unhandled exceptions and caller cancellation remain excluded. In half-open state, slow
+probes divided by `HalfOpenProbes` are checked against `SlowCallRatio`, independently of
+`MinimumThroughput`. An opening caused by slow successful calls can have no `LastException`.
+
+`Kevlar.Testing` exposes `ProbesInFlight` and `SlowCallCount` through
+`GetStateSnapshot()` and `CircuitBreakerStateSnapshot`. The slow count covers the current
+closed-state sampling window; half-open observations are evaluated separately. Closing or resetting
+the circuit clears the window. `GetDescriptor()` exposes the three configured settings, and
+`CircuitBreakerDefinition` accepts the same fields when binding configuration.
 
 ### Dynamic break duration
 
@@ -69,7 +109,7 @@ var breaker = Shield.CircuitBreaker(o =>
 });
 ```
 
-The generator runs after the handled outcome crosses the threshold and before the circuit changes
+The generator runs after a handled failure or slow-call observation crosses a threshold and before the circuit changes
 to `Open`. It receives `FailureRate`, `FailureCount`, and `ConsecutiveFailures` at that moment and
 is awaited outside the circuit lock. Its duration must be positive; its exception or cancellation
 propagates unchanged and leaves the circuit available for a later trip. Untyped shields expose
@@ -77,6 +117,11 @@ propagates unchanged and leaves the circuit available for a later trip. Untyped 
 `CircuitBreakerBreakDurationEvent<T>` with a directly stored `Outcome<T>`. `Context` is pooled and
 must not be retained after the callback completes. A dynamic breaker describes itself as
 `break dynamic` without running the generator.
+
+Failure statistics continue to describe handled failures when a slow-call threshold triggers the
+generator. While a half-open duration generator is pending, new probes are rejected and other
+completions cannot close the circuit. If generation fails, completed observations are discarded;
+still-running probes retain their slots and replacements may fill the remaining cohort.
 
 When duration computation is synchronous, return a completed value (`trip => new(duration)`); that
 form costs nothing extra and works with synchronous `Execute`. A generator or `OnStateChanged` hook
@@ -93,9 +138,9 @@ Closed ──(threshold crossed)──► Open ──(BreakDuration elapses)─�
   └───────────────────────────────┴──────────────────────────────────┘
 ```
 
-- **Closed** — executions flow normally; failures are measured.
+- **Closed** — executions flow normally; failures and configured slow calls are measured.
 - **Open** — executions are rejected immediately with `CircuitOpenException` (carrying `RetryAfter`: the time until a probe is allowed).
-- **HalfOpen** — after the break duration, exactly **one** probe execution is allowed through. Success closes the circuit and resets metrics; failure re-opens it for another `BreakDuration`. Concurrent callers during the probe are rejected (`RetryAfter == null`).
+- **HalfOpen** — after the break duration, up to `HalfOpenProbes` calls are admitted (default **one**). A healthy completed cohort closes the circuit and resets metrics; reaching a configured failure or slow-call threshold reopens it. Calls beyond the cohort limit are rejected (`RetryAfter == null`).
 - **Isolated** — manually forced open via the monitor; rejected until `Reset()`.
 
 After the break duration elapses, `CircuitBreakerMonitor.State` reports `HalfOpen` immediately,

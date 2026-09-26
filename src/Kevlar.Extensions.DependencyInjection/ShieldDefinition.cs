@@ -92,6 +92,9 @@ public sealed class ShieldDefinition
             {
                 options.ConsecutiveFailures = breaker.ConsecutiveFailures;
                 options.FailureRatio = breaker.FailureRatio;
+                options.HalfOpenProbes = breaker.HalfOpenProbes;
+                options.SlowCallThreshold = breaker.SlowCallThreshold;
+                options.SlowCallRatio = breaker.SlowCallRatio;
                 options.MinimumThroughput = breaker.MinimumThroughput;
                 options.SamplingWindow = breaker.SamplingWindow;
                 options.BreakDuration = breaker.BreakDuration;
@@ -185,6 +188,15 @@ public sealed class HedgeDefinition
 /// <summary>The circuit breaker section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class CircuitBreakerDefinition
 {
+    /// <summary>Number of completed probes in a half-open cohort. Default 1.</summary>
+    public int HalfOpenProbes { get; set; } = 1;
+
+    /// <summary>Calls exceeding this duration contribute to the slow-call ratio. Requires ratio mode.</summary>
+    public TimeSpan? SlowCallThreshold { get; set; }
+
+    /// <summary>Slow-call fraction that opens the circuit. Requires <see cref="SlowCallThreshold"/>.</summary>
+    public double? SlowCallRatio { get; set; }
+
     /// <summary>Trip after this many consecutive failures (simple mode).</summary>
     public int? ConsecutiveFailures { get; set; }
 

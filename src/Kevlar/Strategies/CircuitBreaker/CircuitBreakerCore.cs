@@ -19,6 +19,9 @@ internal sealed class CircuitBreakerCore
     private readonly ConditionalWeakTable<TimeProvider, TimestampOrigin> _timestampOrigins = new();
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
+    private readonly int _halfOpenProbes;
+    private readonly TimeSpan? _slowCallThreshold;
+    private readonly double? _slowCallRatio;
     private readonly int _minimumThroughput;
     private readonly TimeSpan _samplingWindow;
     private readonly double _bucketDurationTimestampUnits;
@@ -44,7 +47,10 @@ internal sealed class CircuitBreakerCore
     private double _latestTimestamp;
     private double _openUntilTimestamp;
     private int _consecutiveFailures;
-    private bool _probeInFlight;
+    private int _probesInFlight;
+    private int _completedProbes;
+    private int _failedProbes;
+    private int _slowProbes;
     private long _admissionGeneration;
     private Exception? _lastException;
     private TimeProvider? _openTimeProvider;
@@ -147,6 +153,36 @@ internal sealed class CircuitBreakerCore
             options.MinimumThroughput,
             "must be at least 1");
         ConfigurationValidation.ThrowIf(
+            options.HalfOpenProbes < 1,
+            optionsType,
+            nameof(options.HalfOpenProbes),
+            options.HalfOpenProbes,
+            "must be at least 1");
+        ConfigurationValidation.ThrowIf(
+            options.SlowCallThreshold is { } slowThreshold && slowThreshold <= TimeSpan.Zero,
+            optionsType,
+            nameof(options.SlowCallThreshold),
+            options.SlowCallThreshold,
+            "must be positive when set");
+        ConfigurationValidation.ThrowIf(
+            options.SlowCallRatio is { } slowRatio && (double.IsNaN(slowRatio) || slowRatio <= 0 || slowRatio > 1),
+            optionsType,
+            nameof(options.SlowCallRatio),
+            options.SlowCallRatio,
+            "must be between 0 (exclusive) and 1 (inclusive)");
+        ConfigurationValidation.ThrowIf(
+            options.SlowCallThreshold.HasValue != options.SlowCallRatio.HasValue,
+            optionsType,
+            $"{nameof(options.SlowCallThreshold)} and {nameof(options.SlowCallRatio)}",
+            $"{options.SlowCallThreshold} and {options.SlowCallRatio}",
+            "must both be set or both be omitted");
+        ConfigurationValidation.ThrowIf(
+            options.SlowCallThreshold is not null && options.FailureRatio is null,
+            optionsType,
+            nameof(options.SlowCallThreshold),
+            options.SlowCallThreshold,
+            "requires FailureRatio sampling mode");
+        ConfigurationValidation.ThrowIf(
             options.SamplingWindow <= TimeSpan.Zero,
             optionsType,
             nameof(options.SamplingWindow),
@@ -160,6 +196,9 @@ internal sealed class CircuitBreakerCore
             "must be positive");
 
         _failureRatio = options.FailureRatio;
+        _halfOpenProbes = options.HalfOpenProbes;
+        _slowCallThreshold = options.SlowCallThreshold;
+        _slowCallRatio = options.SlowCallRatio;
         _consecutiveFailureLimit = options.FailureRatio is null ? options.ConsecutiveFailures ?? 5 : null;
         _samplingWindow = options.SamplingWindow;
         _minimumThroughput = options.MinimumThroughput;
@@ -179,17 +218,37 @@ internal sealed class CircuitBreakerCore
 
     internal void BindMonitor() => _monitor?.Bind(this);
 
-    public string Describe() =>
-        _consecutiveFailureLimit is { } limit
+    public string Describe()
+    {
+        var description = _consecutiveFailureLimit is { } limit
             ? $"CircuitBreaker({limit} consecutive, break {DescribeBreakDuration()})"
             : FormattableString.Invariant(
                 $"CircuitBreaker({_failureRatio!.Value * 100:0.#}% over {DescribeHelper.Time(_samplingWindow)}, min {_minimumThroughput}, break {DescribeBreakDuration()})");
+        if (_halfOpenProbes == 1 && _slowCallThreshold is null)
+        {
+            return description;
+        }
+
+        description = description.Substring(0, description.Length - 1);
+        if (_halfOpenProbes != 1)
+        {
+            description += $", probes {_halfOpenProbes}";
+        }
+
+        if (_slowCallThreshold is { } threshold)
+        {
+            description += FormattableString.Invariant($", slow >{DescribeHelper.Time(threshold)} ratio {_slowCallRatio!.Value * 100:0.#}%");
+        }
+
+        return description + ")";
+    }
 
     /// <summary>
-    /// Whether the strategy must take the awaitable entry/record paths so configured hooks are
-    /// awaited. Hooks that complete synchronously keep those paths synchronous.
+    /// Whether the strategy needs configured entry/record paths for hooks or slow-call measurement.
+    /// Hooks that complete synchronously keep those paths synchronous.
     /// </summary>
-    public bool RequiresAsyncExecution => _breakDurationGenerator is not null || _onStateChanged is not null;
+    public bool RequiresAsyncExecution =>
+        _breakDurationGenerator is not null || _onStateChanged is not null || _slowCallThreshold is not null;
 
     internal string TelemetryName => _telemetryName;
 
@@ -200,6 +259,12 @@ internal sealed class CircuitBreakerCore
     internal int? ConsecutiveFailures => _consecutiveFailureLimit;
 
     internal double? FailureRatio => _failureRatio;
+
+    internal int HalfOpenProbes => _halfOpenProbes;
+
+    internal TimeSpan? SlowCallThreshold => _slowCallThreshold;
+
+    internal double? SlowCallRatio => _slowCallRatio;
 
     internal int MinimumThroughput => _minimumThroughput;
 
@@ -219,6 +284,25 @@ internal sealed class CircuitBreakerCore
             {
                 return GetReportedState(_openTimeProvider);
             }
+        }
+    }
+
+    internal (CircuitState State, int ProbesInFlight, long SlowCallCount) CaptureState(TimeProvider timeProvider)
+    {
+        lock (_gate)
+        {
+            var state = GetReportedState(timeProvider);
+            long slowCalls = 0;
+            if (_slowCallThreshold is not null && _currentRatioBucket is not null)
+            {
+                AdvanceBucket(timeProvider);
+                foreach (var bucket in _ratioBuckets)
+                {
+                    slowCalls += bucket?.SlowCalls ?? 0;
+                }
+            }
+
+            return (state, _probesInFlight, slowCalls);
         }
     }
 
@@ -347,18 +431,18 @@ internal sealed class CircuitBreakerCore
                     }
 
                     transition = ChangeState(CircuitState.HalfOpen, context);
-                    _probeInFlight = true;
+                    _probesInFlight = 1;
                     admissionGeneration = _admissionGeneration;
                     return true;
 
                 default: // HalfOpen
-                    if (_probeInFlight)
+                    if (_openingPending || _probesInFlight + _completedProbes >= _halfOpenProbes)
                     {
                         rejection = new CircuitOpenException(null, isIsolated: false, _lastException);
                         return false;
                     }
 
-                    _probeInFlight = true;
+                    _probesInFlight++;
                     admissionGeneration = _admissionGeneration;
                     return true;
             }
@@ -466,7 +550,11 @@ internal sealed class CircuitBreakerCore
 
             if (_state == CircuitState.HalfOpen)
             {
-                _probeInFlight = false;
+                if (RecordProbeOutcome(handledFailure: false, slow: false, out _) != ProbeDecision.Close)
+                {
+                    return null;
+                }
+
                 CancelPendingOpening();
                 ResetMetrics();
                 return ChangeState(CircuitState.Closed, context);
@@ -492,22 +580,31 @@ internal sealed class CircuitBreakerCore
         KevlarContext context,
         long admissionGeneration)
     {
-        Publish(RecordFailureCore(timeProvider, exception, context, admissionGeneration));
+        Publish(RecordOutcomeCore(timeProvider, exception, context, admissionGeneration));
     }
 
-    public ValueTask RecordFailureAsync<T>(
+    public ValueTask RecordOutcomeAsync<T>(
         TimeProvider timeProvider,
         in Outcome<T> outcome,
         KevlarContext context,
-        long admissionGeneration)
+        long admissionGeneration,
+        bool handledFailure,
+        bool slow)
     {
+        if (!handledFailure && _slowCallThreshold is null)
+        {
+            return RecordSuccessAsync(timeProvider, context, admissionGeneration);
+        }
+
         if (_breakDurationGenerator is null)
         {
-            return PublishAsync(RecordFailureCore(
+            return PublishAsync(RecordOutcomeCore(
                 timeProvider,
                 outcome.Exception,
                 context,
-                admissionGeneration));
+                admissionGeneration,
+                handledFailure,
+                slow));
         }
 
         if (!TryReserveDynamicOpening(
@@ -515,9 +612,12 @@ internal sealed class CircuitBreakerCore
                 outcome.Exception,
                 context,
                 admissionGeneration,
-                out var reservation))
+                handledFailure,
+                slow,
+                out var reservation,
+                out var transition))
         {
-            return default;
+            return PublishAsync(transition);
         }
 
         ValueTask<TimeSpan> generation;
@@ -559,11 +659,13 @@ internal sealed class CircuitBreakerCore
         return PublishAsync(CommitDynamicOpening(reservation, timeProvider, duration));
     }
 
-    private TransitionPublication? RecordFailureCore(
+    private TransitionPublication? RecordOutcomeCore(
         TimeProvider timeProvider,
         Exception? exception,
         KevlarContext context,
-        long admissionGeneration)
+        long admissionGeneration,
+        bool handledFailure = true,
+        bool slow = false)
     {
         lock (_gate)
         {
@@ -574,7 +676,18 @@ internal sealed class CircuitBreakerCore
 
             if (_state == CircuitState.HalfOpen)
             {
-                _probeInFlight = false;
+                var decision = RecordProbeOutcome(handledFailure, slow, out _);
+                if (decision == ProbeDecision.Close)
+                {
+                    ResetMetrics();
+                    return ChangeState(CircuitState.Closed, context);
+                }
+
+                if (decision != ProbeDecision.Open)
+                {
+                    return null;
+                }
+
                 _lastException = exception;
                 _openTimeProvider = timeProvider;
                 _openUntilTimestamp = GetCurrentTimestamp(timeProvider) + _breakDurationTimestampUnits;
@@ -583,11 +696,8 @@ internal sealed class CircuitBreakerCore
 
             if (_state == CircuitState.Closed)
             {
-                var timestamp = _failureRatio is null
-                    ? 0
-                    : GetCurrentTimestamp(timeProvider);
-
-                if (RecordFailureAndCheckThreshold(timestamp, out _))
+                var timestamp = _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider);
+                if (RecordOutcomeAndCheckThreshold(timestamp, handledFailure, slow, out _))
                 {
                     if (_failureRatio is null)
                     {
@@ -610,25 +720,17 @@ internal sealed class CircuitBreakerCore
         Exception? exception,
         KevlarContext context,
         long admissionGeneration,
-        out OpeningReservation reservation)
+        bool handledFailure,
+        bool slow,
+        out OpeningReservation reservation,
+        out TransitionPublication? transition)
     {
         lock (_gate)
         {
             reservation = default;
+            transition = null;
             if (admissionGeneration != _admissionGeneration)
             {
-                return false;
-            }
-
-            if (_openingPending)
-            {
-                if (_state == CircuitState.Closed)
-                {
-                    _ = RecordFailureAndCheckThreshold(
-                        _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider),
-                        out _);
-                }
-
                 return false;
             }
 
@@ -636,25 +738,30 @@ internal sealed class CircuitBreakerCore
             bool shouldOpen;
             if (_state == CircuitState.HalfOpen)
             {
-                statistics = new CircuitBreakerFailureStatistics(
-                    FailureRate: 1,
-                    FailureCount: 1,
-                    ConsecutiveFailures: 1);
-                shouldOpen = true;
+                var decision = RecordProbeOutcome(handledFailure, slow, out statistics);
+                if (decision == ProbeDecision.Close)
+                {
+                    ResetMetrics();
+                    transition = ChangeState(CircuitState.Closed, context);
+                    return false;
+                }
+
+                shouldOpen = decision == ProbeDecision.Open;
             }
             else if (_state == CircuitState.Closed)
             {
-                shouldOpen = RecordFailureAndCheckThreshold(
+                shouldOpen = RecordOutcomeAndCheckThreshold(
                     _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider),
+                    handledFailure,
+                    slow,
                     out statistics);
             }
             else
             {
-                statistics = default;
-                shouldOpen = false;
+                return false;
             }
 
-            if (!shouldOpen)
+            if (!shouldOpen || _openingPending)
             {
                 return false;
             }
@@ -707,7 +814,6 @@ internal sealed class CircuitBreakerCore
             }
 
             _openingPending = false;
-            _probeInFlight = false;
             _lastException = reservation.Exception;
             _openTimeProvider = timeProvider;
             _openUntilTimestamp = GetCurrentTimestamp(timeProvider)
@@ -725,7 +831,11 @@ internal sealed class CircuitBreakerCore
                 CancelPendingOpening();
                 if (_state == CircuitState.HalfOpen)
                 {
-                    _probeInFlight = false;
+                    // A failed duration generator abandons completed observations. Still-running
+                    // probes retain their slots, so replacements cannot exceed the configured limit.
+                    _completedProbes = 0;
+                    _failedProbes = 0;
+                    _slowProbes = 0;
                 }
             }
         }
@@ -758,9 +868,9 @@ internal sealed class CircuitBreakerCore
     {
         lock (_gate)
         {
-            if (_state == CircuitState.HalfOpen && _admissionGeneration == probeGeneration)
+            if (_state == CircuitState.HalfOpen && _admissionGeneration == probeGeneration && _probesInFlight > 0)
             {
-                _probeInFlight = false;
+                _probesInFlight--;
             }
         }
     }
@@ -777,7 +887,6 @@ internal sealed class CircuitBreakerCore
         lock (_gate)
         {
             CancelPendingOpening();
-            _probeInFlight = false;
             return _state == CircuitState.Isolated
                 ? null
                 : ChangeState(CircuitState.Isolated, KevlarContext.CreateManual());
@@ -798,7 +907,6 @@ internal sealed class CircuitBreakerCore
             CancelPendingOpening();
             Interlocked.Increment(ref _admissionGeneration);
             ResetMetrics();
-            _probeInFlight = false;
             _lastException = null;
             _openTimeProvider = null;
             return _state == CircuitState.Closed
@@ -807,24 +915,85 @@ internal sealed class CircuitBreakerCore
         }
     }
 
-    private bool RecordFailureAndCheckThreshold(
-        double timestamp,
+    private ProbeDecision RecordProbeOutcome(
+        bool handledFailure,
+        bool slow,
         out CircuitBreakerFailureStatistics statistics)
     {
-        var consecutiveFailures = Interlocked.Increment(ref _consecutiveFailures);
+        _probesInFlight--;
+        _completedProbes++;
+        if (handledFailure)
+        {
+            _failedProbes++;
+        }
+
+        if (slow)
+        {
+            _slowProbes++;
+        }
+
+        // Compare against the complete cohort, so one early failure need not reopen ratio mode.
+        var failureRate = (double)_failedProbes / _halfOpenProbes;
+        statistics = new CircuitBreakerFailureStatistics(failureRate, _failedProbes, _failedProbes);
+        if (_openingPending)
+        {
+            return ProbeDecision.Pending;
+        }
+
+        if ((_failureRatio is null && handledFailure)
+            || (_failureRatio is { } failureRatio && failureRate >= failureRatio)
+            || (_slowCallRatio is { } slowRatio && (double)_slowProbes / _halfOpenProbes >= slowRatio))
+        {
+            return ProbeDecision.Open;
+        }
+
+        return _completedProbes == _halfOpenProbes ? ProbeDecision.Close : ProbeDecision.Pending;
+    }
+
+    private enum ProbeDecision
+    {
+        Pending,
+        Close,
+        Open,
+    }
+
+    private bool RecordOutcomeAndCheckThreshold(
+        double timestamp,
+        bool handledFailure,
+        bool slow,
+        out CircuitBreakerFailureStatistics statistics)
+    {
+        var consecutiveFailures = handledFailure ? Interlocked.Increment(ref _consecutiveFailures) : 0;
+        if (!handledFailure)
+        {
+            Volatile.Write(ref _consecutiveFailures, 0);
+        }
+
         if (_consecutiveFailureLimit is { } limit)
         {
             statistics = new CircuitBreakerFailureStatistics(
-                FailureRate: 1,
+                FailureRate: handledFailure ? 1 : 0,
                 FailureCount: consecutiveFailures,
                 ConsecutiveFailures: consecutiveFailures);
             return consecutiveFailures >= limit;
         }
 
         var bucket = AdvanceBucket(timestamp);
-        bucket.Failures++;
+        if (handledFailure)
+        {
+            bucket.Failures++;
+        }
+        else
+        {
+            Interlocked.Increment(ref bucket.Successes);
+        }
 
-        long failures = 0, total = 0;
+        if (slow)
+        {
+            bucket.SlowCalls++;
+        }
+
+        long failures = 0, total = 0, slowCalls = 0;
         for (var i = 0; i < BucketCount; i++)
         {
             var sample = _ratioBuckets[i];
@@ -836,14 +1005,14 @@ internal sealed class CircuitBreakerCore
             var bucketFailures = sample.Failures;
             failures += bucketFailures;
             total += bucketFailures + Interlocked.Read(ref sample.Successes);
+            slowCalls += sample.SlowCalls;
         }
 
         var failureRate = (double)failures / total;
-        statistics = new CircuitBreakerFailureStatistics(
-            failureRate,
-            failures,
-            consecutiveFailures);
-        return total >= _minimumThroughput && failureRate >= _failureRatio!.Value;
+        statistics = new CircuitBreakerFailureStatistics(failureRate, failures, consecutiveFailures);
+        return total >= _minimumThroughput
+            && (failureRate >= _failureRatio!.Value
+                || (_slowCallRatio is { } slowRatio && (double)slowCalls / total >= slowRatio));
     }
 
     private RatioBucket AdvanceBucket(TimeProvider timeProvider) =>
@@ -980,6 +1149,8 @@ internal sealed class CircuitBreakerCore
         public long Failures;
 
         public long Successes;
+
+        public long SlowCalls;
     }
 
     private TransitionPublication ChangeState(
@@ -993,6 +1164,10 @@ internal sealed class CircuitBreakerCore
             _lastException,
             context,
             breakDuration ?? (next == CircuitState.Open ? _breakDuration : default));
+        _probesInFlight = 0;
+        _completedProbes = 0;
+        _failedProbes = 0;
+        _slowProbes = 0;
         _state = next;
         if (next is CircuitState.Open or CircuitState.Isolated)
         {
