@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
@@ -314,6 +315,7 @@ internal static class StressRunner
             SamplingWindow = TimeSpan.FromMilliseconds(5),
             DecreaseFactor = 0.5,
         });
+        await VerifyAdaptiveFeedbackAsync(shield, maximum);
         var active = 0;
         var peak = 0;
         var completed = 0;
@@ -372,6 +374,44 @@ internal static class StressRunner
         }
         Console.WriteLine($"Adaptive concurrency stress: {completed} admitted, {rejected} rejected, " +
             $"{failed} injected failures, peak {peak}, final limit {snapshot.CurrentLimit}.");
+    }
+
+    private static async Task VerifyAdaptiveFeedbackAsync(Shield shield, int initialLimit)
+    {
+        var time = new FakeTimeProvider();
+        var timed = shield.WithTimeProvider(time);
+        _ = timed.Execute(static _ => 42);
+        var gates = Enumerable.Range(0, initialLimit)
+            .Select(_ => new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)).ToArray();
+        var executions = gates.Select(gate =>
+            timed.ExecuteOutcomeAsync(_ => new ValueTask<int>(gate.Task)).AsTask()).ToArray();
+        try
+        {
+            var excess = await timed.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+            if (excess.Exception is not ConcurrencyLimitExceededException)
+            {
+                throw new InvalidOperationException("Adaptive stress did not reject excess synchronized admission.");
+            }
+
+            time.Advance(TimeSpan.FromMilliseconds(5));
+            gates[0].SetException(new IOException("Injected adaptive feedback failure."));
+            _ = await executions[0];
+            var snapshot = shield.GetStateSnapshot().Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
+            if (snapshot.CurrentLimit != Math.Max(1, initialLimit / 2)
+                || snapshot.RunningExecutions != initialLimit - 1)
+            {
+                throw new InvalidOperationException("Adaptive stress did not reduce its limit while preserving running calls.");
+            }
+        }
+        finally
+        {
+            foreach (var gate in gates)
+            {
+                gate.TrySetResult(42);
+            }
+            _ = await Task.WhenAll(executions);
+        }
+        Console.WriteLine("Adaptive feedback verified: synchronized rejection, failure backoff, and permit drain.");
     }
 
     private static IReadOnlyList<StressCase> CreateCases(int workers)
