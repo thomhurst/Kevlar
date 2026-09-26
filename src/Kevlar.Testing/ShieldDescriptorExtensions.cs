@@ -115,11 +115,13 @@ public static class ShieldDescriptorExtensions
                 rateLimit.Window,
                 rateLimit.Burst,
                 rateLimit.QueueLimit,
+                rateLimit.QueueTimeout,
                 rateLimit.HasNotification),
             ConcurrencyLimitStrategy concurrency => new ConcurrencyLimitStrategyDescriptor(
                 description,
                 concurrency.MaxConcurrency,
                 concurrency.QueueLimit,
+                concurrency.QueueTimeout,
                 concurrency.HasNotification),
             AdaptiveConcurrencyLimitStrategy adaptive => new AdaptiveConcurrencyLimitStrategyDescriptor(
                 description,

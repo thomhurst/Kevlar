@@ -15,3 +15,7 @@ Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallThreshold
 Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallThreshold.set -> void
 Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallRatio.get -> double?
 Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SlowCallRatio.set -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueTimeout.set -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueTimeout.set -> void

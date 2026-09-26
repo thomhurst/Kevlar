@@ -81,6 +81,10 @@ internal static class KevlarActivities
             {
                 tags.Add("kevlar.rejection.kind", Bound(rejection));
             }
+            if (item.RejectionReason is { } rejectionReason)
+            {
+                tags.Add("kevlar.rejection.reason", Bound(rejectionReason));
+            }
             if (item.RetryAfter is { } retryAfter)
             {
                 tags.Add("kevlar.retry_after.seconds", retryAfter.TotalSeconds);

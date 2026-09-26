@@ -39,3 +39,10 @@ static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, Kevl
 Kevlar.Shield<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
 Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!
+Kevlar.ConcurrencyLimitOptions.QueueTimeout.get -> System.TimeSpan?
+Kevlar.ConcurrencyLimitOptions.QueueTimeout.set -> void
+Kevlar.RateLimitOptions.QueueTimeout.get -> System.TimeSpan?
+Kevlar.RateLimitOptions.QueueTimeout.set -> void
+Kevlar.ConcurrencyLimitRejectedEvent.Reason.get -> string?
+Kevlar.RateLimitRejectedEvent.Reason.get -> string?
+Kevlar.KevlarTelemetryEvent.RejectionReason.get -> string?

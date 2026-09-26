@@ -13,6 +13,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _queueLimit;
+    private readonly TimeSpan? _queueTimeout;
     private readonly long _capacity;
     private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejected;
     private readonly string _telemetryName;
@@ -34,6 +35,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
     (int Available, int Running, int Queued) IConcurrencyLimitState.CaptureState() => CaptureState();
 
     internal int QueueLimit => _queueLimit;
+
+    internal TimeSpan? QueueTimeout => _queueTimeout;
 
     internal bool HasNotification => _onRejected is not null;
 
@@ -64,15 +67,26 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         // accepting the extra signal prevents a completion from throwing SemaphoreFullException.
         _semaphore = new SemaphoreSlim(0);
         _maxConcurrency = options.MaxConcurrency;
+        ConfigurationValidation.ThrowIf(
+            options.QueueTimeout is { } timeout && (timeout <= TimeSpan.Zero || timeout > DelayHelper.MaximumDelay),
+            typeof(ConcurrencyLimitOptions),
+            nameof(options.QueueTimeout),
+            options.QueueTimeout,
+            "must be positive and at most 4,294,967,294 milliseconds when set");
         _queueLimit = options.QueueLimit;
+        _queueTimeout = options.QueueTimeout;
         _capacity = options.MaxConcurrency + (long)options.QueueLimit;
         _onRejected = options.OnRejected;
         _telemetryName = options.Name ?? "ConcurrencyLimit";
         _metricsRegistration = KevlarMetrics.RegisterConcurrencyStateSource(this);
     }
 
-    public override string Describe() =>
-        _queueLimit > 0 ? $"ConcurrencyLimit({_maxConcurrency}, queue {_queueLimit})" : $"ConcurrencyLimit({_maxConcurrency})";
+    public override string Describe()
+    {
+        var timeout = _queueTimeout is { } duration ? $"/{DescribeHelper.Time(duration)}" : string.Empty;
+        var queue = _queueLimit > 0 ? $", queue {_queueLimit}{timeout}" : string.Empty;
+        return $"ConcurrencyLimit({_maxConcurrency}{queue})";
+    }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -100,10 +114,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         return ExecuteQueuedAsync(next, context);
     }
 
-    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context)
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, string? reason = null)
     {
         var rejection = new ConcurrencyLimitExceededException();
-        KevlarMetrics.Rejection(context, "concurrency_limit", rejection, _telemetryName);
+        KevlarMetrics.Rejection(context, "concurrency_limit", rejection, _telemetryName, reason);
         if (_onRejected is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
@@ -112,7 +126,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         var rejectedEvent = new ConcurrencyLimitRejectedEvent(
             _maxConcurrency,
             _queueLimit,
-            context);
+            context,
+            reason);
         var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
             rejectedEvent,
@@ -142,20 +157,25 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         var queuedState = Interlocked.Add(ref _state, QueuedIncrement);
         var hasPrecedingWaiter = (uint)queuedState > 1;
         Interlocked.Increment(ref _waiters);
+        QueueWaitTimeout? timeout = null;
         try
         {
+            timeout = _queueTimeout is { } duration ? new QueueWaitTimeout(context, duration) : null;
+            var queueToken = timeout?.Token ?? context.CancellationToken;
+            timeout?.ThrowIfCancellationRequested();
             if (hasPrecedingWaiter || !TryAcquireQueuedPermit(drainSignal: true))
             {
                 do
                 {
                     if (context.IsSynchronous)
                     {
-                        _semaphore.Wait(context.CancellationToken);
+                        _semaphore.Wait(queueToken);
                     }
                     else
                     {
-                        await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
+                        await _semaphore.WaitAsync(queueToken).ConfigureAwait(false);
                     }
+                    timeout?.ThrowIfCancellationRequested();
                 }
                 while (!TryAcquireQueuedPermit(drainSignal: false));
             }
@@ -164,11 +184,27 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         {
             Interlocked.Add(ref _state, -QueuedIncrement);
             Interlocked.Decrement(ref _pending);
+            if (timeout?.Token.IsCancellationRequested == true && !context.CancellationToken.IsCancellationRequested)
+            {
+                return await RejectAsync<T>(context, "queue_timeout").ConfigureAwait(false);
+            }
             return Outcome<T>.FromException(NormalizeCancellation(cancelled, context));
+        }
+        catch (Exception exception)
+        {
+            Interlocked.Add(ref _state, -QueuedIncrement);
+            Interlocked.Decrement(ref _pending);
+            return Outcome<T>.FromException(exception);
         }
         finally
         {
+            timeout?.Dispose();
             Interlocked.Decrement(ref _waiters);
+            // A cancelled waiter may have consumed the wake-up without taking the permit.
+            if (Volatile.Read(ref _waiters) > 0 && (int)(Volatile.Read(ref _state) >> 32) < _maxConcurrency)
+            {
+                _semaphore.Release();
+            }
         }
 
         return await ExecuteAcquired(next, context).ConfigureAwait(false);

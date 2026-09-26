@@ -33,6 +33,7 @@ API reference: [`ConcurrencyLimitOptions`](pathname:///api/Kevlar.ConcurrencyLim
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
 | `QueueLimit` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
+| `QueueTimeout` | `null` | Maximum time waiting for a slot; execution time is excluded |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
 
 </div>
@@ -60,8 +61,30 @@ Cancelling a queued execution frees its queue place when the asynchronous wait o
 Queued cancellation is not rejection and invokes neither rejection hook. A pre-cancelled caller is
 stopped at the shield boundary before the limiter runs.
 
-`ConcurrencyLimit` has no queue timeout. To bound time spent waiting for a slot, compose a timeout
-outside it: `Shield.Timeout(queueBudget).ConcurrencyLimit(maxConcurrency, queueLimit: queueLimit)`.
+## Queue timeout
+
+Set `QueueTimeout` to bound waiting independently of execution time:
+
+```csharp
+var shield = Shield.ConcurrencyLimit(options =>
+{
+    options.MaxConcurrency = 10;
+    options.QueueLimit = 20;
+    options.QueueTimeout = TimeSpan.FromMilliseconds(250);
+});
+```
+
+The queue timer uses the shield's `TimeProvider` and stops before admitted work starts.
+An expired waiter releases its queue place and receives `ConcurrencyLimitExceededException`.
+`OnRejected.Reason` and telemetry `RejectionReason` are `queue_timeout`; the rejection
+counter includes `kevlar.rejection.reason=queue_timeout`. Caller cancellation remains
+cancellation and takes precedence when already requested as the waiter observes expiry.
+Await the rejected execution before assuming its queue place is reusable.
+
+The default `null` leaves the queue wait unbounded. Configured values must be positive
+and at most 4,294,967,294 milliseconds. `QueueLimit = 0` never queues, so no queue timer
+is created. `shield.ToString()` shows `ConcurrencyLimit(10, queue 20/250ms)` for this example.
+An outer `Timeout` can still bound both queue residence and execution together.
 
 ## Adaptive concurrency
 

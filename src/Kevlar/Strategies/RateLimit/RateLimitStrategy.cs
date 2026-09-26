@@ -22,6 +22,7 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly TimeSpan _window;
     private readonly int _burst;
     private readonly int _queueLimit;
+    private readonly TimeSpan? _queueTimeout;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
     private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejected;
@@ -43,6 +44,8 @@ internal sealed class RateLimitStrategy : Strategy
     internal int Burst => _burst;
 
     internal int QueueLimit => _queueLimit;
+
+    internal TimeSpan? QueueTimeout => _queueTimeout;
 
     internal bool HasNotification => _onRejected is not null;
 
@@ -76,7 +79,14 @@ internal sealed class RateLimitStrategy : Strategy
         _permits = options.Permits;
         _window = options.Window;
         _burst = options.Burst ?? options.Permits;
+        ConfigurationValidation.ThrowIf(
+            options.QueueTimeout is { } timeout && (timeout <= TimeSpan.Zero || timeout > DelayHelper.MaximumDelay),
+            typeof(RateLimitOptions),
+            nameof(options.QueueTimeout),
+            options.QueueTimeout,
+            "must be positive and at most 4,294,967,294 milliseconds when set");
         _queueLimit = options.QueueLimit;
+        _queueTimeout = options.QueueTimeout;
         _timestampUnitsPerPermit = options.Window.TotalSeconds * Stopwatch.Frequency / options.Permits;
         _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
         _onRejected = options.OnRejected;
@@ -86,7 +96,8 @@ internal sealed class RateLimitStrategy : Strategy
 
     public override string Describe()
     {
-        var queue = _queueLimit > 0 ? $", queue {_queueLimit}" : string.Empty;
+        var timeout = _queueTimeout is { } duration ? $"/{DescribeHelper.Time(duration)}" : string.Empty;
+        var queue = _queueLimit > 0 ? $", queue {_queueLimit}{timeout}" : string.Empty;
         var burst = _burst != _permits ? $", burst {_burst}" : string.Empty;
         return $"RateLimit({_permits}/{DescribeHelper.Time(_window)}{burst}{queue})";
     }
@@ -106,10 +117,15 @@ internal sealed class RateLimitStrategy : Strategy
             : ExecuteReservedAsync(next, context, reservation);
     }
 
-    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter)
+    // Keep queue-expiry diagnostics out of the successful admission call site's argument setup.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter) =>
+        RejectAsync<T>(context, retryAfter, reason: null);
+
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason)
     {
         var rejection = new RateLimitExceededException(retryAfter);
-        KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName);
+        KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName, reason);
         if (_onRejected is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
@@ -121,7 +137,8 @@ internal sealed class RateLimitStrategy : Strategy
             _window,
             _burst,
             _queueLimit,
-            context);
+            context,
+            reason);
 
         var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
@@ -150,10 +167,14 @@ internal sealed class RateLimitStrategy : Strategy
         KevlarContext context,
         Reservation reservation)
     {
+        QueueWaitTimeout? timeout = null;
         try
         {
+            timeout = _queueTimeout is { } duration ? new QueueWaitTimeout(context, duration) : null;
+            var queueToken = timeout?.Token ?? context.CancellationToken;
             while (true)
             {
+                timeout?.ThrowIfCancellationRequested();
                 if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
                 {
                     nextTurn?.TrySetResult(true);
@@ -162,7 +183,7 @@ internal sealed class RateLimitStrategy : Strategy
 
                 if (wait == Timeout.InfiniteTimeSpan)
                 {
-                    var turn = reservation.WaitForTurnAsync(context.CancellationToken);
+                    var turn = reservation.WaitForTurnAsync(queueToken);
                     if (context.IsSynchronous)
                     {
                         turn.GetAwaiter().GetResult();
@@ -174,14 +195,37 @@ internal sealed class RateLimitStrategy : Strategy
                 }
                 else
                 {
-                    await DelayHelper.DelayAsync(context, wait).ConfigureAwait(false);
+                    var delay = DelayHelper.CreateDelayTask(context.TimeProvider, wait, queueToken);
+                    if (context.IsSynchronous)
+                    {
+                        delay.GetAwaiter().GetResult();
+                    }
+                    else
+                    {
+                        await delay.ConfigureAwait(false);
+                    }
                 }
             }
         }
         catch (OperationCanceledException cancelled)
         {
             CancelReservation(reservation)?.TrySetResult(true);
-            return Outcome<T>.FromException(cancelled);
+            if (timeout?.Token.IsCancellationRequested == true && !context.CancellationToken.IsCancellationRequested)
+            {
+                return await RejectAsync<T>(context, retryAfter: null, reason: "queue_timeout").ConfigureAwait(false);
+            }
+            return Outcome<T>.FromException(context.CancellationToken.IsCancellationRequested
+                ? new OperationCanceledException(cancelled.Message, cancelled, context.CancellationToken)
+                : cancelled);
+        }
+        catch (Exception exception)
+        {
+            CancelReservation(reservation)?.TrySetResult(true);
+            return Outcome<T>.FromException(exception);
+        }
+        finally
+        {
+            timeout?.Dispose();
         }
 
         return await next.InvokeAsync(context).ConfigureAwait(false);

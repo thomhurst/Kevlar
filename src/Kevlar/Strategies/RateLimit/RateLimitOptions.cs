@@ -30,6 +30,13 @@ public sealed class RateLimitOptions
     public int QueueLimit { get; set; }
 
     /// <summary>
+    /// Maximum time spent waiting in the queue. Null (the default) leaves the wait unbounded.
+    /// Must be positive and at most 4,294,967,294 milliseconds when configured.
+    /// This limit ends when execution is admitted and does not bound execution time.
+    /// </summary>
+    public TimeSpan? QueueTimeout { get; set; }
+
+    /// <summary>
     /// Invoked and awaited when an execution is rejected. Return <see langword="default"/> from a
     /// synchronous callback.
     /// </summary>

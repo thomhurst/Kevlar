@@ -11,7 +11,8 @@ public readonly struct RateLimitRejectedEvent
         TimeSpan window,
         int burst,
         int queueLimit,
-        KevlarContext context)
+        KevlarContext context,
+        string? reason = null)
     {
         RetryAfter = retryAfter;
         Permits = permits;
@@ -19,6 +20,7 @@ public readonly struct RateLimitRejectedEvent
         Burst = burst;
         QueueLimit = queueLimit;
         _context = context;
+        Reason = reason;
     }
 
     /// <summary>The estimated delay before another execution can be admitted, when available.</summary>
@@ -35,6 +37,9 @@ public readonly struct RateLimitRejectedEvent
 
     /// <summary>The configured maximum wait queue size.</summary>
     public int QueueLimit { get; }
+
+    /// <summary>The rejection reason, such as <c>queue_timeout</c>, or null for capacity rejection.</summary>
+    public string? Reason { get; }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and

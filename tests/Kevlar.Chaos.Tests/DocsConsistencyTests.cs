@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Kevlar.Chaos;
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Chaos.Tests;
 
@@ -108,6 +109,20 @@ public class DocsConsistencyTests
             .WithName("docs-rate");
         await rateLimit.ExecuteAsync(_ => ValueTask.CompletedTask);
         _ = await rateLimit.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+
+        var queueTime = new FakeTimeProvider();
+        var timedQueue = Shield.RateLimit(options =>
+            {
+                options.Permits = 1;
+                options.Window = TimeSpan.FromMinutes(1);
+                options.QueueLimit = 1;
+                options.QueueTimeout = TimeSpan.FromSeconds(1);
+            }).WithTimeProvider(queueTime).WithName("docs-queue-timeout");
+        await timedQueue.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var expired = timedQueue.ExecuteOutcomeAsync(_ => new ValueTask<int>(1)).AsTask();
+        queueTime.Advance(TimeSpan.FromSeconds(1));
+        await Assert.That((await expired.WaitAsync(TimeSpan.FromSeconds(5))).Exception)
+            .IsTypeOf<RateLimitExceededException>();
 
         var partitions = new PartitionedShield<string>(
             static _ => Shield.Empty,

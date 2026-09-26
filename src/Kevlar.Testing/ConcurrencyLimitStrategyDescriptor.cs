@@ -7,11 +7,13 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
         string description,
         int maxConcurrency,
         int queueLimit,
+        TimeSpan? queueTimeout,
         bool hasNotification)
         : base(StrategyKind.ConcurrencyLimit, description)
     {
         MaxConcurrency = maxConcurrency;
         QueueLimit = queueLimit;
+        QueueTimeout = queueTimeout;
         HasNotification = hasNotification;
     }
 
@@ -20,6 +22,9 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
 
     /// <summary>The maximum wait queue size.</summary>
     public int QueueLimit { get; }
+
+    /// <summary>The maximum queue residence time, or null for an unbounded wait.</summary>
+    public TimeSpan? QueueTimeout { get; }
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
     public bool HasNotification { get; }
