@@ -69,7 +69,7 @@ public class ParentContextExecutionTests
             release.SetResult();
             await childTask;
 
-            await Assert.That(parent.Properties.GetOrDefault(RequestId)).IsEqualTo("parent");
+            await Assert.That(parent.Properties.GetOrDefault(RequestId, string.Empty)).IsEqualTo("parent");
             await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
         });
     }
