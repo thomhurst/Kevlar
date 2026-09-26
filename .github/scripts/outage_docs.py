@@ -90,7 +90,7 @@ def build_page(data):
               "The simulator omits sockets, serialization, server queues, database locks, and real cancellation delays.", "",
               "## Environment and raw results", "",
               f"- {data['operatingSystem']}; {data['runtime']}; {data['architecture']}; {data['processorCount']} visible processors.",
-              "- [Current published JSON](/Kevlar/measurements/outage-results.json) accompanies this page. "
+              "- [Current published JSON](../static/measurements/outage-results.json) accompanies this page. "
               "The [outage workflow](https://github.com/thomhurst/Kevlar/actions/workflows/outage.yml) also uploads JSON and Markdown results for each run. "
               "JSON records all configuration, scheduled phase boundaries, actual phase attempt counts, and wall duration for each composition.", "",
               "## Reproduce", "", "```bash",

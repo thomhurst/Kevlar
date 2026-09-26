@@ -8,7 +8,7 @@ sidebar_label: Outage and recovery
 
 An open-loop load generator exercises Kevlar against an in-process asynchronous dependency. Each composition gets fresh strategy state and the same healthy, slowdown, outage, and recovery schedule. These measurements describe the configured simulation, not production capacity or a comparison with another library.
 
-Measured 2026-09-26T13:53:31.1815335+00:00 at commit `9632b7dd76f46465fda23260d19858457b8b9a84`.
+Measured 2026-09-26T13:58:20.5162414+00:00 at commit `329635f72368e0f31efd1617edbabade4ccf30f3`.
 
 ## Request outcomes and latency
 
@@ -18,22 +18,22 @@ Latency starts at the scheduled arrival, including scheduler delay and queue tim
 
 | Composition | Phase | Offered | Success / failed | p95 / p99 ms | Success p99 ms | Scheduler p99 ms |
 |---|---|---:|---:|---:|---:|---:|
-| retry | healthy | 100 | 100 / 0 | 6.51 / 12.95 | 12.95 | 2.08 |
-| retry | slowdown | 100 | 100 / 0 | 301.94 / 302.70 | 302.70 | 1.95 |
-| retry | outage | 100 | 4 / 96 | 63.01 / 63.85 | 45.79 | 1.91 |
-| retry | recovery | 100 | 100 / 0 | 6.22 / 6.26 | 6.26 | 1.09 |
-| retry-breaker | healthy | 100 | 100 / 0 | 6.27 / 6.30 | 6.30 | 1.14 |
-| retry-breaker | slowdown | 100 | 100 / 0 | 301.61 / 301.68 | 301.68 | 1.08 |
-| retry-breaker | outage | 100 | 0 / 100 | 41.19 / 61.81 | not observed | 1.14 |
-| retry-breaker | recovery | 100 | 89 / 11 | 6.24 / 6.29 | 6.29 | 1.12 |
-| limit-retry-breaker | healthy | 100 | 100 / 0 | 6.12 / 6.23 | 6.23 | 1.09 |
-| limit-retry-breaker | slowdown | 100 | 58 / 42 | 590.85 / 592.26 | 592.29 | 1.11 |
-| limit-retry-breaker | outage | 100 | 0 / 100 | 19.59 / 51.16 | not observed | 1.13 |
-| limit-retry-breaker | recovery | 100 | 91 / 9 | 6.23 / 6.26 | 6.27 | 1.12 |
-| limit-hedge-breaker | healthy | 100 | 100 / 0 | 6.23 / 6.33 | 6.33 | 1.10 |
-| limit-hedge-breaker | slowdown | 100 | 100 / 0 | 51.89 / 300.41 | 300.41 | 1.30 |
-| limit-hedge-breaker | outage | 100 | 0 / 100 | 20.93 / 41.06 | not observed | 1.13 |
-| limit-hedge-breaker | recovery | 100 | 84 / 16 | 6.15 / 6.19 | 6.22 | 1.13 |
+| retry | healthy | 3000 | 3000 / 0 | 6.21 / 6.91 | 6.91 | 1.59 |
+| retry | slowdown | 3000 | 3000 / 0 | 301.87 / 302.21 | 302.21 | 2.14 |
+| retry | outage | 3000 | 4 / 2996 | 62.35 / 63.23 | 46.11 | 2.15 |
+| retry | recovery | 3000 | 3000 / 0 | 6.22 / 7.13 | 7.13 | 1.96 |
+| retry-breaker | healthy | 3000 | 3000 / 0 | 6.57 / 7.04 | 7.04 | 1.90 |
+| retry-breaker | slowdown | 3000 | 3000 / 0 | 301.56 / 302.00 | 302.00 | 1.89 |
+| retry-breaker | outage | 3000 | 0 / 3000 | 1.16 / 20.91 | not observed | 1.74 |
+| retry-breaker | recovery | 3000 | 2949 / 51 | 6.22 / 7.03 | 7.03 | 1.89 |
+| limit-retry-breaker | healthy | 3000 | 3000 / 0 | 6.15 / 6.26 | 6.26 | 1.11 |
+| limit-retry-breaker | slowdown | 3000 | 1600 / 1400 | 595.58 / 599.33 | 599.79 | 1.12 |
+| limit-retry-breaker | outage | 3000 | 0 / 3000 | 1.17 / 20.69 | not observed | 1.79 |
+| limit-retry-breaker | recovery | 3000 | 2952 / 48 | 6.27 / 7.12 | 7.12 | 1.87 |
+| limit-hedge-breaker | healthy | 3000 | 3000 / 0 | 6.28 / 7.00 | 7.00 | 1.86 |
+| limit-hedge-breaker | slowdown | 3000 | 3000 / 0 | 51.96 / 52.71 | 52.71 | 1.87 |
+| limit-hedge-breaker | outage | 3000 | 0 / 3000 | 20.43 / 21.23 | not observed | 1.63 |
+| limit-hedge-breaker | recovery | 3000 | 2988 / 12 | 6.26 / 7.00 | 7.00 | 1.86 |
 
 </div>
 
@@ -45,22 +45,22 @@ Submitted means accepted by the harness. Admitted means at least one dependency 
 
 | Composition | Phase | Submitted / admitted | Rejected: harness / limiter / circuit | Attempts | Attempts / offered | Attempts / admitted |
 |---|---|---:|---:|---:|---:|---:|
-| retry | healthy | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| retry | slowdown | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| retry | outage | 100 / 100 | 0 / 0 / 0 | 298 | 2.98 | 2.98 |
-| retry | recovery | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| retry-breaker | healthy | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| retry-breaker | slowdown | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| retry-breaker | outage | 100 / 9 | 0 / 0 / 97 | 18 | 0.18 | 2.00 |
-| retry-breaker | recovery | 100 / 89 | 0 / 0 / 11 | 89 | 0.89 | 1.00 |
-| limit-retry-breaker | healthy | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| limit-retry-breaker | slowdown | 100 / 65 | 0 / 27 / 13 | 72 | 0.72 | 1.11 |
-| limit-retry-breaker | outage | 100 / 1 | 0 / 0 / 100 | 1 | 0.01 | 1.00 |
-| limit-retry-breaker | recovery | 100 / 91 | 0 / 0 / 9 | 91 | 0.91 | 1.00 |
-| limit-hedge-breaker | healthy | 100 / 100 | 0 / 0 / 0 | 100 | 1.00 | 1.00 |
-| limit-hedge-breaker | slowdown | 100 / 100 | 0 / 0 / 0 | 200 | 2.00 | 2.00 |
-| limit-hedge-breaker | outage | 100 / 7 | 0 / 0 / 97 | 10 | 0.10 | 1.43 |
-| limit-hedge-breaker | recovery | 100 / 84 | 0 / 0 / 16 | 84 | 0.84 | 1.00 |
+| retry | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| retry | slowdown | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| retry | outage | 3000 / 3000 | 0 / 0 / 0 | 8998 | 3.00 | 3.00 |
+| retry | recovery | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| retry-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| retry-breaker | slowdown | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| retry-breaker | outage | 3000 / 65 | 0 / 0 / 2996 | 74 | 0.02 | 1.14 |
+| retry-breaker | recovery | 3000 / 2949 | 0 / 0 / 51 | 2949 | 0.98 | 1.00 |
+| limit-retry-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| limit-retry-breaker | slowdown | 3000 / 1613 | 0 / 1384 / 10 | 1629 | 0.54 | 1.01 |
+| limit-retry-breaker | outage | 3000 / 57 | 0 / 3 / 2997 | 57 | 0.02 | 1.00 |
+| limit-retry-breaker | recovery | 3000 / 2952 | 0 / 0 / 48 | 2952 | 0.98 | 1.00 |
+| limit-hedge-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| limit-hedge-breaker | slowdown | 3000 / 3000 | 0 / 0 / 0 | 6000 | 2.00 | 2.00 |
+| limit-hedge-breaker | outage | 3000 / 190 | 0 / 0 / 2997 | 193 | 0.06 | 1.02 |
+| limit-hedge-breaker | recovery | 3000 / 2988 | 0 / 0 / 12 | 2988 | 1.00 | 1.00 |
 
 </div>
 
@@ -75,15 +75,15 @@ Cancelled attempts include cancelled hedge losers. Cleanup delay is measured aft
 | Composition | Recovery ms | Cancelled | Losers pending at caller completion | Cleanup p99 / max ms | Peak logical / downstream | Active after drain |
 |---|---:|---:|---:|---:|---:|---:|
 | retry | 250.00 | 0 | 0 | 0.00 / 0.00 | 31 / 31 | 0 |
-| retry-breaker | 500.00 | 0 | 0 | 0.00 / 0.00 | 31 / 31 | 0 |
-| limit-retry-breaker | 500.00 | 0 | 0 | 0.00 / 0.00 | 33 / 16 | 0 |
-| limit-hedge-breaker | 500.00 | 101 | 101 | 20.99 / 21.02 | 7 / 12 | 0 |
+| retry-breaker | 1000.00 | 0 | 0 | 0.00 / 0.00 | 31 / 31 | 0 |
+| limit-retry-breaker | 750.00 | 0 | 0 | 0.00 / 0.00 | 33 / 16 | 0 |
+| limit-hedge-breaker | 500.00 | 3142 | 3142 | 21.02 / 29.63 | 7 / 13 | 0 |
 
 </div>
 
 ## Configuration and limitations
 
-- 100 offered requests/s, 1 seconds per phase, four phases per composition, and a harness cap of 512 active logical requests.
+- 100 offered requests/s, 30 seconds per phase, four phases per composition, and a harness cap of 512 active logical requests.
 - Arrivals keep their scheduled times when the runner falls behind; delayed arrivals catch up without waiting for prior responses. Scheduler lag exposes bursts caused by a saturated generator. High lag or harness shedding limits interpretation.
 - Healthy/recovery dependency latency: 5 ms. Slowdown: first attempt 300 ms, additional attempts 30 ms. This intentionally models a slow original replica with a faster alternate; hedging will not help uniformly slow replicas.
 - Outage: every attempt fails after 20 ms. An attempt uses the phase at its start, so outstanding outage attempts can fail after recovery begins.
@@ -95,7 +95,7 @@ Cancelled attempts include cancelled hedge losers. Cleanup delay is measured aft
 ## Environment and raw results
 
 - Ubuntu 24.04.5 LTS; .NET 10.0.12; X64; 4 visible processors.
-- [Current published JSON](/Kevlar/measurements/outage-results.json) accompanies this page. The [outage workflow](https://github.com/thomhurst/Kevlar/actions/workflows/outage.yml) also uploads JSON and Markdown results for each run. JSON records all configuration, scheduled phase boundaries, actual phase attempt counts, and wall duration for each composition.
+- [Current published JSON](../static/measurements/outage-results.json) accompanies this page. The [outage workflow](https://github.com/thomhurst/Kevlar/actions/workflows/outage.yml) also uploads JSON and Markdown results for each run. JSON records all configuration, scheduled phase boundaries, actual phase attempt counts, and wall duration for each composition.
 
 ## Reproduce
 
