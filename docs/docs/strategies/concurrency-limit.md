@@ -27,11 +27,15 @@ var configuredLimit = Shield.ConcurrencyLimit(o =>
 
 API reference: [`ConcurrencyLimitOptions`](pathname:///api/Kevlar.ConcurrencyLimitOptions.html).
 
+<div style={{overflowX: 'auto'}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
 | `QueueLimit` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
