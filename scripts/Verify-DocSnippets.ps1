@@ -33,6 +33,7 @@ $requiredPackages = @(
     'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Grpc'
+    'Kevlar.Extensions.EntityFrameworkCore'
     'Kevlar.Extensions.Http'
     'Kevlar.Extensions.Diagnostics.HealthChecks'
     'Kevlar.Extensions.Logging'

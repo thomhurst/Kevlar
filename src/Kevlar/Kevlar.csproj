@@ -62,6 +62,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
     <InternalsVisibleTo Include="Kevlar.Extensions.Diagnostics.HealthChecks" />
+    <InternalsVisibleTo Include="Kevlar.Extensions.EntityFrameworkCore" />
     <InternalsVisibleTo Include="Kevlar.Testing" />
     <InternalsVisibleTo Include="Kevlar.Extensions.Http" />
     <InternalsVisibleTo Include="Kevlar.Extensions.RateLimiting" />

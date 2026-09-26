@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup Condition="'$(UsePackedPackages)' != 'true'">
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.EntityFrameworkCore\Kevlar.Extensions.EntityFrameworkCore.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UsePackedPackages)' == 'true'">
+    <PackageReference Include="Kevlar.Extensions.EntityFrameworkCore" VersionOverride="$(KevlarSamplePackageVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+</Project>

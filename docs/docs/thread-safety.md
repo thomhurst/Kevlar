@@ -64,3 +64,10 @@ circuit-breaker transition notifications are one such serialized contract.
 mutable list, stream, request, or domain object, attempts still see the same reference unless the
 application supplies an independent value. Prefer immutable property values or an attempt-specific
 factory.
+
+## EF Core execution strategies
+
+`KevlarExecutionStrategy` belongs to one `DbContext` and must not execute concurrently.
+Use separate contexts and strategy instances for concurrent operations. An explicit shared shield
+retains its normal shared strategy state. Hedging and timeout strategies are rejected because
+they can overlap database operations or abandon active work.
