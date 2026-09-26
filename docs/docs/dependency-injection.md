@@ -341,6 +341,9 @@ Register a budget once, then reference its name from `RetryDefinition.Budget` or
 singleton, so configuration reloads preserve the shared balance:
 
 ```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 var services = new ServiceCollection();
 services.AddRetryBudget("inventory", maxTokens: 100, tokenRatio: 0.1);
 var configuration = new ConfigurationBuilder().AddInMemoryCollection(

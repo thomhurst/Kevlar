@@ -261,7 +261,7 @@ var retry = Shield.Retry(options =>
     options.Backoff = Backoff.Exponential(TimeSpan.FromMilliseconds(100));
     options.Budget = budget;
 });
-var hedge = Shield.Hedge(options =>
+var hedge = Shield.For<int>().Hedge(options =>
 {
     options.Delay = TimeSpan.FromMilliseconds(200);
     options.Budget = budget;
