@@ -556,14 +556,23 @@ Request replay safety, per-request shields/properties, and original path/query p
 Resolution receives the linked transport/per-request cancellation token. Cancellation stops waiting
 even if the provider ignores that token. Resolution and provider exceptions occur before the selected
 shield runs, so its retry and timeout strategies do not cover discovery. Apply a discovery-specific
-budget inside the provider when required; `HttpClient` cancellation still applies.
+budget inside the provider when required; `HttpClient` cancellation still applies. Bound provider
+concurrency and make its work honor cancellation, since stopping the wait cannot stop an uncooperative lookup.
+
+Treat provider results as trusted routing configuration: validate approved schemes and authorities
+before returning endpoints, because routed requests retain their headers. If no approved destination
+is available and fallback to the original authority is inappropriate, throw instead of returning an empty list.
 
 For `Microsoft.Extensions.ServiceDiscovery` 10.10.0, add that package to the **application**, call
 `AddServiceDiscovery`, and use the configuration-backed registration to resolve
 [`ServiceEndpointResolver`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.servicediscovery.serviceendpointresolver)
 from DI. Kevlar's HTTP package adds no service-discovery dependency. This HTTPS-only bridge accepts
-URI, DNS, and IP endpoints and rejects unsupported endpoint forms. Configure discovery normally,
-including the service configuration supplied by Aspire when applicable:
+URI, DNS, and IP endpoints and rejects unsupported endpoint forms. An IP endpoint becomes the HTTPS
+request authority, so the server certificate must cover that IP address. A certificate containing only
+the service's DNS name will not validate for this mapping. Use DNS endpoints that match the certificate,
+or explicitly configure a transport that preserves the intended TLS host; see
+[HttpClient TLS host selection](https://learn.microsoft.com/dotnet/core/extensions/httpclient-sni).
+Configure discovery normally, including the service configuration supplied by Aspire when applicable:
 
 ```csharp
 using System.Net;
