@@ -91,18 +91,22 @@ public class DocsConsistencyTests
             .WithName("docs-hedge")
             .ExecuteAsync(_ => new ValueTask<int>(1));
 
+        var budget = new RetryBudget(maxTokens: 2);
         var budgetedRetry = Shield.Retry(options =>
         {
-            options.Budget = new RetryBudget(maxTokens: 2);
+            options.Budget = budget;
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
         }).WithName("docs-budget-retry");
         var retryDenial = await budgetedRetry.ExecuteOutcomeAsync<int>(static _ => throw new IOException());
         await Assert.That(retryDenial.Exception).IsTypeOf<IOException>();
+        await Assert.That(budget.AllowsAdditionalAttempt).IsFalse();
 
+        // Fixed zero-delay hedging launches its first extra attempt before observing the
+        // primary outcome. Share the already-depleted budget so this exercises a refusal.
         var budgetedHedge = Shield.Hedge(options =>
         {
-            options.Budget = new RetryBudget(maxTokens: 2);
+            options.Budget = budget;
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
         }).WithName("docs-budget-hedge");
