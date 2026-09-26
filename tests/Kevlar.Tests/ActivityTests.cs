@@ -354,6 +354,32 @@ public class ActivityTests
         await Assert.That(ReferenceEquals(observed, parent)).IsTrue();
     }
 
+    [Test]
+    public async Task Attempt_Telemetry_Remains_Available_Without_Duplicate_Span_Events()
+    {
+        using var capture = new Capture();
+        var listener = new AttemptListener();
+        using var subscription = KevlarDiagnostics.Listen(listener);
+        _ = await Shield.Retry(1, Backoff.None).ExecuteAsync(static _ => new ValueTask<int>(42));
+        await Assert.That(listener.Count).IsEqualTo(1);
+        await Assert.That(capture.Stopped.Count(span => span.OperationName == "kevlar.attempt")).IsEqualTo(1);
+        await Assert.That(capture.Stopped.SelectMany(span => span.Events)
+            .Any(item => item.Name == "kevlar.execution_attempt")).IsFalse();
+    }
+
+    private sealed class AttemptListener : IKevlarTelemetryListener
+    {
+        public int Count { get; private set; }
+
+        public void OnEvent(in KevlarTelemetryEvent item)
+        {
+            if (item.EventName == "execution_attempt")
+            {
+                Count++;
+            }
+        }
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));

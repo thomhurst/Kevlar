@@ -18,7 +18,10 @@ internal static class KevlarTelemetry
     public static bool AttemptEnabled
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => EventEnabled || KevlarMetrics.AttemptDurationEnabled;
+        // Built-in tracing already measures each attempt with a span.
+        get => Volatile.Read(ref _listeners).Length != 0
+            || KevlarMetrics.StrategyEventsEnabled
+            || KevlarMetrics.AttemptDurationEnabled;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

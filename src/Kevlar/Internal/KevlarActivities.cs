@@ -48,7 +48,8 @@ internal static class KevlarActivities
     public static void RecordEvent(in KevlarTelemetryEvent item)
     {
 #if NET8_0_OR_GREATER
-        if (!Enabled || FindActivity() is not { IsAllDataRequested: true } activity)
+        if (!Enabled || item.EventName == "execution_attempt"
+            || FindActivity() is not { IsAllDataRequested: true } activity)
         {
             return;
         }

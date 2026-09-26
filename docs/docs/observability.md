@@ -232,6 +232,8 @@ and exception type when present. Circuit transitions add `kevlar.circuit.from`/`
 rejections add `kevlar.rejection.kind` and optional `kevlar.retry_after.seconds`. Hedge-attempt
 events carry `kevlar.hedge.winner` and `kevlar.hedge.cancelled`. Suppression uses
 `kevlar.suppression.reason`. Events after all Kevlar ancestors have stopped are dropped.
+Retry timing is represented by attempt spans instead of duplicate `execution_attempt` events;
+the telemetry listener and metrics APIs continue to publish those events when subscribed.
 
 Sampling belongs to the listener: `None` creates no span; propagation-only activities receive
 no enrichment; `AllData` and `AllDataAndRecorded` receive tags/events. Tags are added after
