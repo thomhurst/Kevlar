@@ -110,13 +110,22 @@ internal sealed class TimeoutStrategy : Strategy
         var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
         var trackDeadline = !context.SuppressDeadlineTracking || KevlarTelemetry.HasContextListeners
             || KevlarMetricEnrichment.HasEnrichers;
+#if NET8_0_OR_GREATER
+        var startedAt = !usesSystemTime && (recordTimeoutIgnored || trackDeadline)
+            ? context.TimeProvider.GetTimestamp() : 0;
+#else
         var startedAt = recordTimeoutIgnored || trackDeadline ? context.TimeProvider.GetTimestamp() : 0;
+#endif
 
         try
         {
             if (usesSystemTime)
             {
-                TimeoutSourcePool.Arm(timeoutSource, timeout);
+#if NET8_0_OR_GREATER
+                startedAt = TimeoutSourcePool.Arm(timeoutSource, timeout);
+#else
+                _ = TimeoutSourcePool.Arm(timeoutSource, timeout);
+#endif
             }
             else
             {
