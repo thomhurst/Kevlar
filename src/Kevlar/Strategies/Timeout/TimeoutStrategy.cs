@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Kevlar.Internal;
-using Reservoir;
 
 namespace Kevlar.Strategies;
 
@@ -104,7 +103,7 @@ internal sealed class TimeoutStrategy : Strategy
         var priorDeadline = context.DeadlineState;
         var usesSystemTime = ReferenceEquals(context.TimeProvider, TimeProvider.System);
         var timeoutSource = usesSystemTime
-            ? CancellationTokenSourcePool.Shared.RentLinked(priorToken)
+            ? TimeoutSourcePool.RentLinked(priorToken)
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
@@ -117,7 +116,7 @@ internal sealed class TimeoutStrategy : Strategy
         {
             if (usesSystemTime)
             {
-                timeoutSource.CancelAfter(timeout);
+                TimeoutSourcePool.Arm(timeoutSource, timeout);
             }
             else
             {
