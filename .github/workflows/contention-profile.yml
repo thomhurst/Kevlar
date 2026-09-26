@@ -59,8 +59,9 @@ jobs:
           printf 'Baseline: %s\nCandidate: %s\n' "$BASELINE_SHA" "$GITHUB_SHA" > "$results/revisions.txt"
           for phase in baseline-before candidate baseline-after; do
             root="$baseline"
-            if [[ "$phase" == candidate ]]; then root="$GITHUB_WORKSPACE"; fi
-            (cd "$root" && dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
+            revision="$BASELINE_SHA"
+            if [[ "$phase" == candidate ]]; then root="$GITHUB_WORKSPACE"; revision="$GITHUB_SHA"; fi
+            (cd "$root" && GITHUB_SHA="$revision" dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
               --duration 00:02:00 --warmup 00:00:02 --workers 4 \
               --output "$results/$phase.json") > "$results/$phase.log" 2>&1
           done
