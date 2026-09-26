@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 using Reservoir;
 
@@ -39,8 +40,8 @@ public sealed class KevlarContext
     private string? _shieldName;
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
-    internal ExecutionDeadline DeadlineState { get; set; }
-    internal bool TrackDeadline { get; set; }
+    internal ExecutionDeadline DeadlineState;
+    internal bool SuppressDeadlineTracking { get; set; }
 
 #if DEBUG
     private bool _returnedToPool;
@@ -137,10 +138,10 @@ public sealed class KevlarContext
         ? DeadlineState.Remaining(TimeProvider, TimeProvider.GetTimestamp())
         : null;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void EnterDeadline(TimeSpan timeout, long startedAt)
     {
-        var parent = DeadlineState;
-        if (parent.HasValue && parent.Remaining(TimeProvider, startedAt) <= timeout)
+        if (DeadlineState.HasValue && DeadlineState.Remaining(TimeProvider, startedAt) <= timeout)
         {
             return;
         }
@@ -255,7 +256,6 @@ public sealed class KevlarContext
         context.StrategyIndex = -1;
         context.AttemptNumber = 0;
         context.TelemetryListener = null;
-        context.TrackDeadline = true;
         return context;
     }
 
@@ -332,7 +332,7 @@ public sealed class KevlarContext
             StrategyIndex = StrategyIndex,
             AttemptNumber = AttemptNumber,
             DeadlineState = DeadlineState,
-            TrackDeadline = TrackDeadline,
+            SuppressDeadlineTracking = SuppressDeadlineTracking,
         };
         Properties.CopyTo(snapshot.Properties);
         return snapshot;
@@ -346,7 +346,7 @@ public sealed class KevlarContext
     {
         var fork = Rent(cancellationToken, SynchronousExecutionKind, TimeProvider, ShieldName);
         fork.DeadlineState = DeadlineState;
-        fork.TrackDeadline = TrackDeadline;
+        fork.SuppressDeadlineTracking = SuppressDeadlineTracking;
         fork.StrategyIndex = StrategyIndex;
         fork.AttemptNumber = AttemptNumber;
         fork.TelemetryListener = TelemetryListener;
@@ -488,7 +488,7 @@ public sealed class KevlarContext
             context.StrategyIndex = -1;
             context.AttemptNumber = 0;
             context.TelemetryListener = null;
-            context.TrackDeadline = false;
+            context.SuppressDeadlineTracking = false;
             context._activeStrategyMask = 0;
             context._retryTerminalInspectionMask = 0;
             context._retryTerminalInspectionOverflow?.Clear();

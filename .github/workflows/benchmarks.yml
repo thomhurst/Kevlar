@@ -32,6 +32,11 @@ on:
         type: boolean
         required: false
         default: false
+      comparison_launch_count:
+        description: 'Measured process launches per comparison case (1-5); repeat to expose process/JIT variance'
+        type: number
+        required: false
+        default: 1
 
 permissions:
   contents: read
@@ -75,6 +80,7 @@ jobs:
           BENCHMARK_FILTER: ${{ inputs.benchmark_filter || '*' }}
           COPY_CANDIDATE_FIXTURES: ${{ inputs.copy_candidate_fixtures }}
           DISASSEMBLY: ${{ inputs.disassembly }}
+          COMPARISON_LAUNCH_COUNT: ${{ inputs.comparison_launch_count || 1 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -82,6 +88,7 @@ jobs:
           diagnostics=()
           if [[ "$DISASSEMBLY" == "true" ]]; then diagnostics+=(--disasm --disasmDepth 4); fi
           [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "baseline_sha must be a full commit SHA"; exit 1; }
+          [[ "$COMPARISON_LAUNCH_COUNT" =~ ^[1-5]$ ]] || { echo "comparison_launch_count must be 1-5"; exit 1; }
           git fetch origin "$BASELINE_SHA"
           git worktree add --detach "$RUNNER_TEMP/benchmark-baseline" "$BASELINE_SHA"
           # Use identical candidate fixture source with each revision's product/build inputs.
@@ -93,6 +100,7 @@ jobs:
           results="$GITHUB_WORKSPACE/comparison-results"
           mkdir -p "$results"
           printf 'Baseline: %s\nCandidate: %s\nFilter: %s\n' "$BASELINE_SHA" "$GITHUB_SHA" "$BENCHMARK_FILTER" > "$results/revisions.txt"
+          printf 'Process launches per case: %s\n' "$COMPARISON_LAUNCH_COUNT" >> "$results/revisions.txt"
           dotnet build "$baseline_project" -c Release
           for revision in baseline candidate; do
             project="$candidate_project"
@@ -105,7 +113,8 @@ jobs:
             project="$baseline_project"
             if [[ "$phase" == candidate ]]; then project="$candidate_project"; fi
             (cd "$(dirname "$project")" && dotnet run -c Release --no-build -- \
-              --filter "${benchmark_filters[@]}" "${diagnostics[@]}" --exporters json --artifacts "$results/$phase") \
+              --filter "${benchmark_filters[@]}" "${diagnostics[@]}" --launchCount "$COMPARISON_LAUNCH_COUNT" \
+              --exporters json --artifacts "$results/$phase") \
               > "$results/$phase.log" 2>&1
           done
 
