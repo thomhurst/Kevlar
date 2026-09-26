@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
   </ItemGroup>
 
 </Project>

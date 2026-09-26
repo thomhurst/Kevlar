@@ -36,7 +36,7 @@ The following public mutable types follow that rule:
 
 | Package | Mutable setup or control types |
 |---|---|
-| Core | `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions<TKey>`, `PartitionedShieldOptions<TKey, TResult>`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
+| Core | `AdaptiveConcurrencyLimitOptions`, `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions<TKey>`, `PartitionedShieldOptions<TKey, TResult>`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
 | Chaos | `ChaosBehaviorOptions`, `ChaosFaultOptions`, `ChaosLatencyOptions`, `ChaosOutcomeOptions<TResult>` |
 | Dependency injection | `CircuitBreakerDefinition`, `ConcurrencyLimitDefinition`, `HedgeDefinition`, `RateLimitDefinition`, `ReloadingShieldOptions`, `RetryDefinition`, `ShieldDefinition` |
 | HTTP | `HttpEndpointRoutingOptions`, `KevlarRequestOptions`, `ShieldHttpHandlerOptions`, `StandardHedgeShieldOptions`, `StandardHttpShieldOptions` |

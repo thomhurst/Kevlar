@@ -3,7 +3,7 @@ using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
 
-internal sealed class ConcurrencyLimitStrategy : Strategy
+internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitState
 {
     private const long RunningIncrement = 1L << 32;
     private const long QueuedIncrement = 1;
@@ -19,13 +19,19 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private int _waiters;
     private long _pending;
     private long _state;
-    private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
+    private readonly KevlarMetrics.StateMetricRegistration<IConcurrencyLimitState> _metricsRegistration;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
     internal int MaxConcurrency => _maxConcurrency;
+
+    int IConcurrencyLimitState.MaxConcurrency => _maxConcurrency;
+
+    int IConcurrencyLimitState.CurrentLimit => _maxConcurrency;
+
+    (int Available, int Running, int Queued) IConcurrencyLimitState.CaptureState() => CaptureState();
 
     internal int QueueLimit => _queueLimit;
 

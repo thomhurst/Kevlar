@@ -180,6 +180,14 @@ public static class ShieldExtensions
         return shield.Append(new ConcurrencyLimitStrategy(options));
     }
 
+    /// <summary>Appends an adaptive concurrency limit. The options are copied when the strategy is created.</summary>
+    public static Shield ConcurrencyLimit(this Shield shield, AdaptiveConcurrencyLimitOptions options)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(options, nameof(options));
+        return shield.CurrentSnapshot.Append(new AdaptiveConcurrencyLimitStrategy(options));
+    }
+
     /// <summary>Appends hedging: up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>.</summary>
     /// <remarks>
     /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,

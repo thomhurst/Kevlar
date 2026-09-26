@@ -357,6 +357,18 @@ public sealed class Shield<TResult> : IShieldLifecycle
         return Append(new ConcurrencyLimitStrategy(options));
     }
 
+    /// <summary>Adds an adaptive concurrency limit. The options are copied when the strategy is created.</summary>
+    public Shield<TResult> ConcurrencyLimit(AdaptiveConcurrencyLimitOptions options)
+    {
+        Throw.IfNull(options, nameof(options));
+        if (CurrentSnapshot is { } snapshot && !ReferenceEquals(snapshot, this))
+        {
+            return snapshot.ConcurrencyLimit(options);
+        }
+
+        return Append(new AdaptiveConcurrencyLimitStrategy(options));
+    }
+
     /// <summary>Races the primary with up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
     /// <param name="maxHedgedAttempts">Maximum additional attempts after the primary attempt.</param>
     /// <param name="delay">

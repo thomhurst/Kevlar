@@ -15,7 +15,7 @@ public readonly struct ConcurrencyLimitRejectedEvent
         _context = context;
     }
 
-    /// <summary>The configured maximum concurrent executions.</summary>
+    /// <summary>The admission limit at rejection: configured capacity for a static limiter or the current adaptive limit.</summary>
     public int MaxConcurrency { get; }
 
     /// <summary>The configured maximum wait queue size.</summary>

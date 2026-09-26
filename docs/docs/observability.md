@@ -96,6 +96,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.concurrency_limit.inflight` | ObservableGauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.capacity` | ObservableGauge | `{execution}` | `net10.0` | configured concurrency permit capacity | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.concurrency_limit.limit` | ObservableGauge | `{execution}` | `net10.0` | current admission limit, including adaptive adjustments | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.rate_limit.available` | ObservableGauge | `{permit}` | `net10.0` | immediately available burst permits at collection time | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.rate_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.chaos.injections` | Counter | `{injection}` | `net8.0` | chaos injections applied | `kevlar.chaos.kind`, `kevlar.shield.name`, `kevlar.chaos.operation`, `kevlar.chaos.environment` |

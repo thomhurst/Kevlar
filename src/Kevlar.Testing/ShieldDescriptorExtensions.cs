@@ -121,6 +121,15 @@ public static class ShieldDescriptorExtensions
                 concurrency.MaxConcurrency,
                 concurrency.QueueLimit,
                 concurrency.HasNotification),
+            AdaptiveConcurrencyLimitStrategy adaptive => new AdaptiveConcurrencyLimitStrategyDescriptor(
+                description,
+                adaptive.MinLimit,
+                adaptive.MaxLimit,
+                adaptive.InitialLimit,
+                adaptive.SamplingWindow,
+                adaptive.DecreaseFactor,
+                adaptive.LatencyTolerance,
+                adaptive.HasNotification),
             HedgingStrategy hedging => new HedgeStrategyDescriptor(
                 description,
                 hedging.MaxHedgedAttempts,

@@ -169,6 +169,9 @@ public sealed class Shield : IShieldLifecycle
     /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
     public static Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => ShieldExtensions.ConcurrencyLimit(Empty, configure);
 
+    /// <summary>Adds an adaptive concurrency limit configured through <paramref name="options"/>.</summary>
+    public static Shield ConcurrencyLimit(AdaptiveConcurrencyLimitOptions options) => ShieldExtensions.ConcurrencyLimit(Empty, options);
+
     /// <summary>Races the primary with up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
     /// <remarks>
     /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,

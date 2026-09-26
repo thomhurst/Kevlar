@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Kevlar.Testing;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
@@ -75,6 +76,7 @@ internal static class StressRunner
         }
 
         await RunPartitionStressAsync();
+        await RunAdaptiveConcurrencyStressAsync(options.Workers);
 
         var phases = new List<StressPhaseResult>(MeasurementRounds * cases.Count * 2);
         foreach (var stressCase in cases)
@@ -300,6 +302,76 @@ internal static class StressRunner
         Console.WriteLine(
             $"Partition stress complete: {partitions.Count:N0} retained, " +
             $"{partitions.EvictionCount:N0} evicted.");
+    }
+
+    private static async Task RunAdaptiveConcurrencyStressAsync(int workers)
+    {
+        var maximum = Math.Max(2, workers);
+        var shield = Shield.ConcurrencyLimit(new AdaptiveConcurrencyLimitOptions
+        {
+            InitialLimit = maximum,
+            MaxLimit = maximum,
+            SamplingWindow = TimeSpan.FromMilliseconds(5),
+            DecreaseFactor = 0.5,
+        });
+        var active = 0;
+        var peak = 0;
+        var completed = 0;
+        var rejected = 0;
+        var failed = 0;
+        var fault = new IOException("Injected adaptive-concurrency stress failure.");
+        var runs = Enumerable.Range(0, workers).Select(_ => Task.Run(async () =>
+        {
+            for (var operation = 0; operation < 512; operation++)
+            {
+                var outcome = await shield.ExecuteOutcomeAsync<int>(async _ =>
+                {
+                    var running = Interlocked.Increment(ref active);
+                    try
+                    {
+                        int observed;
+                        do
+                        {
+                            observed = Volatile.Read(ref peak);
+                        }
+                        while (running > observed && Interlocked.CompareExchange(ref peak, running, observed) != observed);
+                        await Task.Yield();
+                        if (Interlocked.Increment(ref completed) % 19 == 0)
+                        {
+                            throw fault;
+                        }
+                        return 42;
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref active);
+                    }
+                });
+                if (outcome.Exception is ConcurrencyLimitExceededException)
+                {
+                    Interlocked.Increment(ref rejected);
+                    await Task.Yield();
+                }
+                else if (ReferenceEquals(outcome.Exception, fault))
+                {
+                    Interlocked.Increment(ref failed);
+                }
+                else if (!outcome.IsSuccess || outcome.Result != 42)
+                {
+                    throw new InvalidOperationException("Adaptive concurrency stress returned an unexpected outcome.");
+                }
+            }
+        })).ToArray();
+        await Task.WhenAll(runs);
+        var snapshot = shield.GetStateSnapshot().Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
+        if (peak > maximum || active != 0 || snapshot.RunningExecutions != 0
+            || snapshot.CurrentLimit < 1 || snapshot.CurrentLimit > maximum
+            || completed + rejected != workers * 512)
+        {
+            throw new InvalidOperationException("Adaptive concurrency stress violated permit or outcome accounting.");
+        }
+        Console.WriteLine($"Adaptive concurrency stress: {completed} admitted, {rejected} rejected, " +
+            $"{failed} injected failures, peak {peak}, final limit {snapshot.CurrentLimit}.");
     }
 
     private static IReadOnlyList<StressCase> CreateCases(int workers)

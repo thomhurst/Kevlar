@@ -12,3 +12,30 @@ Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.get -> System.TimeSpan?
 Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.get -> double?
 Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.set -> void
+Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitAlgorithm.Aimd = 0 -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitOptions
+Kevlar.AdaptiveConcurrencyLimitOptions.AdaptiveConcurrencyLimitOptions() -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.Name.get -> string?
+Kevlar.AdaptiveConcurrencyLimitOptions.Name.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.Algorithm.get -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitOptions.Algorithm.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.MinLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.MinLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.MaxLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.MaxLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.InitialLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.InitialLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.SamplingWindow.get -> System.TimeSpan
+Kevlar.AdaptiveConcurrencyLimitOptions.SamplingWindow.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.DecreaseFactor.get -> double
+Kevlar.AdaptiveConcurrencyLimitOptions.DecreaseFactor.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.LatencyTolerance.get -> double
+Kevlar.AdaptiveConcurrencyLimitOptions.LatencyTolerance.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.OnRejected.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.AdaptiveConcurrencyLimitOptions.OnRejected.set -> void
+static Kevlar.Shield.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+Kevlar.Shield<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!

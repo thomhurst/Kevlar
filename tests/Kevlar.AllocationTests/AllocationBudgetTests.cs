@@ -70,6 +70,12 @@ public class AllocationBudgetTests
         options.OnRejected = static _ => ValueTask.CompletedTask;
     });
     private readonly Shield _concurrencyLimit = Shield.ConcurrencyLimit(1024);
+    private readonly Shield _adaptiveConcurrencyLimit = Shield.ConcurrencyLimit(new AdaptiveConcurrencyLimitOptions
+    {
+        InitialLimit = 1024,
+        MaxLimit = 1024,
+        SamplingWindow = TimeSpan.FromDays(1),
+    });
     private readonly Shield _concurrencyLimitWithRejectionHooks = Shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = 1024;
@@ -175,6 +181,10 @@ public class AllocationBudgetTests
     [Test]
     public void Documented_Hot_Paths_Allocate_Zero_Bytes_Per_Operation()
     {
+        AssertZero("adaptive concurrency sync", this, static test =>
+            test._adaptiveConcurrencyLimit.Execute(static _ => 42));
+        AssertZero("adaptive concurrency async", this, static test =>
+            test._adaptiveConcurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("empty sync", this, static test => test._empty.Execute(static _ => 42));
         AssertZero("equal jitter", this, static test => _ = test._equalJitter.GetDelay(1));
         AssertZero("empty async", this, static test =>
