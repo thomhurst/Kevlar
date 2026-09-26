@@ -1,1 +1,30 @@
 #nullable enable
+Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Finite = 0 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Indeterminate = 2 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Overflow = 3 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Unbounded = 1 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Ambient = 2 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Custom = 4 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Default = 1 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.LocalOverride = 3 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.None = 0 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.ShieldDescriptor.Explain() -> Kevlar.Testing.ShieldExplanation!
+Kevlar.Testing.ShieldExplanation
+Kevlar.Testing.ShieldExplanation.AttemptBoundKind.get -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.ShieldExplanation.MaxAttempts.get -> long?
+Kevlar.Testing.ShieldExplanation.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyExplanation!>!
+Kevlar.Testing.StrategyExplanation
+Kevlar.Testing.StrategyExplanation.EnclosingAttemptStrategies.get -> System.Collections.Generic.IReadOnlyList<int>!
+Kevlar.Testing.StrategyExplanation.HandlingDescription.get -> string?
+Kevlar.Testing.StrategyExplanation.HandlingSource.get -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.StrategyExplanation.Index.get -> int
+Kevlar.Testing.StrategyExplanation.Strategy.get -> Kevlar.Testing.StrategyDescriptor!
+Kevlar.Testing.StrategyExplanation.TimeoutScope.get -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Attempt = 2 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Execution = 1 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Indeterminate = 3 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.None = 0 -> Kevlar.Testing.TimeoutScope
+override Kevlar.Testing.ShieldExplanation.ToString() -> string!

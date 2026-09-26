@@ -35,6 +35,61 @@ Timeout position follows the same rule. `Timeout(t).Hedge(h)` is one total budge
 fork. `Hedge(h).Timeout(t)` gives each fork an independent budget. Cancelling hedge losers does
 not count as their timeout and does not invoke their `OnTimeout` callback.
 
+## Explaining effective behavior
+
+Use `GetDescriptor().Explain()` from the optional `Kevlar.Testing` package to inspect the combined
+behavior without executing the operation, handling predicates, or duration/action generators:
+
+```csharp
+using Kevlar;
+using Kevlar.Testing;
+
+var explainedShield = Shield.Timeout(TimeSpan.FromSeconds(30))
+    .Retry(3, Backoff.None)
+    .Timeout(TimeSpan.FromSeconds(5))
+    .Retry(3, Backoff.None);
+var explanation = explainedShield.GetDescriptor().Explain();
+Console.WriteLine(explanation.MaxAttempts); // 16: (3 + 1) * (3 + 1)
+Console.WriteLine(explanation);
+```
+
+`Strategies` retains outer-to-inner descriptor order. Each `StrategyExplanation` carries its descriptor
+and zero-based index. `HandlingSource` identifies default handling, an inherited ambient clause,
+strategy-local predicate overrides, or custom handling. `HandlingDescription` exposes the effective
+clause text where available; predicate logic remains opaque. Composing shields with `Wrap` or
+`Compose` preserves their sealed handling clauses in this explanation.
+
+`MaxAttempts` is a **theoretical upper bound**, not an expected or guaranteed execution count.
+Actual attempts may be zero and depend on outcomes, cancellation, rejections, and timeouts. Retry and
+hedge factors multiply using each count **plus the original attempt**. Fallback delegates, notifications,
+and arbitrary work performed by user code are outside the count. Inspect `AttemptBoundKind` before
+using the nullable bound:
+
+| Kind | Meaning |
+|---|---|
+| `Finite` | A conservative `long` upper bound is available. |
+| `Unbounded` | A `RetryForever` sentinel supplies no useful configured finite budget; its implementation counter limit is not treated as an operational budget. |
+| `Indeterminate` | A custom strategy or generated hedge action prevents a reliable bound. |
+| `Overflow` | The finite product exceeds `long.MaxValue`; no wrapped or truncated number is returned. |
+
+Dynamic retry/hedge delays do not change a fixed attempt-count bound. Dynamic timeout durations are
+reported without evaluating their generators. Time budgets never reduce the theoretical count:
+operation duration and cancellation cooperation are unknown.
+
+For timeouts, `TimeoutScope.Execution` means one budget around the downstream suffix.
+`TimeoutScope.Attempt` means a fresh budget for each enclosing retry/hedge attempt;
+`EnclosingAttemptStrategies` lists those ancestor indexes. In the example, timeout index 2 repeats
+within retry index 1 and covers the **whole inner retry group**, not each innermost operation.
+An enclosing custom strategy makes the scope `Indeterminate`. All timeout budgets use cooperative
+cancellation and **do not guarantee wall-clock completion** for operations that ignore cancellation.
+
+The API stays in `Kevlar.Testing` to reuse descriptors and avoid expanding the core runtime dependency
+surface. It can be used for on-demand production diagnostics; inspection and formatting allocate and
+belong outside request hot paths. `GetDescriptor()` takes the current publication of a reloading shield
+and omits transparent infrastructure decorators by default. Including a transparent decorator as a
+custom descriptor can make the bound indeterminate. Text output is diagnostic; use the structured
+properties for application logic.
+
 ## Merging independent shields
 
 Use `Wrap` to put one shield around another, or `Compose` to stack several:
