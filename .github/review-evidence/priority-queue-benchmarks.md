@@ -1,6 +1,6 @@
 # Priority queue validation
 
-## Initial isolated comparison â€” investigation pending
+## Initial isolated comparison
 
 [Run 36259479703](https://github.com/thomhurst/Kevlar/actions/runs/36259479703) ran baseline, candidate, and baseline sequentially on one GitHub-hosted Ubuntu 24.04.5 runner (AMD EPYC 7763, .NET 10.0.12, SDK 10.0.401, BenchmarkDotNet 0.15.8).
 
@@ -18,7 +18,7 @@
 
 Opt-in priority admission, including configured queue deadlines, measured **169.2 ns / 0 B** for concurrency and **187.0 ns / 0 B** for rate limiting. These are uncontended measurements, not queued throughput measurements or promises of zero allocation while waiting.
 
-The default rate queue is 8.7â€“11.3 ns (4.9â€“6.5%) slower than both controls. This initially blocked performance acceptance and prompted the investigations below. The existing rate admission algorithm is unchanged; the shared metrics registration changes from the concrete rate strategy to an internal state interface. Other default paths show small absolute deltas or baseline process variation. CPU-frequency strings reported by BDN vary between phases and do not establish the cause.
+The default rate queue is 8.7-11.3 ns (4.9-6.5%) slower than both controls. This initially blocked performance acceptance and prompted the investigations below. The existing rate admission algorithm is unchanged; the shared metrics registration changes from the concrete rate strategy to an internal state interface. Other default paths show small absolute deltas or baseline process variation. CPU-frequency strings reported by BDN vary between phases and do not establish the cause.
 
 [Focused investigation 36260120072](https://github.com/thomhurst/Kevlar/actions/runs/36260120072) captures JIT disassembly at depth four and measures the two existing rate fixtures on candidate `5d8c9831e680be9a749aaee66f9e62eb4506cebc` against the same baseline. The intervening runtime change only bounds queued timer waits to one millisecond; the measured default and uncontended paths and benchmark fixtures are unchanged. The focused run completed on an Intel Xeon Platinum 8370C / Ubuntu 24.04.5 / .NET 10.0.12 runner:
 
@@ -48,9 +48,13 @@ After #574 merged, [run 36261056301](https://github.com/thomhurst/Kevlar/actions
 
 Candidate-only priority admission measured **163.7 ns** for concurrency and **181.7 ns** for rate, both **0 B**. These remain uncontended measurements.
 
-Rate queue performance passes this comparison. Default concurrency queue admission is 5.8-8.0% slower than the controls and blocks acceptance pending investigation. Its candidate process means are 187.919/165.832/179.892 ns, compared with 165.019/163.040/166.692 ns before and 166.621/172.320/165.815 ns after. The candidate's standard deviation is 9.16 ns; one process matches controls while two are slower. The default concurrency algorithm is unchanged; its only class diff exposes an existing rejection helper internally for the new strategy.
+Rate queue performance passes this comparison. Default concurrency queue admission is 5.8-8.0% slower than the controls and initially blocked acceptance pending the investigation below. Its candidate process means are 187.919/165.832/179.892 ns, compared with 165.019/163.040/166.692 ns before and 166.621/172.320/165.815 ns after. The candidate's standard deviation is 9.16 ns; one process matches controls while two are slower. The default concurrency algorithm is unchanged; its only class diff exposes an existing rejection helper internally for the new strategy.
 
-[Focused investigation 36262202036](https://github.com/thomhurst/Kevlar/actions/runs/36262202036) retains these exact revisions and measures only the default concurrency queue fixture, with five process launches and depth-four JIT disassembly. This investigation is pending. No performance acceptance is claimed yet.
+[Focused investigation 36262202036](https://github.com/thomhurst/Kevlar/actions/runs/36262202036) retains these exact revisions and measures only the default concurrency queue fixture, with five process launches and depth-four JIT disassembly. The completed five-launch comparison measured **166.3 / 165.2 / 164.5 ns**, all **0 B**, on AMD EPYC 7763 with the same software versions. Standard deviations were 5.63 / 2.43 / 2.40 ns. Per-process means were 164.630/174.374/160.399/171.281/161.006 ns before, 163.375/168.082/167.859/162.298/163.933 ns for the candidate, and 169.286/162.699/163.487/163.287/164.089 ns after. The candidate's pooled mean lies between the controls.
+
+The benchmark entry method is 592 bytes in each phase and identical after normalizing absolute process addresses (SHA-256 prefix `6db0d9ab83504f06`). The captured 679-byte total also includes the generated delegate, its constructor, and `Shield.Name`; it does not cover indirectly dispatched strategy internals. This evidence supports process/JIT variance as an explanation for the inconsistent timing, without proving a specific cause or a universal speedup.
+
+**Performance acceptance passes.** Both initially slower paths were investigated with repeated launches, preserving all earlier results. The final rate and concurrency comparisons do not show a consistent material regression. Runtime and fixture files are unchanged from measured head `76a2785a`; subsequent commits only update this evidence. Main's later #575 changes retry/hedge budgets without changing the measured queue paths.
 
 ## Functional and documentation checks
 
