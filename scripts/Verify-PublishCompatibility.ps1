@@ -114,6 +114,7 @@ try
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Logging" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Tracing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$DependencyInjectionVersion" />
@@ -130,11 +131,27 @@ using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
 using Kevlar.Extensions.Logging;
+using Kevlar.Extensions.Tracing;
 using Kevlar.Extensions.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Threading.RateLimiting;
+
+using (var tracing = KevlarTracing.Listen())
+using (var trace = new System.Diagnostics.Activity("package-consumer").SetIdFormat(System.Diagnostics.ActivityIdFormat.W3C).Start())
+{
+    trace.ActivityTraceFlags = System.Diagnostics.ActivityTraceFlags.Recorded;
+    Shield.Empty.ExecuteWithContextAsync(context =>
+    {
+        context.RecordEvent("package-consumer");
+        return default(ValueTask);
+    }).GetAwaiter().GetResult();
+    if (!trace.Events.Any())
+    {
+        throw new InvalidOperationException("Tracing package enrichment failed.");
+    }
+}
 
 var untyped = Shield.Empty;
 _ = untyped.WithLogging(NullLogger.Instance);

@@ -198,6 +198,7 @@ concepts side by side.
 | [`Kevlar.Extensions.DependencyInjection`](https://www.nuget.org/packages/Kevlar.Extensions.DependencyInjection) | Named and configuration-bound shields for Microsoft DI |
 | [`Kevlar.Extensions.Http`](https://www.nuget.org/packages/Kevlar.Extensions.Http) | `HttpClientFactory` integration, request replay and transient-fault handling |
 | [`Kevlar.Extensions.Diagnostics.HealthChecks`](src/Kevlar.Extensions.Diagnostics.HealthChecks/README.md) | Health checks for circuit breakers, registered shields, and retained partitions |
+| [`Kevlar.Extensions.Tracing`](https://www.nuget.org/packages/Kevlar.Extensions.Tracing) | Opt-in strategy events on existing application traces |
 | [`Kevlar.Extensions.Logging`](https://www.nuget.org/packages/Kevlar.Extensions.Logging) | Structured `ILogger` events for every built-in strategy |
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience and server admission control for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
@@ -213,6 +214,7 @@ concepts side by side.
 | `Kevlar.Extensions.Grpc` | `netstandard2.0`; `netstandard2.1`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Http` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Diagnostics.HealthChecks` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.Tracing` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Logging` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.RateLimiting` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Testing` | `netstandard2.0`; `net8.0`; `net10.0` |

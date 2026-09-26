@@ -1,0 +1,11 @@
+#nullable enable
+Kevlar.Extensions.Tracing.KevlarTracing
+Kevlar.Extensions.Tracing.KevlarTracingOptions
+Kevlar.Extensions.Tracing.KevlarTracingOptions.KevlarTracingOptions() -> void
+Kevlar.Extensions.Tracing.KevlarTracingOptions.IncludeExceptionDetails.get -> bool
+Kevlar.Extensions.Tracing.KevlarTracingOptions.IncludeExceptionDetails.set -> void
+Kevlar.Extensions.Tracing.KevlarTracingOptions.IncludeOperationKey.get -> bool
+Kevlar.Extensions.Tracing.KevlarTracingOptions.IncludeOperationKey.set -> void
+Kevlar.Extensions.Tracing.KevlarTracingOptions.MaximumTagValueLength.get -> int
+Kevlar.Extensions.Tracing.KevlarTracingOptions.MaximumTagValueLength.set -> void
+static Kevlar.Extensions.Tracing.KevlarTracing.Listen(Kevlar.Extensions.Tracing.KevlarTracingOptions? options = null) -> System.IDisposable!

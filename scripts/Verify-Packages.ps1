@@ -324,6 +324,11 @@ $expectedDependencies = @{
         'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
         '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
     }
+    'Kevlar.Extensions.Tracing' = @{
+        'net10.0' = @('Kevlar')
+        'net8.0' = @('Kevlar')
+        '.NETStandard2.0' = @('Kevlar', 'System.Diagnostics.DiagnosticSource')
+    }
     'Kevlar.Extensions.Logging' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
         'net8.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
@@ -386,6 +391,7 @@ foreach ($dependencyId in @(
     'Microsoft.Extensions.Primitives',
     'Microsoft.Extensions.TimeProvider.Testing',
     'Reservoir',
+    'System.Diagnostics.DiagnosticSource',
     'System.Runtime.CompilerServices.Unsafe',
     'System.Threading.RateLimiting',
     'System.Threading.Tasks.Extensions'))
@@ -799,6 +805,7 @@ using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
 using Kevlar.Extensions.Logging;
+using Kevlar.Extensions.Tracing;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
 using Microsoft.Extensions.Configuration;
@@ -818,7 +825,23 @@ using (var healthProvider = healthServices.BuildServiceProvider())
         throw new InvalidOperationException("Health check package inspection failed.");
     }
 }
+using (var tracing = KevlarTracing.Listen())
+using (var trace = new System.Diagnostics.Activity("package-consumer").SetIdFormat(System.Diagnostics.ActivityIdFormat.W3C).Start())
+{
+    trace.ActivityTraceFlags = System.Diagnostics.ActivityTraceFlags.Recorded;
+    Shield.Empty.ExecuteWithContextAsync(context =>
+    {
+        context.RecordEvent("package-consumer");
+        return default(ValueTask);
+    }).GetAwaiter().GetResult();
+    if (!trace.Events.Any())
+    {
+        throw new InvalidOperationException("Tracing package enrichment failed.");
+    }
+}
+
 var shield = Shield.Empty;
+
 var loggedShield = Shield.Retry(0, Backoff.None).WithLogging(NullLogger.Instance);
 if (loggedShield.Execute(static _ => 42) != 42)
 {
@@ -972,6 +995,7 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Diagnostics.HealthChecks" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Logging" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Tracing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />

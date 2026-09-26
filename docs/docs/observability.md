@@ -183,6 +183,91 @@ its `Events` property and `WaitForEventCountAsync`. Kevlar intentionally does no
 `ActivitySource` spans: use the metrics and listener hook to enrich the tracing system already owned
 by the application or transport.
 
+### Enrich existing traces
+
+Install `Kevlar.Extensions.Tracing` and keep one `KevlarTracing.Listen()` subscription for the
+application lifetime. It adds `kevlar.strategy` events to the sampled `Activity.Current` at each
+telemetry callback. It does not create spans, change their status, or require an OpenTelemetry SDK.
+
+This runnable example configures an application-owned source and records a retry:
+
+<!-- doc-test-run: tracing-enrichment -->
+```csharp
+using System.Diagnostics;
+using Kevlar.Extensions.Tracing;
+
+using var source = new ActivitySource("Catalog.Application");
+using var listener = new ActivityListener
+{
+    ShouldListenTo = candidate => candidate == source,
+    Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
+        ActivitySamplingResult.AllDataAndRecorded,
+};
+ActivitySource.AddActivityListener(listener);
+using var tracing = KevlarTracing.Listen();
+using var activity = source.StartActivity("load-catalog")!;
+var attempts = 0;
+var result = await Shield.Retry(1, Backoff.None).WithName("catalog").ExecuteAsync(async _ =>
+{
+    await Task.Yield();
+    if (++attempts == 1)
+    {
+        throw new InvalidOperationException("Temporary failure");
+    }
+    return 42;
+});
+
+if (result != 42 || !activity.Events.Any(item => item.Tags.Any(tag =>
+        tag.Key == "kevlar.event.name" && Equals(tag.Value, "retry"))))
+{
+    throw new InvalidOperationException("Expected retry enrichment on the application activity.");
+}
+```
+
+In production, configure sampling and export in your tracing system. No matching source listener,
+no current activity, propagation-only sampling, or an unrecorded/stopped activity means no enrichment.
+Async retries and concurrent hedges follow `Activity.Current` through normal execution-context flow.
+There is no saved context or activity lookup: suppressed flow loses correlation. Events occurring
+outside an application activity are dropped. Transport attempt spans often stop before retry or
+rejection callbacks run; keep an enclosing application activity alive across the entire shield call.
+Late hedge-loser events after that activity stops are dropped, and concurrent event order is not guaranteed.
+
+The fixed event name is `kevlar.strategy`. The event's tags use this bounded schema:
+
+| Tags | Meaning |
+| --- | --- |
+| `kevlar.event.name`, `kevlar.strategy.name`, `kevlar.strategy.index`, `kevlar.shield.name` | Event and pipeline identity |
+| `kevlar.attempt.number`, `kevlar.outcome.success` | Zero-based attempt and its outcome |
+| `kevlar.duration.seconds`, `kevlar.delay.seconds`, `kevlar.retry_after.seconds` | Measured duration, scheduled delay, or retry hint |
+| `kevlar.circuit.from`, `kevlar.circuit.to` | Circuit transition, when available |
+| `kevlar.hedge.winner`, `kevlar.hedge.cancelled` | Hedge-attempt selection and cancellation |
+| `kevlar.rejection.kind`, `kevlar.suppression.reason` | Rejection or suppression classification |
+| `kevlar.callback.kind`, `kevlar.callback.source` | Failed callback identity |
+| `exception.type` | Exception type, without retaining the exception |
+
+Optional tags are omitted when unavailable. String tag values are truncated to 256 UTF-16 code units,
+without splitting surrogate pairs. Keep shield names, custom event names, and strategy names bounded
+and non-sensitive. Truncation limits size; it does not redact data or bound the number of distinct values.
+Results, request/response bodies, and arbitrary context properties are never copied. Event count follows
+the telemetry stream; configure exporter limits and sampling for long-lived or high-volume activities.
+
+`KevlarTracingOptions.IncludeOperationKey` opts into `kevlar.operation.key`.
+`IncludeExceptionDetails` opts into `exception.message` and `exception.stacktrace`; those values may
+contain sensitive data. `MaximumTagValueLength` changes the positive string limit. Options are copied
+when subscribing, so later mutation has no effect. The adapter copies scalar values synchronously and
+never retains pooled contexts, property bags, results, or exception objects.
+
+Subscriptions are global and independent. Duplicate registrations produce duplicate events. Dispose the
+subscription during shutdown; repeated or concurrent disposal is safe, though an in-flight callback can
+finish after disposal. Listener failures cannot change execution outcomes. With no registration, the core
+fast path is unchanged. A registration enables telemetry dispatch even with no sampled activity; the
+adapter avoids tag creation and value-result boxing on that path. Recorded events allocate tag storage.
+The package supports .NET Standard 2.0, .NET 8, and .NET 10; only the .NET Standard asset adds a
+`System.Diagnostics.DiagnosticSource` package dependency.
+
+### Custom tracing listeners
+
+Keep a custom listener when you need a different schema, redaction policy, or correlation model.
 For applications that want one span per Kevlar event, bridge the listener into an application-owned
 `ActivitySource`. Keep tags bounded and copy everything needed during the callback because the
 context is pooled:
