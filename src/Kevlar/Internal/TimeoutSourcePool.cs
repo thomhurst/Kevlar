@@ -31,15 +31,26 @@ internal static class TimeoutSourcePool
 #endif
     }
 
-    // The modern source already samples the monotonic clock to schedule its timer.
-    // Reuse that sample for deadline tracking instead of reading the clock twice.
-    public static long Arm(CancellationTokenSource source, TimeSpan timeout)
+    public static void Arm(CancellationTokenSource source, TimeSpan timeout)
     {
 #if NET8_0_OR_GREATER
-        return ((Source)source).Arm(timeout);
+        ((Source)source).Arm(timeout);
 #else
         source.CancelAfter(timeout);
-        return 0;
+#endif
+    }
+
+    public static long ArmAndGetTimestamp(CancellationTokenSource source, TimeSpan timeout)
+    {
+#if NET8_0_OR_GREATER
+        var pooled = (Source)source;
+        pooled.Arm(timeout);
+        // This rental owns the source until completion; arming already sampled the clock.
+        return pooled.StartedAt;
+#else
+        var startedAt = TimeProvider.System.GetTimestamp();
+        source.CancelAfter(timeout);
+        return startedAt;
 #endif
     }
 
@@ -86,19 +97,19 @@ internal static class TimeoutSourcePool
             }
         }
 
-        public long Arm(TimeSpan timeout)
+        public long StartedAt => _startedAt;
+
+        public void Arm(TimeSpan timeout)
         {
             lock (_gate)
             {
-                var startedAt = TimeProvider.System.GetTimestamp();
-                _startedAt = startedAt;
+                _startedAt = TimeProvider.System.GetTimestamp();
                 _timeout = timeout;
                 _active = true;
                 if (!_scheduled || timeout < _scheduledDelay - TimeProvider.System.GetElapsedTime(_scheduledAt, _startedAt))
                 {
                     Schedule(timeout, _startedAt);
                 }
-                return startedAt;
             }
         }
 
