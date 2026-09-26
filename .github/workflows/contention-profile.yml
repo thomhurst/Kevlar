@@ -1,0 +1,47 @@
+name: Contention profile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    name: Attribute runtime contention
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build stress harness and report tool
+        run: |
+          dotnet build benchmarks/Kevlar.StressTests -c Release
+          dotnet build tools/Kevlar.ContentionReport -c Release
+          dotnet tool install dotnet-trace --tool-path .tools --version 9.0.652701
+      - name: Capture contention with managed stacks
+        run: |
+          mkdir -p artifacts/contention
+          .tools/dotnet-trace collect --providers 'Microsoft-Windows-DotNETRuntime:0x4000:5' \
+            --output artifacts/contention/baseline.nettrace --show-child-io -- \
+            dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
+            --duration 00:01:00 --warmup 00:00:01 --workers 4 \
+            --output artifacts/contention/stress-results.json > artifacts/contention/trace.log 2>&1
+      - name: Attribute contended stacks
+        run: >-
+          dotnet run --project tools/Kevlar.ContentionReport -c Release --no-build --
+          artifacts/contention/baseline.nettrace > artifacts/contention/stacks.json
+      - name: Preserve profile and source identity
+        if: always()
+        run: |
+          mkdir -p artifacts/contention
+          git rev-parse HEAD > artifacts/contention/commit.txt
+          dotnet --info > artifacts/contention/dotnet-info.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: contention-profile
+          path: artifacts/contention/
+          retention-days: 30
