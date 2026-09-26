@@ -159,6 +159,10 @@ The standard shield has a 30-second total timeout, three jittered retries that h
 part or supply your own shield. POST, PATCH, and custom methods remain single-attempt unless you
 explicitly enable replay for operations that are safe to repeat.
 
+Migrating from `Microsoft.Extensions.Http.Resilience`? Follow the
+[HTTP resilience migration guide](docs/docs/http-resilience-migration.md) for defaults, routing,
+replay rules, and handler lifetime differences.
+
 `Kevlar.Extensions.DependencyInjection` adds named, configuration-bound shields and
 `IKevlarRegistry`. In a standalone console project, install the concrete
 `Microsoft.Extensions.DependencyInjection` package as well; it provides `BuildServiceProvider()`:

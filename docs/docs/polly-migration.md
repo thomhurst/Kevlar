@@ -275,58 +275,11 @@ before the service provider is built. Both providers expose non-throwing lookup 
 
 ## HTTP
 
-The standard handlers have corresponding `IHttpClientBuilder` extensions:
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-
-var pollyHttpServices = new ServiceCollection();
-pollyHttpServices.AddHttpClient("catalog")
-    .AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 3);
-```
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-
-var kevlarHttpServices = new ServiceCollection();
-kevlarHttpServices.AddHttpClient("catalog")
-    .AddStandardShield(options => options.Retry.MaxRetries = 3);
-```
-
-| Polly HTTP | Kevlar HTTP |
-|---|---|
-| `AddStandardResilienceHandler()` | `AddStandardShield()` |
-| `AddStandardHedgingHandler()` | `AddStandardHedgeShield()` |
-| `AddResilienceHandler(name, builder => …)` | build a `Shield<HttpResponseMessage>`, then `AddShield(shield)`; the handler-registration name has no Kevlar analogue |
-| `AddPolicyHandlerFromRegistry(name)` | `AddShield(name)`; reload-aware registrations resolve per request |
-| `RemoveAllResilienceHandlers()` | `RemoveAllShields()` |
-| `SetResilienceContext` / request context properties | `WithKevlarProperties` / `KevlarHttp.GetRequestOptions(request)` |
-| `ResilienceHandler(request => pipeline)` | `AddShield((request, serviceProvider) => shield)` |
-| `HttpClientResiliencePredicates.IsTransient` | `HttpShield.IsTransient` |
-| named gRPC resilience pipeline | `AddShieldUnaryInterceptor` / `AddShieldStreamingInterceptor` |
-
-Like Polly's standard handler, Kevlar hedges against the request's own authority by default:
-
-```csharp
-using Kevlar.Extensions.Http;
-using Microsoft.Extensions.DependencyInjection;
-
-var kevlarHedgeServices = new ServiceCollection();
-kevlarHedgeServices.AddHttpClient("hedged-catalog")
-    .AddStandardHedgeShield();
-```
-
-Configure `Routing.Endpoints` only when attempts should use alternate authorities.
-
-Kevlar buffers only bounded content and does not replay unsafe methods by default. Call
-`AllowReplay()` on a known-idempotent request, enable `AllowUnsafeMethodReplay` for a client,
-choose a bounded buffering policy, or supply a `RequestFactory` when a POST-like request is
-intentionally replayable. See [safe request replay](http.md#safe-request-replay).
-Per-request properties, shield overrides, replay opt-in and opt-out, cancellation linking,
-selectors, and request-keyed partitions are covered in
-[per-request options](http.md#per-request-options). Use `WithKevlarProperties`, `WithShield`,
-`WithShieldName`, and `WithKevlarCancellationToken` to configure the corresponding request options
-fluently; `AllowReplay` and `DisableReplay` opt only that request in or out.
+For `Microsoft.Extensions.Http.Resilience` registrations such as `AddStandardResilienceHandler`,
+`AddStandardHedgingHandler`, and `AddResilienceHandler`, use the dedicated
+[HTTP resilience migration guide](http-resilience-migration.md). It compares defaults, routing,
+request replay, dependency injection, reloads, and handler lifetime. The
+[HTTP integration reference](http.md) covers Kevlar's complete API.
 
 ## Telemetry
 
