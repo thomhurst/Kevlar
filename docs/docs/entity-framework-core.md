@@ -5,7 +5,7 @@ sidebar_position: 12
 # Entity Framework Core
 
 `Kevlar.Extensions.EntityFrameworkCore` plugs a sequential shield into EF Core's
-`IExecutionStrategy`. It supports .NET 8 and .NET 10 with EF Core 8.0.11 or later.
+`IExecutionStrategy`. It supports .NET 8 and .NET 10 with EF Core 8.0.31 or later.
 Install your relational provider separately, and configure that provider before Kevlar.
 
 ```bash
