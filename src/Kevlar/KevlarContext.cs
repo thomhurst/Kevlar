@@ -29,6 +29,7 @@ public sealed class KevlarContext
     private readonly object _completionPropertiesLock = new();
     private bool _hasCompletionProperties;
     private bool _hasForkBaseline;
+    private bool _hasEmptyForkBaseline;
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
@@ -174,7 +175,7 @@ public sealed class KevlarContext
         {
             target.CaptureCompletionProperties(
                 PropertiesForCompletion,
-                _hasForkBaseline ? _forkBaseline : null);
+                _hasForkBaseline ? (_forkBaseline ??= new KevlarProperties()) : null);
         }
     }
 
@@ -246,9 +247,15 @@ public sealed class KevlarContext
             synchronousExecutionKind,
             parent.TimeProvider,
             shieldName);
-        context._forkBaseline ??= new KevlarProperties();
-        parent.Properties.CopyTo(context._forkBaseline);
-        context._forkBaseline.CopyTo(context.Properties);
+        context._hasEmptyForkBaseline = parent.Properties.Count == 0
+            && !parent.Properties.SuppressAdditionalAttempts;
+        if (!context._hasEmptyForkBaseline)
+        {
+            context._forkBaseline ??= new KevlarProperties();
+            parent.Properties.CopyTo(context._forkBaseline);
+            context._forkBaseline.CopyTo(context.Properties);
+        }
+
         context.Properties.ShareAdditionalAttemptStateWith(parent.Properties);
         context._hasForkBaseline = true;
         return context;
@@ -256,9 +263,17 @@ public sealed class KevlarContext
 
     internal void CopyChangesToParent(KevlarContext parent)
     {
+        // Attempt suppression is shared eagerly; an unchanged empty bag has no delta to merge.
+        // Hedged completion snapshots still use the lock, even when the live bag is empty.
+        if (_hasEmptyForkBaseline && !_hasCompletionProperties && _properties.Count == 0)
+        {
+            return;
+        }
+
         lock (_completionPropertiesLock)
         {
-            PropertiesForCompletion.ApplyChangesSince(_forkBaseline!, parent.Properties);
+            _forkBaseline ??= new KevlarProperties();
+            PropertiesForCompletion.ApplyChangesSince(_forkBaseline, parent.Properties);
         }
     }
 
@@ -456,6 +471,7 @@ public sealed class KevlarContext
 
             context._hasCompletionProperties = false;
             context._hasForkBaseline = false;
+            context._hasEmptyForkBaseline = false;
             return true;
         }
     }

@@ -18,6 +18,10 @@ on:
         description: 'Benchmark filter (e.g. *Retry*, *Pipeline*)'
         required: false
         default: '*'
+      baseline_sha:
+        description: 'Optional full baseline SHA for sequential baseline/candidate/baseline comparison using candidate fixtures'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -46,6 +50,7 @@ jobs:
         run: dotnet build benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj -c Release
 
       - name: Run Benchmarks
+        if: inputs.baseline_sha == ''
         working-directory: benchmarks/Kevlar.Benchmarks
         run: >-
           dotnet run -c Release --no-build --
@@ -53,15 +58,55 @@ jobs:
           --exporters json
           --artifacts ./BenchmarkResults
 
+      - name: Compare baseline and candidate
+        if: inputs.baseline_sha != ''
+        env:
+          BASELINE_SHA: ${{ inputs.baseline_sha }}
+          BENCHMARK_FILTER: ${{ inputs.benchmark_filter || '*' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "baseline_sha must be a full commit SHA"; exit 1; }
+          git fetch origin "$BASELINE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/benchmark-baseline" "$BASELINE_SHA"
+          # Use identical candidate fixture source with each revision's product/build inputs.
+          cp benchmarks/Kevlar.Benchmarks/*.cs "$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/"
+          baseline_project="$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"
+          candidate_project="$GITHUB_WORKSPACE/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"
+          results="$GITHUB_WORKSPACE/comparison-results"
+          mkdir -p "$results"
+          printf 'Baseline: %s\nCandidate: %s\nFilter: %s\n' "$BASELINE_SHA" "$GITHUB_SHA" "$BENCHMARK_FILTER" > "$results/revisions.txt"
+          dotnet build "$baseline_project" -c Release
+          for revision in baseline candidate; do
+            project="$candidate_project"
+            if [[ "$revision" == baseline ]]; then project="$baseline_project"; fi
+            (cd "$(dirname "$project")" && dotnet run -c Release --no-build -- \
+              --filter "$BENCHMARK_FILTER" --job Dry --artifacts "$results/dry-$revision") \
+              > "$results/dry-$revision.log" 2>&1
+          done
+          for phase in baseline-before candidate baseline-after; do
+            project="$baseline_project"
+            if [[ "$phase" == candidate ]]; then project="$candidate_project"; fi
+            (cd "$(dirname "$project")" && dotnet run -c Release --no-build -- \
+              --filter "$BENCHMARK_FILTER" --exporters json --artifacts "$results/$phase") \
+              > "$results/$phase.log" 2>&1
+          done
+
       - name: Write Run Summary
         run: |
           {
             echo "# Benchmark Results"
             echo
-            for md in benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/*-report-github.md; do
-              cat "$md"
-              echo
-            done
+            if [[ -f comparison-results/revisions.txt ]]; then
+              cat comparison-results/revisions.txt
+              for phase in baseline-before candidate baseline-after; do
+                echo "## $phase"
+                cat comparison-results/"$phase"/results/*-report-github.md
+                echo
+              done
+            else
+              cat benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/*-report-github.md
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Results
@@ -69,14 +114,16 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: benchmark-results
-          path: benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/**
+          path: |
+            benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/**
+            comparison-results/**
           retention-days: 30
 
   benchmark-history:
     name: Store Benchmark History
     runs-on: ubuntu-latest
     needs: run-benchmarks
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.baseline_sha == ''
 
     permissions:
       contents: write
