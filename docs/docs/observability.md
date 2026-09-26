@@ -72,6 +72,8 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(ChaosDiagnostics.MeterName));
 ```
 
+<div style={{overflowX: 'auto'}}>
+
 | Instrument | Type | Unit | Minimum target | Measures | Attributes |
 |---|---|---|---|---|---|
 | `kevlar.executions` | Counter | `{execution}` | `net8.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
@@ -96,6 +98,8 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.rate_limit.available` | ObservableGauge | `{permit}` | `net10.0` | immediately available burst permits at collection time | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.rate_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.chaos.injections` | Counter | `{injection}` | `net8.0` | chaos injections applied | `kevlar.chaos.kind`, `kevlar.shield.name`, `kevlar.chaos.operation`, `kevlar.chaos.environment` |
+
+</div>
 
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
 
@@ -207,7 +211,8 @@ ActivitySource.AddActivityListener(listener);
 using var tracing = KevlarTracing.Listen();
 using var activity = source.StartActivity("load-catalog")!;
 var attempts = 0;
-var result = await Shield.Retry(1, Backoff.None).WithName("catalog").ExecuteAsync(async _ =>
+var shield = Shield.Retry(1, Backoff.None).WithName("catalog");
+var result = await shield.ExecuteAsync(async _ =>
 {
     await Task.Yield();
     if (++attempts == 1)
@@ -220,7 +225,7 @@ var result = await Shield.Retry(1, Backoff.None).WithName("catalog").ExecuteAsyn
 if (result != 42 || !activity.Events.Any(item => item.Tags.Any(tag =>
         tag.Key == "kevlar.event.name" && Equals(tag.Value, "retry"))))
 {
-    throw new InvalidOperationException("Expected retry enrichment on the application activity.");
+    throw new InvalidOperationException("Expected a retry event on the application activity.");
 }
 ```
 
@@ -234,6 +239,8 @@ Late hedge-loser events after that activity stops are dropped, and concurrent ev
 
 The fixed event name is `kevlar.strategy`. The event's tags use this bounded schema:
 
+<div style={{overflowX: 'auto'}}>
+
 | Tags | Meaning |
 | --- | --- |
 | `kevlar.event.name`, `kevlar.strategy.name`, `kevlar.strategy.index`, `kevlar.shield.name` | Event and pipeline identity |
@@ -244,6 +251,8 @@ The fixed event name is `kevlar.strategy`. The event's tags use this bounded sch
 | `kevlar.rejection.kind`, `kevlar.suppression.reason` | Rejection or suppression classification |
 | `kevlar.callback.kind`, `kevlar.callback.source` | Failed callback identity |
 | `exception.type` | Exception type, without retaining the exception |
+
+</div>
 
 Optional tags are omitted when unavailable. String tag values are truncated to 256 UTF-16 code units,
 without splitting surrogate pairs. Keep shield names, custom event names, and strategy names bounded

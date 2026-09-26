@@ -831,6 +831,7 @@ using (var trace = new System.Diagnostics.Activity("package-consumer").SetIdForm
     trace.ActivityTraceFlags = System.Diagnostics.ActivityTraceFlags.Recorded;
     Shield.Empty.ExecuteWithContextAsync(context =>
     {
+        context.CancellationToken.ThrowIfCancellationRequested();
         context.RecordEvent("package-consumer");
         return default(ValueTask);
     }).GetAwaiter().GetResult();
