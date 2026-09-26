@@ -1,0 +1,103 @@
+name: Outage measurements
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/Kevlar/**'
+      - 'benchmarks/Kevlar.OutageTests/**'
+      - 'tests/Kevlar.OutageTests.Tests/**'
+      - '.github/scripts/outage_docs.py'
+      - '.github/workflows/outage.yml'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+  push:
+    branches: [main]
+    paths:
+      - 'benchmarks/Kevlar.OutageTests/**'
+      - 'tests/Kevlar.OutageTests.Tests/**'
+      - '.github/scripts/outage_docs.py'
+      - '.github/workflows/outage.yml'
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: outage-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  measure:
+    name: Controlled outage and recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build harness and accounting tests
+        run: dotnet build tests/Kevlar.OutageTests.Tests -c Release
+      - name: Verify accounting
+        run: dotnet run --project tests/Kevlar.OutageTests.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict
+      - name: Measure phases
+        run: >-
+          dotnet run --project benchmarks/Kevlar.OutageTests -c Release --no-build --
+          --phase-seconds ${{ github.event_name == 'pull_request' && '1' || '30' }}
+          --rate 100 --max-inflight 512 --output artifacts/outage/outage-results.json
+      - name: Render results
+        run: >-
+          python3 .github/scripts/outage_docs.py --input artifacts/outage/outage-results.json
+          --output artifacts/outage/outage-results.md
+      - name: Publish job summary
+        run: cat artifacts/outage/outage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: outage-results
+          path: artifacts/outage/outage-results.*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-docs:
+    name: Publish outage results to docs
+    needs: measure
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: outage-results
+          path: outage-results
+      - name: Generate page
+        run: >-
+          python3 .github/scripts/outage_docs.py --input outage-results/outage-results.json
+          --output docs/docs/outage-recovery.md
+      - name: Publish matching raw data
+        run: |
+          mkdir -p docs/static/measurements
+          cp outage-results/outage-results.json docs/static/measurements/outage-results.json
+      - name: Commit and deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet docs/docs/outage-recovery.md docs/static/measurements/outage-results.json; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/docs/outage-recovery.md docs/static/measurements/outage-results.json
+          git commit -m "docs: update outage measurements [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          run_url=$(gh workflow run docs.yml --ref main)
+          run_id="${run_url##*/}"
+          gh run watch "$run_id" --exit-status
