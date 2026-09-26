@@ -9,6 +9,130 @@ public class ParentContextExecutionTests
     private static readonly KevlarKey<int> ChildValue = new("child-value");
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Empty_Nested_Execution_Keeps_Both_Property_Bags_Empty(bool synchronous)
+    {
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            var result = synchronous
+                ? Shield.Empty.ExecuteWithContext(parent, static child => child.Properties.Count)
+                : await Shield.Empty.ExecuteWithContextAsync(
+                    parent, static child => new ValueTask<int>(child.Properties.Count));
+
+            await Assert.That(result).IsEqualTo(0);
+            await Assert.That(parent.Properties.Count).IsEqualTo(0);
+        });
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Empty_Parent_Receives_New_Child_Properties(bool synchronous)
+    {
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            if (synchronous)
+            {
+                Shield.Empty.ExecuteWithContext(parent, static child => child.Properties.Set(ChildValue, 42));
+            }
+            else
+            {
+                await Shield.Empty.ExecuteWithContextAsync(parent, static child =>
+                {
+                    child.Properties.Set(ChildValue, 42);
+                    return ValueTask.CompletedTask;
+                });
+            }
+
+            await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
+        });
+    }
+
+    [Test]
+    public async Task Empty_Baseline_Preserves_Parent_Writes_While_Child_Is_Running()
+    {
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var childTask = Shield.Empty.ExecuteWithContextAsync(parent, async child =>
+            {
+                child.Properties.Set(ChildValue, 42);
+                child.Properties.Set(RequestId, "child");
+                entered.SetResult();
+                await release.Task;
+            });
+
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            parent.Properties.Set(RequestId, "parent");
+            release.SetResult();
+            await childTask;
+
+            await Assert.That(parent.Properties.GetOrDefault(RequestId)).IsEqualTo("parent");
+            await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
+        });
+    }
+
+    [Test]
+    public async Task Removing_A_New_Child_Property_Leaves_Empty_Parent_Unchanged()
+    {
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            await Shield.Empty.ExecuteWithContextAsync(parent, static child =>
+            {
+                child.Properties.Set(ChildValue, 42);
+                child.Properties.Remove(ChildValue);
+                return ValueTask.CompletedTask;
+            });
+
+            await Assert.That(parent.Properties.Count).IsEqualTo(0);
+        });
+    }
+
+    [Test]
+    public async Task Empty_Nested_Bags_Share_Attempt_Suppression_In_Both_Directions()
+    {
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            await Shield.Empty.ExecuteWithContextAsync(parent, async child =>
+            {
+                parent.Properties.SuppressAdditionalAttempts = true;
+                await Assert.That(child.Properties.SuppressAdditionalAttempts).IsTrue();
+                parent.Properties.SuppressAdditionalAttempts = false;
+                child.Properties.SuppressAdditionalAttempts = true;
+                await Assert.That(parent.Properties.SuppressAdditionalAttempts).IsTrue();
+            });
+
+            await Assert.That(parent.Properties.SuppressAdditionalAttempts).IsTrue();
+            await Assert.That(parent.Properties.Count).IsEqualTo(0);
+        });
+    }
+
+    [Test]
+    public async Task Empty_Nested_Bag_Propagates_Hedge_Completion_Properties()
+    {
+        var hedge = Shield.Hedge(1, TimeSpan.Zero);
+        await Shield.Empty.ExecuteWithContextAsync(async parent =>
+        {
+            var calls = 0;
+            var result = await hedge.ExecuteWithContextAsync(parent, async child =>
+            {
+                if (Interlocked.Increment(ref calls) == 1)
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, child.CancellationToken);
+                }
+
+                child.Properties.Set(ChildValue, 42);
+                return 42;
+            });
+
+            await Assert.That(result).IsEqualTo(42);
+            await Assert.That(parent.Properties.GetOrDefault(ChildValue)).IsEqualTo(42);
+        });
+    }
+
+    [Test]
     public async Task Nested_Execution_Carries_Parent_State_And_Child_Mutations_Back()
     {
         using var cancellation = new CancellationTokenSource();

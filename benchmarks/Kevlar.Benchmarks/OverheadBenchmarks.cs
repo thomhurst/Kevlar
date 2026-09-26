@@ -13,6 +13,7 @@ namespace Kevlar.Benchmarks;
 [CategoriesColumn]
 public class OverheadBenchmarks
 {
+    private static readonly KevlarKey<int> NestedValue = new("nested-value");
     private static readonly KevlarKey<OverheadBenchmarks> MetadataState = new("metadata-state");
     private static readonly Shield KevlarEmpty = Shield.Empty;
     private static readonly ResiliencePipeline PollyEmpty = ResiliencePipeline.Empty;
@@ -75,4 +76,32 @@ public class OverheadBenchmarks
     public int Kevlar_NestedEmptySync() =>
         KevlarEmpty.ExecuteWithContext(
             static parentContext => KevlarEmpty.ExecuteWithContext(parentContext, static _ => 42));
+
+    [BenchmarkCategory("NestedWithPropertiesAsync"), Benchmark]
+    public ValueTask<int> Kevlar_NestedWithPropertiesAsync() =>
+        KevlarEmpty.ExecuteWithContextAsync(
+            _state,
+            static (state, properties) => properties.Set(NestedValue, state),
+            static (_, parentContext) => KevlarEmpty.ExecuteWithContextAsync(
+                parentContext,
+                static child =>
+                {
+                    var value = child.Properties.GetOrDefault(NestedValue) + 1;
+                    child.Properties.Set(NestedValue, value);
+                    return new ValueTask<int>(value);
+                }));
+
+    [BenchmarkCategory("NestedWithPropertiesSync"), Benchmark]
+    public int Kevlar_NestedWithPropertiesSync() =>
+        KevlarEmpty.ExecuteWithContext(
+            _state,
+            static (state, properties) => properties.Set(NestedValue, state),
+            static (_, parentContext) => KevlarEmpty.ExecuteWithContext(
+                parentContext,
+                static child =>
+                {
+                    var value = child.Properties.GetOrDefault(NestedValue) + 1;
+                    child.Properties.Set(NestedValue, value);
+                    return value;
+                }));
 }
