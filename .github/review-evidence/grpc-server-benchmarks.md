@@ -20,3 +20,5 @@ BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.9278/25H2/2025Update/HudsonValle
 | EmptyShield      |  20.7824 ns | 0.4479 ns | 0.8191 ns |  25.43 |    1.32 | 0.0055 |      72 B |          NA |
 | ConcurrencyLimit | 123.6426 ns | 0.3247 ns | 0.2711 ns | 151.30 |    5.22 | 0.0055 |      72 B |          NA |
 | MethodPartition  | 139.9785 ns | 0.4278 ns | 0.3572 ns | 171.29 |    5.91 | 0.0055 |      72 B |          NA |
+
+Final benchmark interval (UTC): 2026-09-26 12:36:06 to 2026-09-26 12:38:10. The shared performance reservation was held continuously through this interval.
