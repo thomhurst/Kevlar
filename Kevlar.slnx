@@ -35,6 +35,7 @@
     <Project Path="tests/Kevlar.Testing.Tests/Kevlar.Testing.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Kevlar.ContentionReport/Kevlar.ContentionReport.csproj" />
     <Project Path="tools/Kevlar.ApiVerifier/Kevlar.ApiVerifier.csproj" />
   </Folder>
 </Solution>

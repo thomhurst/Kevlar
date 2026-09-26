@@ -1,0 +1,79 @@
+name: Contention profile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/contention-profile.yml'
+      - 'tools/Kevlar.ContentionReport/**'
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Optional full baseline SHA for an untraced stress A-B-A comparison'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    name: Attribute runtime contention
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build stress harness and report tool
+        run: |
+          dotnet build benchmarks/Kevlar.StressTests -c Release
+          dotnet build tools/Kevlar.ContentionReport -c Release
+          dotnet tool install dotnet-trace --tool-path .tools --version 9.0.652701
+      - name: Capture contention with managed stacks
+        run: |
+          mkdir -p artifacts/contention
+          .tools/dotnet-trace collect --providers 'Microsoft-Windows-DotNETRuntime:0x4000:5' \
+            --output artifacts/contention/candidate.nettrace --show-child-io -- \
+            dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
+            --duration 00:01:00 --warmup 00:00:01 --workers 4 \
+            --output artifacts/contention/stress-results.json > artifacts/contention/trace.log 2>&1
+      - name: Attribute contended stacks
+        run: >-
+          dotnet run --project tools/Kevlar.ContentionReport -c Release --no-build --
+          artifacts/contention/candidate.nettrace > artifacts/contention/stacks.json
+      - name: Compare baseline and candidate without profiler overhead
+        if: inputs.baseline_sha != ''
+        env:
+          BASELINE_SHA: ${{ inputs.baseline_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "baseline_sha must be a full commit SHA"; exit 1; }
+          git fetch origin "$BASELINE_SHA"
+          baseline="$RUNNER_TEMP/contention-baseline"
+          git worktree add --detach "$baseline" "$BASELINE_SHA"
+          dotnet build "$baseline/benchmarks/Kevlar.StressTests" -c Release
+          results="$GITHUB_WORKSPACE/artifacts/contention"
+          printf 'Baseline: %s\nCandidate: %s\n' "$BASELINE_SHA" "$GITHUB_SHA" > "$results/revisions.txt"
+          for phase in baseline-before candidate baseline-after; do
+            root="$baseline"
+            revision="$BASELINE_SHA"
+            if [[ "$phase" == candidate ]]; then root="$GITHUB_WORKSPACE"; revision="$GITHUB_SHA"; fi
+            (cd "$root" && GITHUB_SHA="$revision" dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
+              --duration 00:02:00 --warmup 00:00:02 --workers 4 \
+              --output "$results/$phase.json") > "$results/$phase.log" 2>&1
+          done
+      - name: Preserve profile and source identity
+        if: always()
+        run: |
+          mkdir -p artifacts/contention
+          git rev-parse HEAD > artifacts/contention/commit.txt
+          dotnet --info > artifacts/contention/dotnet-info.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: contention-profile
+          path: artifacts/contention/
+          retention-days: 30
