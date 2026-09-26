@@ -228,6 +228,9 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.</summary>
     public Shield<TResult> ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
+    /// <summary>Adds an adaptive concurrency limit. Handling clauses remain ambient for later strategies.</summary>
+    public Shield<TResult> ConcurrencyLimit(AdaptiveConcurrencyLimitOptions options) => Seal().ConcurrencyLimit(options);
+
     /// <summary>
     /// Freezes this builder's clause into a shield. Both predicate arrays are already private and
     /// never mutated, and the description is rendered here, so no later chaining — on this builder

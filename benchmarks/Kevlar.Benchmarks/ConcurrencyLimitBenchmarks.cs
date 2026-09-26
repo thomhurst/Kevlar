@@ -14,6 +14,11 @@ namespace Kevlar.Benchmarks;
 public class ConcurrencyLimitBenchmarks
 {
     private static readonly Shield KevlarConcurrency = Shield.ConcurrencyLimit(1024);
+    private static readonly Shield KevlarAdaptiveConcurrency = Shield.ConcurrencyLimit(new AdaptiveConcurrencyLimitOptions
+    {
+        InitialLimit = 1024,
+        MaxLimit = 1024,
+    });
     private static readonly Shield KevlarConcurrencyWithHooks = Shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = 1024;
@@ -33,4 +38,8 @@ public class ConcurrencyLimitBenchmarks
     [BenchmarkCategory("Uncontended"), Benchmark(Description = "Kevlar concurrency limiter with hooks")]
     public ValueTask<int> Kevlar_WithHooks_Uncontended() =>
         KevlarConcurrencyWithHooks.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("Uncontended"), Benchmark]
+    public ValueTask<int> Kevlar_Adaptive_Uncontended() =>
+        KevlarAdaptiveConcurrency.ExecuteAsync(static _ => new ValueTask<int>(42));
 }

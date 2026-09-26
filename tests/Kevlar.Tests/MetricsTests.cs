@@ -294,6 +294,7 @@ public class MetricsTests
             ["kevlar.concurrency_limit.inflight"] = "{execution}",
             ["kevlar.concurrency_limit.queued"] = "{execution}",
             ["kevlar.concurrency_limit.capacity"] = "{execution}",
+            ["kevlar.concurrency_limit.limit"] = "{execution}",
             ["kevlar.rate_limit.available"] = "{permit}",
             ["kevlar.rate_limit.queued"] = "{execution}",
 #endif
@@ -1476,6 +1477,35 @@ public class MetricsTests
 
         await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", name))
             .IsEquivalentTo([3L]);
+        GC.KeepAlive(partitions);
+    }
+
+    [Test]
+    public async Task Current_Limit_Gauge_Aggregates_Static_And_Adaptive_Partitions()
+    {
+        using var listener = new KevlarMeterListener();
+        var time = new FakeTimeProvider();
+        const string name = "metrics-mixed-adaptive-concurrency";
+        var partitions = new PartitionedShield<int>(key =>
+            (key == 0
+                ? Shield.ConcurrencyLimit(2)
+                : Shield.ConcurrencyLimit(new AdaptiveConcurrencyLimitOptions
+                {
+                    InitialLimit = 4,
+                    MaxLimit = 8,
+                    DecreaseFactor = 0.5,
+                })).WithTimeProvider(time).WithName(name));
+        _ = partitions.GetShield(0).Execute(static _ => 42);
+        var adaptive = partitions.GetShield(1);
+        _ = adaptive.Execute(static _ => 42);
+        listener.RecordObservableInstruments();
+        await Assert.That(listener.Values("kevlar.concurrency_limit.limit", name)).IsEquivalentTo([6L]);
+        await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", name)).IsEquivalentTo([10L]);
+
+        time.Advance(TimeSpan.FromSeconds(1));
+        _ = await adaptive.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+        listener.RecordObservableInstruments();
+        await Assert.That(listener.Values("kevlar.concurrency_limit.limit", name)).IsEquivalentTo([6L, 4L]);
         GC.KeepAlive(partitions);
     }
 

@@ -22,6 +22,11 @@ on:
         description: 'Optional full baseline SHA for sequential baseline/candidate/baseline comparison using candidate fixtures'
         required: false
         default: ''
+      copy_candidate_fixtures:
+        description: 'Copy candidate fixtures to baseline; disable when comparing unchanged fixtures beside candidate-only APIs'
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -63,6 +68,7 @@ jobs:
         env:
           BASELINE_SHA: ${{ inputs.baseline_sha }}
           BENCHMARK_FILTER: ${{ inputs.benchmark_filter || '*' }}
+          COPY_CANDIDATE_FIXTURES: ${{ inputs.copy_candidate_fixtures }}
         shell: bash
         run: |
           set -euo pipefail
@@ -70,7 +76,9 @@ jobs:
           git fetch origin "$BASELINE_SHA"
           git worktree add --detach "$RUNNER_TEMP/benchmark-baseline" "$BASELINE_SHA"
           # Use identical candidate fixture source with each revision's product/build inputs.
-          cp benchmarks/Kevlar.Benchmarks/*.cs "$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/"
+          if [[ "$COPY_CANDIDATE_FIXTURES" != "false" ]]; then
+            cp benchmarks/Kevlar.Benchmarks/*.cs "$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/"
+          fi
           baseline_project="$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"
           candidate_project="$GITHUB_WORKSPACE/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"
           results="$GITHUB_WORKSPACE/comparison-results"

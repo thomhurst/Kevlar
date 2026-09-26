@@ -101,7 +101,16 @@ public static class ShieldStateSnapshotExtensions
                     strategyIndex,
                     current.Available,
                     current.Running,
-                    current.Queued);
+                    current.Queued,
+                    concurrency.MaxConcurrency);
+            case AdaptiveConcurrencyLimitStrategy adaptive:
+                var adjusted = adaptive.CaptureAdaptiveState();
+                return new ConcurrencyLimitStateSnapshot(
+                    strategyIndex,
+                    adjusted.Available,
+                    adjusted.Running,
+                    queuedExecutions: 0,
+                    adjusted.Limit);
             default:
                 return null;
         }

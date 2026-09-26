@@ -33,3 +33,13 @@ Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallThreshold.get -> System.
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallRatio.get -> double?
 Kevlar.Testing.CircuitBreakerStateSnapshot.ProbesInFlight.get -> int
 Kevlar.Testing.CircuitBreakerStateSnapshot.SlowCallCount.get -> long
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.CurrentLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.Algorithm.get -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.MinLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.MaxLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.InitialLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.SamplingWindow.get -> System.TimeSpan
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.DecreaseFactor.get -> double
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.LatencyTolerance.get -> double
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool

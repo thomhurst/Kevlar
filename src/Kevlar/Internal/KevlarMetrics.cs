@@ -24,7 +24,7 @@ internal static class KevlarMetrics
 
 #if NET9_0_OR_GREATER
     private static readonly StateMetricRegistry<CircuitBreakerStrategy> CircuitStates = new();
-    private static readonly StateMetricRegistry<ConcurrencyLimitStrategy> ConcurrencyStates = new();
+    private static readonly StateMetricRegistry<IConcurrencyLimitState> ConcurrencyStates = new();
     private static readonly StateMetricRegistry<RateLimitStrategy> RateStates = new();
 #endif
 
@@ -118,6 +118,11 @@ internal static class KevlarMetrics
         ObserveConcurrencyCapacity,
         "{execution}",
         "Configured concurrency permit capacity.");
+    private static readonly ObservableGauge<long> ConcurrencyCurrentLimit = Meter.CreateObservableGauge(
+        "kevlar.concurrency_limit.limit",
+        ObserveConcurrencyLimit,
+        "{execution}",
+        "Current admission limit, including adaptive adjustments.");
     private static readonly ObservableGauge<long> RateAvailable = Meter.CreateObservableGauge(
         "kevlar.rate_limit.available",
         ObserveRateAvailable,
@@ -175,7 +180,7 @@ internal static class KevlarMetrics
 #if NET9_0_OR_GREATER
     public static bool CircuitStateEnabled => CircuitStateGauge.Enabled || CircuitInstances.Enabled;
     public static bool ConcurrencyStateEnabled =>
-        ConcurrencyInflight.Enabled || ConcurrencyQueued.Enabled || ConcurrencyCapacity.Enabled;
+        ConcurrencyInflight.Enabled || ConcurrencyQueued.Enabled || ConcurrencyCapacity.Enabled || ConcurrencyCurrentLimit.Enabled;
     public static bool RateStateEnabled => RateAvailable.Enabled || RateQueued.Enabled;
 #else
     public static bool CircuitStateEnabled => false;
@@ -579,12 +584,12 @@ internal static class KevlarMetrics
         StateMetricRegistration<CircuitBreakerStrategy>.Disabled;
 #endif
 
-    public static StateMetricRegistration<ConcurrencyLimitStrategy> RegisterConcurrencyStateSource(
-        ConcurrencyLimitStrategy strategy) =>
+    public static StateMetricRegistration<IConcurrencyLimitState> RegisterConcurrencyStateSource(
+        IConcurrencyLimitState strategy) =>
 #if NET9_0_OR_GREATER
         ConcurrencyStates.Register(strategy);
 #else
-        StateMetricRegistration<ConcurrencyLimitStrategy>.Disabled;
+        StateMetricRegistration<IConcurrencyLimitState>.Disabled;
 #endif
 
     public static StateMetricRegistration<RateLimitStrategy> RegisterRateStateSource(
@@ -621,6 +626,11 @@ internal static class KevlarMetrics
         ConcurrencyStates.Observe(
             ConcurrencyCapacity,
             static (strategy, _) => strategy.MaxConcurrency);
+
+    private static IEnumerable<Measurement<long>> ObserveConcurrencyLimit() =>
+        ConcurrencyStates.Observe(
+            ConcurrencyCurrentLimit,
+            static (strategy, _) => strategy.CurrentLimit);
 
     private static IEnumerable<Measurement<long>> ObserveRateAvailable() =>
         RateStates.Observe(
