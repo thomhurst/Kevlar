@@ -179,18 +179,26 @@ public class RateLimitEdgeCaseTests
         var shield = Shield
             .RateLimit(1, TimeSpan.FromSeconds(1))
             .WithTimeProvider(timeProvider);
-        var delayedExecution = Task.Run(async () =>
-            await shield.ExecuteAsync(_ => new ValueTask<int>(1)));
+        // GetTimestamp deliberately blocks: use a dedicated thread so the rendezvous
+        // cannot depend on another thread-pool worker becoming available under load.
+        var delayedExecution = Task.Factory.StartNew(
+            () => shield.ExecuteAsync(_ => new ValueTask<int>(1)).AsTask(),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default).Unwrap();
 
         try
         {
-            await Assert.That(timeProvider.WaitForBlockedSample(TimeSpan.FromSeconds(5))).IsTrue();
+            await timeProvider.WaitForBlockedSampleAsync(TimeSpan.FromSeconds(5));
             await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
             timeProvider.Advance(TimeSpan.FromSeconds(1));
         }
         finally
         {
             timeProvider.ReleaseBlockedSample();
+            // Even when the rendezvous or assertion fails, observe completion before the
+            // provider's wait handle is disposed by the enclosing using declaration.
+            await delayedExecution;
         }
 
         await Assert.That(await delayedExecution).IsEqualTo(1);
@@ -332,7 +340,8 @@ public class RateLimitEdgeCaseTests
 
     private sealed class ContendedTimestampTimeProvider : TimeProvider, IDisposable
     {
-        private readonly ManualResetEventSlim _sampleCaptured = new();
+        private readonly TaskCompletionSource _sampleCaptured =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly ManualResetEventSlim _releaseSample = new();
         private long _timestamp;
         private int _getTimestampCalls;
@@ -344,7 +353,7 @@ public class RateLimitEdgeCaseTests
             var timestamp = Volatile.Read(ref _timestamp);
             if (Interlocked.Increment(ref _getTimestampCalls) == 2)
             {
-                _sampleCaptured.Set();
+                _sampleCaptured.TrySetResult();
                 _releaseSample.Wait();
             }
 
@@ -353,13 +362,12 @@ public class RateLimitEdgeCaseTests
 
         public void Advance(TimeSpan elapsed) => Interlocked.Add(ref _timestamp, elapsed.Ticks);
 
-        public bool WaitForBlockedSample(TimeSpan timeout) => _sampleCaptured.Wait(timeout);
+        public Task WaitForBlockedSampleAsync(TimeSpan timeout) => _sampleCaptured.Task.WaitAsync(timeout);
 
         public void ReleaseBlockedSample() => _releaseSample.Set();
 
         public void Dispose()
         {
-            _sampleCaptured.Dispose();
             _releaseSample.Dispose();
         }
     }
