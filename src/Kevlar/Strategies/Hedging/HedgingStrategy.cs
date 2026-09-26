@@ -118,6 +118,10 @@ internal sealed class HedgingStrategy : Strategy
 
     internal override bool RequiresContinuationOverlapIsolation => false;
 
+    internal override bool RequiresDeadline =>
+        _respectDeadline || _onHedge is not null || _delayGenerator is not null
+        || _actionGenerator is not null || _judge.IsContextAware;
+
     public override string Describe() =>
         $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))}{(_respectDeadline ? ", deadline-aware" : string.Empty)})";
 

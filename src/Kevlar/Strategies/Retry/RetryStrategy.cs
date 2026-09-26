@@ -125,6 +125,9 @@ internal sealed class RetryStrategy : Strategy
 
     internal override bool RequiresContinuationOverlapIsolation => false;
 
+    internal override bool RequiresDeadline =>
+        _respectDeadline || _onRetry is not null || _delayGenerator is not null || _judge.IsContextAware;
+
     public override string Describe()
     {
         var cap = _maxDelay is { } max && max != _backoff.MaxDelay

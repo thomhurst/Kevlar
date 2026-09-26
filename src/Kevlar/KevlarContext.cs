@@ -40,6 +40,7 @@ public sealed class KevlarContext
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
     internal ExecutionDeadline DeadlineState { get; set; }
+    internal bool TrackDeadline { get; set; }
 
 #if DEBUG
     private bool _returnedToPool;
@@ -254,6 +255,7 @@ public sealed class KevlarContext
         context.StrategyIndex = -1;
         context.AttemptNumber = 0;
         context.TelemetryListener = null;
+        context.TrackDeadline = true;
         return context;
     }
 
@@ -330,6 +332,7 @@ public sealed class KevlarContext
             StrategyIndex = StrategyIndex,
             AttemptNumber = AttemptNumber,
             DeadlineState = DeadlineState,
+            TrackDeadline = TrackDeadline,
         };
         Properties.CopyTo(snapshot.Properties);
         return snapshot;
@@ -343,6 +346,7 @@ public sealed class KevlarContext
     {
         var fork = Rent(cancellationToken, SynchronousExecutionKind, TimeProvider, ShieldName);
         fork.DeadlineState = DeadlineState;
+        fork.TrackDeadline = TrackDeadline;
         fork.StrategyIndex = StrategyIndex;
         fork.AttemptNumber = AttemptNumber;
         fork.TelemetryListener = TelemetryListener;
@@ -484,6 +488,7 @@ public sealed class KevlarContext
             context.StrategyIndex = -1;
             context.AttemptNumber = 0;
             context.TelemetryListener = null;
+            context.TrackDeadline = false;
             context._activeStrategyMask = 0;
             context._retryTerminalInspectionMask = 0;
             context._retryTerminalInspectionOverflow?.Clear();

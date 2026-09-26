@@ -344,11 +344,70 @@ public class DeadlineTests
     private sealed class AdjustableUtcProvider(FakeTimeProvider clock) : TimeProvider
     {
         public TimeSpan UtcOffset { get; set; }
+        public int UtcReads { get; private set; }
         public override long TimestampFrequency => clock.TimestampFrequency;
         public override long GetTimestamp() => clock.GetTimestamp();
-        public override DateTimeOffset GetUtcNow() => clock.GetUtcNow() + UtcOffset;
+        public override DateTimeOffset GetUtcNow()
+        {
+            UtcReads++;
+            return clock.GetUtcNow() + UtcOffset;
+        }
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
             clock.CreateTimer(callback, state, dueTime, period);
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Token_Only_Default_Pipeline_Does_Not_Read_Utc_Clock(bool synchronous)
+    {
+        var time = new AdjustableUtcProvider(new FakeTimeProvider());
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(2)).Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromSeconds(1)).WithTimeProvider(time);
+        var result = synchronous
+            ? shield.Execute(static _ => 42)
+            : await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(time.UtcReads).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Context_Aware_Handling_Receives_Deadline_With_Option_Off()
+    {
+        var time = new FakeTimeProvider();
+        DateTimeOffset? observed = null;
+        var result = await Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.HandlesExceptionContext = handling =>
+            {
+                observed = handling.Context.Deadline;
+                return false;
+            };
+        }).WithTimeProvider(time).ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+        await Assert.That(result.Exception).IsTypeOf<IOException>();
+        await Assert.That(observed).IsEqualTo(time.GetUtcNow().AddSeconds(1));
+    }
+
+    [Test]
+    public async Task Custom_Strategy_Receives_Deadline_In_Token_Only_Execution()
+    {
+        var time = new FakeTimeProvider();
+        var observer = new DeadlineObserver();
+        await Shield.Timeout(TimeSpan.FromSeconds(1)).Use(observer).WithTimeProvider(time)
+            .ExecuteAsync(static _ => ValueTask.CompletedTask);
+        await Assert.That(observer.Deadline).IsEqualTo(time.GetUtcNow().AddSeconds(1));
+    }
+
+    private sealed class DeadlineObserver : Strategy
+    {
+        public DateTimeOffset? Deadline { get; private set; }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+        {
+            Deadline = context.Deadline;
+            return next.InvokeAsync(context);
+        }
     }
 
     private sealed class TimerCountingProvider(FakeTimeProvider clock) : TimeProvider

@@ -38,6 +38,9 @@ internal sealed class TimeoutStrategy : Strategy
         _telemetryName = options.Name ?? "Timeout";
     }
 
+    internal override bool RequiresDeadline =>
+        _timeoutGenerator is not null || _onTimeout is not null;
+
     public override string Describe() => _timeoutGenerator is null
         ? $"Timeout({DescribeHelper.Time(_timeout)})"
         : "Timeout(dynamic)";
@@ -106,7 +109,7 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
         var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
-        var startedAt = context.TimeProvider.GetTimestamp();
+        var startedAt = recordTimeoutIgnored || context.TrackDeadline ? context.TimeProvider.GetTimestamp() : 0;
 
         try
         {
@@ -133,7 +136,10 @@ internal sealed class TimeoutStrategy : Strategy
                     System.Threading.Timeout.InfiniteTimeSpan);
             }
 
-            context.EnterDeadline(timeout, startedAt);
+            if (context.TrackDeadline)
+            {
+                context.EnterDeadline(timeout, startedAt);
+            }
             context.CancellationToken = timeoutSource.Token;
             execution = next.InvokeAsync(context);
         }
