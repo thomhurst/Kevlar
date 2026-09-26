@@ -94,7 +94,7 @@ try
                     $assemblyId = $packageId
                     $targetFramework = $Matches[1].ToLowerInvariant()
                 }
-                elseif ($entry.FullName -match '^analyzers/dotnet/(?:roslyn[\d.]+/)?cs/(Kevlar\.Analyzers)\.dll$')
+                elseif ($entry.FullName -match '^analyzers/dotnet/(?:roslyn[\d.]+/)?cs/(Kevlar\.(?:Analyzers|CodeFixes))\.dll$')
                 {
                     $assemblyId = $Matches[1]
                     $targetFramework = 'netstandard2.0'

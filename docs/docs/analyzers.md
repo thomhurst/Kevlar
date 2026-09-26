@@ -5,7 +5,8 @@ sidebar_position: 13
 # Analyzers
 
 The `Kevlar` package includes these analyzers automatically. No separate analyzer package is
-required. They report diagnostics only; Kevlar does not install code fixes or IDE code actions.
+required. A narrowly scoped IDE code fix also forwards an ignored execution token for `KEV001`.
+Other diagnostics require manual changes.
 
 ## Toolchain compatibility
 
@@ -13,6 +14,13 @@ Kevlar's analyzers reference Microsoft.CodeAnalysis 4.8.0. Use Visual Studio 202
 or the .NET 8.0.100 SDK or later to run them. The package places them in its `roslyn4.8` analyzer
 band, so older compiler hosts skip them instead of reporting `CS9057`; the Kevlar runtime library
 remains available. Update the compiler host when those projects should also run Kevlar's analyzers.
+
+The separate `Kevlar.CodeFixes.dll` ships alongside `Kevlar.Analyzers.dll` in
+`analyzers/dotnet/roslyn4.8/cs`. The compiler analyzer has no Workspaces dependency. The code fix
+uses the IDE's Roslyn 4.8 or later Workspaces and MEF services; Visual Studio 2022 17.8 or later
+is the supported IDE baseline. Command-line builds report diagnostics without applying fixes.
+Older compiler hosts skip both assemblies. No Roslyn or Workspaces runtime dependency is added
+to applications.
 
 ## Keep analyzers enabled
 
@@ -69,6 +77,24 @@ await shield.ExecuteAsync(ct => client.GetAsync(url, ct));    // clean
 
 Pass the token to cancellable work. Name it `_` only when the operation is truly synchronous or
 uncancellable and ignoring cancellation is deliberate.
+
+### Forward execution CancellationToken
+
+For simple delegates, the IDE offers **Forward execution CancellationToken**. For example,
+`ct => client.GetAsync(url)` becomes `ct => client.GetAsync(url, cancellationToken: ct)`.
+The fix uses the selected overload's actual token parameter name and preserves existing argument
+expressions, named arguments, comments, and `await`. It supports expression bodies and blocks
+containing one return or expression statement, including typed and state-passing execution.
+
+The fixer requires unambiguous semantic overload resolution and matching return types and
+non-token parameters, including optional defaults. It does not replace an explicit token, change
+other arguments, or guess how to rewrite complex delegates, context-based callbacks, or dynamic
+calls. Those cases retain the diagnostic and need a manual fix. Matching signatures cannot prove
+the implementation behavior of arbitrary user-defined overloads; review the IDE preview.
+
+**Fix All** supports document, project, and solution scope through Roslyn's batch fixer. It changes
+only supported diagnostics and leaves unsupported cases for manual correction. See the
+[Roslyn Fix All contract](https://github.com/dotnet/roslyn/blob/main/docs/analyzers/FixAllProvider.md).
 
 ## KEV002: synchronous hedging
 
