@@ -12,6 +12,7 @@ internal sealed class RetryStrategy : Strategy
     private readonly Backoff _backoff;
     private readonly TimeSpan? _maxDelay;
     private readonly bool _respectDeadline;
+    private readonly RetryBudget? _budget;
     private readonly Delegate? _onRetry;
     private readonly Delegate? _delayGenerator;
     private readonly bool _inspectTerminalOutcome;
@@ -26,6 +27,7 @@ internal sealed class RetryStrategy : Strategy
             options.Backoff,
             options.MaxDelay,
             options.RespectDeadline,
+            options.Budget,
             judge,
             options.OnRetry,
             options.DelayGenerator,
@@ -41,6 +43,7 @@ internal sealed class RetryStrategy : Strategy
         Backoff backoff,
         TimeSpan? maxDelay,
         bool respectDeadline,
+        RetryBudget? budget,
         OutcomeJudge judge,
         Delegate? onRetry,
         Delegate? delayGenerator,
@@ -79,6 +82,7 @@ internal sealed class RetryStrategy : Strategy
         _backoff = backoff!;
         _maxDelay = maxDelay ?? _backoff.MaxDelay;
         _respectDeadline = respectDeadline;
+        _budget = budget;
         _onRetry = onRetry;
         _delayGenerator = delayGenerator;
         _inspectTerminalOutcome = delayGenerator?.Method.CustomAttributes.Any(static attribute =>
@@ -98,6 +102,7 @@ internal sealed class RetryStrategy : Strategy
             options.Backoff,
             options.MaxDelay,
             options.RespectDeadline,
+            options.Budget,
             judge,
             options.OnRetry,
             options.DelayGenerator,
@@ -134,9 +139,10 @@ internal sealed class RetryStrategy : Strategy
             ? $", ≤{DescribeHelper.Time(max)}"
             : string.Empty;
         var deadline = _respectDeadline ? ", deadline-aware" : string.Empty;
+        var budget = _budget is not null ? ", budget" : string.Empty;
         return _maxRetries == int.MaxValue
-            ? $"RetryForever({_backoff}{cap}{deadline})"
-            : $"Retry({_maxRetries}, {_backoff}{cap}{deadline})";
+            ? $"RetryForever({_backoff}{cap}{budget}{deadline})"
+            : $"Retry({_maxRetries}, {_backoff}{cap}{budget}{deadline})";
     }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
@@ -277,6 +283,7 @@ internal sealed class RetryStrategy : Strategy
                 }
 
                 if (context.Properties.SuppressAdditionalAttempts
+                    || _budget is not null && ShouldSkipForBudget(context, attempt, in outcome)
                     || _respectDeadline && ShouldSkipForDeadline(context, delay, attempt, in outcome))
                 {
                     return outcome;
@@ -293,6 +300,7 @@ internal sealed class RetryStrategy : Strategy
                 }
 
                 if (context.Properties.SuppressAdditionalAttempts
+                    || _budget is not null && ShouldSkipForBudget(context, attempt, in outcome)
                     || _respectDeadline && ShouldSkipForDeadline(context, delay, attempt, in outcome))
                 {
                     return outcome;
@@ -300,6 +308,7 @@ internal sealed class RetryStrategy : Strategy
 
                 var deferDisposalUntilReplacement =
                     context.Properties.CanSuppressAdditionalAttemptsConcurrently
+                    || _budget is not null
                     || _respectDeadline && context.DeadlineState.HasValue;
                 var disposeBeforeDelay = delay > TimeSpan.Zero
                     && !deferDisposalUntilReplacement;
@@ -328,6 +337,7 @@ internal sealed class RetryStrategy : Strategy
                 }
 
                 if (context.Properties.SuppressAdditionalAttempts
+                    || _budget is not null && ShouldSkipForBudget(context, attempt, in outcome)
                     || _respectDeadline && ShouldSkipForDeadline(context, TimeSpan.Zero, attempt, in outcome))
                 {
                     return outcome;
@@ -485,15 +495,51 @@ internal sealed class RetryStrategy : Strategy
             recordAttemptDuration: true);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool ShouldRetry<T>(
         in Outcome<T> outcome,
         int retriesUsed,
         KevlarContext context,
-        int strategyIndex) =>
-        retriesUsed < _maxRetries
-        && !context.Properties.SuppressAdditionalAttempts
-        && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
-        && !context.CancellationToken.IsCancellationRequested;
+        int strategyIndex)
+    {
+        if (_budget is null)
+        {
+            return retriesUsed < _maxRetries
+                && !context.Properties.SuppressAdditionalAttempts
+                && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
+                && !context.CancellationToken.IsCancellationRequested;
+        }
+
+        return ShouldRetryWithBudget(in outcome, retriesUsed, context, strategyIndex);
+    }
+
+    private bool ShouldRetryWithBudget<T>(in Outcome<T> outcome, int retriesUsed, KevlarContext context, int strategyIndex)
+    {
+        var handled = _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex);
+        _budget!.Observe(in outcome, handled, context);
+        return retriesUsed < _maxRetries
+            && !context.Properties.SuppressAdditionalAttempts
+            && handled
+            && !context.CancellationToken.IsCancellationRequested
+            && !ShouldSkipForBudget(context, retriesUsed + 1, in outcome);
+    }
+
+    private bool ShouldSkipForBudget<T>(KevlarContext context, int attempt, in Outcome<T> outcome)
+    {
+        if (context.CancellationToken.IsCancellationRequested || _budget!.AllowsAdditionalAttempt)
+        {
+            return false;
+        }
+
+        KevlarMetrics.RetryBudgetExhausted(context);
+        if (KevlarTelemetry.IsEventEnabled(context))
+        {
+            KevlarTelemetry.RecordResult(context, _telemetryName, "retry.budget_exhausted",
+                KevlarTelemetrySeverity.Information, context.StrategyIndex, attempt, in outcome,
+                suppressionReason: "budget");
+        }
+        return true;
+    }
 
     private bool ShouldInspectTerminalOutcome<T>(
         in Outcome<T> outcome,

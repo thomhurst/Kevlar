@@ -14,6 +14,7 @@ internal sealed class HedgingStrategy : Strategy
     private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
     private readonly bool _respectDeadline;
+    private readonly RetryBudget? _budget;
     private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGenerator;
     private readonly Delegate? _onHedge;
     private readonly HedgeActionGeneratorAdapter? _actionGenerator;
@@ -60,6 +61,7 @@ internal sealed class HedgingStrategy : Strategy
         _judge = judge;
         _maxHedgedAttempts = options.MaxHedgedAttempts;
         _respectDeadline = options.RespectDeadline;
+        _budget = options.Budget;
         _delay = options.Delay < TimeSpan.Zero
             ? System.Threading.Timeout.InfiniteTimeSpan
             : options.Delay;
@@ -123,7 +125,7 @@ internal sealed class HedgingStrategy : Strategy
         || _actionGenerator is not null || _judge.IsContextAware;
 
     public override string Describe() =>
-        $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))}{(_respectDeadline ? ", deadline-aware" : string.Empty)})";
+        $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))}{(_budget is not null ? ", budget" : string.Empty)}{(_respectDeadline ? ", deadline-aware" : string.Empty)})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -131,7 +133,7 @@ internal sealed class HedgingStrategy : Strategy
         if (_maxHedgedAttempts == 0
             || context.Properties.SuppressAdditionalAttempts)
         {
-            return next.InvokeAsync(context);
+            return _budget is null ? next.InvokeAsync(context) : ExecuteSingleBudgetedAsync(next, context);
         }
 
         if (context.IsSynchronous)
@@ -165,6 +167,7 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Context,
                 attempt: 0,
                 strategyIndex);
+            _budget?.Observe(in outcome, shouldHandle, primary.Context);
             RecordAttempt(
                 primary.Context,
                 primary.Attempt,
@@ -256,6 +259,10 @@ internal sealed class HedgingStrategy : Strategy
                     {
                         delay = System.Threading.Timeout.InfiniteTimeSpan;
                     }
+                    if (_budget is { AllowsAdditionalAttempt: false })
+                    {
+                        delay = System.Threading.Timeout.InfiniteTimeSpan;
+                    }
                     if (delay == TimeSpan.Zero)
                     {
                         if (!HasDelayGenerator && hedgesLaunched == 0
@@ -340,6 +347,7 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
+                    _budget?.Observe(in outcome, shouldHandle, judgingContext);
                     var suppressAdditionalAttempts = PropagateAttemptSuppression(
                         judgingContext,
                         context,
@@ -497,7 +505,8 @@ internal sealed class HedgingStrategy : Strategy
         TimeSpan delay)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-        if (DeadlinePreventsLaunch(context, TimeSpan.Zero))
+        if (DeadlinePreventsLaunch(context, TimeSpan.Zero)
+            || _budget is not null && BudgetPreventsLaunch(context, attemptNumber, outcome))
         {
             return new ValueTask<HedgeAttempt<T>?>((HedgeAttempt<T>?)null);
         }
@@ -641,6 +650,7 @@ internal sealed class HedgingStrategy : Strategy
                 && _onHedge is null
                 && _actionGenerator is null;
             if (DeadlinePreventsLaunch(context, TimeSpan.Zero)
+                || _budget is not null && BudgetPreventsLaunch(context, attemptNumber, outcome)
                 || !reservedFirstFixedHedge && !context.Properties.TryBeginAdditionalAttempt())
             {
                 ReleaseAttemptResources(fork, cancellation, contextCapture);
@@ -1258,12 +1268,12 @@ internal sealed class HedgingStrategy : Strategy
         throw new InvalidOperationException("The completed hedge attempt was not pending.");
     }
 
-    private static void Cleanup<T>(
+    private void Cleanup<T>(
         HedgeAttempt<T> attempt,
         Outcome<T>? terminalOutcome,
         string strategyName)
     {
-        if (attempt.Task.Status != TaskStatus.RanToCompletion)
+        if (_budget is not null || attempt.Task.Status != TaskStatus.RanToCompletion)
         {
             _ = CleanupAsync(attempt, terminalOutcome, strategyName);
             return;
@@ -1289,7 +1299,7 @@ internal sealed class HedgingStrategy : Strategy
         _ = FinishCleanupAsync(disposal, attempt);
     }
 
-    private static async Task CleanupAsync<T>(
+    private async Task CleanupAsync<T>(
         HedgeAttempt<T> attempt,
         Outcome<T>? terminalOutcome,
         string strategyName)
@@ -1298,6 +1308,12 @@ internal sealed class HedgingStrategy : Strategy
         try
         {
             var outcome = await attempt.Task.ConfigureAwait(false);
+            if (_budget is not null)
+            {
+                var judgingContext = await attempt.FreezeContextAsync(in outcome).ConfigureAwait(false);
+                var handled = _judge.ShouldHandle(in outcome, judgingContext, attempt.Attempt, judgingContext.StrategyIndex);
+                _budget.Observe(in outcome, handled, judgingContext);
+            }
             recorded = true;
             RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
             if (terminalOutcome is not { } terminal
@@ -1313,6 +1329,11 @@ internal sealed class HedgingStrategy : Strategy
             if (!recorded)
             {
                 var outcome = Outcome<T>.FromException(exception);
+                if (_budget is not null)
+                {
+                    var handled = _judge.ShouldHandle(in outcome, attempt.Context, attempt.Attempt, attempt.Context.StrategyIndex);
+                    _budget.Observe(in outcome, handled, attempt.Context);
+                }
                 RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
             }
 
@@ -1391,6 +1412,34 @@ internal sealed class HedgingStrategy : Strategy
             in outcome,
             isWinner,
             context.TimeProvider.GetElapsedTime(startedAt));
+    }
+
+    private bool BudgetPreventsLaunch<T>(KevlarContext context, int attempt, Outcome<T>? outcome)
+    {
+        if (context.CancellationToken.IsCancellationRequested || _budget!.AllowsAdditionalAttempt)
+        {
+            return false;
+        }
+        KevlarMetrics.HedgeBudgetExhausted(context);
+        if (KevlarTelemetry.IsEventEnabled(context))
+        {
+            KevlarTelemetry.Record(context, _telemetryName, "hedge.budget_exhausted",
+                KevlarTelemetrySeverity.Information, context.StrategyIndex, attempt,
+                isSuccess: false, outcome?.Exception, suppressionReason: "budget");
+        }
+        return true;
+    }
+
+#if NET8_0_OR_GREATER
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#endif
+    private async ValueTask<Outcome<T>> ExecuteSingleBudgetedAsync<T, TState>(
+        Continuation<T, TState> next, KevlarContext context)
+    {
+        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+        var handled = _judge.ShouldHandle(in outcome, context, attempt: 0, context.StrategyIndex);
+        _budget!.Observe(in outcome, handled, context);
+        return outcome;
     }
 
     private readonly struct HedgeAttempt<T>

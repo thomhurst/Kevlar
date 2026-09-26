@@ -15,6 +15,26 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
+    /// <summary>Registers one shared, named retry/hedge feedback budget.</summary>
+    public static IServiceCollection AddRetryBudget(this IServiceCollection services, string name, RetryBudget budget)
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (budget is null) { throw new ArgumentNullException(nameof(budget)); }
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(RetryBudget)
+            && descriptor.IsKeyedService && Equals(descriptor.ServiceKey, name)))
+        {
+            throw new InvalidOperationException($"Retry budget '{name}' is already registered.");
+        }
+        services.AddKeyedSingleton(name, budget);
+        return services;
+    }
+
+    /// <summary>Creates and registers one shared, named retry/hedge feedback budget.</summary>
+    public static IServiceCollection AddRetryBudget(
+        this IServiceCollection services, string name, int maxTokens = 100, double tokenRatio = 0.1) =>
+        services.AddRetryBudget(name, new RetryBudget(maxTokens, tokenRatio));
+
     private static readonly TimeSpan MaximumTimerDelay =
         TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
 
@@ -105,8 +125,8 @@ public static class KevlarServiceCollectionExtensions
     {
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
-        return services.AddShield(name, _ =>
-            BuildConfiguredShield(configuration).WithName(name), replace);
+        return services.AddShield(name, serviceProvider =>
+            BuildConfiguredShield(configuration, serviceProvider).WithName(name), replace);
     }
 
     /// <summary>
@@ -187,7 +207,7 @@ public static class KevlarServiceCollectionExtensions
                 .CreateReloadingProvider(() => new ReloadingShieldProvider(
                     () => Decorate(
                         serviceProvider,
-                        BuildConfiguredShield(configuration).WithName(name),
+                        BuildConfiguredShield(configuration, serviceProvider).WithName(name),
                         name),
                     configuration.GetReloadToken,
                     onReloadFailure,
@@ -263,8 +283,8 @@ public static class KevlarServiceCollectionExtensions
     {
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
-        return services.AddShield<TResult>(name, _ =>
-            BuildConfiguredShield<TResult>(configuration).WithName(name), replace);
+        return services.AddShield<TResult>(name, serviceProvider =>
+            BuildConfiguredShield<TResult>(configuration, serviceProvider).WithName(name), replace);
     }
 
     /// <summary>
@@ -343,7 +363,7 @@ public static class KevlarServiceCollectionExtensions
                 .CreateReloadingProvider(() => new ReloadingShieldProvider<TResult>(
                     () => Decorate(
                         serviceProvider,
-                        BuildConfiguredShield<TResult>(configuration).WithName(name),
+                        BuildConfiguredShield<TResult>(configuration, serviceProvider).WithName(name),
                         name),
                     configuration.GetReloadToken,
                     onReloadFailure,
@@ -587,6 +607,7 @@ public static class KevlarServiceCollectionExtensions
         {
             var retryDefinition = new RetryDefinition
             {
+                Budget = retry[nameof(RetryDefinition.Budget)],
                 BaseDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.BaseDelay)),
                 MaxDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.MaxDelay)),
             };
@@ -619,6 +640,7 @@ public static class KevlarServiceCollectionExtensions
             string.Equals(section.Key, nameof(ShieldDefinition.Hedge), StringComparison.OrdinalIgnoreCase)))
         {
             var hedgeDefinition = new HedgeDefinition();
+            hedgeDefinition.Budget = hedge[nameof(HedgeDefinition.Budget)];
             if (ReadInt(hedge, nameof(HedgeDefinition.MaxHedgedAttempts)) is { } maxHedgedAttempts)
             {
                 hedgeDefinition.MaxHedgedAttempts = maxHedgedAttempts;
@@ -727,11 +749,11 @@ public static class KevlarServiceCollectionExtensions
             name,
             serviceProvider.GetServices<IShieldDecorator>());
 
-    private static Shield BuildConfiguredShield(IConfiguration configuration)
+    private static Shield BuildConfiguredShield(IConfiguration configuration, IServiceProvider serviceProvider)
     {
         try
         {
-            return BindDefinition(configuration).Build();
+            return BindDefinition(configuration).Build(serviceProvider);
         }
         catch (Exception exception) when (IsConfigurationFailure(exception))
         {
@@ -739,11 +761,11 @@ public static class KevlarServiceCollectionExtensions
         }
     }
 
-    private static Shield<TResult> BuildConfiguredShield<TResult>(IConfiguration configuration)
+    private static Shield<TResult> BuildConfiguredShield<TResult>(IConfiguration configuration, IServiceProvider serviceProvider)
     {
         try
         {
-            return BindDefinition(configuration).Build<TResult>();
+            return BindDefinition(configuration).Build<TResult>(serviceProvider);
         }
         catch (Exception exception) when (IsConfigurationFailure(exception))
         {

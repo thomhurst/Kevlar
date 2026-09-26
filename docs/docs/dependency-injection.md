@@ -333,3 +333,28 @@ var namedShield = Shield.Retry(3).WithName("github");
 `AddShield("github", …)` registers under that DI name either way; `WithName` is about observability inside the pipeline.
 
 For `HttpClient` pipelines specifically, see the [HTTP integration](http.md) — it builds on this package's registration model.
+
+## Shared retry budgets
+
+Register a budget once, then reference its name from `RetryDefinition.Budget` or
+`HedgeDefinition.Budget`. Typed, untyped, and reloading registrations resolve the same keyed
+singleton, so configuration reloads preserve the shared balance:
+
+```csharp
+var services = new ServiceCollection();
+services.AddRetryBudget("inventory", maxTokens: 100, tokenRatio: 0.1);
+var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+    new Dictionary<string, string?>
+    {
+        ["Retry:MaxRetries"] = "3",
+        ["Retry:Budget"] = "inventory",
+    }).Build();
+services.AddShield("inventory-client", configuration);
+```
+
+`services.AddRetryBudget(name, existingBudget)` registers an existing instance. Duplicate names
+are rejected. Resolve it with `GetRequiredKeyedService<RetryBudget>(name)` to inspect `Tokens`.
+For a manually constructed definition, call `definition.Build(serviceProvider)` to resolve names;
+`Build()` reports a configuration error when a named budget is requested without a provider.
+Unknown names also produce a configuration error. Budget settings are immutable: registering a
+new budget is an explicit choice, independent of shield configuration reloads.

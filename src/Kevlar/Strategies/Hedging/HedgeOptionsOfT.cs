@@ -11,6 +11,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions<TResult>
 {
+    /// <inheritdoc cref="HedgeOptions.Budget"/>
+    public RetryBudget? Budget { get; set; }
+
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
     public string? Name { get; set; }
 
@@ -70,6 +73,7 @@ public sealed class HedgeOptions<TResult>
 
     internal HedgeOptions ToUntyped() => new()
     {
+        Budget = Budget,
         Name = Name,
         HandlesException = HandlesException,
         MaxHedgedAttempts = MaxHedgedAttempts,

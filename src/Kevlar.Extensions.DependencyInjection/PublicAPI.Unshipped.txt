@@ -19,3 +19,10 @@ Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueTimeout.ge
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueTimeout.set -> void
 Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueTimeout.get -> System.TimeSpan?
 Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueTimeout.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build(System.IServiceProvider! serviceProvider) -> Kevlar.Shield!
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Budget.get -> string?
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Budget.set -> void
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.Budget.get -> string?
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.Budget.set -> void
+static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddRetryBudget(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.RetryBudget! budget) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddRetryBudget(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, int maxTokens = 100, double tokenRatio = 0.1) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

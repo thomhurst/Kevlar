@@ -265,6 +265,35 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Budget_Exhaustion_Records_Reason_And_Last_Outcome()
+    {
+        const string name = "metrics-budget-exhaustion";
+        using var listener = new KevlarMeterListener();
+        var events = new List<KevlarTelemetryEvent>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.ShieldName == name && telemetryEvent.EventName.EndsWith("budget_exhausted"))
+            {
+                events.Add(telemetryEvent);
+            }
+        }));
+        var budget = new RetryBudget(maxTokens: 2, tokenRatio: 1);
+        var failure = new IOException("budget failure");
+        _ = await Shield.Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; })
+            .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
+        await Assert.That(listener.Total("kevlar.retries", name, ("reason", "budget"))).IsEqualTo(1);
+        var skipped = events.Single();
+        await Assert.That(skipped.EventName).IsEqualTo("retry.budget_exhausted");
+        await Assert.That(skipped.Exception).IsSameReferenceAs(failure);
+        await Assert.That(skipped.AttemptNumber).IsEqualTo(1);
+
+        _ = await Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+            .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
+        await Assert.That(listener.Total("kevlar.hedges", name, ("reason", "budget"))).IsEqualTo(1);
+        await Assert.That(events.Count(item => item.EventName == "hedge.budget_exhausted")).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Meter_And_Instrument_Schema_Is_Stable()
     {
         using var listener = new KevlarMeterListener();

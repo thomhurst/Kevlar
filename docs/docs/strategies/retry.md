@@ -224,7 +224,7 @@ Set `RespectDeadline = true` to stop retrying when the next delay is greater tha
 `KevlarContext.Deadline`'s remaining budget. The effective delay includes `DelayGenerator` and
 `MaxDelay`. Kevlar returns the last handled result or exception immediately, without disposing
 that returned result. It emits `retry.skipped_deadline` and increments `kevlar.retries.skipped`
-with `reason=deadline`; `kevlar.retries` still counts only attempts that actually start.
+with `reason=deadline`; deadline refusals do not increment `kevlar.retries`.
 
 ```csharp
 var deadlineAware = Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
@@ -246,3 +246,56 @@ checked before `OnRetry` and again afterward because an asynchronous callback ca
 A skipped retry normally does not invoke `OnRetry`; it can already have run when its duration
 causes the second check to skip. Caller cancellation retains priority. `Describe()` includes
 `deadline-aware` when enabled. DI configuration also accepts `Retry.RespectDeadline`.
+
+## Shared retry budgets
+
+Use one `RetryBudget` for a downstream dependency when failures across many callers should
+suppress additional traffic. The same instance can be assigned to retry and hedge options on
+independent shields, including shields created for different partition keys:
+
+```csharp
+var budget = new RetryBudget(maxTokens: 100, tokenRatio: 0.1);
+var retry = Shield.Retry(options =>
+{
+    options.MaxRetries = 3;
+    options.Backoff = Backoff.Exponential(TimeSpan.FromMilliseconds(100));
+    options.Budget = budget;
+});
+var hedge = Shield.Hedge(options =>
+{
+    options.Delay = TimeSpan.FromMilliseconds(200);
+    options.Budget = budget;
+});
+```
+
+This follows the feedback model in [gRPC retry throttling](https://github.com/grpc/proposal/blob/master/A6-client-retries.md#throttling-retry-attempts-and-hedged-rpcs).
+The balance starts at `MaxTokens`. Each handled failure subtracts one token, including handled
+result values and the final attempt after the retry count is exhausted. Each acceptable successful
+result adds `TokenRatio`. Unhandled exceptions and caller cancellation do not change the balance.
+Updates are atomic, and the balance stays between zero and `MaxTokens`.
+
+Additional attempts are allowed only while `Tokens > MaxTokens / 2`. Equality suppresses them.
+The initial attempt always runs, so successful initial traffic can replenish an exhausted budget.
+No timer replenishes tokens. `MaxTokens` must be positive; `TokenRatio` must be finite and at least
+0.001. Refunds are rounded down to three decimal places and capped at capacity. Integer thousandths
+avoid floating-point drift at the threshold. Defaults are 100 and 0.1. Settings are immutable, and
+`Tokens` is a thread-safe snapshot.
+
+A denied retry returns its last outcome. It rechecks the shared balance after callbacks and delay,
+and preserves ownership of a returned disposable result. A denied hedge leaves existing contenders
+running; their completed outcomes still update the balance, including losing attempts. Cancellation
+caused by selecting a winning hedge is excluded. This feedback throttle does not reserve tokens
+when attempts start and does not impose a concurrency or requests-per-second bound. Compose a
+concurrency limiter, rate limiter, or circuit breaker for those separate controls.
+
+Configure a shared budget on one retry or hedge layer per logical dependency call. Nested policies
+observe their own attempt outcomes; assigning the same budget to multiple nested layers counts
+those observations separately. Share across independent callers and partitions to aggregate feedback.
+The handling predicates also classify terminal outcomes when a budget is configured, so they must
+be safe to call even when no further retry is allowed.
+
+Descriptions include `budget`. Refusals emit `retry.budget_exhausted` or `hedge.budget_exhausted`.
+The corresponding `kevlar.retries` or `kevlar.hedges` counter includes refusals tagged `reason=budget`;
+exclude that tag when counting attempts that actually started. Normal attempt measurements remain
+untagged by reason. Synchronous `Execute` works with retry budgets and synchronous callbacks.
+See [named budget registration](../dependency-injection.md#shared-retry-budgets) for configuration binding.

@@ -3,6 +3,11 @@
 
 # Coming from Polly?
 
+Kevlar's optional [shared retry budgets](strategies/retry.md#shared-retry-budgets) aggregate failure
+feedback across callers. `AddRetryBudget` registers a named singleton for configuration-bound retry
+or hedge shields. This is an explicit resilience choice when migrating; leave `Budget` unset to
+retain per-execution retry limits without shared throttling.
+
 Kevlar and Polly v8 use the same pipeline model: the first strategy added is outermost, strategy
 instances own their state, and executions flow through one immutable pipeline. The main migration
 work is translating option names, defaults, context handling, and integrations.
