@@ -50,6 +50,13 @@ public class DocsConsistencyTests
 
     private static async Task ExerciseEveryInstrumentAsync()
     {
+        _ = await Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
+            {
+                options.RespectDeadline = true;
+                options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(2), jitter: Jitter.None);
+            }).WithName("docs-deadline")
+            .ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(new IOException()));
+
         var retryAttempts = 0;
         await Shield.Retry(options =>
             {
@@ -160,7 +167,7 @@ public class DocsConsistencyTests
             }
 
             var name = cells[1].Trim('`');
-            var tags = Regex.Matches(cells[6], "`((?:(?:kevlar|exception)\\.[^`]+|result))`")
+            var tags = Regex.Matches(cells[6], "`((?:(?:kevlar|exception)\\.[^`]+|result|reason))`")
                 .Select(static match => match.Groups[1].Value)
                 .ToHashSet(StringComparer.Ordinal);
             rows.Add(name, new InstrumentRow(

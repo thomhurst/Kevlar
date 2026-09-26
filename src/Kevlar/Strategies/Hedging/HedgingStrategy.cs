@@ -13,6 +13,7 @@ internal sealed class HedgingStrategy : Strategy
     private readonly OutcomeJudge _judge;
     private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
+    private readonly bool _respectDeadline;
     private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGenerator;
     private readonly Delegate? _onHedge;
     private readonly HedgeActionGeneratorAdapter? _actionGenerator;
@@ -58,6 +59,7 @@ internal sealed class HedgingStrategy : Strategy
 
         _judge = judge;
         _maxHedgedAttempts = options.MaxHedgedAttempts;
+        _respectDeadline = options.RespectDeadline;
         _delay = options.Delay < TimeSpan.Zero
             ? System.Threading.Timeout.InfiniteTimeSpan
             : options.Delay;
@@ -117,7 +119,7 @@ internal sealed class HedgingStrategy : Strategy
     internal override bool RequiresContinuationOverlapIsolation => false;
 
     public override string Describe() =>
-        $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))})";
+        $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))}{(_respectDeadline ? ", deadline-aware" : string.Empty)})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -246,6 +248,10 @@ internal sealed class HedgingStrategy : Strategy
                 if (completed is null && hedgesLaunched < _maxHedgedAttempts)
                 {
                     delay = await GetDelayAsync(hedgesLaunched + 1, context, startedAt).ConfigureAwait(false);
+                    if (DeadlinePreventsLaunch(context, delay))
+                    {
+                        delay = System.Threading.Timeout.InfiniteTimeSpan;
+                    }
                     if (delay == TimeSpan.Zero)
                     {
                         if (!HasDelayGenerator && hedgesLaunched == 0
@@ -336,7 +342,8 @@ internal sealed class HedgingStrategy : Strategy
                         pending);
                     var isWinner = !shouldHandle
                         || suppressAdditionalAttempts && pending.Count == 0
-                        || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0;
+                        || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0
+                        || pending.Count == 0 && DeadlinePreventsLaunch(context, TimeSpan.Zero);
                     RecordAttempt(
                         in completedAttempt,
                         in outcome,
@@ -425,6 +432,10 @@ internal sealed class HedgingStrategy : Strategy
         }
     }
 
+    private bool DeadlinePreventsLaunch(KevlarContext context, TimeSpan delay) =>
+        _respectDeadline && context.RemainingDeadline is { } remaining
+        && (remaining <= TimeSpan.Zero || delay > remaining);
+
     private ValueTask<TimeSpan> GetDelayAsync(
         int attemptNumber,
         KevlarContext context,
@@ -482,6 +493,10 @@ internal sealed class HedgingStrategy : Strategy
         TimeSpan delay)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        if (DeadlinePreventsLaunch(context, TimeSpan.Zero))
+        {
+            return new ValueTask<HedgeAttempt<T>?>((HedgeAttempt<T>?)null);
+        }
         var notification = _onHedge is null
             ? default
             : InvokeOnHedgeAsync(_onHedge, attemptNumber, outcome, context);
@@ -621,8 +636,8 @@ internal sealed class HedgingStrategy : Strategy
                 && _delay == TimeSpan.Zero
                 && _onHedge is null
                 && _actionGenerator is null;
-            if (!reservedFirstFixedHedge
-                && !context.Properties.TryBeginAdditionalAttempt())
+            if (DeadlinePreventsLaunch(context, TimeSpan.Zero)
+                || !reservedFirstFixedHedge && !context.Properties.TryBeginAdditionalAttempt())
             {
                 ReleaseAttemptResources(fork, cancellation, contextCapture);
                 return null;

@@ -101,3 +101,7 @@ Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.get 
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.set -> void
 static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.Shield<TResult>!>! factory, System.Action<Kevlar.PartitionedShieldOptions<TKey, TResult>!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.Shield!>! factory, System.Action<Kevlar.PartitionedShieldOptions<TKey>!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kevlar.Extensions.DependencyInjection.RetryDefinition.RespectDeadline.get -> bool
+Kevlar.Extensions.DependencyInjection.RetryDefinition.RespectDeadline.set -> void
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.RespectDeadline.get -> bool
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.RespectDeadline.set -> void

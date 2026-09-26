@@ -38,6 +38,12 @@ public sealed class HedgeOptions
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionContext is not null;
 
+    /// <summary>
+    /// Skips timer-based hedges whose delay exceeds the remaining timeout budget, and skips
+    /// all new hedges once the deadline has elapsed. Existing attempts continue. Defaults to false.
+    /// </summary>
+    public bool RespectDeadline { get; set; }
+
     /// <summary>Maximum additional attempts after the original. Default 1.</summary>
     public int MaxHedgedAttempts { get; set; } = 1;
 

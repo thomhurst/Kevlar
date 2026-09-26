@@ -38,6 +38,10 @@ internal static class KevlarMetrics
         "kevlar.retries",
         "{retry}",
         "Retry attempts started after the initial attempt.");
+    private static readonly Counter<long> RetriesSkipped = Meter.CreateCounter<long>(
+        "kevlar.retries.skipped",
+        "{retry}",
+        "Retry attempts skipped because the remaining deadline budget is insufficient.");
     private static readonly Counter<long> Timeouts = Meter.CreateCounter<long>(
         "kevlar.timeouts",
         "{timeout}",
@@ -198,6 +202,18 @@ internal static class KevlarMetrics
         {
             var tags = NameTags(context.ShieldName);
             KevlarMetricEnrichment.Add(Retries, 1, in tags, context);
+        }
+#endif
+    }
+
+    public static void RetrySkippedDeadline(KevlarContext context)
+    {
+#if NET8_0_OR_GREATER
+        if (RetriesSkipped.Enabled)
+        {
+            var tags = NameTags(context.ShieldName);
+            tags.Add("reason", "deadline");
+            KevlarMetricEnrichment.Add(RetriesSkipped, 1, in tags, context);
         }
 #endif
     }

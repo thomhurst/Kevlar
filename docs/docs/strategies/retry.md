@@ -51,6 +51,8 @@ if (attempts != 4)
 
 Bare `Retry(n)` and `RetryForever()` use `Backoff.Default`:
 
+<div style={{overflowX: "auto"}}>
+
 | Setting | Default |
 |---|---|
 | Curve | Exponential |
@@ -58,6 +60,8 @@ Bare `Retry(n)` and `RetryForever()` use `Backoff.Default`:
 | Factor | 2 |
 | Jitter | Equal: each delay is scaled by a value in [0.5, 1.5) |
 | Maximum delay | 30 seconds |
+
+</div>
 
 The cap also applies to `RetryForever()`. Equal jitter prevents callers from retrying in lockstep.
 
@@ -102,6 +106,8 @@ var retry = Shield.Retry(o =>
 });
 ```
 
+<div style={{overflowX: "auto"}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `MaxRetries` | `3` | Retries after the initial attempt — `3` means up to 4 total attempts; `int.MaxValue` = forever |
@@ -111,6 +117,8 @@ var retry = Shield.Retry(o =>
 | `DelayGenerator` | — | Per-retry override returning `ValueTask<TimeSpan?>`: a `TimeSpan` replaces the computed delay, `null` keeps it. This is how [`Retry-After` support](../http.md) works |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
 | `HandlesResult` (`RetryOptions<T>`) | — | Local result predicate; replaces the ambient clause together with `HandlesException` |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
@@ -209,3 +217,32 @@ var scopedRetry = Shield
 ```
 
 Retry outside a per-attempt timeout retries timeouts; retry inside a circuit breaker hammers a struggling dependency before the breaker sees the pattern. The [composition rules](../composition.md) cover this in depth.
+
+## Respecting an outer deadline
+
+Set `RespectDeadline = true` to stop retrying when the next delay is greater than or equal to
+`KevlarContext.Deadline`'s remaining budget. The effective delay includes `DelayGenerator` and
+`MaxDelay`. Kevlar returns the last handled result or exception immediately, without disposing
+that returned result. It emits `retry.skipped_deadline` and increments `kevlar.retries.skipped`
+with `reason=deadline`; `kevlar.retries` still counts only attempts that actually start.
+
+```csharp
+var deadlineAware = Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
+{
+    options.MaxRetries = 3;
+    options.Backoff = Backoff.Constant(TimeSpan.FromMilliseconds(600), jitter: Jitter.None);
+    options.RespectDeadline = true;
+});
+```
+
+If attempts fail immediately, this pipeline performs the initial attempt and one retry at
+600 ms. The next 600 ms delay cannot fit, so the second failure surfaces instead of waiting
+for the outer timeout. A viable delay does not guarantee that the following operation will
+finish before the deadline; cancellation still applies during that operation.
+
+Both typed and untyped options default to `false` in 1.x, preserving existing timeout and
+cancellation behavior. With no enclosing timeout, the option has no effect. The budget is
+checked before `OnRetry` and again afterward because an asynchronous callback can consume time.
+A skipped retry normally does not invoke `OnRetry`; it can already have run when its duration
+causes the second check to skip. Caller cancellation retains priority. `Describe()` includes
+`deadline-aware` when enabled. DI configuration also accepts `Retry.RespectDeadline`.

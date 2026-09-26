@@ -69,6 +69,7 @@ public sealed class ShieldDefinition
             shield = shield.Retry(options =>
             {
                 options.MaxRetries = retry.MaxRetries;
+                options.RespectDeadline = retry.RespectDeadline;
                 options.Backoff = retry.BuildBackoff();
 
                 // Linear and exponential backoffs already carry the cap; setting it twice
@@ -82,6 +83,7 @@ public sealed class ShieldDefinition
             shield = shield.Hedge(options =>
             {
                 options.MaxHedgedAttempts = hedge.MaxHedgedAttempts;
+                options.RespectDeadline = hedge.RespectDeadline;
                 options.Delay = hedge.Delay;
             });
         }
@@ -129,6 +131,9 @@ public sealed class ShieldDefinition
 /// <summary>The retry section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class RetryDefinition
 {
+    /// <inheritdoc cref="RetryOptions.RespectDeadline"/>
+    public bool RespectDeadline { get; set; }
+
     /// <summary>Maximum retries after the initial attempt. Default 3.</summary>
     public int MaxRetries { get; set; } = 3;
 
@@ -172,6 +177,9 @@ public sealed class RetryDefinition
 /// <summary>The hedging section of a <see cref="ShieldDefinition"/>. Requires asynchronous execution and a concurrency-safe operation.</summary>
 public sealed class HedgeDefinition
 {
+    /// <inheritdoc cref="HedgeOptions.RespectDeadline"/>
+    public bool RespectDeadline { get; set; }
+
     /// <summary>Maximum additional attempts after the original. Default 1.</summary>
     public int MaxHedgedAttempts { get; set; } = 1;
 
