@@ -77,6 +77,16 @@ public class DurationBudgetAnalyzerTests
     }
 
     [Test]
+    public async Task Reports_Both_Hazards_In_The_Same_Chain()
+    {
+        var diagnostics = await AnalyzeAsync(
+            "Shield.Timeout(TimeSpan.FromSeconds(5)).Retry(3, Backoff.Constant(TimeSpan.FromSeconds(3))).Timeout(TimeSpan.FromSeconds(10))");
+
+        await Assert.That(diagnostics.Length).IsEqualTo(2);
+        await Assert.That(diagnostics.All(diagnostic => diagnostic.Id == "KEV015")).IsTrue();
+    }
+
+    [Test]
     public async Task Recognizes_Numeric_Constants_And_TimeSpan_Units()
     {
         var diagnostics = await AnalyzeAsync(
