@@ -29,12 +29,15 @@ internal sealed class HttpShieldPipelineOptions
         public RoutingSnapshot(HttpEndpointRoutingOptions source)
         {
             Endpoints = source.Endpoints.ToArray();
+            EndpointProvider = source.EndpointProvider;
             SelectionMode = source.SelectionMode;
             Seed = source.Seed ?? Interlocked.Add(ref _nextUnseeded, GoldenRatio);
             ShieldFactory = source.ShieldFactory;
         }
 
         public HttpEndpoint[] Endpoints { get; }
+
+        public Func<HttpRequestMessage, CancellationToken, ValueTask<IReadOnlyList<HttpEndpoint>>>? EndpointProvider { get; }
 
         public HttpEndpointSelectionMode SelectionMode { get; }
 

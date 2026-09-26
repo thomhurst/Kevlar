@@ -149,6 +149,16 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             pipeline.Options,
             requestOptions).ConfigureAwait(false);
         var reportSuppression = !replay.CanReplay && !selectedShield.InvokesContinuationAtMostOnce;
+        IReadOnlyList<HttpEndpoint>? resolvedEndpoints = null;
+        if (pipeline.Options.Routing?.EndpointProvider is { } endpointProvider)
+        {
+            resolvedEndpoints = await AwaitWithCancellationAsync(
+                endpointProvider(request, executionCancellationToken),
+                executionCancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The endpoint provider returned null.");
+        }
+
+        var endpointOrder = pipeline.CreateEndpointOrder(request.RequestUri, resolvedEndpoints);
         var execution = new RequestExecution(
             this,
             request,
@@ -157,6 +167,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             replay.CanReplay,
             replay.SuppressionReason,
             reportSuppression,
+            endpointOrder,
             executionCancellationToken: executionCancellationToken);
         try
         {
@@ -331,6 +342,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             bool canReplay,
             string? suppressionReason,
             bool reportSuppression,
+            Uri[]? endpointOrder,
             CancellationToken executionCancellationToken)
         {
             _handler = handler;
@@ -342,7 +354,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             _reportSuppression = reportSuppression;
             _hadInitialContent = original.Content is not null;
             _executionCancellationToken = executionCancellationToken;
-            _endpointOrder = pipeline.CreateEndpointOrder(original.RequestUri);
+            _endpointOrder = endpointOrder;
         }
 
         private HttpShieldPipelineOptions Options => _pipeline.Options;
