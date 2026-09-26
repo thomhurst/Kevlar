@@ -5,6 +5,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'getting-started',
     'polly-migration',
+    'http-resilience-migration',
     'glossary',
     'cookbook',
     'handling-failures',
