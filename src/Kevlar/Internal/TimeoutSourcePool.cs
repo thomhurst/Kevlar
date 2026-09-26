@@ -10,11 +10,15 @@ internal static class TimeoutSourcePool
 #if NET8_0_OR_GREATER
     private static readonly CancellationTokenSourcePool[] Pools = CreatePools();
 
+    [ThreadStatic]
+    private static CancellationTokenSourcePool? _threadPool;
+
     internal static CancellationTokenSource RentLinked(CancellationToken upstreamToken)
     {
-        var pools = Pools;
-        var index = (uint)Thread.GetCurrentProcessorId() % (uint)pools.Length;
-        return pools[index].RentLinked(upstreamToken);
+        // Keep the choice after thread migration: switching to a cold pool would allocate
+        // a new source/timer in an otherwise warmed, zero-allocation execution loop.
+        var pool = _threadPool ??= Pools[(uint)Thread.GetCurrentProcessorId() % (uint)Pools.Length];
+        return pool.RentLinked(upstreamToken);
     }
 
     private static CancellationTokenSourcePool[] CreatePools()
