@@ -11,7 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\ActivityTestConfiguration.cs" Link="ActivityTestConfiguration.cs" />
     <Compile Include="..\Kevlar.Chaos.Tests\DocsConsistencyTests.cs" Link="DocsConsistencyTests.cs" />
+    <Compile Include="..\Kevlar.Tests\ActivityTests.cs" Link="ActivityTests.cs" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
   </ItemGroup>

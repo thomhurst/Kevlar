@@ -183,15 +183,72 @@ Custom strategies can publish through the same listener and meter using
 messages and operation-specific data belong in logs, not metric dimensions.
 
 `Kevlar.Testing.TelemetryRecorder` subscribes to this stream and exposes immutable snapshots through
-its `Events` property and `WaitForEventCountAsync`. Kevlar intentionally does not create
-`ActivitySource` spans: use the metrics and listener hook to enrich the tracing system already owned
-by the application or transport.
+its `Events` property and `WaitForEventCountAsync`. Core tracing is opt-in: no activities are
+created unless a listener subscribes to the `Kevlar` activity source on .NET 8 or later.
+
+### Built-in tracing
+
+Subscribe to `KevlarDiagnostics.ActivitySourceName` (`"Kevlar"`) with your application's tracing
+SDK. For OpenTelemetry, use `OpenTelemetry.Extensions.Hosting` and configure export as usual:
+
+```csharp
+using Kevlar;
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Trace;
+
+services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddSource(KevlarDiagnostics.ActivitySourceName));
+```
+
+The source creates internal spans with fixed names:
+
+<div style={{overflowX: 'auto'}}>
+
+| Span | Meaning | Tags |
+| --- | --- | --- |
+| `kevlar.execute` | One public shield execution, including empty pipelines and pre-cancelled calls | Optional `kevlar.shield.name`, `kevlar.execution.outcome`, optional `exception.type` |
+| `kevlar.attempt` | One retry or hedge continuation invocation | Optional `kevlar.shield.name`, `kevlar.strategy.name`, `kevlar.strategy.index`, `kevlar.attempt.number`, `kevlar.attempt.outcome`, optional `exception.type` |
+
+</div>
+
+Attempt numbers are zero-based. Outcomes are `success`, `failure`, or `cancelled`. Failed and
+cancelled spans have error status without an exception message or stack trace. Successful spans
+keep unset status; the enclosing execution can succeed after a failed retry or losing hedge.
+Names and exception types are limited to 256 UTF-16 code units without splitting surrogate pairs.
+Results, bodies, operation keys, and arbitrary context properties are not copied. Keep names
+bounded and non-sensitive: truncation limits size, not the number of distinct values or disclosure.
+
+Retry attempts are children of the current execution. Concurrent hedge attempts are siblings;
+nested retry/hedge strategies add nested attempt spans, and nested shield calls add execution
+spans. Normal execution-context flow preserves parents across awaits. The caller's ambient
+activity is restored before an incomplete operation is returned. A losing hedge can finish after
+its execution span ends; its attempt span ends when that continuation finishes.
+
+Strategy events use the `kevlar.` prefix, such as `kevlar.retry`, `kevlar.timeout`,
+`kevlar.circuit_opened`, `kevlar.rejection`, and `kevlar.fallback`. Events enrich the nearest
+active Kevlar ancestor, including when application or transport child activities are current.
+They include strategy name/index, attempt number, outcome success, duration/delay in seconds,
+and exception type when present. Circuit transitions add `kevlar.circuit.from`/`kevlar.circuit.to`;
+rejections add `kevlar.rejection.kind` and optional `kevlar.retry_after.seconds`. Hedge-attempt
+events carry `kevlar.hedge.winner` and `kevlar.hedge.cancelled`. Suppression uses
+`kevlar.suppression.reason`. Events after all Kevlar ancestors have stopped are dropped.
+
+Sampling belongs to the listener: `None` creates no span; propagation-only activities receive
+no enrichment; `AllData` and `AllDataAndRecorded` receive tags/events. Tags are added after
+sampling, so samplers select using source, span name, and parent context. No listener preserves
+the allocation-free paths; enabled tracing allocates span/tag/event storage. The .NET Standard
+asset exposes the source-name constant but creates no activities and adds no tracing dependency.
+Listener start/sample/stop failures are isolated from protected outcomes. A global listener that
+throws while the source is first constructed disables this source for the process.
 
 ### Enrich existing traces
 
 Install `Kevlar.Extensions.Tracing` and keep one `KevlarTracing.Listen()` subscription for the
 application lifetime. It adds `kevlar.strategy` events to the sampled `Activity.Current` at each
 telemetry callback. It does not create spans, change their status, or require an OpenTelemetry SDK.
+If the built-in `Kevlar` source is also enabled, the adapter enriches its current execution or attempt
+span as well. Choose the source, the adapter, or both according to the telemetry shape you need;
+enabling both produces both event schemas.
 
 This runnable example configures an application-owned source and records a retry:
 
@@ -435,8 +492,10 @@ finally
 
 ## Logging and tracing
 
-The core package does not create `ILogger` messages or `Activity` spans automatically. This avoids
-duplicate telemetry and keeps it independent of a logging provider or tracing SDK. Add
-`Kevlar.Extensions.Logging` when structured strategy logs are useful. Add `Kevlar.Extensions.Tracing` for [events on existing sampled activities](#enrich-existing-traces), or use custom listeners for a different schema. The delegate executed by a
-shield runs in the caller's ambient `Activity`, so normal trace-context propagation continues
-through the protected operation.
+Add `Kevlar.Extensions.Logging` when structured `ILogger` strategy logs are useful. Subscribe to
+the built-in `Kevlar` activity source for execution and attempt spans. Add
+`Kevlar.Extensions.Tracing` for [events on existing sampled activities](#enrich-existing-traces),
+or use custom listeners for a different schema. The core package requires no logging provider
+or tracing SDK. Without a tracing listener, the protected delegate keeps the caller's ambient
+`Activity`. With a listener, it runs inside the sampled execution or attempt activity, preserving
+normal trace propagation.

@@ -559,7 +559,7 @@ internal sealed class HedgingStrategy : Strategy
         fork.AttemptNumber = 0;
         try
         {
-            return new StartedAttempt<T>(next.InvokeAsync(fork), cancellation, fork, attempt: 0);
+            return new StartedAttempt<T>(KevlarActivities.InvokeAttemptAsync(next, fork, _telemetryName), cancellation, fork, attempt: 0);
         }
         catch
         {
@@ -633,9 +633,7 @@ internal sealed class HedgingStrategy : Strategy
                 _telemetryName,
                 attemptNumber,
                 delay: delay);
-            var execution = generatedAction is null
-                ? next.InvokeAsync(fork)
-                : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
+            var execution = InvokeHedgeAction(next, fork, generatedAction);
             return new HedgeAttempt<T>(
                 execution.AsTask(),
                 cancellation,
@@ -649,6 +647,23 @@ internal sealed class HedgingStrategy : Strategy
             ReleaseAttemptResources(fork, cancellation, contextCapture);
             throw;
         }
+    }
+
+    private ValueTask<Outcome<T>> InvokeHedgeAction<T, TState>(
+        Continuation<T, TState> next, KevlarContext context, Func<CancellationToken, ValueTask<T>>? generatedAction)
+    {
+#if NET8_0_OR_GREATER
+        if (KevlarActivities.Enabled)
+        {
+            return KevlarActivities.AttemptAsync(context, _telemetryName, (next, context, generatedAction),
+                static state => state.generatedAction is null
+                    ? state.next.InvokeAsync(state.context)
+                    : InvokeGeneratedAction(state.generatedAction, state.context.CancellationToken));
+        }
+#endif
+        return generatedAction is null
+            ? next.InvokeAsync(context)
+            : InvokeGeneratedAction(generatedAction, context.CancellationToken);
     }
 
     private static ValueTask<T> GetOriginalResultAsync<T>(ValueTask<Outcome<T>> execution)

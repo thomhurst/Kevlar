@@ -139,7 +139,7 @@ internal sealed class RetryStrategy : Strategy
         var attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
         try
         {
-            var execution = next.InvokeAsync(context);
+            var execution = KevlarActivities.InvokeAttemptAsync(next, context, _telemetryName);
             var firstOutcomeShouldRetry = false;
             if (execution.IsCompletedSuccessfully)
             {
@@ -365,7 +365,7 @@ internal sealed class RetryStrategy : Strategy
 
                 attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
                 context.AttemptNumber = attempt;
-                execution = next.InvokeAsync(context);
+                execution = KevlarActivities.InvokeAttemptAsync(next, context, _telemetryName);
             }
         }
         finally
