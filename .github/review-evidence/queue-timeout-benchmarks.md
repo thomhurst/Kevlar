@@ -29,3 +29,23 @@ The subsequent observability-contract test correction and this report change no
 runtime or benchmark source. The earlier pre-rebase comparison is retained at
 https://github.com/thomhurst/Kevlar/actions/runs/36253012783; it uses a different main
 baseline and is not combined with these measurements.
+# Post-adaptive-concurrency comparison
+
+The rebase onto `4e41e545ca87e21f3f249e26fb5fa87aa898ad4d` requires fresh evidence.
+[Run 36255569762](https://github.com/thomhurst/Kevlar/actions/runs/36255569762)
+measured candidate `d1e183d957000d898003a90cd37a961cd1c57f43` on one Ubuntu runner,
+AMD EPYC 7763, .NET 10.0.12, BenchmarkDotNet 0.15.8. All paths allocate zero bytes.
+
+| Method | Baseline before ns | Candidate ns | Baseline after ns |
+|---|---:|---:|---:|
+| Concurrency | 164.3 | 165.6 | 168.4 |
+| ConcurrencyQueue | 161.9 | 163.4 | 166.4 |
+| Rate | 166.4 | 175.9 | 167.5 |
+| RateQueue | 177.4 | 177.5 | 174.4 |
+
+Concurrency remains within the control range. Rate without a queue is 8.4–9.5 ns
+(5.0–5.7%) slower than both controls; acceptance remains blocked. The only changed
+argument setup in that admission method is the added optional rejection-reason
+argument. A follow-up retains the original two-argument rejection entry point
+outside the hot method and requires another comparison. This is a code-generation
+hypothesis, not a confirmed explanation of the measured regression.

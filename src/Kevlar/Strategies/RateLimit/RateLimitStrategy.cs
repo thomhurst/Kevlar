@@ -117,7 +117,12 @@ internal sealed class RateLimitStrategy : Strategy
             : ExecuteReservedAsync(next, context, reservation);
     }
 
-    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason = null)
+    // Keep queue-expiry diagnostics out of the successful admission call site's argument setup.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter) =>
+        RejectAsync<T>(context, retryAfter, reason: null);
+
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason)
     {
         var rejection = new RateLimitExceededException(retryAfter);
         KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName, reason);
