@@ -40,6 +40,20 @@ internal static class TimeoutSourcePool
 #endif
     }
 
+    public static long ArmAndGetTimestamp(CancellationTokenSource source, TimeSpan timeout)
+    {
+#if NET8_0_OR_GREATER
+        var pooled = (Source)source;
+        pooled.Arm(timeout);
+        // This rental owns the source until completion; arming already sampled the clock.
+        return pooled.StartedAt;
+#else
+        var startedAt = TimeProvider.System.GetTimestamp();
+        source.CancelAfter(timeout);
+        return startedAt;
+#endif
+    }
+
 #if NET8_0_OR_GREATER
     private sealed class Source : CancellationTokenSource
     {
@@ -82,6 +96,8 @@ internal static class TimeoutSourcePool
                 _upstream = token.UnsafeRegister(static state => ((Source)state!).Cancel(), this);
             }
         }
+
+        public long StartedAt => _startedAt;
 
         public void Arm(TimeSpan timeout)
         {

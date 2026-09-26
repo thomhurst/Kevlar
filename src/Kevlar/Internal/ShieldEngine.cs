@@ -471,7 +471,7 @@ internal static partial class ShieldEngine
         Func<TState, CancellationToken, ValueTask<T>> action,
         KevlarContext context)
     {
-        context.TrackDeadline = head?.RequiresDeadline == true;
+        context.SuppressDeadlineTracking = head?.RequiresDeadline != true;
         var continuation = new Continuation<T, AsyncCallback<TState, T>>(
             head,
             static (callback, ctx) => InvokeAsync(callback, ctx),
@@ -486,7 +486,7 @@ internal static partial class ShieldEngine
         Func<TState, CancellationToken, T> action,
         KevlarContext context)
     {
-        context.TrackDeadline = head?.RequiresDeadline == true;
+        context.SuppressDeadlineTracking = head?.RequiresDeadline != true;
         var continuation = new Continuation<T, SyncCallback<TState, T>>(
             head,
             static (callback, ctx) =>

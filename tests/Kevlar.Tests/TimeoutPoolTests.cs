@@ -85,9 +85,11 @@ public class TimeoutPoolTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Reuse_Uses_Current_Deadline_And_Removes_Previous_Registrations(bool shorten)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Reuse_Uses_Current_Deadline_And_Removes_Previous_Registrations(bool shorten, bool trackDeadline)
     {
         using var previous = new CancellationTokenSource();
         var source = TimeoutSourcePool.RentLinked(previous.Token);
@@ -97,7 +99,19 @@ public class TimeoutPoolTests
         source.Dispose();
         using var next = TimeoutSourcePool.RentLinked(CancellationToken.None);
         var reused = ReferenceEquals(source, next);
-        TimeoutSourcePool.Arm(next, shorten ? TimeSpan.FromMilliseconds(50) : TimeSpan.FromSeconds(30));
+        var timeout = shorten ? TimeSpan.FromMilliseconds(50) : TimeSpan.FromSeconds(30);
+        if (trackDeadline)
+        {
+            var before = TimeProvider.System.GetTimestamp();
+            var startedAt = TimeoutSourcePool.ArmAndGetTimestamp(next, timeout);
+            var after = TimeProvider.System.GetTimestamp();
+            await Assert.That(startedAt).IsGreaterThanOrEqualTo(before);
+            await Assert.That(startedAt).IsLessThanOrEqualTo(after);
+        }
+        else
+        {
+            TimeoutSourcePool.Arm(next, timeout);
+        }
         previous.Cancel();
         await Assert.That(reused).IsTrue();
         if (shorten)
