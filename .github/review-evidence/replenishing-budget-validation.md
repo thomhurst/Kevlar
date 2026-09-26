@@ -29,3 +29,12 @@ Local opt-in diagnostics: Windows 11, i7-12700K, .NET 10.0.12, BenchmarkDotNet 0
 | HandledResultRecovery (three attempts) | 534.15 ns | 0 B |
 
 The allowance capacity is intentionally large enough to measure actual extra attempts without depletion; windows refill during the benchmark. Raw artifacts: `C:/git/kevlar-500-allowance-benchmarks`. The shared performance reservation covered local validation and measurement, approximately 17:40–17:50 UTC on 2026-09-26. All other owned heavy workloads completed before the benchmark. No competing owned workloads ran during measurement.
+## Initial comparison and focused investigation
+
+Run 36259932201 completed. Default retry success was 82.93/87.32/91.11 ns, handled-result retry 167.44/167.03/168.29 ns, and hedge primary success 244.01/250.92/238.13 ns. Existing feedback retry success was 92.24/93.40/91.54 ns, hedge primary success 241.51/240.54/245.97 ns, and three-attempt recovery 230.88/231.61/232.71 ns. All cases allocated zero bytes. The default hedge's 2.8–5.4% increase blocked acceptance and prompted investigation.
+
+[Focused disassembly comparison](https://github.com/thomhurst/Kevlar/actions/runs/36260641189), AMD EPYC 7763 / .NET 10.0.12, measured Empty at 17.86/17.81/14.87 ns and HedgePrimaryWins at 389.81/336.40/341.78 ns, all zero-allocation. The candidate improves against both hedge controls, but the controls drift substantially. Normalizing absolute addresses makes both benchmark entry methods identical across phases; this does not assert that every indirectly called strategy method is identical. The initial slowdown was not reproduced. Different CPUs and code-generation runs are not averaged into a speedup claim.
+
+## Cancellation review regression
+
+The review identified cancellation between the outer hedge check and final admission. A deterministic test enables the hedge-attempt metric and cancels from the preparation timestamp, after OnHedge completes but before admission. Before the fix it consumed the last token (expected 1, observed 0). Moving the existing cancellation check outside the optional action-generator block prevents that debit and returns cancellation without invoking another attempt. All 22 focused cases pass on .NET 8 and .NET 10. The fix is rebased onto main `091c3427`; fresh CI and a fresh-main comparison remain required.

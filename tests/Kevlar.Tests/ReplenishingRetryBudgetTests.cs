@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Kevlar.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -6,6 +7,42 @@ namespace Kevlar.Tests;
 
 public class ReplenishingRetryBudgetTests
 {
+    [Test]
+    [NotInParallel]
+    public async Task Cancellation_During_Hedge_Preparation_Does_Not_Consume_Allowance()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var clock = new CancellingTimestampProvider(cancellation);
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = static (instrument, meterListener) =>
+            {
+                if (instrument.Name == "kevlar.hedge_attempts")
+                {
+                    meterListener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
+        listener.Start();
+        var budget = RetryBudget.CreateReplenishing(1, replenishmentPeriod: TimeSpan.FromHours(1));
+        var attempts = 0;
+        var outcome = await Shield.Hedge(options =>
+        {
+            options.Budget = budget;
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = _ => { clock.CancelOnNextTimestamp = true; return default; };
+        }).WithTimeProvider(clock).ExecuteOutcomeAsync<int>(_ =>
+        {
+            attempts++;
+            return ValueTask.FromException<int>(new IOException());
+        }, cancellation.Token);
+        await Assert.That(cancellation.IsCancellationRequested).IsTrue();
+        await Assert.That(budget.Tokens).IsEqualTo(1);
+        await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
     [Test]
     public async Task Invalid_Capacity_And_Period_Are_Rejected()
     {
@@ -359,5 +396,19 @@ public class ReplenishingRetryBudgetTests
         public override DateTimeOffset GetUtcNow() => UtcNow;
         public override long GetTimestamp() => clock.GetTimestamp();
         public override long TimestampFrequency => clock.TimestampFrequency;
+    }
+
+    private sealed class CancellingTimestampProvider(CancellationTokenSource cancellation) : TimeProvider
+    {
+        internal bool CancelOnNextTimestamp { get; set; }
+        public override long GetTimestamp()
+        {
+            if (CancelOnNextTimestamp)
+            {
+                CancelOnNextTimestamp = false;
+                cancellation.Cancel();
+            }
+            return TimeProvider.System.GetTimestamp();
+        }
     }
 }

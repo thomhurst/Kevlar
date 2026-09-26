@@ -640,10 +640,9 @@ internal sealed class HedgingStrategy : Strategy
                         startedAt,
                         contextCapture);
                 }
-
-                context.CancellationToken.ThrowIfCancellationRequested();
             }
 
+            context.CancellationToken.ThrowIfCancellationRequested();
             var reservedFirstFixedHedge = attemptNumber == 1
                 && !HasDelayGenerator
                 && _delay == TimeSpan.Zero
