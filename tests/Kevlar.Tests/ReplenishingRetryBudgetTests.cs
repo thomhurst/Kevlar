@@ -135,14 +135,21 @@ public class ReplenishingRetryBudgetTests
             attempts++;
             return ValueTask.FromException<int>(new IOException());
         };
-        var outcome = typed
-            ? await (hedge
+        Outcome<int> outcome;
+        if (typed)
+        {
+            var shield = hedge
                 ? Shield.For<int>().Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
-                : Shield.For<int>().Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; }))
-                .ExecuteOutcomeAsync(action)
-            : await (hedge
+                : Shield.For<int>().Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; });
+            outcome = await shield.ExecuteOutcomeAsync(action);
+        }
+        else
+        {
+            var shield = hedge
                 ? Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
-                : CreateRetry(budget)).ExecuteOutcomeAsync(action);
+                : CreateRetry(budget);
+            outcome = await shield.ExecuteOutcomeAsync(action);
+        }
         await Assert.That(outcome.Exception).IsTypeOf<IOException>();
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(budget.Tokens).IsEqualTo(0);
@@ -245,6 +252,24 @@ public class ReplenishingRetryBudgetTests
         }).ExecuteAsync(_ => new ValueTask<DisposableResult>(value));
         await Assert.That(result).IsSameReferenceAs(value);
         await Assert.That(value.Disposed).IsFalse();
+        await Assert.That(budget.Tokens).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Downstream_Circuit_Rejection_Does_Not_Refund_Admitted_Attempts()
+    {
+        var budget = RetryBudget.CreateReplenishing(2, replenishmentPeriod: TimeSpan.FromHours(1));
+        var attempts = 0;
+        var outcome = await CreateRetry(budget)
+            .CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromHours(1))
+            .ExecuteOutcomeAsync<int>(_ =>
+            {
+                attempts++;
+                return ValueTask.FromException<int>(new IOException());
+            });
+        await Assert.That(outcome.Exception).IsTypeOf<CircuitOpenException>();
+        await Assert.That(attempts).IsEqualTo(1);
+        // Circuit-open rejection is terminal by default; its one admitted retry stays charged.
         await Assert.That(budget.Tokens).IsEqualTo(1);
     }
 
