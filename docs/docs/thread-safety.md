@@ -38,7 +38,7 @@ The following public mutable types follow that rule:
 |---|---|
 | Core | `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions<TKey>`, `PartitionedShieldOptions<TKey, TResult>`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
 | Chaos | `ChaosBehaviorOptions`, `ChaosFaultOptions`, `ChaosLatencyOptions`, `ChaosOutcomeOptions<TResult>` |
-| Dependency injection | `CircuitBreakerDefinition`, `ConcurrencyLimitDefinition`, `RateLimitDefinition`, `ReloadingShieldOptions`, `RetryDefinition`, `ShieldDefinition` |
+| Dependency injection | `CircuitBreakerDefinition`, `ConcurrencyLimitDefinition`, `HedgeDefinition`, `RateLimitDefinition`, `ReloadingShieldOptions`, `RetryDefinition`, `ShieldDefinition` |
 | HTTP | `HttpEndpointRoutingOptions`, `KevlarRequestOptions`, `ShieldHttpHandlerOptions`, `StandardHedgeShieldOptions`, `StandardHttpShieldOptions` |
 | Rate-limiter adapter | `RateLimiterAdapterOptions` |
 

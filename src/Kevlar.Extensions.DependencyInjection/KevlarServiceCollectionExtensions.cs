@@ -581,7 +581,12 @@ public static class KevlarServiceCollectionExtensions
         }
 
         var hedge = configuration.GetSection(nameof(ShieldDefinition.Hedge));
-        if (HasChildren(hedge))
+        if (hedge.Value is { } hedgeValue)
+        {
+            throw InvalidValue(configuration, nameof(ShieldDefinition.Hedge), hedgeValue, "a configuration section");
+        }
+        if (configuration.GetChildren().Any(section =>
+            string.Equals(section.Key, nameof(ShieldDefinition.Hedge), StringComparison.OrdinalIgnoreCase)))
         {
             var hedgeDefinition = new HedgeDefinition();
             if (ReadInt(hedge, nameof(HedgeDefinition.MaxHedgedAttempts)) is { } maxHedgedAttempts)

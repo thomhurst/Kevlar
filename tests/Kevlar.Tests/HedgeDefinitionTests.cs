@@ -20,7 +20,7 @@ public class HedgeDefinitionTests
               "AttemptTimeout": "00:00:01"
             }
             """));
-        using var configuration = new ConfigurationBuilder().AddJsonStream(json).Build();
+        var configuration = new ConfigurationBuilder().AddJsonStream(json).Build();
         using var services = new ServiceCollection()
             .AddShield("untyped", configuration)
             .AddShield<int>("typed", configuration)
@@ -44,6 +44,21 @@ public class HedgeDefinitionTests
     }
 
     [Test]
+    [Arguments("{}", false)]
+    [Arguments("{\"Hedge\":{}}", true)]
+    [Arguments("{\"hedge\":{}}", true)]
+    public async Task Empty_Declared_Section_Enables_Defaults_While_Omission_Does_Not(string json, bool declared)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        var configuration = new ConfigurationBuilder().AddJsonStream(stream).Build();
+        using var services = new ServiceCollection().AddShield("hedge", configuration).BuildServiceProvider();
+        var expected = declared ? "Hedge(1 extra, delay 1s)" : Shield.Empty.ToString();
+
+        await Assert.That(services.GetRequiredService<IKevlarRegistry>().GetShield("hedge").ToString())
+            .IsEqualTo($"hedge: {expected}");
+    }
+
+    [Test]
     [Arguments("MaxHedgedAttempts", "2", "Hedge(2 extra, delay 1s)")]
     [Arguments("Delay", "00:00:00.100", "Hedge(1 extra, delay 100ms)")]
     [Arguments("Delay", "00:00:00", "Hedge(1 extra, delay 0s)")]
@@ -51,12 +66,25 @@ public class HedgeDefinitionTests
     public async Task Partial_Configuration_Preserves_Defaults_And_Delay_Semantics(
         string key, string value, string expected)
     {
-        using var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { [$"Hedge:{key}"] = value }).Build();
         using var services = new ServiceCollection().AddShield("hedge", configuration).BuildServiceProvider();
 
         await Assert.That(services.GetRequiredService<IKevlarRegistry>().GetShield("hedge").ToString())
             .IsEqualTo($"hedge: {expected}");
+    }
+
+    [Test]
+    public async Task Scalar_Hedge_Without_Children_Is_Rejected()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("""{"Hedge":"invalid"}"""));
+        var configuration = new ConfigurationBuilder().AddJsonStream(stream).Build();
+        using var services = new ServiceCollection().AddShield("hedge", configuration).BuildServiceProvider();
+
+        var error = await Assert.That(() => services.GetRequiredService<IKevlarRegistry>().GetShield("hedge"))
+            .Throws<KevlarConfigurationException>();
+        await Assert.That(error!.Message).Contains("Hedge");
+        await Assert.That(error.Message).Contains("invalid");
     }
 
     [Test]
@@ -78,10 +106,12 @@ public class HedgeDefinitionTests
     [Arguments("Hedge:MaxHedgedAttempts", "-1")]
     [Arguments("Hedge:MaxHedgedAttempts", "invalid")]
     [Arguments("Hedge:Delay", "invalid")]
+    [Arguments("Hedge", "invalid")]
+    [Arguments("Hedge", "")]
     [Arguments("Retry:MaxRetries", "1")]
     public async Task Invalid_Configuration_Reports_The_Path_For_Both_Registration_Forms(string key, string value)
     {
-        using var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?>
             {
                 ["Resilience:Hedge:Delay"] = "00:00:01",
@@ -105,7 +135,7 @@ public class HedgeDefinitionTests
     [Test]
     public async Task Reload_Updates_Hedge_Delay_And_Retains_Last_Good_Publication_On_Conflict()
     {
-        using var configuration = new ConfigurationBuilder().AddInMemoryCollection(
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { ["Hedge:Delay"] = "00:00:01" }).Build();
         var options = new ReloadingShieldOptions { DebounceDelay = TimeSpan.Zero };
         var failures = new List<Exception>();

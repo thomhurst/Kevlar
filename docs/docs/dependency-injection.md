@@ -163,7 +163,8 @@ two additional attempts, staggered by 100 milliseconds, within a 10-second total
 }
 ```
 
-`HedgeDefinition` defaults to one additional attempt and a one-second delay. Zero delay removes
+`HedgeDefinition` defaults to one additional attempt and a one-second delay. An empty `Hedge` object
+enables these defaults; omit the section to disable hedging. Scalar section values are invalid. Zero delay removes
 timer staggering; any negative delay hedges only on failure. Hedging requires asynchronous execution
 and an operation that is safe to invoke concurrently. Register the section with either
 `AddShield(name, configuration)` or `AddShield<TResult>(name, configuration)`.
