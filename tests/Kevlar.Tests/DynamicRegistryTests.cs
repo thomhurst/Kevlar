@@ -1553,6 +1553,8 @@ public class DynamicRegistryTests
 
         public bool HandlersInstalledBeforeValidation { get; private set; }
 
+        public IReadOnlyList<Strategy> CurrentStrategies => Strategies;
+
         public IReadOnlyList<Strategy> Strategies
         {
             get

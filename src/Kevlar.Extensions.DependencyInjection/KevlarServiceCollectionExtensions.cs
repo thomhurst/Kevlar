@@ -449,6 +449,13 @@ public static class KevlarServiceCollectionExtensions
                 key => Decorate(serviceProvider, factory(serviceProvider, key), name),
                 options,
                 comparer));
+        services.AddSingleton(new PartitionedShieldRegistration(
+            name,
+            typeof(PartitionedShield<TKey>),
+            serviceProvider => serviceProvider.GetRequiredKeyedService<PartitionedShield<TKey>>(name)
+                .CaptureShields()
+                .Select(static shield => (IReadOnlyList<Strategy>)((IShieldLifecycle)shield).Strategies)
+                .ToArray()));
         return services;
     }
 
@@ -474,6 +481,13 @@ public static class KevlarServiceCollectionExtensions
                 key => Decorate(serviceProvider, factory(serviceProvider, key), name),
                 options,
                 comparer));
+        services.AddSingleton(new PartitionedShieldRegistration(
+            name,
+            typeof(PartitionedShield<TKey, TResult>),
+            serviceProvider => serviceProvider.GetRequiredKeyedService<PartitionedShield<TKey, TResult>>(name)
+                .CaptureShields()
+                .Select(static shield => (IReadOnlyList<Strategy>)((IShieldLifecycle)shield).Strategies)
+                .ToArray()));
         return services;
     }
 

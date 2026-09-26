@@ -41,6 +41,7 @@ const sidebars: SidebarsConfig = {
     'library-authors',
     'analyzers',
     'logging',
+    'health-checks',
     'observability',
     'testing',
     'performance',

@@ -104,6 +104,8 @@ public sealed class CircuitBreakerMonitor
             : ResetAllAsync(cores);
     }
 
+    internal CircuitState[] CaptureStates() => BoundCores().Select(static core => core.State).ToArray();
+
     internal void Bind(CircuitBreakerCore core)
     {
         while (true)

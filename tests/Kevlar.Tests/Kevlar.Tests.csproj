@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.RateLimiting\Kevlar.Extensions.RateLimiting.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Diagnostics.HealthChecks\Kevlar.Extensions.Diagnostics.HealthChecks.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
   </ItemGroup>

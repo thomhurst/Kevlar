@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Description>Health checks for registered Kevlar shields, circuit breaker monitors, and partitioned shields.</Description>
+    <PackageTags>resilience;health-checks;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
+    <ProjectReference Include="..\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" />
+  </ItemGroup>
+</Project>

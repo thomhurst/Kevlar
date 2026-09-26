@@ -319,6 +319,11 @@ $expectedDependencies = @{
         'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
+    'Kevlar.Extensions.Diagnostics.HealthChecks' = @{
+        'net10.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
+        'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
+        '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
+    }
     'Kevlar.Extensions.Logging' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
         'net8.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
@@ -372,6 +377,8 @@ foreach ($dependencyId in @(
     'Microsoft.Bcl.TimeProvider',
     'Microsoft.Extensions.Configuration.Abstractions',
     'Microsoft.Extensions.DependencyInjection.Abstractions',
+    'Microsoft.Extensions.Diagnostics.HealthChecks',
+    'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions',
     'Microsoft.Extensions.Http',
     'Microsoft.Extensions.Logging',
     'Microsoft.Extensions.Logging.Abstractions',
@@ -801,6 +808,16 @@ using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 
+var healthServices = new ServiceCollection().AddLogging();
+healthServices.AddHealthChecks().AddKevlar();
+using (var healthProvider = healthServices.BuildServiceProvider())
+{
+    var report = await healthProvider.GetRequiredService<Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService>().CheckHealthAsync();
+    if (report.Status != Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy)
+    {
+        throw new InvalidOperationException("Health check package inspection failed.");
+    }
+}
 var shield = Shield.Empty;
 var loggedShield = Shield.Retry(0, Backoff.None).WithLogging(NullLogger.Instance);
 if (loggedShield.Execute(static _ => 42) != 42)
@@ -953,6 +970,7 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Diagnostics.HealthChecks" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Logging" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />

@@ -162,6 +162,31 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
+    internal (string Name, Type? ResultType, IReadOnlyList<Strategy> Strategies)[] CaptureShields(
+        Func<string, bool>? filter,
+        CancellationToken cancellationToken) => Read(() =>
+    {
+        var snapshots = new List<(string, Type?, IReadOnlyList<Strategy>)>();
+        foreach (var entry in _entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (filter is not null && !filter(entry.Key.Name))
+            {
+                continue;
+            }
+
+            var strategies = entry.Value.Resolve() switch
+            {
+                IReloadingProvider provider => provider.CurrentStrategies,
+                IShieldLifecycle shield => shield.Strategies,
+                _ => throw new InvalidOperationException("The registration is not a shield.")
+            };
+            snapshots.Add((entry.Key.Name, entry.Key.ResultType, strategies));
+        }
+
+        return snapshots.ToArray();
+    });
+
     internal void ValidateRegistration(ShieldRegistration registration) => Read(() =>
     {
         if (_entries.TryGetValue((registration.Name, registration.ResultType), out var entry))
