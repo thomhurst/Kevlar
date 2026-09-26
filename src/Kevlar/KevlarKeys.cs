@@ -12,4 +12,10 @@ public static class KevlarKeys
     /// </remarks>
     public static KevlarKey<string> OperationKey { get; } = new("kevlar.operation.key");
 
+    /// <summary>
+    /// Queue admission priority when UsePriorityQueue is enabled. Higher integers run first;
+    /// equal priorities retain arrival order. An absent value means zero.
+    /// </summary>
+    public static KevlarKey<int> Priority { get; } = new("kevlar.priority");
+
 }

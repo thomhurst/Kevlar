@@ -10,7 +10,7 @@ namespace Kevlar.Strategies;
 /// for their replenishment time; beyond that, executions are rejected immediately.
 /// Uses GCRA's atomic theoretical-arrival schedule, which is equivalent to a token bucket.
 /// </summary>
-internal sealed class RateLimitStrategy : Strategy
+internal sealed class RateLimitStrategy : Strategy, IRateLimitState
 {
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -33,7 +33,7 @@ internal sealed class RateLimitStrategy : Strategy
     private Reservation? _queueHead;
     private Reservation? _queueTail;
     private int _queuedReservations;
-    private readonly KevlarMetrics.StateMetricRegistration<RateLimitStrategy> _metricsRegistration;
+    private readonly KevlarMetrics.StateMetricRegistration<IRateLimitState> _metricsRegistration;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -122,7 +122,7 @@ internal sealed class RateLimitStrategy : Strategy
     private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter) =>
         RejectAsync<T>(context, retryAfter, reason: null);
 
-    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason)
+    internal ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason)
     {
         var rejection = new RateLimitExceededException(retryAfter);
         KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName, reason);
@@ -249,7 +249,7 @@ internal sealed class RateLimitStrategy : Strategy
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryAcquireWithoutQueue(
+    internal bool TryAcquireWithoutQueue(
         TimeProvider timeProvider,
         out TimeSpan? retryAfter,
         out double admissionTimestamp)
@@ -448,6 +448,8 @@ internal sealed class RateLimitStrategy : Strategy
             _metricsRegistration.Add(alias, timeProvider);
         }
     }
+
+    (long Available, int Queued) IRateLimitState.CaptureState(TimeProvider timeProvider) => CaptureState(timeProvider);
 
     internal (long Available, int Queued) CaptureState(TimeProvider timeProvider)
     {

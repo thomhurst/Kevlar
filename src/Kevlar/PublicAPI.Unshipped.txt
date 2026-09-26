@@ -60,3 +60,8 @@ Kevlar.HedgeOptions.Budget.get -> Kevlar.RetryBudget?
 Kevlar.HedgeOptions.Budget.set -> void
 Kevlar.HedgeOptions<TResult>.Budget.get -> Kevlar.RetryBudget?
 Kevlar.HedgeOptions<TResult>.Budget.set -> void
+Kevlar.ConcurrencyLimitOptions.UsePriorityQueue.get -> bool
+Kevlar.ConcurrencyLimitOptions.UsePriorityQueue.set -> void
+Kevlar.RateLimitOptions.UsePriorityQueue.get -> bool
+Kevlar.RateLimitOptions.UsePriorityQueue.set -> void
+static Kevlar.KevlarKeys.Priority.get -> Kevlar.KevlarKey<int>

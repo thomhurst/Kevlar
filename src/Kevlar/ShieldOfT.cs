@@ -328,7 +328,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
         var options = new RateLimitOptions();
         configure(options);
-        return Append(new RateLimitStrategy(options));
+        return Append(options.UsePriorityQueue ? new PriorityRateLimitStrategy(options) : new RateLimitStrategy(options));
     }
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
@@ -354,7 +354,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
         var options = new ConcurrencyLimitOptions();
         configure(options);
-        return Append(new ConcurrencyLimitStrategy(options));
+        return Append(options.UsePriorityQueue ? new PriorityConcurrencyLimitStrategy(options) : new ConcurrencyLimitStrategy(options));
     }
 
     /// <summary>Adds an adaptive concurrency limit. The options are copied when the strategy is created.</summary>

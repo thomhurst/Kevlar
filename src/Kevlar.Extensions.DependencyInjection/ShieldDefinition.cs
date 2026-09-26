@@ -125,6 +125,7 @@ public sealed class ShieldDefinition
                 options.Burst = rate.Burst;
                 options.QueueLimit = rate.QueueLimit;
                 options.QueueTimeout = rate.QueueTimeout;
+                options.UsePriorityQueue = rate.UsePriorityQueue;
             });
         }
 
@@ -135,6 +136,7 @@ public sealed class ShieldDefinition
                 options.MaxConcurrency = concurrency.MaxConcurrency;
                 options.QueueLimit = concurrency.QueueLimit;
                 options.QueueTimeout = concurrency.QueueTimeout;
+                options.UsePriorityQueue = concurrency.UsePriorityQueue;
             });
         }
 
@@ -279,6 +281,9 @@ public sealed class RateLimitDefinition
 
     /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
     public TimeSpan? QueueTimeout { get; set; }
+
+    /// <summary>Whether to enable highest-priority-first queueing with FIFO ties and lower-priority eviction.</summary>
+    public bool UsePriorityQueue { get; set; }
 }
 
 /// <summary>The concurrency limit section of a <see cref="ShieldDefinition"/>.</summary>
@@ -292,4 +297,7 @@ public sealed class ConcurrencyLimitDefinition
 
     /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
     public TimeSpan? QueueTimeout { get; set; }
+
+    /// <summary>Whether to enable highest-priority-first queueing with FIFO ties and lower-priority eviction.</summary>
+    public bool UsePriorityQueue { get; set; }
 }
