@@ -7,13 +7,13 @@ namespace Kevlar.Extensions.DependencyInjection;
 /// <remarks>
 /// <para>
 /// <see cref="Build"/> chains the sections in one fixed order, outermost first:
-/// <see cref="Timeout"/> → <see cref="Retry"/> → <see cref="CircuitBreaker"/> →
+/// <see cref="Timeout"/> → <see cref="Retry"/> or <see cref="Hedge"/> → <see cref="CircuitBreaker"/> →
 /// <see cref="RateLimit"/> → <see cref="ConcurrencyLimit"/> → <see cref="AttemptTimeout"/>.
 /// Only the sections present in configuration are added; the rest keep their relative order.
 /// </para>
 /// <para>
 /// The order reads like any fluent chain: <see cref="Timeout"/> is the total budget around
-/// everything, retries happen inside it, every attempt passes through the breaker and the two
+/// everything, retries or hedges happen inside it, every attempt passes through the breaker and the two
 /// limiters, and <see cref="AttemptTimeout"/> is the innermost per-attempt budget. Configuration
 /// cannot reorder the chain — build the shield with the fluent API when a different shape is
 /// needed.
@@ -26,6 +26,9 @@ public sealed class ShieldDefinition
 
     /// <summary>Retry configuration. Omit for none.</summary>
     public RetryDefinition? Retry { get; set; }
+
+    /// <summary>Hedging configuration. Omit for none. Cannot be combined with <see cref="Retry"/>.</summary>
+    public HedgeDefinition? Hedge { get; set; }
 
     /// <summary>Circuit breaker configuration. Omit for none.</summary>
     public CircuitBreakerDefinition? CircuitBreaker { get; set; }
@@ -41,12 +44,19 @@ public sealed class ShieldDefinition
 
     /// <summary>
     /// Builds the configured <see cref="Shield"/>, chaining the declared sections outermost first:
-    /// <see cref="Timeout"/> → <see cref="Retry"/> → <see cref="CircuitBreaker"/> →
+    /// <see cref="Timeout"/> → <see cref="Retry"/> or <see cref="Hedge"/> → <see cref="CircuitBreaker"/> →
     /// <see cref="RateLimit"/> → <see cref="ConcurrencyLimit"/> → <see cref="AttemptTimeout"/>.
     /// Sections left null are skipped without changing the order of the rest.
     /// </summary>
+    /// <exception cref="KevlarConfigurationException">Both <see cref="Retry"/> and <see cref="Hedge"/> are set.</exception>
     public Shield Build()
     {
+        if (Retry is not null && Hedge is not null)
+        {
+            throw new KevlarConfigurationException(
+                "ShieldDefinition.Retry and ShieldDefinition.Hedge cannot both be configured. Choose one, or use the fluent API to compose them explicitly.");
+        }
+
         var shield = Shield.Empty;
 
         if (Timeout is { } total)
@@ -64,6 +74,15 @@ public sealed class ShieldDefinition
                 // Linear and exponential backoffs already carry the cap; setting it twice
                 // would only duplicate it in the described pipeline.
                 options.MaxDelay = retry.Backoff is BackoffKind.None or BackoffKind.Constant ? retry.MaxDelay : null;
+            });
+        }
+
+        if (Hedge is { } hedge)
+        {
+            shield = shield.Hedge(options =>
+            {
+                options.MaxHedgedAttempts = hedge.MaxHedgedAttempts;
+                options.Delay = hedge.Delay;
             });
         }
 
@@ -148,6 +167,19 @@ public sealed class RetryDefinition
             "RetryDefinition cannot construct BackoffKind.Custom; configure Backoff.Custom with the fluent API."),
         _ => throw new ArgumentOutOfRangeException(nameof(Backoff), Backoff, "Unknown backoff kind."),
     };
+}
+
+/// <summary>The hedging section of a <see cref="ShieldDefinition"/>. Requires asynchronous execution and a concurrency-safe operation.</summary>
+public sealed class HedgeDefinition
+{
+    /// <summary>Maximum additional attempts after the original. Default 1.</summary>
+    public int MaxHedgedAttempts { get; set; } = 1;
+
+    /// <summary>
+    /// Delay before launching the next attempt. Default 1 second. Zero starts attempts without
+    /// timer staggering; a negative delay hedges only on failure, as with <see cref="HedgeOptions.Delay"/>.
+    /// </summary>
+    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
 }
 
 /// <summary>The circuit breaker section of a <see cref="ShieldDefinition"/>.</summary>

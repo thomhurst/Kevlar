@@ -1,1 +1,9 @@
 #nullable enable
+Kevlar.Extensions.DependencyInjection.HedgeDefinition
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.Delay.get -> System.TimeSpan
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.Delay.set -> void
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.HedgeDefinition() -> void
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.MaxHedgedAttempts.get -> int
+Kevlar.Extensions.DependencyInjection.HedgeDefinition.MaxHedgedAttempts.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.get -> Kevlar.Extensions.DependencyInjection.HedgeDefinition?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.set -> void
