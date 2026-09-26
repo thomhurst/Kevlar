@@ -43,3 +43,5 @@ Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.SamplingWindow.get -> 
 Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.DecreaseFactor.get -> double
 Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.LatencyTolerance.get -> double
 Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Testing.RateLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?

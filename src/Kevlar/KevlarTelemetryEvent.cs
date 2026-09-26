@@ -27,7 +27,8 @@ public readonly struct KevlarTelemetryEvent
         string? callbackSource,
         bool isWinner,
         bool isCancelled,
-        KevlarContext context)
+        KevlarContext context,
+        string? rejectionReason = null)
     {
         EventName = eventName;
         Severity = severity;
@@ -45,6 +46,7 @@ public readonly struct KevlarTelemetryEvent
         ToState = toState;
         RetryAfter = retryAfter;
         RejectionKind = rejectionKind;
+        RejectionReason = rejectionReason;
         SuppressionReason = suppressionReason;
         CallbackKind = callbackKind;
         CallbackSource = callbackSource;
@@ -106,6 +108,9 @@ public readonly struct KevlarTelemetryEvent
 
     internal string? RejectionKind { get; }
 
+    /// <summary>The bounded rejection reason, such as <c>queue_timeout</c>, when applicable.</summary>
+    public string? RejectionReason { get; }
+
     /// <summary>The bounded reason additional attempts were suppressed, when applicable.</summary>
     public string? SuppressionReason { get; }
 
@@ -141,5 +146,6 @@ public readonly struct KevlarTelemetryEvent
         CallbackSource,
         IsWinner,
         IsCancelled,
-        Context);
+        Context,
+        RejectionReason);
 }

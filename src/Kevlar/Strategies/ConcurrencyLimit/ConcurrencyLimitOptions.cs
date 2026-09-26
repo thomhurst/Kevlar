@@ -20,9 +20,16 @@ public sealed class ConcurrencyLimitOptions
 
     /// <summary>
     /// Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).
-    /// The queue has no built-in timeout; compose a timeout outside this strategy to bound the wait.
+    /// Set QueueTimeout to bound queue residence independently of execution time.
     /// </summary>
     public int QueueLimit { get; set; }
+
+    /// <summary>
+    /// Maximum time spent waiting in the queue. Null (the default) leaves the wait unbounded.
+    /// Must be positive and at most 4,294,967,294 milliseconds when configured.
+    /// This limit ends when execution is admitted and does not bound execution time.
+    /// </summary>
+    public TimeSpan? QueueTimeout { get; set; }
 
     /// <summary>
     /// Invoked and awaited when an execution is rejected. Return <see langword="default"/> from a

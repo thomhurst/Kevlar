@@ -76,6 +76,18 @@ public class AllocationBudgetTests
         MaxLimit = 1024,
         SamplingWindow = TimeSpan.FromDays(1),
     });
+    private readonly Shield _timedConcurrencyQueue = Shield.ConcurrencyLimit(options =>
+    {
+        options.MaxConcurrency = 1024;
+        options.QueueLimit = 10;
+        options.QueueTimeout = TimeSpan.FromSeconds(1);
+    });
+    private readonly Shield _timedRateQueue = Shield.RateLimit(options =>
+    {
+        options.Permits = 1_000_000_000;
+        options.QueueLimit = 10;
+        options.QueueTimeout = TimeSpan.FromSeconds(1);
+    });
     private readonly Shield _concurrencyLimitWithRejectionHooks = Shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = 1024;
@@ -282,6 +294,10 @@ public class AllocationBudgetTests
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("concurrency limit with rejection hooks uncontended", this, static test =>
             test._concurrencyLimitWithRejectionHooks.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("timed concurrency queue uncontended", this, static test =>
+            test._timedConcurrencyQueue.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("timed rate queue uncontended", this, static test =>
+            test._timedRateQueue.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("typed result judging", this, static test =>
             test._typedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("context-aware typed result judging", this, static test =>

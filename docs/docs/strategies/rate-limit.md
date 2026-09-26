@@ -153,6 +153,7 @@ API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html
 | `Window` | `1s` | The replenishment window |
 | `Burst` | = `Permits` | Bucket capacity: how far above the steady rate a burst may spike |
 | `QueueLimit` | `0` | How many executions may *wait* for a permit instead of being rejected immediately |
+| `QueueTimeout` | `null` | Maximum queue residence time; execution time is excluded |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
@@ -202,3 +203,29 @@ var polite = Shield
 :::warning Sync callers block
 In synchronous `Execute`, queued waits block the calling thread. Prefer `ExecuteAsync` for queue-enabled limiters.
 :::
+
+## Queue timeout
+
+Bound reservation waiting without limiting admitted execution time:
+
+```csharp
+var shield = Shield.RateLimit(options =>
+{
+    options.Permits = 100;
+    options.Window = TimeSpan.FromSeconds(1);
+    options.QueueLimit = 20;
+    options.QueueTimeout = TimeSpan.FromMilliseconds(250);
+});
+```
+
+The queue timer uses the shield's `TimeProvider`. Expiry removes and refunds the
+reservation, then reports `RateLimitExceededException` with no `RetryAfter` estimate.
+`OnRejected.Reason` and telemetry `RejectionReason` are `queue_timeout`; the rejection
+counter includes `kevlar.rejection.reason=queue_timeout`. Caller cancellation remains
+cancellation and wins when already requested as the waiter observes expiry.
+
+The default `null` retains unbounded queue waiting. Configured values must be positive
+and at most 4,294,967,294 milliseconds. No timer is created for immediate admission.
+Once a permit is granted the queue timer stops, so it cannot cancel protected work.
+`Describe()` includes `queue 20/250ms`. Synchronous `Execute` blocks during the wait
+and observes the same queue timeout.

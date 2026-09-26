@@ -391,13 +391,18 @@ internal static class KevlarMetrics
         KevlarContext context,
         string kind,
         Exception exception,
-        string? strategyName = null)
+        string? strategyName = null,
+        string? reason = null)
     {
 #if NET8_0_OR_GREATER
         if (Rejections.Enabled)
         {
             var tags = NameTags(context.ShieldName);
             tags.Add("kevlar.rejection.type", kind);
+            if (reason is not null)
+            {
+                tags.Add("kevlar.rejection.reason", reason);
+            }
             KevlarMetricEnrichment.Add(Rejections, 1, in tags, context);
         }
 #endif
@@ -416,7 +421,8 @@ internal static class KevlarMetrics
             isSuccess: false,
             exception,
             retryAfter: (exception as ExecutionRejectedException)?.RetryAfter,
-            rejectionKind: kind);
+            rejectionKind: kind,
+            rejectionReason: reason);
     }
 
     public static void HttpReplaySuppressed(
@@ -554,6 +560,11 @@ internal static class KevlarMetrics
         if (telemetryEvent.SuppressionReason is not null)
         {
             tags.Add("kevlar.suppression.reason", telemetryEvent.SuppressionReason);
+        }
+
+        if (telemetryEvent.RejectionReason is not null)
+        {
+            tags.Add("kevlar.rejection.reason", telemetryEvent.RejectionReason);
         }
 
         if (StrategyEvents.Enabled)

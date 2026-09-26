@@ -183,7 +183,8 @@ internal static class KevlarTelemetry
         string? callbackSource = null,
         bool isWinner = false,
         bool isCancelled = false,
-        bool localOnly = false)
+        bool localOnly = false,
+        string? rejectionReason = null)
     {
         var listeners = localOnly ? [] : Volatile.Read(ref _listeners);
         var contextListener = context.TelemetryListener;
@@ -220,7 +221,8 @@ internal static class KevlarTelemetry
             callbackSource,
             isWinner,
             isCancelled,
-            context);
+            context,
+            rejectionReason);
 
         if (!localOnly)
         {

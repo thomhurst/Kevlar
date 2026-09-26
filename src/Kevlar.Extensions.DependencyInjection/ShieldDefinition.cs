@@ -111,12 +111,18 @@ public sealed class ShieldDefinition
                 options.Window = rate.Window;
                 options.Burst = rate.Burst;
                 options.QueueLimit = rate.QueueLimit;
+                options.QueueTimeout = rate.QueueTimeout;
             });
         }
 
         if (ConcurrencyLimit is { } concurrency)
         {
-            shield = shield.ConcurrencyLimit(concurrency.MaxConcurrency, concurrency.QueueLimit);
+            shield = shield.ConcurrencyLimit(options =>
+            {
+                options.MaxConcurrency = concurrency.MaxConcurrency;
+                options.QueueLimit = concurrency.QueueLimit;
+                options.QueueTimeout = concurrency.QueueTimeout;
+            });
         }
 
         if (AttemptTimeout is { } attempt)
@@ -235,6 +241,9 @@ public sealed class RateLimitDefinition
 
     /// <summary>Executions allowed to wait for a permit. Default 0.</summary>
     public int QueueLimit { get; set; }
+
+    /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
+    public TimeSpan? QueueTimeout { get; set; }
 }
 
 /// <summary>The concurrency limit section of a <see cref="ShieldDefinition"/>.</summary>
@@ -245,4 +254,7 @@ public sealed class ConcurrencyLimitDefinition
 
     /// <summary>Executions allowed to wait for a slot. Default 0.</summary>
     public int QueueLimit { get; set; }
+
+    /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
+    public TimeSpan? QueueTimeout { get; set; }
 }

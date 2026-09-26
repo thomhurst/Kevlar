@@ -668,6 +668,7 @@ public static class KevlarServiceCollectionExtensions
             var rateLimitDefinition = new RateLimitDefinition
             {
                 Burst = ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Burst)),
+                QueueTimeout = ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.QueueTimeout)),
             };
             if (ReadInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
             {
@@ -689,7 +690,10 @@ public static class KevlarServiceCollectionExtensions
         if (HasChildren(concurrency))
         {
             RejectLegacyQueueKey(concurrency);
-            var concurrencyDefinition = new ConcurrencyLimitDefinition();
+            var concurrencyDefinition = new ConcurrencyLimitDefinition
+            {
+                QueueTimeout = ReadTimeSpan(concurrency, nameof(ConcurrencyLimitDefinition.QueueTimeout)),
+            };
             if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
             {
                 concurrencyDefinition.MaxConcurrency = maxConcurrency;
