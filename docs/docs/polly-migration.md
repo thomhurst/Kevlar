@@ -249,6 +249,10 @@ var registeredShield = kevlarProvider
 var keyedShield = kevlarProvider.GetRequiredKeyedService<Shield>("catalog");
 ```
 
+Call `AddKevlarValidationOnStart()` to validate explicitly registered named shields during Generic Host
+startup, including typed shields and initial reload publications. Factories remain lazy without this
+opt-in; partition keys and runtime additions are outside its scope. See [startup validation](dependency-injection.md#validating-shields-at-host-startup).
+
 `AddKevlar`, `AddShield`, `AddReloadingShield`, and [`AddPartitionedShield`](partitioning.md) cover fixed,
 configuration-bound, reload-aware, and partitioned registrations. Dynamic registry operations map
 as follows:

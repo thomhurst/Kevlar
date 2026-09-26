@@ -28,6 +28,22 @@ public static class KevlarServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Validates explicitly registered named shields when a Generic Host starts.</summary>
+    /// <remarks>
+    /// Requires Microsoft.Extensions.Hosting 8.0 or later. Constructs typed, untyped, and initial
+    /// reloading shields through their normal cache without executing protected operations.
+    /// Register before building the service provider; registration order does not matter.
+    /// Runtime registry additions and partition keys are not enumerated. Without this opt-in,
+    /// registrations remain lazy. Construction failures include the shield name and original error.
+    /// </remarks>
+    public static IServiceCollection AddKevlarValidationOnStart(this IServiceCollection services)
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        services.AddKevlar();
+        services.AddOptionsWithValidateOnStart<ShieldStartupOptions, ShieldStartupValidator>();
+        return services;
+    }
+
     /// <summary>Registers a named shield, resolvable via <see cref="IKevlarRegistry.GetShield(string)"/> or as a keyed <see cref="Shield"/> service.</summary>
     public static IServiceCollection AddShield(this IServiceCollection services, string name, Shield shield)
         => AddShield(services, name, shield, replace: false);

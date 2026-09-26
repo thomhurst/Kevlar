@@ -162,6 +162,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
+    internal void ValidateRegistration(ShieldRegistration registration) => Read(() =>
+    {
+        if (_entries.TryGetValue((registration.Name, registration.ResultType), out var entry))
+        {
+            _ = entry.Resolve();
+        }
+
+        return true;
+    });
+
     public Shield GetShield(string name) => Read(() =>
         TryResolve(name, resultType: null, out Shield? shield)
             ? shield

@@ -177,6 +177,47 @@ because its replacement operation is a delegate and cannot be represented in con
 `ReloadingShieldOptions` as other sections. An invalid reload, including one that sets both `Retry`
 and `Hedge`, keeps the last valid shield and reports the configuration error through the failure callback.
 
+### Validating shields at host startup
+
+Registrations remain lazy by default. Call `AddKevlarValidationOnStart()` before building a Generic
+Host to construct all explicitly registered named shields during `StartAsync`, before hosted services
+start processing work:
+
+```csharp
+using Kevlar;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddShield("orders", Shield.Retry(3, Backoff.None));
+builder.Services.AddShield<int>("inventory", Shield.For<int>().Timeout(TimeSpan.FromSeconds(2)));
+builder.Services.AddKevlarValidationOnStart();
+using var host = builder.Build();
+await host.StartAsync();
+await host.StopAsync();
+```
+
+This uses the existing Options startup validation hook and requires `Microsoft.Extensions.Hosting`
+8.0 or later. It works with every target of `Kevlar.Extensions.DependencyInjection` and adds no
+hosting dependency to the core or DI package. Install the hosting package in the application, or
+use the ASP.NET Core shared framework. The [Web API sample](https://github.com/thomhurst/Kevlar/tree/main/samples/WebApi)
+enables validation and exercises startup in its smoke mode.
+
+Validation covers typed and untyped `AddShield` registrations and the initial publication of
+`AddReloadingShield`, including named-options registrations. A factory or configuration failure
+throws `KevlarConfigurationException` with the shield name, result type when applicable, and original
+error as its inner exception. Validation stops at the first failed shield. It never executes a
+protected operation. Successful construction populates the same cache used by normal resolution;
+the registry retains ownership and disposes resources with the host, including after failed startup.
+Later invalid reloads still keep the last valid publication.
+
+The opt-in can appear before or after shield registrations and repeated calls are safe. Only
+registrations present when the service provider is built are included. Runtime registry additions
+are outside this validation set, removed registrations are skipped, and partition factories are not
+called because their key space may be unbounded. Validate application-specific partition keys explicitly
+when required. Ordinary host rules still apply: a factory cannot resolve a scoped service from the root
+provider when scope validation is enabled.
+
 ### Reloading configuration atomically
 
 `AddShield(name, IConfiguration)` intentionally binds once, when first resolved. Use

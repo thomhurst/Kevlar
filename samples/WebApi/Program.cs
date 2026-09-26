@@ -21,6 +21,7 @@ listener.Start();
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagnostics.MeterName));
 builder.Services.AddShield("background-jobs", Shield.Retry(1, Backoff.None));
+builder.Services.AddKevlarValidationOnStart();
 builder.Services.AddHttpClient("downstream")
     .ConfigurePrimaryHttpMessageHandler(() => new FlakyHandler(() => Interlocked.Increment(ref attempts)))
     .AddStandardShield(options =>
@@ -50,6 +51,10 @@ if (!args.Contains("--smoke", StringComparer.Ordinal))
     return;
 }
 
+// Exercise host startup validation in smoke mode without binding a fixed port.
+app.Urls.Clear();
+app.Urls.Add("http://127.0.0.1:0");
+await app.StartAsync();
 var client = app.Services.GetRequiredService<IHttpClientFactory>().CreateClient("downstream");
 using var response = await client.GetAsync("https://sample.invalid/orders");
 var provider = app.Services.GetRequiredKeyedService<Kevlar.Extensions.DependencyInjection.IShieldProvider>(
@@ -69,6 +74,7 @@ if (retries != 2)
 #endif
 
 Console.WriteLine($"Web API sample passed after {attempts} HTTP attempts and observed {retries} retry measurements.");
+await app.StopAsync();
 
 internal sealed class FlakyHandler(Func<int> nextAttempt) : HttpMessageHandler
 {
