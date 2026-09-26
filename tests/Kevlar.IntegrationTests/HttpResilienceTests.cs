@@ -306,13 +306,20 @@ public class HttpResilienceTests
     [Test]
     public async Task HttpClientFactory_Standard_Hedge_Uses_Adaptive_Delay()
     {
+        var primaryStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var slow = FlakyHttpServer.Start(async (_, context) =>
         {
+            primaryStarted.TrySetResult();
             await Task.Delay(TimeSpan.FromSeconds(3));
             await FlakyHttpServer.Respond(context, 200, "slow");
         });
-        await using var healthy = FlakyHttpServer.Start((_, context) =>
-            FlakyHttpServer.Respond(context, 200, "adaptive hedge"));
+        await using var healthy = FlakyHttpServer.Start(async (_, context) =>
+        {
+            // A zero-delay hedge may reach the server before the primary. Do not let its
+            // response cancel that primary before the asserted server call is observed.
+            await primaryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await FlakyHttpServer.Respond(context, 200, "adaptive hedge");
+        });
         var observedAttempt = 0;
         using var services = new ServiceCollection()
             .AddHttpClient("adaptive-hedge")

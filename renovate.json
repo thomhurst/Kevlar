@@ -16,6 +16,8 @@
         "Microsoft.Bcl.AsyncInterfaces",
         "Microsoft.Bcl.TimeProvider",
         "Microsoft.Extensions.*",
+        "Microsoft.EntityFrameworkCore.*",
+        "Npgsql.EntityFrameworkCore.PostgreSQL",
         "System.Threading.RateLimiting"
       ],
       "matchCurrentVersion": "<9.0.0",

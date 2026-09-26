@@ -91,7 +91,7 @@ public class RateLimitEdgeCaseTests
     [Test]
     public async Task Queued_Reservations_Are_Scheduled_In_Order()
     {
-        var fakeTime = new FakeTimeProvider();
+        var fakeTime = new ControlledTimeProvider();
         var shield = Shield
             .RateLimit(options =>
             {
@@ -117,12 +117,17 @@ public class RateLimitEdgeCaseTests
             .IsEqualTo(TimeSpan.FromSeconds(3))
             .Within(TimeSpan.FromMilliseconds(1));
 
+        await fakeTime.WaitForTimersAsync(1);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await second).IsEqualTo(2);
+        fakeTime.FireTimer(0);
+        await Assert.That(await second.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
         await Assert.That(third.IsCompleted).IsFalse();
 
+        // The second result can complete before the next reservation registers its timer.
+        await fakeTime.WaitForTimersAsync(2);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await third).IsEqualTo(3);
+        fakeTime.FireTimer(1);
+        await Assert.That(await third.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
     }
 
     [Test]
