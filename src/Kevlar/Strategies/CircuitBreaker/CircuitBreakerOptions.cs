@@ -39,6 +39,26 @@ public sealed class CircuitBreakerOptions
     /// </summary>
     public double? FailureRatio { get; set; }
 
+    /// <summary>Number of completed probes used to evaluate one half-open cohort. Default 1.</summary>
+    /// <remarks>
+    /// At most this many probes run concurrently. Simple mode reopens on the first handled failure;
+    /// ratio mode compares failed probes against this cohort size. The circuit closes after the
+    /// whole cohort completes below the configured thresholds. Unhandled or cancelled probes release their slot.
+    /// </remarks>
+    public int HalfOpenProbes { get; set; } = 1;
+
+    /// <summary>Successful or handled calls taking longer than this duration count toward <see cref="SlowCallRatio"/>.</summary>
+    /// <remarks>Requires ratio mode and <see cref="SlowCallRatio"/>. Detection does not cancel work or change its result.</remarks>
+    public TimeSpan? SlowCallThreshold { get; set; }
+
+    /// <summary>Opens the circuit when this fraction of sampled calls is slow, independently of the handled failure ratio.</summary>
+    /// <remarks>
+    /// Requires <see cref="SlowCallThreshold"/> and <see cref="FailureRatio"/>; uses the same sampling
+    /// window and minimum throughput. In half-open state, the denominator is <see cref="HalfOpenProbes"/>.
+    /// Valid values are greater than zero and at most one.
+    /// </remarks>
+    public double? SlowCallRatio { get; set; }
+
     /// <summary>Minimum executions in the sampling window before <see cref="FailureRatio"/> can trip the circuit. Default 10.</summary>
     public int MinimumThroughput { get; set; } = 10;
 
@@ -49,7 +69,7 @@ public sealed class CircuitBreakerOptions
     public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// Produces the break duration when a handled outcome trips or re-opens the circuit, and is
+    /// Produces the break duration when a handled or slow outcome trips or re-opens the circuit, and is
     /// awaited before the circuit opens. The returned value must be positive. Return
     /// <c>new(duration)</c> from a synchronous generator. The event context is valid only until
     /// the returned task completes. When configured, this value overrides

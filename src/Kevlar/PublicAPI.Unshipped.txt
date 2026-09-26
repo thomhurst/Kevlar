@@ -1,2 +1,14 @@
 #nullable enable
 const Kevlar.KevlarDiagnostics.ActivitySourceName = "Kevlar" -> string!
+Kevlar.CircuitBreakerOptions.HalfOpenProbes.get -> int
+Kevlar.CircuitBreakerOptions.HalfOpenProbes.set -> void
+Kevlar.CircuitBreakerOptions.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.CircuitBreakerOptions.SlowCallThreshold.set -> void
+Kevlar.CircuitBreakerOptions.SlowCallRatio.get -> double?
+Kevlar.CircuitBreakerOptions.SlowCallRatio.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.HalfOpenProbes.get -> int
+Kevlar.CircuitBreakerOptions<TResult>.HalfOpenProbes.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.get -> double?
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.set -> void

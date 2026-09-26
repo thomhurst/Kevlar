@@ -90,7 +90,8 @@ public static class ShieldStateSnapshotExtensions
         switch (strategy)
         {
             case CircuitBreakerStrategy circuit:
-                return new CircuitBreakerStateSnapshot(strategyIndex, circuit.Core.GetState(timeProvider));
+                var breaker = circuit.Core.CaptureState(timeProvider);
+                return new CircuitBreakerStateSnapshot(strategyIndex, breaker.State, breaker.ProbesInFlight, breaker.SlowCallCount);
             case RateLimitStrategy rateLimit:
                 var rate = rateLimit.CaptureState(timeProvider);
                 return new RateLimitStateSnapshot(strategyIndex, rate.Available, rate.Queued);

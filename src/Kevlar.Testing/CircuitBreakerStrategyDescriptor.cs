@@ -12,7 +12,10 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
         TimeSpan breakDuration,
         bool hasMonitor,
         bool hasNotification,
-        bool hasHandlingOverride)
+        bool hasHandlingOverride,
+        int halfOpenProbes,
+        TimeSpan? slowCallThreshold,
+        double? slowCallRatio)
         : base(StrategyKind.CircuitBreaker, description)
     {
         ConsecutiveFailures = consecutiveFailures;
@@ -23,6 +26,9 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
         HasMonitor = hasMonitor;
         HasNotification = hasNotification;
         HasHandlingOverride = hasHandlingOverride;
+        HalfOpenProbes = halfOpenProbes;
+        SlowCallThreshold = slowCallThreshold;
+        SlowCallRatio = slowCallRatio;
     }
 
     /// <summary>The consecutive-failure threshold in simple mode.</summary>
@@ -30,6 +36,15 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
 
     /// <summary>The failure-ratio threshold in sampling mode.</summary>
     public double? FailureRatio { get; }
+
+    /// <summary>Number of completed probes used to evaluate a half-open cohort.</summary>
+    public int HalfOpenProbes { get; }
+
+    /// <summary>Optional duration above which calls count as slow.</summary>
+    public TimeSpan? SlowCallThreshold { get; }
+
+    /// <summary>Optional slow-call ratio that trips the circuit.</summary>
+    public double? SlowCallRatio { get; }
 
     /// <summary>Minimum sampled executions before ratio mode can trip.</summary>
     public int MinimumThroughput { get; }

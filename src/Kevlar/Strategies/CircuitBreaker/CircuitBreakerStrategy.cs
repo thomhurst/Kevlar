@@ -196,47 +196,50 @@ internal sealed class CircuitBreakerStrategy : Strategy
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(entry.Rejection!));
         }
 
+        var startedAt = _core.SlowCallThreshold is not null ? context.TimeProvider.GetTimestamp() : 0;
         var execution = next.InvokeAsync(context);
         return execution.IsCompletedSuccessfully
-            ? CompleteConfigured(execution.Result, context, entry.AdmissionGeneration)
+            ? CompleteConfigured(execution.Result, context, entry.AdmissionGeneration, startedAt)
             : AwaitConfiguredOutcomeAsync(
                 execution,
                 context,
-                entry.AdmissionGeneration);
+                entry.AdmissionGeneration,
+                startedAt);
     }
 
     private async ValueTask<Outcome<T>> AwaitConfiguredOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
-        long admissionGeneration)
+        long admissionGeneration,
+        long startedAt)
     {
         var outcome = await execution.ConfigureAwait(false);
         return await CompleteConfigured(
             outcome,
             context,
-            admissionGeneration).ConfigureAwait(false);
+            admissionGeneration,
+            startedAt).ConfigureAwait(false);
     }
 
     private ValueTask<Outcome<T>> CompleteConfigured<T>(
         Outcome<T> outcome,
         KevlarContext context,
-        long admissionGeneration)
+        long admissionGeneration,
+        long startedAt)
     {
         ValueTask recording;
-        if (_judge.ShouldHandle(in outcome, context, attempt: 0, context.StrategyIndex))
+        var slow = _core.SlowCallThreshold is { } threshold
+            && context.TimeProvider.GetElapsedTime(startedAt) > threshold;
+        var handledFailure = _judge.ShouldHandle(in outcome, context, attempt: 0, context.StrategyIndex);
+        if (handledFailure || outcome.Exception is null)
         {
-            recording = _core.RecordFailureAsync(
+            recording = _core.RecordOutcomeAsync(
                 context.TimeProvider,
                 in outcome,
                 context,
-                admissionGeneration);
-        }
-        else if (outcome.Exception is null)
-        {
-            recording = _core.RecordSuccessAsync(
-                context.TimeProvider,
-                context,
-                admissionGeneration);
+                admissionGeneration,
+                handledFailure,
+                slow);
         }
         else
         {
