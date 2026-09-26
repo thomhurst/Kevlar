@@ -298,20 +298,27 @@ public class HedgingRaceTests
         var executions = Enumerable.Range(0, 64).Select(async executionId =>
         {
             var attempts = 0;
-            var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var primaryCancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var result = await shield.ExecuteAsync(async token =>
             {
                 if (Interlocked.Increment(ref attempts) == 1)
                 {
-                    using var registration = token.Register(() => primaryCancelled.TrySetResult());
-                    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                    try
+                    {
+                        await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                    }
+                    finally
+                    {
+                        // Observe cancellation after the delay completes, independent of callback ordering.
+                        primaryCancelled.TrySetResult(token.IsCancellationRequested);
+                    }
                 }
 
                 return executionId;
             });
 
-            await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            return (result, attempts);
+            var wasCancelled = await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            return (result, attempts, wasCancelled);
         });
 
         var results = await Task.WhenAll(executions).WaitAsync(TimeSpan.FromSeconds(10));
@@ -319,6 +326,7 @@ public class HedgingRaceTests
         await Assert.That(results.Select(result => result.result))
             .IsEquivalentTo(Enumerable.Range(0, 64));
         await Assert.That(results.All(result => result.attempts == 2)).IsTrue();
+        await Assert.That(results.All(result => result.wasCancelled)).IsTrue();
     }
 
     private static async Task RunUnhandledExceptionAndSuccessRace(bool unhandledExceptionWins)
