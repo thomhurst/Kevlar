@@ -196,5 +196,8 @@ and [deadline-aware retries](retry.md#respecting-an-outer-deadline).
 
 Set `HedgeOptions.Budget` or `HedgeOptions<TResult>.Budget` to a shared `RetryBudget` to suppress
 additional contenders during a failure burst. The primary always runs. Refusing another launch
-preserves already-running contenders, and their completions continue to update the shared balance.
+preserves already-running contenders. The constructor's feedback mode observes their completions.
+`RetryBudget.CreateReplenishing` instead acquires one token atomically for each extra contender at
+admission; completion and cancellation after admission do not refund it. Initial attempts remain
+free, and a denied extra launch does not cancel an existing contender.
 Retry and hedge shields can share the same instance. See [budget accounting and composition](retry.md#shared-retry-budgets).

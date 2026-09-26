@@ -361,3 +361,19 @@ For a manually constructed definition, call `definition.Build(serviceProvider)` 
 `Build()` reports a configuration error when a named budget is requested without a provider.
 Unknown names also produce a configuration error. Budget settings are immutable: registering a
 new budget is an explicit choice, independent of shield configuration reloads.
+
+Register a replenishing allowance through the existing instance overload:
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Kevlar.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddRetryBudget("inventory", RetryBudget.CreateReplenishing(
+    maxTokens: 100, replenishmentPeriod: TimeSpan.FromSeconds(10)));
+```
+
+All shields referencing `inventory` share that allowance, including different partition keys when
+their factory uses the registered instance. Register separate instances for independent allowances.
+The budget owns its clock; shield configuration reloads neither reset its balance nor move its
+window boundaries. See [additional-attempt accounting](strategies/retry.md#replenishing-additional-attempt-allowance).

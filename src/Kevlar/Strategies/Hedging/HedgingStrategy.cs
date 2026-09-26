@@ -650,8 +650,8 @@ internal sealed class HedgingStrategy : Strategy
                 && _onHedge is null
                 && _actionGenerator is null;
             if (DeadlinePreventsLaunch(context, TimeSpan.Zero)
-                || _budget is not null && BudgetPreventsLaunch(context, attemptNumber, outcome)
-                || !reservedFirstFixedHedge && !context.Properties.TryBeginAdditionalAttempt())
+                || !reservedFirstFixedHedge && !context.Properties.TryBeginAdditionalAttempt()
+                || _budget is not null && BudgetPreventsLaunch(context, attemptNumber, outcome, acquire: true))
             {
                 ReleaseAttemptResources(fork, cancellation, contextCapture);
                 return null;
@@ -1414,9 +1414,10 @@ internal sealed class HedgingStrategy : Strategy
             context.TimeProvider.GetElapsedTime(startedAt));
     }
 
-    private bool BudgetPreventsLaunch<T>(KevlarContext context, int attempt, Outcome<T>? outcome)
+    private bool BudgetPreventsLaunch<T>(KevlarContext context, int attempt, Outcome<T>? outcome, bool acquire = false)
     {
-        if (context.CancellationToken.IsCancellationRequested || _budget!.AllowsAdditionalAttempt)
+        if (!acquire && context.CancellationToken.IsCancellationRequested
+            || (acquire ? _budget!.TryAcquireAdditionalAttempt() : _budget!.AllowsAdditionalAttempt))
         {
             return false;
         }

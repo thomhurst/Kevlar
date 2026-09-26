@@ -9,6 +9,7 @@ internal static class NetFrameworkCompatibilityTests
     public static async Task Main()
     {
         await RetryHandlesExceptionsAndResults();
+        await ReplenishingBudgetUsesMonotonicTime();
         await TimeoutUsesBclTimeProvider();
         await CircuitBreakerTransitions();
         await RateLimitReportsRetryAfter();
@@ -36,6 +37,24 @@ internal static class NetFrameworkCompatibilityTests
             .ExecuteAsync(_ => new ValueTask<int>(++resultAttempts == 1 ? -1 : 42));
         Equal(42, result, "result retry result");
         Equal(2, resultAttempts, "result retry attempts");
+    }
+
+    private static async Task ReplenishingBudgetUsesMonotonicTime()
+    {
+        var time = new ManualTimeProvider();
+        var budget = RetryBudget.CreateReplenishing(1, replenishmentPeriod: TimeSpan.FromSeconds(1), timeProvider: time);
+        var attempts = 0;
+        var shield = Shield.For<int>().Retry(options =>
+        {
+            options.Budget = budget;
+            options.Backoff = Backoff.None;
+            options.HandlesResult = static _ => true;
+        });
+        _ = await shield.ExecuteAsync(_ => new ValueTask<int>(++attempts));
+        Equal(2, attempts, "replenishing budget attempts");
+        Equal(0d, budget.Tokens, "replenishing budget exhausted");
+        time.Advance(TimeSpan.FromSeconds(1));
+        Equal(1d, budget.Tokens, "replenishing budget refill");
     }
 
     private static async Task TimeoutUsesBclTimeProvider()

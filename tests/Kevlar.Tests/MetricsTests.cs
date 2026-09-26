@@ -265,7 +265,9 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Budget_Exhaustion_Records_Reason_And_Last_Outcome()
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Budget_Exhaustion_Records_Reason_And_Last_Outcome(bool replenishing)
     {
         const string name = "metrics-budget-exhaustion";
         using var listener = new KevlarMeterListener();
@@ -277,7 +279,9 @@ public class MetricsTests
                 events.Add(telemetryEvent);
             }
         }));
-        var budget = new RetryBudget(maxTokens: 2, tokenRatio: 1);
+        var budget = replenishing
+            ? RetryBudget.CreateReplenishing(2, replenishmentPeriod: TimeSpan.FromHours(1))
+            : new RetryBudget(maxTokens: 2, tokenRatio: 1);
         var failure = new IOException("budget failure");
         _ = await Shield.Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; })
             .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
@@ -285,7 +289,7 @@ public class MetricsTests
         var skipped = events.Single();
         await Assert.That(skipped.EventName).IsEqualTo("retry.budget_exhausted");
         await Assert.That(skipped.Exception).IsSameReferenceAs(failure);
-        await Assert.That(skipped.AttemptNumber).IsEqualTo(1);
+        await Assert.That(skipped.AttemptNumber).IsEqualTo(replenishing ? 3 : 1);
 
         _ = await Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
             .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));

@@ -268,7 +268,9 @@ var hedge = Shield.For<int>().Hedge(options =>
 });
 ```
 
-This follows the feedback model in [gRPC retry throttling](https://github.com/grpc/proposal/blob/master/A6-client-retries.md#throttling-retry-attempts-and-hedged-rpcs).
+### Feedback throttle
+
+The constructor follows the feedback model in [gRPC retry throttling](https://github.com/grpc/proposal/blob/master/A6-client-retries.md#throttling-retry-attempts-and-hedged-rpcs).
 The balance starts at `MaxTokens`. Each handled failure subtracts one token, including handled
 result values and the final attempt after the retry count is exhausted. Each acceptable successful
 result adds `TokenRatio`. Unhandled exceptions and caller cancellation do not change the balance.
@@ -294,7 +296,68 @@ those observations separately. Share across independent callers and partitions t
 The handling predicates also classify terminal outcomes when a budget is configured, so they must
 be safe to call even when no further retry is allowed.
 
-Descriptions include `budget`. Refusals emit `retry.budget_exhausted` or `hedge.budget_exhausted`.
+### Replenishing additional-attempt allowance
+
+Use `CreateReplenishing` when concurrent callers must share a finite allowance for extra attempts:
+
+```csharp
+var budget = RetryBudget.CreateReplenishing(
+    maxTokens: 100, replenishmentPeriod: TimeSpan.FromSeconds(10));
+var retry = Shield.Retry(options =>
+{
+    options.MaxRetries = 3;
+    options.Backoff = Backoff.None;
+    options.Budget = budget;
+});
+var hedge = Shield.For<int>().Hedge(options =>
+{
+    options.Delay = TimeSpan.FromMilliseconds(200);
+    options.Budget = budget;
+});
+```
+
+The allowance starts at `MaxTokens`. Fixed windows are anchored at budget creation, and each new
+window restores the full allowance. Unused tokens do not accumulate. Refill happens lazily when
+the budget is read or an attempt is considered; there is no background timer. A delayed read does
+not move later boundaries. The optional `timeProvider:` belongs to the budget and controls its
+monotonic windows, independently of any shield's clock. `ReplenishmentPeriod` exposes the duration;
+it is null for a feedback throttle. `TokenRatio` is zero in replenishing mode, and successful or
+failed outcomes do not change its balance.
+
+Initial attempts remain free, including when the allowance is empty. Checks before callbacks and
+backoff only inspect availability. Each additional attempt atomically consumes one token at final
+admission, immediately before its continuation or generated hedge action starts. Concurrent retries
+and hedges cannot acquire the same token. `AllowsAdditionalAttempt` and `Tokens` are snapshots, so
+neither guarantees that a later launch will succeed.
+
+Cancellation or replay suppression before admission consumes nothing. Cancellation, a failed
+attempt, or rejection by a downstream circuit breaker or admission limiter after admission does
+not refund a token. A hedge action generator that throws before producing an action consumes no
+token. On exhaustion, retries preserve their last outcome and ownership of a returned disposable
+result; hedging preserves already-running contenders. An `OnRetry` or `OnHedge` notification may
+run before another caller consumes the last token, so notifications do not prove an attempt starts.
+
+Nested layers charge only their own additional attempts. For example, an outer retry consumes one
+token when it starts the inner layer's initial attempt; that inner initial attempt is free. A later
+inner retry consumes another token. Completion observations do not charge replenishing mode.
+This also applies to retry/hedge compositions. Separate independent executions always have their
+own free initial attempt; the allowance is not a bound on all physical requests.
+
+Keep one caller-owned instance per intended dependency or partition group. Reusing it shares the
+allowance; creating separate instances gives separate allowances. Existing named DI registration
+accepts either mode and preserves the instance through shield reloads. HTTP and gRPC shields use
+the same options; assign the shared instance to their retry/hedge layer. Retries performed inside
+another HTTP handler, gRPC client, or downstream service are outside Kevlar's accounting.
+
+Fixed windows can admit up to two windows' allowances close to a boundary. Use a rate limiter for
+total request rate and a concurrency limiter for in-flight work. Place those limits and a circuit
+breaker inside retry/hedge when each attempt must pass admission; any resulting rejection still
+consumes an already-admitted extra attempt. Placing a limiter outside controls logical executions.
+Keep per-execution retry/hedge counts and timeout deadlines as independent bounds.
+
+### Budget telemetry
+
+Descriptions include `budget`. Both modes emit `retry.budget_exhausted` or `hedge.budget_exhausted` on refusal.
 The corresponding `kevlar.retries` or `kevlar.hedges` counter includes refusals tagged `reason=budget`;
 exclude that tag when counting attempts that actually started. Normal attempt measurements remain
 untagged by reason. Synchronous `Execute` works with retry budgets and synchronous callbacks.

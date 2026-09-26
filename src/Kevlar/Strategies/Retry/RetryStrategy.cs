@@ -361,7 +361,8 @@ internal sealed class RetryStrategy : Strategy
                         new OperationCanceledException(context.CancellationToken));
                 }
 
-                if (!context.Properties.TryBeginAdditionalAttempt())
+                if (!context.Properties.TryBeginAdditionalAttempt()
+                    || _budget is not null && ShouldSkipForBudget(context, attempt, in outcome, acquire: true))
                 {
                     return outcome;
                 }
@@ -524,9 +525,10 @@ internal sealed class RetryStrategy : Strategy
             && !ShouldSkipForBudget(context, retriesUsed + 1, in outcome);
     }
 
-    private bool ShouldSkipForBudget<T>(KevlarContext context, int attempt, in Outcome<T> outcome)
+    private bool ShouldSkipForBudget<T>(KevlarContext context, int attempt, in Outcome<T> outcome, bool acquire = false)
     {
-        if (context.CancellationToken.IsCancellationRequested || _budget!.AllowsAdditionalAttempt)
+        if (!acquire && context.CancellationToken.IsCancellationRequested
+            || (acquire ? _budget!.TryAcquireAdditionalAttempt() : _budget!.AllowsAdditionalAttempt))
         {
             return false;
         }
