@@ -8,6 +8,8 @@ internal interface IReloadingProvider : IDisposable
 {
     IReadOnlyList<Strategy> Strategies { get; }
 
+    IReadOnlyList<Strategy> CurrentStrategies { get; }
+
     (IReadOnlyList<ShieldRetirement> Retirements, Exception? CleanupFailure) Retire();
 
     void SetLifecycleHandlers(
@@ -223,6 +225,8 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     }
 
     public TShield Current => Volatile.Read(ref _current);
+
+    IReadOnlyList<Strategy> IReloadingProvider.CurrentStrategies => ((IShieldLifecycle)Current).Strategies;
 
     IReadOnlyList<Strategy> IReloadingProvider.Strategies
     {

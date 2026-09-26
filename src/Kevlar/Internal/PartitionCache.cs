@@ -106,6 +106,15 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         }
     }
 
+    internal TShield[] CaptureShields()
+    {
+        lock (_gate)
+        {
+            ThrowIfDisposed();
+            return _entries.Values.Select(static entry => entry.Shield).ToArray();
+        }
+    }
+
     public TShield Get(TKey key)
     {
         ThrowIfDisposed();

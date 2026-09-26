@@ -7,7 +7,8 @@ sidebar_position: 15
 Shields describe their configured pipeline, publish metrics through built-in `Meter` instances,
 and expose strategy events for request-level telemetry. Use
 [`Kevlar.Extensions.Logging`](logging.md) for structured `ILogger` events. Built-in analyzers catch
-resilience mistakes at compile time.
+resilience mistakes at compile time. [Health checks](health-checks.md) expose registered circuit
+breaker state and retained-partition summaries to readiness endpoints.
 
 ## Pipeline descriptions
 

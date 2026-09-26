@@ -1,0 +1,12 @@
+#nullable enable
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.IncludeRegistry.get -> bool
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.IncludeRegistry.set -> void
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.IsolatedStatus.get -> Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.IsolatedStatus.set -> void
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.KevlarHealthCheckOptions() -> void
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.Monitors.get -> System.Collections.Generic.IDictionary<string!, Kevlar.CircuitBreakerMonitor!>!
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.ShieldFilter.get -> System.Func<string!, bool>?
+Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions.ShieldFilter.set -> void
+Microsoft.Extensions.DependencyInjection.KevlarHealthChecksBuilderExtensions
+static Microsoft.Extensions.DependencyInjection.KevlarHealthChecksBuilderExtensions.AddKevlar(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, string! name = "kevlar", Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus failureStatus = Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded, System.Action<Kevlar.Extensions.Diagnostics.HealthChecks.KevlarHealthCheckOptions!>? configure = null, System.Collections.Generic.IEnumerable<string!>? tags = null, System.TimeSpan? timeout = null) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!

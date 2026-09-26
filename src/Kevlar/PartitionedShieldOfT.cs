@@ -94,6 +94,8 @@ public sealed class PartitionedShield<TKey, TResult> : IDisposable, IAsyncDispos
     /// <summary>Gets the total number of partitions removed for any reason.</summary>
     public long EvictionCount => _cache.EvictionCount;
 
+    internal Shield<TResult>[] CaptureShields() => _cache.CaptureShields();
+
     internal PartitionCacheState CaptureState() => _cache.CaptureState();
 
     /// <summary>Disposes strategies owned by every retained partition.</summary>
