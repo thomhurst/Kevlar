@@ -7,3 +7,5 @@ Kevlar.Extensions.DependencyInjection.HedgeDefinition.MaxHedgedAttempts.get -> i
 Kevlar.Extensions.DependencyInjection.HedgeDefinition.MaxHedgedAttempts.set -> void
 Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.get -> Kevlar.Extensions.DependencyInjection.HedgeDefinition?
 Kevlar.Extensions.DependencyInjection.ShieldDefinition.Hedge.set -> void
+
+static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddKevlarValidationOnStart(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
