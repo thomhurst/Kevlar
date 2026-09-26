@@ -7,6 +7,9 @@ Moving from `Microsoft.Extensions.Http.Resilience`? Replace `AddStandardResilien
 `AddStandardHedgingHandler`, or `AddResilienceHandler`
 with the corresponding Kevlar HTTP registration. For named gRPC resilience, use
 [gRPC interceptors](grpc.md): `AddShieldUnaryInterceptor` and `AddShieldStreamingInterceptor`.
+For server admission control, register `AddShieldServerInterceptor` and add `ShieldServerInterceptor`
+to the ASP.NET Core gRPC interceptor pipeline. Server shields must guarantee at most one handler
+invocation; keep retries and hedging on replay-safe client operations.
 Start by comparing defaults and replay rules;
 renaming the registration alone changes behavior. For direct Polly pipelines, see the
 [Polly migration guide](polly-migration.md).

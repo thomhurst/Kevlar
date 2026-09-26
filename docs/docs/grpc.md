@@ -4,11 +4,67 @@ sidebar_position: 10
 
 # gRPC Integration
 
-`Kevlar.Extensions.Grpc` supplies separate interceptors for asynchronous unary and streaming gRPC client calls. Blocking unary and server calls remain unchanged.
+`Kevlar.Extensions.Grpc` supplies interceptors for asynchronous unary and streaming gRPC client
+calls, plus server admission control. Client interceptors leave blocking unary and server calls unchanged.
 
 ```bash
 dotnet add package Kevlar.Extensions.Grpc
 ```
+
+## Server admission control
+
+Use `ShieldServerInterceptor` to hold a concurrency permit for the entire handler lifetime,
+including all reads and writes in a stream. Register both the interceptor instance and its place
+in the ASP.NET Core gRPC pipeline:
+
+```csharp
+using Kevlar;
+using Kevlar.Extensions.Grpc;
+using Microsoft.Extensions.DependencyInjection;
+
+services.AddShieldServerInterceptor(Shield.ConcurrencyLimit(100, queueLimit: 20));
+services.AddGrpc(options => options.Interceptors.Add<ShieldServerInterceptor>());
+```
+
+Alternatively, register a named shield with `services.AddShield("server", shield)` and use
+`services.AddShieldServerInterceptor("server")`. The interceptor is a singleton and shares the
+resolved shield's state across unary, client-streaming, server-streaming, and duplex calls.
+
+For independent limits per full gRPC method name, supply a bounded partition provider:
+
+```csharp
+using Kevlar;
+using Microsoft.Extensions.DependencyInjection;
+
+var serverPartitions = new PartitionedShield<string>(
+    _ => Shield.ConcurrencyLimit(10, queueLimit: 0));
+services.AddShieldServerInterceptor(serverPartitions);
+```
+
+Pass `partitionKey: context => context.Peer` to partition by peer instead. Peer includes transport
+identity details and may change between connections; choose a stable application key when needed.
+The caller owns the provider and must dispose it after the server stops. Asynchronous partition
+factories are supported. Keep partition cardinality bounded through `PartitionedShieldOptions`.
+
+- `ConcurrencyLimitExceededException` and `RateLimitExceededException` become `ResourceExhausted`.
+- `CircuitOpenException` becomes `Unavailable`. A known remaining break duration becomes a
+  `grpc-retry-pushback-ms` trailer, rounded up to milliseconds and capped at `Int32.MaxValue`.
+  Isolated circuits have no automatic recovery estimate and omit that trailer.
+- Existing `RpcException` statuses and trailers pass through unchanged. Other exceptions retain
+  the host's normal gRPC exception handling.
+
+Server shields must guarantee at most one handler invocation. Retry, hedging, live-forwarding
+shields, and custom strategies without that guarantee are rejected; a server cannot rewind request
+streams or retract sent response messages. Use client-side retry for replay-safe RPCs. Zero-retry
+and zero-hedge strategies are supported.
+
+Caller cancellation reaches the shield and handler. The original `ServerCallContext` is preserved,
+including request metadata, deadlines, HTTP context, response headers, status, trailers, and native
+context propagation. Cancellation remains cooperative: pass its token to downstream operations.
+Use gRPC deadlines for time limits. Shield timeouts and other strategies that replace the transport
+token are rejected before handler execution: substituting a context wrapper would break ASP.NET
+Core service activation. This admission integration adds no ASP.NET Core dependency to client apps
+and remains available on every target framework supported by `Kevlar.Extensions.Grpc`.
 
 ## Choose transient failures explicitly
 

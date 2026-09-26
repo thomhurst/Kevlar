@@ -20,6 +20,7 @@
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
