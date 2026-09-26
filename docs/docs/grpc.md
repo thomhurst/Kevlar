@@ -103,6 +103,9 @@ Do not configure both a ServiceConfig retry policy and a Kevlar retry for the sa
 attempt counts multiply, and the outer Kevlar shield sees only the channel's final result. Choose
 ServiceConfig when protocol-native, per-method retry with built-in throttling is sufficient. Choose
 Kevlar when retry must compose with its other strategies or share their telemetry and state.
+Kevlar can also share a [retry budget](strategies/retry.md#shared-retry-budgets) across shields and
+partitions. This provides success/failure feedback throttling; it does not add the channel's
+protocol-level call commitment or buffering rules.
 
 When Kevlar owns retry, opt in to the server's `grpc-retry-pushback-ms` trailer:
 

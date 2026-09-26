@@ -30,6 +30,37 @@ public class RetryBudgetDependencyInjectionTests
     }
 
     [Test]
+    public async Task Configuration_Reload_Preserves_The_Shared_Balance()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Retry:Budget"] = "downstream",
+            ["Retry:MaxRetries"] = "10",
+            ["Retry:Backoff"] = "None",
+        }).Build();
+        var options = new ReloadingShieldOptions { DebounceDelay = TimeSpan.Zero };
+        using var provider = new ServiceCollection()
+            .AddRetryBudget("downstream", maxTokens: 4, tokenRatio: 1)
+            .AddReloadingShield("first", options, configuration)
+            .AddReloadingShield<int>("second", options, configuration)
+            .BuildServiceProvider();
+        var first = provider.GetRequiredKeyedService<IShieldProvider>("first");
+        var second = provider.GetRequiredKeyedService<IShieldProvider<int>>("second");
+        var original = first.Current;
+        _ = await original.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+
+        configuration["Retry:MaxRetries"] = "20";
+        configuration.Reload();
+        await Assert.That(ReferenceEquals(first.Current, original)).IsFalse();
+        var budget = provider.GetRequiredKeyedService<RetryBudget>("downstream");
+        await Assert.That(budget.Tokens).IsEqualTo(2);
+        _ = await second.Current.ExecuteOutcomeAsync(static _ => ValueTask.FromException<int>(new IOException()));
+        await Assert.That(budget.Tokens).IsEqualTo(1);
+        await Assert.That(first.Current.Execute(static _ => 42)).IsEqualTo(42);
+        await Assert.That(budget.Tokens).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Definition_Resolves_Hedge_Budget_And_Reports_Missing_Registration()
     {
         var definition = new ShieldDefinition
