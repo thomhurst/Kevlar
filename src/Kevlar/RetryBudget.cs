@@ -114,6 +114,7 @@ public sealed class RetryBudget
     private sealed class ReplenishingAllowance(int capacity, TimeSpan period, TimeProvider timeProvider)
     {
         private readonly object _gate = new();
+        private readonly int _capacity = capacity;
         private readonly long _startedAt = timeProvider.GetTimestamp();
         private long _window;
         private int _tokens = capacity;
@@ -152,7 +153,7 @@ public sealed class RetryBudget
             if (window > _window)
             {
                 _window = window;
-                _tokens = capacity;
+                _tokens = _capacity;
             }
         }
     }
