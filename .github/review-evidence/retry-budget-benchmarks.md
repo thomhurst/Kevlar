@@ -4,7 +4,45 @@ Issue #507 adds an opt-in, shared success/failure feedback budget. Existing shie
 budget retain their retry and hedge behavior. Budget observations include terminal attempts,
 handled results, and late hedge losers; caller/winner cancellation is excluded.
 
-## Sequential performance comparison
+## Isolated comparisons and investigation
+
+Both remote comparisons pin baseline `4e41e545ca87e21f3f249e26fb5fa87aa898ad4d`.
+[Initial full comparison](https://github.com/thomhurst/Kevlar/actions/runs/36256059391)
+measures `cfb25381c6bd6848cadf1227b67c55a90eb17fe9` on an Intel Xeon 8573C.
+All cases allocate zero bytes. Retry success (102.96/104.99/114.80 ns) and hedge
+primary success (312.47/313.15/315.25 ns) remain within the controls. Handled-result
+retry is 202.84/213.53/202.30 ns, while the unchanged empty path is
+11.63/18.25/11.85 ns. These discrepancies blocked acceptance and prompted a
+focused code-generation investigation; they are retained rather than discarded.
+
+[Targeted comparison with disassembly](https://github.com/thomhurst/Kevlar/actions/runs/36257105022)
+measures `9507e28fa1391b40bf4f6b82f084694799a17741` on an AMD EPYC 9V45,
+Ubuntu 24.04, .NET 10.0.12, BenchmarkDotNet 0.15.8. Product and benchmark source
+are identical to the first candidate; intervening changes affect tests, docs,
+and the diagnostic workflow. The same two fixture methods run sequentially in
+each baseline/candidate/baseline phase, with disassembly depth four.
+
+| Method | Baseline before ns | Candidate ns | Baseline after ns | Allocation |
+|---|---:|---:|---:|---:|
+| Empty | 8.844 | 8.944 | 8.821 | 0 B |
+| RetryHandledResult | 157.959 | 152.583 | 156.954 | 0 B |
+
+Empty differs by 0.10–0.12 ns (1.1–1.4%); its 99.9% confidence intervals overlap.
+Handled-result retry is 2.8–3.4% faster than both controls. After normalizing
+absolute process addresses, the disassembled benchmark entry methods are
+identical across all three phases. This statement concerns the benchmark entry
+methods, not every called retry implementation method. The reported transitive
+code-size totals vary with disassembler traversal and are not comparable as
+changes to the entry method.
+
+The large empty-path discrepancy and retry regression are not reproduced in the
+focused investigation. Together with the local comparison below and unchanged
+allocation gates, no consistent material default-path regression is established.
+Performance acceptance does not claim a speedup or uniform results across CPUs;
+the initial Intel result remains a measurement limitation. Do not average the
+different machines or treat these fixtures as production scalability estimates.
+
+## Local sequential performance comparison
 
 Baseline `02502dbdd36519064bd269ff19a28d4b813d5807`; candidate
 `ef1490e426a00475e7b382e254993c21fb9286e0`. Later changes add only tests and documentation.
