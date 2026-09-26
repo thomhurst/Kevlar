@@ -1,1 +1,6 @@
 #nullable enable
+Kevlar.Analyzers.DurationBudgetAnalyzer
+Kevlar.Analyzers.DurationBudgetAnalyzer.DurationBudgetAnalyzer() -> void
+static readonly Kevlar.Analyzers.DurationBudgetAnalyzer.Rule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+override Kevlar.Analyzers.DurationBudgetAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
+override Kevlar.Analyzers.DurationBudgetAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>

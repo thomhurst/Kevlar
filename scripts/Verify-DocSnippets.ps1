@@ -52,7 +52,7 @@ $trustedAnalyzerPackageIds = [System.Collections.Generic.HashSet[string]]::new(
 $supportedDiagnosticIds = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@(
         'KEV001', 'KEV002', 'KEV003', 'KEV004', 'KEV005', 'KEV006', 'KEV007'
-        'KEV008', 'KEV012', 'KEV014'
+        'KEV008', 'KEV012', 'KEV014', 'KEV015'
     ),
     [StringComparer]::Ordinal)
 $analysisCategories = @(
