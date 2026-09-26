@@ -7,6 +7,11 @@ on:
       - '.github/workflows/contention-profile.yml'
       - 'tools/Kevlar.ContentionReport/**'
   workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Optional full baseline SHA for an untraced stress A-B-A comparison'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -15,7 +20,7 @@ jobs:
   profile:
     name: Attribute runtime contention
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -30,14 +35,35 @@ jobs:
         run: |
           mkdir -p artifacts/contention
           .tools/dotnet-trace collect --providers 'Microsoft-Windows-DotNETRuntime:0x4000:5' \
-            --output artifacts/contention/baseline.nettrace --show-child-io -- \
+            --output artifacts/contention/candidate.nettrace --show-child-io -- \
             dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
             --duration 00:01:00 --warmup 00:00:01 --workers 4 \
             --output artifacts/contention/stress-results.json > artifacts/contention/trace.log 2>&1
       - name: Attribute contended stacks
         run: >-
           dotnet run --project tools/Kevlar.ContentionReport -c Release --no-build --
-          artifacts/contention/baseline.nettrace > artifacts/contention/stacks.json
+          artifacts/contention/candidate.nettrace > artifacts/contention/stacks.json
+      - name: Compare baseline and candidate without profiler overhead
+        if: inputs.baseline_sha != ''
+        env:
+          BASELINE_SHA: ${{ inputs.baseline_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "baseline_sha must be a full commit SHA"; exit 1; }
+          git fetch origin "$BASELINE_SHA"
+          baseline="$RUNNER_TEMP/contention-baseline"
+          git worktree add --detach "$baseline" "$BASELINE_SHA"
+          dotnet build "$baseline/benchmarks/Kevlar.StressTests" -c Release
+          results="$GITHUB_WORKSPACE/artifacts/contention"
+          printf 'Baseline: %s\nCandidate: %s\n' "$BASELINE_SHA" "$GITHUB_SHA" > "$results/revisions.txt"
+          for phase in baseline-before candidate baseline-after; do
+            root="$baseline"
+            if [[ "$phase" == candidate ]]; then root="$GITHUB_WORKSPACE"; fi
+            (cd "$root" && dotnet artifacts/bin/Kevlar.StressTests/release/Kevlar.StressTests.dll \
+              --duration 00:02:00 --warmup 00:00:02 --workers 4 \
+              --output "$results/$phase.json") > "$results/$phase.log" 2>&1
+          done
       - name: Preserve profile and source identity
         if: always()
         run: |
