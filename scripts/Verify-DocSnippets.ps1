@@ -50,6 +50,7 @@ $trustedAnalyzerPackageIds = [System.Collections.Generic.HashSet[string]]::new(
         'Kevlar'
         'Microsoft.EntityFrameworkCore.Analyzers'
         'Microsoft.Extensions.Telemetry.Abstractions'
+        'System.ClientModel'
         'System.Text.Json'
     ),
     [StringComparer]::OrdinalIgnoreCase)
