@@ -471,6 +471,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         var snapshot = new HttpEndpointRoutingOptions
         {
+            EndpointProvider = source.EndpointProvider,
             SelectionMode = source.SelectionMode,
             Seed = source.Seed,
             ShieldFactory = source.ShieldFactory,
@@ -693,6 +694,7 @@ public static class ShieldHttpClientBuilderExtensions
         var routing = new HttpEndpointRoutingOptions { ShieldFactory = CreateEndpointShieldFactory(options) };
         if (configuredRouting is not null)
         {
+            routing.EndpointProvider = configuredRouting.EndpointProvider;
             routing.SelectionMode = configuredRouting.SelectionMode;
             routing.Seed = configuredRouting.Seed;
             foreach (var endpoint in configuredRouting.Endpoints)

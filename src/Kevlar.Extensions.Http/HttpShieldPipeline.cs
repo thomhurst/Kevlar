@@ -71,7 +71,7 @@ internal sealed class HttpShieldPipeline
         }
     }
 
-    public Uri[]? CreateEndpointOrder(Uri? requestUri)
+    public Uri[]? CreateEndpointOrder(Uri? requestUri, IReadOnlyList<HttpEndpoint>? resolvedEndpoints = null)
     {
         var routing = Options.Routing;
         if (routing is null)
@@ -79,20 +79,26 @@ internal sealed class HttpShieldPipeline
             return null;
         }
 
-        if (routing.Endpoints.Length == 0)
+        var endpoints = resolvedEndpoints ?? routing.Endpoints;
+        if (resolvedEndpoints is not null && resolvedEndpoints.Any(static endpoint => endpoint is null))
+        {
+            throw new InvalidOperationException("The endpoint provider returned a null endpoint.");
+        }
+
+        if (endpoints.Count == 0)
         {
             return requestUri is { IsAbsoluteUri: true } ? [requestUri] : null;
         }
 
         if (routing.SelectionMode == HttpEndpointSelectionMode.Ordered)
         {
-            return routing.Endpoints.Select(static endpoint => endpoint.Uri).ToArray();
+            return endpoints.Select(static endpoint => endpoint.Uri).ToArray();
         }
 
         var sequence = Interlocked.Increment(ref _routingSequence) - 1;
         var seed = unchecked(routing.Seed + ((int)sequence * 0x61C88647));
         var random = new DeterministicRandom(seed);
-        return routing.Endpoints
+        return endpoints
             .Select(endpoint => (
                 endpoint.Uri,
                 Priority: -Math.Log(random.NextExclusiveDouble()) / endpoint.Weight))
@@ -123,7 +129,7 @@ internal sealed class HttpShieldPipeline
             throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
         }
 
-        if (routing.Endpoints.Length == 0 && routing.ShieldFactory is null)
+        if (routing.Endpoints.Length == 0 && routing.ShieldFactory is null && routing.EndpointProvider is null)
         {
             throw new ArgumentException("Routing requires at least one endpoint.", nameof(options));
         }

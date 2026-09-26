@@ -513,8 +513,101 @@ shield so every additional send goes through safe replay and routing.
 Handler options are setup objects. `ShieldDelegatingHandler` snapshots their scalar values,
 delegates, routing values, and endpoint list when the handler pipeline is created; the direct
 `AddShield(shield, options)` overload snapshots at registration. Mutating those source objects later
-does not reconfigure existing handlers. Use a configuration-backed standard registration when
-runtime changes are required; each valid reload publishes a fresh complete pipeline snapshot.
+does not reconfigure existing handlers. Use `EndpointProvider` for changing endpoint membership,
+or a configuration-backed standard registration to replace settings and state; each valid reload
+publishes a fresh complete pipeline snapshot.
+
+### Dynamic endpoints and service discovery
+
+Set `Routing.EndpointProvider` to resolve the current authorities once per request. Its result
+replaces the static `Endpoints` list. `Ordered`, `Weighted`, and `Seed` apply to that result in the
+same way as static endpoints; all retries and hedges for the request keep the resolved ordering.
+An empty result uses the original request authority, even when static endpoints are configured.
+A null result or null list element fails before transport.
+
+```csharp
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddHttpClient("discovered")
+    .AddStandardHedgeShield(options =>
+    {
+        options.Routing = new HttpEndpointRoutingOptions
+        {
+            EndpointProvider = static (request, cancellationToken) =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                IReadOnlyList<HttpEndpoint> endpoints =
+                [new(new Uri("https://api-a.example")), new(new Uri("https://api-b.example"))];
+                return new ValueTask<IReadOnlyList<HttpEndpoint>>(endpoints);
+            },
+        };
+    });
+```
+
+Replace the delegate body with your directory or DNS lookup. The provider owns caching and must
+support concurrent requests. Return an immutable or otherwise stable list while the handler reads
+it; changing membership after that read affects subsequent requests only. Provider selection itself
+is snapshotted with the handler options. Authority-local shields remain cached until the pipeline is
+replaced, including authorities removed from discovery; bound membership for long-lived pipelines.
+Request replay safety, per-request shields/properties, and original path/query preservation still apply.
+
+Resolution receives the linked transport/per-request cancellation token. Cancellation stops waiting
+even if the provider ignores that token. Resolution and provider exceptions occur before the selected
+shield runs, so its retry and timeout strategies do not cover discovery. Apply a discovery-specific
+budget inside the provider when required; `HttpClient` cancellation still applies.
+
+For `Microsoft.Extensions.ServiceDiscovery` 10.10.0, add that package to the **application**, call
+`AddServiceDiscovery`, and use the configuration-backed registration to resolve
+[`ServiceEndpointResolver`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.servicediscovery.serviceendpointresolver)
+from DI. Kevlar's HTTP package adds no service-discovery dependency. This HTTPS-only bridge accepts
+URI, DNS, and IP endpoints and rejects unsupported endpoint forms. Configure discovery normally,
+including the service configuration supplied by Aspire when applicable:
+
+```csharp
+using System.Net;
+using Kevlar.Extensions.Http;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.ServiceDiscovery;
+
+var discoveryBuilder = WebApplication.CreateBuilder();
+discoveryBuilder.Services.AddServiceDiscovery();
+discoveryBuilder.Services.AddHttpClient("catalog")
+    .AddStandardHedgeShield(
+        discoveryBuilder.Configuration.GetSection("Resilience:Catalog"),
+        (serviceProvider, options) =>
+        {
+            var resolver = serviceProvider.GetRequiredService<ServiceEndpointResolver>();
+            options.Routing = new HttpEndpointRoutingOptions
+            {
+                EndpointProvider = async (_, cancellationToken) =>
+                {
+                    var source = await resolver.GetEndpointsAsync("https://catalog", cancellationToken);
+                    return source.Endpoints.Select(endpoint =>
+                    {
+                        var uri = endpoint.EndPoint switch
+                        {
+                            UriEndPoint value => value.Uri,
+                            DnsEndPoint value => new UriBuilder("https", value.Host, value.Port).Uri,
+                            IPEndPoint value => new UriBuilder("https", value.Address.ToString(), value.Port).Uri,
+                            _ => throw new NotSupportedException("Unsupported service endpoint."),
+                        };
+                        if (uri.Scheme != Uri.UriSchemeHttps)
+                        {
+                            throw new InvalidOperationException("Catalog discovery requires HTTPS.");
+                        }
+                        return new HttpEndpoint(uri);
+                    }).ToArray();
+                },
+            };
+        });
+```
+
+The resolver manages its own discovery cache. The bridge maps each returned snapshot to Kevlar
+endpoints with equal weights; supply application weights explicitly when using weighted routing.
+For HTTP services, deliberately change the service URI, DNS/IP URI scheme, and scheme check together.
 
 ## Behaviour notes
 
