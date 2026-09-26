@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-26 16:42 UTC (commit `4e41e54`).*
+*Last updated 2026-09-26 17:22 UTC (commit `7d6ecca`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 1.96M ops/s | 100% | 8.23 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.38M ops/s | 100% | 6.96 GiB | 48.00 B | 135.97 ms | 445 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 3.98M ops/s | 399% | 11.94 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 727 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.75M ops/s | 397% | 13.83 GiB | 48.00 B | 366.46 ms | 888 / 8 / 0 | 4.02K |
-| Shared timeout → retry | 4 | Kevlar | 5.72M ops/s | 399% | 8.80 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 916 |
-| Shared timeout → retry | 4 | Polly | 3.85M ops/s | 398% | 9.68 GiB | 24.00 B | 231.12 ms | 620 / 8 / 0 | 568 |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 4.17M ops/s | 399% | 16.38 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 637 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.75M ops/s | 398% | 13.85 GiB | 48.00 B | 361.90 ms | 889 / 8 / 0 | 370 |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.19M ops/s | 100% | 8.52 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.39M ops/s | 100% | 6.97 GiB | 48.00 B | 126.27 ms | 445 / 8 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.28M ops/s | 399% | 13.21 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 8 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.72M ops/s | 396% | 13.69 GiB | 48.00 B | 358.19 ms | 878 / 8 / 0 | 4.04K |
+| Shared timeout → retry | 4 | Kevlar | 7.87M ops/s | 399% | 11.45 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 5 |
+| Shared timeout → retry | 4 | Polly | 3.81M ops/s | 398% | 9.57 GiB | 24.00 B | 218.41 ms | 614 / 8 / 0 | 1.57K |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.52M ops/s | 399% | 19.30 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 4 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.80M ops/s | 398% | 14.08 GiB | 48.00 B | 338.50 ms | 904 / 8 / 0 | 1.12K |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.42×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.45×** |
-| Shared timeout → retry | 4 | **1.49×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.51×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.58×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.94×** |
+| Shared timeout → retry | 4 | **2.07×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.97×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 79.35 MiB.
+- Peak working set for the shared process: 82.48 MiB.
 
 ## Environment
 
