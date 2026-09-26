@@ -13,7 +13,7 @@ namespace Kevlar;
 /// </remarks>
 public sealed class RetryOptions
 {
-    /// <summary>An optional shared retry/hedge feedback budget. The initial attempt is always allowed.</summary>
+    /// <summary>An optional shared retry/hedge budget. The initial attempt is always allowed.</summary>
     public RetryBudget? Budget { get; set; }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>

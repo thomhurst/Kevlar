@@ -16,7 +16,7 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions
 {
-    /// <summary>An optional shared retry/hedge feedback budget. Already-running contenders are preserved.</summary>
+    /// <summary>An optional shared retry/hedge budget. Already-running contenders are preserved.</summary>
     public RetryBudget? Budget { get; set; }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>

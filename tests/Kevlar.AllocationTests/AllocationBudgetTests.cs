@@ -28,6 +28,17 @@ public class AllocationBudgetTests
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
     private readonly Shield _budgetRetry = Shield.Retry(options => options.Budget = new RetryBudget());
     private readonly Shield _budgetHedge = Shield.Hedge(options => options.Budget = new RetryBudget());
+    private readonly Shield _allowanceRetry = Shield.Retry(options =>
+        options.Budget = RetryBudget.CreateReplenishing(int.MaxValue, replenishmentPeriod: TimeSpan.FromHours(1)));
+    private readonly Shield _allowanceHedge = Shield.Hedge(options =>
+        options.Budget = RetryBudget.CreateReplenishing(int.MaxValue, replenishmentPeriod: TimeSpan.FromHours(1)));
+    private readonly Shield<int> _allowanceRecovery = Shield.For<int>().Retry(options =>
+    {
+        options.Budget = RetryBudget.CreateReplenishing(int.MaxValue, replenishmentPeriod: TimeSpan.FromHours(1));
+        options.Backoff = Backoff.None;
+        options.HandlesResult = static value => value == 0;
+    });
+    private int _allowanceAttempts;
     private readonly Shield _generatedDelayRetry = Shield.Retry(options =>
     {
         options.MaxRetries = 3;
@@ -250,6 +261,15 @@ public class AllocationBudgetTests
             test._budgetRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("budget hedge async primary wins", this, static test =>
             test._budgetHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("allowance retry sync happy path", this, static test =>
+            test._allowanceRetry.Execute(static _ => 42));
+        AssertZero("allowance retry async happy path", this, static test =>
+            test._allowanceRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("allowance hedge async primary wins", this, static test =>
+            test._allowanceHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("allowance retry additional attempt", this, static test =>
+            test._allowanceRecovery.ExecuteAsync(test,
+                static (state, _) => new ValueTask<int>(++state._allowanceAttempts % 2)).GetAwaiter().GetResult());
         AssertZero("dynamic circuit sync happy path", this, static test =>
             test._dynamicBreaker.Execute(static _ => 42));
         AssertZero("fixed circuit sync happy path", this, static test =>

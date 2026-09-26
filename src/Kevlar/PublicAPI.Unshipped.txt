@@ -50,6 +50,8 @@ Kevlar.RetryBudget
 Kevlar.RetryBudget.RetryBudget(int maxTokens = 100, double tokenRatio = 0.1) -> void
 Kevlar.RetryBudget.MaxTokens.get -> int
 Kevlar.RetryBudget.TokenRatio.get -> double
+Kevlar.RetryBudget.ReplenishmentPeriod.get -> System.TimeSpan?
+static Kevlar.RetryBudget.CreateReplenishing(int maxTokens, System.TimeSpan replenishmentPeriod, System.TimeProvider? timeProvider = null) -> Kevlar.RetryBudget!
 Kevlar.RetryBudget.Tokens.get -> double
 Kevlar.RetryBudget.AllowsAdditionalAttempt.get -> bool
 Kevlar.RetryOptions.Budget.get -> Kevlar.RetryBudget?

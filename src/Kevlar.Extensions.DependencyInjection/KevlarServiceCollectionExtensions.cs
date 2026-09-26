@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
-    /// <summary>Registers one shared, named retry/hedge feedback budget.</summary>
+    /// <summary>Registers one shared, named retry/hedge budget.</summary>
     public static IServiceCollection AddRetryBudget(this IServiceCollection services, string name, RetryBudget budget)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }

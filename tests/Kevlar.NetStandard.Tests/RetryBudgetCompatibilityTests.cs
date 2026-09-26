@@ -3,6 +3,30 @@ namespace Kevlar.NetStandard.Tests;
 public class RetryBudgetCompatibilityTests
 {
     [Test]
+    public async Task Replenishing_Allowance_Charges_Only_Additional_Attempts_On_NetStandard()
+    {
+        var budget = RetryBudget.CreateReplenishing(3, replenishmentPeriod: TimeSpan.FromHours(1));
+        var attempts = 0;
+        var retry = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.MaxRetries = 10;
+            options.Backoff = Backoff.None;
+        });
+        _ = await retry.ExecuteOutcomeAsync<int>(async _ =>
+        {
+            await Task.Yield();
+            attempts++;
+            throw new IOException();
+        });
+        await Assert.That(attempts).IsEqualTo(4);
+        await Assert.That(budget.Tokens).IsEqualTo(0);
+        _ = await Shield.For<int>().Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+            .ExecuteOutcomeAsync(_ => { attempts++; return ValueTask.FromException<int>(new IOException()); });
+        await Assert.That(attempts).IsEqualTo(5);
+    }
+
+    [Test]
     public async Task Async_Retry_And_Hedge_Share_Budget_On_NetStandard()
     {
         var budget = new RetryBudget(maxTokens: 4, tokenRatio: 1);
