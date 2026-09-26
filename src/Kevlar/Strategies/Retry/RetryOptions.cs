@@ -13,6 +13,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class RetryOptions
 {
+    /// <summary>An optional shared retry/hedge feedback budget. The initial attempt is always allowed.</summary>
+    public RetryBudget? Budget { get; set; }
+
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
     public string? Name { get; set; }
 
@@ -92,6 +95,9 @@ public sealed class RetryOptions
 /// </remarks>
 public sealed class RetryOptions<TResult>
 {
+    /// <inheritdoc cref="RetryOptions.Budget"/>
+    public RetryBudget? Budget { get; set; }
+
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
     public string? Name { get; set; }
 

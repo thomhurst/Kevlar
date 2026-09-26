@@ -191,3 +191,10 @@ This option defaults to `false` in 1.x. It does not estimate an operation's exec
 replace cancellation. `Describe()` includes `deadline-aware` when enabled, and DI configuration
 accepts `Hedge.RespectDeadline`. See [timeout deadlines](timeout.md#propagating-the-deadline)
 and [deadline-aware retries](retry.md#respecting-an-outer-deadline).
+
+## Shared retry budgets
+
+Set `HedgeOptions.Budget` or `HedgeOptions<TResult>.Budget` to a shared `RetryBudget` to suppress
+additional contenders during a failure burst. The primary always runs. Refusing another launch
+preserves already-running contenders, and their completions continue to update the shared balance.
+Retry and hedge shields can share the same instance. See [budget accounting and composition](retry.md#shared-retry-budgets).

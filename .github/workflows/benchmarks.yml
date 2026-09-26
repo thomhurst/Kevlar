@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       benchmark_filter:
-        description: 'Benchmark filter (e.g. *Retry*, *Pipeline*)'
+        description: 'Benchmark filter; pinned comparisons also accept newline-separated filters'
         required: false
         default: '*'
       baseline_sha:
@@ -27,6 +27,11 @@ on:
         type: boolean
         required: false
         default: true
+      disassembly:
+        description: 'Capture JIT disassembly during pinned comparisons'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -69,9 +74,13 @@ jobs:
           BASELINE_SHA: ${{ inputs.baseline_sha }}
           BENCHMARK_FILTER: ${{ inputs.benchmark_filter || '*' }}
           COPY_CANDIDATE_FIXTURES: ${{ inputs.copy_candidate_fixtures }}
+          DISASSEMBLY: ${{ inputs.disassembly }}
         shell: bash
         run: |
           set -euo pipefail
+          mapfile -t benchmark_filters <<< "$BENCHMARK_FILTER"
+          diagnostics=()
+          if [[ "$DISASSEMBLY" == "true" ]]; then diagnostics+=(--disasm --disasmDepth 4); fi
           [[ "$BASELINE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "baseline_sha must be a full commit SHA"; exit 1; }
           git fetch origin "$BASELINE_SHA"
           git worktree add --detach "$RUNNER_TEMP/benchmark-baseline" "$BASELINE_SHA"
@@ -89,14 +98,14 @@ jobs:
             project="$candidate_project"
             if [[ "$revision" == baseline ]]; then project="$baseline_project"; fi
             (cd "$(dirname "$project")" && dotnet run -c Release --no-build -- \
-              --filter "$BENCHMARK_FILTER" --job Dry --artifacts "$results/dry-$revision") \
+              --filter "${benchmark_filters[@]}" --job Dry --artifacts "$results/dry-$revision") \
               > "$results/dry-$revision.log" 2>&1
           done
           for phase in baseline-before candidate baseline-after; do
             project="$baseline_project"
             if [[ "$phase" == candidate ]]; then project="$candidate_project"; fi
             (cd "$(dirname "$project")" && dotnet run -c Release --no-build -- \
-              --filter "$BENCHMARK_FILTER" --exporters json --artifacts "$results/$phase") \
+              --filter "${benchmark_filters[@]}" "${diagnostics[@]}" --exporters json --artifacts "$results/$phase") \
               > "$results/$phase.log" 2>&1
           done
 

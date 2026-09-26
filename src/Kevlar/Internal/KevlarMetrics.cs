@@ -223,6 +223,30 @@ internal static class KevlarMetrics
 #endif
     }
 
+    public static void RetryBudgetExhausted(KevlarContext context)
+    {
+#if NET8_0_OR_GREATER
+        if (Retries.Enabled)
+        {
+            var tags = NameTags(context.ShieldName);
+            tags.Add("reason", "budget");
+            KevlarMetricEnrichment.Add(Retries, 1, in tags, context);
+        }
+#endif
+    }
+
+    public static void HedgeBudgetExhausted(KevlarContext context)
+    {
+#if NET8_0_OR_GREATER
+        if (Hedges.Enabled)
+        {
+            var tags = NameTags(context.ShieldName);
+            tags.Add("reason", "budget");
+            KevlarMetricEnrichment.Add(Hedges, 1, in tags, context);
+        }
+#endif
+    }
+
     public static void Timeout(
         KevlarContext context,
         string strategyName,

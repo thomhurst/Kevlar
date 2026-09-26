@@ -46,3 +46,17 @@ Kevlar.RateLimitOptions.QueueTimeout.set -> void
 Kevlar.ConcurrencyLimitRejectedEvent.Reason.get -> string?
 Kevlar.RateLimitRejectedEvent.Reason.get -> string?
 Kevlar.KevlarTelemetryEvent.RejectionReason.get -> string?
+Kevlar.RetryBudget
+Kevlar.RetryBudget.RetryBudget(int maxTokens = 100, double tokenRatio = 0.1) -> void
+Kevlar.RetryBudget.MaxTokens.get -> int
+Kevlar.RetryBudget.TokenRatio.get -> double
+Kevlar.RetryBudget.Tokens.get -> double
+Kevlar.RetryBudget.AllowsAdditionalAttempt.get -> bool
+Kevlar.RetryOptions.Budget.get -> Kevlar.RetryBudget?
+Kevlar.RetryOptions.Budget.set -> void
+Kevlar.RetryOptions<TResult>.Budget.get -> Kevlar.RetryBudget?
+Kevlar.RetryOptions<TResult>.Budget.set -> void
+Kevlar.HedgeOptions.Budget.get -> Kevlar.RetryBudget?
+Kevlar.HedgeOptions.Budget.set -> void
+Kevlar.HedgeOptions<TResult>.Budget.get -> Kevlar.RetryBudget?
+Kevlar.HedgeOptions<TResult>.Budget.set -> void

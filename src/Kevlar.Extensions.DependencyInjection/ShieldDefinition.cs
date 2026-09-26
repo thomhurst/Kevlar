@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Kevlar.Extensions.DependencyInjection;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Kevlar.Extensions.DependencyInjection;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="Build"/> chains the sections in one fixed order, outermost first:
+/// <see cref="Build()"/> chains the sections in one fixed order, outermost first:
 /// <see cref="Timeout"/> → <see cref="Retry"/> or <see cref="Hedge"/> → <see cref="CircuitBreaker"/> →
 /// <see cref="RateLimit"/> → <see cref="ConcurrencyLimit"/> → <see cref="AttemptTimeout"/>.
 /// Only the sections present in configuration are added; the rest keep their relative order.
@@ -49,7 +51,16 @@ public sealed class ShieldDefinition
     /// Sections left null are skipped without changing the order of the rest.
     /// </summary>
     /// <exception cref="KevlarConfigurationException">Both <see cref="Retry"/> and <see cref="Hedge"/> are set.</exception>
-    public Shield Build()
+    public Shield Build() => BuildCore(serviceProvider: null);
+
+    /// <summary>Builds the configured shield, resolving named retry budgets from the service provider.</summary>
+    public Shield Build(IServiceProvider serviceProvider)
+    {
+        if (serviceProvider is null) { throw new ArgumentNullException(nameof(serviceProvider)); }
+        return BuildCore(serviceProvider);
+    }
+
+    private Shield BuildCore(IServiceProvider? serviceProvider)
     {
         if (Retry is not null && Hedge is not null)
         {
@@ -69,6 +80,7 @@ public sealed class ShieldDefinition
             shield = shield.Retry(options =>
             {
                 options.MaxRetries = retry.MaxRetries;
+                options.Budget = ResolveBudget(retry.Budget, serviceProvider);
                 options.RespectDeadline = retry.RespectDeadline;
                 options.Backoff = retry.BuildBackoff();
 
@@ -83,6 +95,7 @@ public sealed class ShieldDefinition
             shield = shield.Hedge(options =>
             {
                 options.MaxHedgedAttempts = hedge.MaxHedgedAttempts;
+                options.Budget = ResolveBudget(hedge.Budget, serviceProvider);
                 options.RespectDeadline = hedge.RespectDeadline;
                 options.Delay = hedge.Delay;
             });
@@ -135,11 +148,30 @@ public sealed class ShieldDefinition
 
     /// <summary>Builds a result-aware view over the configured strategy pipeline.</summary>
     internal Shield<TResult> Build<TResult>() => Build().For<TResult>();
+
+    internal Shield<TResult> Build<TResult>(IServiceProvider serviceProvider) => Build(serviceProvider).For<TResult>();
+
+    private static RetryBudget? ResolveBudget(string? name, IServiceProvider? serviceProvider)
+    {
+        if (name is null)
+        {
+            return null;
+        }
+        if (serviceProvider is null)
+        {
+            throw new KevlarConfigurationException("Named retry budgets require ShieldDefinition.Build(IServiceProvider).");
+        }
+        return serviceProvider.GetKeyedService<RetryBudget>(name)
+            ?? throw new KevlarConfigurationException($"Retry budget '{name}' is not registered. Use services.AddRetryBudget.");
+    }
 }
 
 /// <summary>The retry section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class RetryDefinition
 {
+    /// <summary>The name of a shared budget registered with AddRetryBudget. Omit for no budget.</summary>
+    public string? Budget { get; set; }
+
     /// <inheritdoc cref="RetryOptions.RespectDeadline"/>
     public bool RespectDeadline { get; set; }
 
@@ -186,6 +218,9 @@ public sealed class RetryDefinition
 /// <summary>The hedging section of a <see cref="ShieldDefinition"/>. Requires asynchronous execution and a concurrency-safe operation.</summary>
 public sealed class HedgeDefinition
 {
+    /// <summary>The name of a shared budget registered with AddRetryBudget. Omit for no budget.</summary>
+    public string? Budget { get; set; }
+
     /// <inheritdoc cref="HedgeOptions.RespectDeadline"/>
     public bool RespectDeadline { get; set; }
 

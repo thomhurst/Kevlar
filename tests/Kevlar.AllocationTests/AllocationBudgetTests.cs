@@ -26,6 +26,8 @@ public class AllocationBudgetTests
         factor: 1,
         jitter: Jitter.Equal);
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
+    private readonly Shield _budgetRetry = Shield.Retry(options => options.Budget = new RetryBudget());
+    private readonly Shield _budgetHedge = Shield.Hedge(options => options.Budget = new RetryBudget());
     private readonly Shield _generatedDelayRetry = Shield.Retry(options =>
     {
         options.MaxRetries = 3;
@@ -242,6 +244,12 @@ public class AllocationBudgetTests
                 .GetResult());
         AssertZero("retry sync happy path", this, static test =>
             test._retry.Execute(static _ => 42));
+        AssertZero("budget retry sync happy path", this, static test =>
+            test._budgetRetry.Execute(static _ => 42));
+        AssertZero("budget retry async happy path", this, static test =>
+            test._budgetRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("budget hedge async primary wins", this, static test =>
+            test._budgetHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("dynamic circuit sync happy path", this, static test =>
             test._dynamicBreaker.Execute(static _ => 42));
         AssertZero("fixed circuit sync happy path", this, static test =>
