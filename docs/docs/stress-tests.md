@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-26 13:16 UTC (commit `7c450e6`).*
+*Last updated 2026-09-26 13:45 UTC (commit `661f76a`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.74M ops/s | 100% | 8.17 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.52M ops/s | 100% | 7.62 GiB | 48.00 B | 80.44 ms | 324 / 8 / 0 | 1 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 3.59M ops/s | 399% | 13.27 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 822 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.26M ops/s | 397% | 11.35 GiB | 48.00 B | 175.41 ms | 485 / 8 / 0 | 5.05K |
-| Shared timeout → retry | 4 | Kevlar | 5.36M ops/s | 399% | 9.12 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.99K |
-| Shared timeout → retry | 4 | Polly | 2.99M ops/s | 399% | 7.52 GiB | 24.00 B | 104.65 ms | 321 / 8 / 0 | 2.23K |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 4.47M ops/s | 399% | 15.27 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 926 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.34M ops/s | 399% | 11.76 GiB | 48.00 B | 175.51 ms | 503 / 8 / 0 | 1.60K |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.36M ops/s | 100% | 7.54 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.34M ops/s | 100% | 6.76 GiB | 48.00 B | 98.91 ms | 432 / 8 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.80M ops/s | 398% | 12.66 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 464 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.83M ops/s | 397% | 14.23 GiB | 48.00 B | 296.57 ms | 914 / 8 / 0 | 3.34K |
+| Shared timeout → retry | 4 | Kevlar | 6.17M ops/s | 398% | 9.47 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 756 |
+| Shared timeout → retry | 4 | Polly | 3.99M ops/s | 398% | 10.02 GiB | 24.00 B | 189.39 ms | 642 / 8 / 0 | 546 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.25M ops/s | 398% | 15.47 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 607 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.87M ops/s | 398% | 14.43 GiB | 48.00 B | 334.94 ms | 927 / 8 / 0 | 442 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.81×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.59×** |
-| Shared timeout → retry | 4 | **1.79×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.91×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.76×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.70×** |
+| Shared timeout → retry | 4 | **1.55×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.83×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 83.59 MiB.
+- Peak working set for the shared process: 75.84 MiB.
 
 ## Environment
 
