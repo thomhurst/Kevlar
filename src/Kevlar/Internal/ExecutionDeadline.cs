@@ -12,7 +12,7 @@ internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, lo
         duration - timeProvider.GetElapsedTime(startedAt, timestamp);
 
     internal static ExecutionDeadline Create(TimeProvider timeProvider, long startedAt, TimeSpan duration,
-        ExecutionDeadline parent)
+        in ExecutionDeadline parent)
     {
         var nowTicks = ReferenceEquals(timeProvider, TimeProvider.System)
             ? DateTime.UtcNow.Ticks

@@ -108,7 +108,7 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
         var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
-        var trackDeadline = context.TrackDeadline || KevlarTelemetry.HasContextListeners
+        var trackDeadline = !context.SuppressDeadlineTracking || KevlarTelemetry.HasContextListeners
             || KevlarMetricEnrichment.HasEnrichers;
         var startedAt = recordTimeoutIgnored || trackDeadline ? context.TimeProvider.GetTimestamp() : 0;
 
@@ -243,7 +243,7 @@ internal sealed class TimeoutStrategy : Strategy
         Outcome<T> outcome,
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline priorDeadline,
+        in ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         long startedAt,
@@ -271,7 +271,7 @@ internal sealed class TimeoutStrategy : Strategy
     private static void Cleanup(
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline priorDeadline,
+        in ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer)
     {
@@ -286,7 +286,7 @@ internal sealed class TimeoutStrategy : Strategy
         OperationCanceledException cancellationException,
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline priorDeadline,
+        in ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout)
