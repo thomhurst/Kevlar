@@ -112,7 +112,10 @@ public sealed class DurationBudgetAnalyzer : DiagnosticAnalyzer
         }
 
         var cap = MaximumDelayTicks;
-        var capArgument = Unwrap(Argument(backoff, "maxDelay"));
+        // Roslyn represents an omitted nullable struct argument as a default-value operation,
+        // not a constant null. Only inspect an explicitly supplied cap.
+        var capArgument = Unwrap(backoff.Arguments.FirstOrDefault(argument =>
+            argument.Parameter?.Name == "maxDelay" && argument.ArgumentKind != ArgumentKind.DefaultValue)?.Value);
         if (capArgument is not null && capArgument.ConstantValue is not { HasValue: true, Value: null })
         {
             if (!TryDuration(capArgument, types, out cap) || cap > MaximumDelayTicks)
