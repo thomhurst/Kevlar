@@ -610,6 +610,11 @@ public class MetricsTests
         var observed = new List<TelemetrySnapshot>();
         using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
         {
+            // Other executions, including late hedge completions, may reach a global listener.
+            if (telemetryEvent.OperationKey != "listener-operation")
+            {
+                return;
+            }
             observed.Add(new TelemetrySnapshot(
                 telemetryEvent.EventName,
                 telemetryEvent.AttemptNumber,
@@ -620,6 +625,8 @@ public class MetricsTests
                 throw new InvalidOperationException("listener");
             }
         }));
+        // An unrelated execution must not contaminate this operation's ordered assertions.
+        await Shield.Retry(0, Backoff.None).ExecuteAsync(static _ => new ValueTask<int>(0));
         var attempts = 0;
 
         var result = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(

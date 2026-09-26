@@ -2,6 +2,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
 
+[NotInParallel]
 public class DeadlineTests
 {
     [Test]
@@ -397,6 +398,56 @@ public class DeadlineTests
         await Shield.Timeout(TimeSpan.FromSeconds(1)).Use(observer).WithTimeProvider(time)
             .ExecuteAsync(static _ => ValueTask.CompletedTask);
         await Assert.That(observer.Deadline).IsEqualTo(time.GetUtcNow().AddSeconds(1));
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Global_Diagnostics_Observe_Deadline_In_Token_Only_Execution(bool enrichment)
+    {
+        var time = new FakeTimeProvider();
+        var observer = new DiagnosticDeadlineObserver();
+        using var meter = new System.Diagnostics.Metrics.MeterListener();
+        meter.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == "Kevlar" && instrument.Name == "kevlar.retries")
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        meter.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
+        meter.Start();
+        using var subscription = enrichment
+            ? KevlarDiagnostics.AddMetricEnricher(observer)
+            : KevlarDiagnostics.Listen(observer);
+        var attempts = 0;
+        var result = await Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(1, Backoff.None)
+            .WithTimeProvider(time).ExecuteAsync<int>(_ => ++attempts == 1
+                ? ValueTask.FromException<int>(new IOException())
+                : new ValueTask<int>(42));
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observer.Deadline).IsEqualTo(time.GetUtcNow().AddSeconds(1));
+    }
+
+    private sealed class DiagnosticDeadlineObserver : KevlarMetricEnricher, IKevlarTelemetryListener
+    {
+        public DateTimeOffset? Deadline { get; private set; }
+
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
+        {
+            if (telemetryEvent.Context.Deadline is { } deadline)
+            {
+                Deadline = deadline;
+            }
+        }
+
+        public override void Enrich(in KevlarMetricEnrichmentContext context)
+        {
+            if (context.Context?.Deadline is { } deadline)
+            {
+                Deadline = deadline;
+            }
+        }
     }
 
     private sealed class DeadlineObserver : Strategy

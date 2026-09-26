@@ -109,7 +109,9 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
         var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
-        var startedAt = recordTimeoutIgnored || context.TrackDeadline ? context.TimeProvider.GetTimestamp() : 0;
+        var trackDeadline = context.TrackDeadline || KevlarTelemetry.HasContextListeners
+            || KevlarMetricEnrichment.HasEnrichers;
+        var startedAt = recordTimeoutIgnored || trackDeadline ? context.TimeProvider.GetTimestamp() : 0;
 
         try
         {
@@ -136,7 +138,7 @@ internal sealed class TimeoutStrategy : Strategy
                     System.Threading.Timeout.InfiniteTimeSpan);
             }
 
-            if (context.TrackDeadline)
+            if (trackDeadline)
             {
                 context.EnterDeadline(timeout, startedAt);
             }

@@ -12,6 +12,8 @@ internal static class KevlarMetricEnrichment
     private static readonly Lock Sync = new();
     private static KevlarMetricEnricher[] _enrichers = [];
 
+    internal static bool HasEnrichers => Volatile.Read(ref _enrichers).Length != 0;
+
     public static IDisposable Subscribe(KevlarMetricEnricher enricher)
     {
         lock (Sync)
