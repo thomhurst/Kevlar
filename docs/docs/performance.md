@@ -89,3 +89,10 @@ Run the same gates locally with:
 ```bash
 dotnet run -c Release --project tests/Kevlar.AllocationTests -- --timeout 5m
 ```
+
+## Outage and recovery measurements
+
+[Controlled outage measurements](outage-recovery.md) use scheduled arrivals independent of request
+completion. They publish latency, offered load, rejections, downstream amplification, recovery,
+and hedge cleanup through healthy, slowdown, outage, and recovery phases. These measurements
+complement overhead and allocation benchmarks; they do not predict production capacity.

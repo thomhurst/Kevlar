@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj" />
+    <Project Path="benchmarks/Kevlar.OutageTests/Kevlar.OutageTests.csproj" />
     <Project Path="benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj" />
   </Folder>
   <Folder Name="/src/">
@@ -18,6 +19,7 @@
     <Project Path="src/Kevlar.Testing/Kevlar.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Kevlar.OutageTests.Tests/Kevlar.OutageTests.Tests.csproj" />
     <Project Path="tests/Kevlar.Chaos.Tests/Kevlar.Chaos.Tests.csproj" />
     <Project Path="tests/Kevlar.AllocationTests/Kevlar.AllocationTests.csproj" />
     <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />

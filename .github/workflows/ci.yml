@@ -218,6 +218,8 @@ jobs:
           dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net8.trx --results-directory artifacts/test-results/tracing
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net10.trx --results-directory artifacts/test-results/tracing
+      - name: Outage measurement accounting tests
+        run: dotnet run --project tests/Kevlar.OutageTests.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename outage.trx --results-directory artifacts/test-results/outage
 
       - name: Upload test reports
         if: always()

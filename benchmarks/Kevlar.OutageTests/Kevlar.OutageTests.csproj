@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+    <InternalsVisibleTo Include="Kevlar.OutageTests.Tests" />
+  </ItemGroup>
+</Project>
