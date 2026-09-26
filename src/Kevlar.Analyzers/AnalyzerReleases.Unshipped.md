@@ -5,3 +5,4 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
+KEV015 | Configuration | Warning | Literal timeout and retry delay budgets

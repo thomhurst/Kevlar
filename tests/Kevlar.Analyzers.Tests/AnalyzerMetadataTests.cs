@@ -19,6 +19,8 @@ public class AnalyzerMetadataTests
     {
         var cancellationRules = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics;
         var pipelineRules = new PipelineHazardAnalyzer().SupportedDiagnostics;
+        var durationRules = new DurationBudgetAnalyzer().SupportedDiagnostics;
+        await Assert.That(durationRules.Select(static rule => rule.Id).SequenceEqual(["KEV015"])).IsTrue();
 
         await Assert.That(cancellationRules.Select(static rule => rule.Id).SequenceEqual(["KEV001"]))
             .IsTrue();
@@ -26,7 +28,7 @@ public class AnalyzerMetadataTests
             ["KEV002", "KEV003", "KEV004", "KEV005", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011", "KEV012", "KEV014"]))
             .IsTrue();
 
-        var allRules = cancellationRules.Concat(pipelineRules).ToArray();
+        var allRules = cancellationRules.Concat(pipelineRules).Concat(durationRules).ToArray();
         await Assert.That(allRules.Select(static rule => rule.Id).Distinct().Count())
             .IsEqualTo(allRules.Length);
     }
@@ -36,6 +38,7 @@ public class AnalyzerMetadataTests
     {
         var rules = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics
             .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
+            .Concat(new DurationBudgetAnalyzer().SupportedDiagnostics)
             .ToDictionary(static rule => rule.Id, StringComparer.Ordinal);
 
         foreach (var reliabilityRule in new[] { "KEV001", "KEV002", "KEV004", "KEV006", "KEV012", "KEV014" })
@@ -44,7 +47,7 @@ public class AnalyzerMetadataTests
             await Assert.That(rules[reliabilityRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Warning);
         }
 
-        foreach (var configurationRule in new[] { "KEV003", "KEV005", "KEV007", "KEV008" })
+        foreach (var configurationRule in new[] { "KEV003", "KEV005", "KEV007", "KEV008", "KEV015" })
         {
             await Assert.That(rules[configurationRule].Category).IsEqualTo("Configuration");
             await Assert.That(rules[configurationRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Warning);
@@ -84,7 +87,8 @@ public class AnalyzerMetadataTests
                     .Replace(' ', '-'),
                 StringComparer.Ordinal);
         var rules = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics
-            .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics);
+            .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
+            .Concat(new DurationBudgetAnalyzer().SupportedDiagnostics);
 
         foreach (var rule in rules)
         {
@@ -123,6 +127,7 @@ public class AnalyzerMetadataTests
             .Single(columns => columns.Length >= 3 && columns[0] == ruleId);
         var descriptor = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics
             .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
+            .Concat(new DurationBudgetAnalyzer().SupportedDiagnostics)
             .Single(rule => rule.Id == ruleId);
 
         var isOptIn = ruleId is "KEV009" or "KEV010" or "KEV011";
@@ -133,6 +138,13 @@ public class AnalyzerMetadataTests
         await Assert.That(descriptor.Category).IsEqualTo(shippedRule[1]);
         await Assert.That(descriptor.DefaultSeverity).IsEqualTo(severity);
         await Assert.That(descriptor.IsEnabledByDefault).IsEqualTo(!isOptIn);
+    }
+
+    [Test]
+    public async Task Duration_Rule_Is_Tracked_As_Unshipped()
+    {
+        var path = Path.Combine(FindRepositoryRoot(), "src", "Kevlar.Analyzers", "AnalyzerReleases.Unshipped.md");
+        await Assert.That(File.ReadAllText(path)).Contains("KEV015 | Configuration | Warning");
     }
 
     private static string FindRepositoryRoot()

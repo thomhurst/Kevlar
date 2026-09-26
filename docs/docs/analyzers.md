@@ -52,6 +52,7 @@ The warning-level safety rules remain enabled by default.
 | `KEV011` | Info | Off | reactive strategy relies on implicit default handling, which includes programming errors |
 | `KEV012` | Warning | On | a delegate that completes asynchronously is assigned to a hook of a shield passed to synchronous `Execute` |
 | `KEV014` | Warning | On | a pooled event context is captured by deferred work |
+| `KEV015` | Warning | On | literal inner timeout or retry delay sum reaches an outer timeout |
 
 `KEV013` is intentionally unused. `KEV012` covers synchronous-execution callback hazards.
 
@@ -453,3 +454,44 @@ var shield = Shield.Empty
 
 Do not add warning pragmas, `NoWarn`, or severity overrides. A suppression hides future regressions
 at the same site; explicit configuration keeps intent checked as APIs and analyzers evolve.
+
+## KEV015: duration budgets
+
+An outer timeout covers everything chained inside it. An inner timeout that reaches or exceeds
+that budget cannot provide a shorter per-attempt limit. Likewise, the configured retry delays
+may consume the entire budget before counting any time spent executing attempts.
+
+<!-- doc-test-diagnostic: KEV015 -->
+```csharp
+var shield = Shield
+    .Timeout(TimeSpan.FromSeconds(5))
+    .Retry(3, Backoff.Constant(TimeSpan.FromSeconds(3))) // KEV015: 9 seconds of delays
+    .Timeout(TimeSpan.FromSeconds(10));                // KEV015: inner exceeds outer
+```
+
+Choose per-attempt timeouts and retry delays that leave room inside the total budget:
+
+```csharp
+var shield = Shield
+    .Timeout(TimeSpan.FromSeconds(10))
+    .Retry(2, Backoff.Constant(TimeSpan.FromMilliseconds(100)))
+    .Timeout(TimeSpan.FromSeconds(2));
+```
+
+The warning compares literal `TimeSpan.FromDays`, `FromHours`, `FromMinutes`, `FromSeconds`,
+`FromMilliseconds`, `FromMicroseconds`, and `FromTicks` calls with one constant numeric argument,
+and `TimeSpan.Zero`. Numeric `const` values work too. It recognizes typed and untyped shields,
+handling-clause builders, named arguments, and explicit extension-method calls.
+
+For `Retry(count, backoff)`, KEV015 sums the delays after the initial attempt. It recognizes
+`Backoff.Constant`, `Backoff.Linear`, and `Backoff.Exponential`, respects literal `maxDelay` caps
+and the runtime timer limit, and deliberately ignores jitter. Equality also warns. This is a
+configuration comparison, not a prediction of actual duration: outcomes, cancellation, jitter,
+and time spent in operations determine which attempts can run. Timeouts remain cooperative.
+
+Analysis stays within a direct fluent chain and stops at `Wrap`, `Compose`, custom `Use`
+strategies, and opaque expressions. Each directly written chain inside a composition is checked
+independently. Runtime variables, options callbacks, custom backoffs, and nonliteral durations
+stay silent. For extremely large retry counts, bounded arithmetic analysis reports only a proven
+comparison; unresolved tick-rounding boundaries stay silent. Absence of KEV015 does not prove
+that a pipeline fits its timeout budget.
