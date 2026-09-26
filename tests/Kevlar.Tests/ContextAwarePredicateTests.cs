@@ -207,7 +207,7 @@ public class ContextAwarePredicateTests
                 if (handling.AttemptNumber == 1)
                 {
                     releaseSlowOriginal.SetResult();
-                    slowOriginal!.GetAwaiter().GetResult();
+                    slowOriginal!.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
                     observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
                 }
 
@@ -227,8 +227,9 @@ public class ContextAwarePredicateTests
 
         var result = await shield.ExecuteWithContextAsync(async context =>
         {
-            await Task.Yield();
+            // Assign invocation order before yielding: thread-pool continuations may resume out of order.
             var execution = Interlocked.Increment(ref executions);
+            await Task.Yield();
             context.Properties.Set(HedgeAttempt, execution);
             if (execution == 3)
             {

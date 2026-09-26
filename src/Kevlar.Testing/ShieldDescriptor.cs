@@ -26,4 +26,7 @@ public sealed class ShieldDescriptor
 
     /// <summary>Strategies in execution order, outermost first.</summary>
     public IReadOnlyList<StrategyDescriptor> Strategies { get; }
+
+    /// <summary>Explains theoretical attempt bounds, timeout scopes, and effective handling without executing the pipeline.</summary>
+    public ShieldExplanation Explain() => ShieldExplanation.Create(this);
 }
