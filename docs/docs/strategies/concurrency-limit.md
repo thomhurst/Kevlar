@@ -66,8 +66,9 @@ stopped at the shield boundary before the limiter runs.
 
 Set `UsePriorityQueue = true` to admit queued work by `KevlarKeys.Priority`:
 
+<!-- doc-test-declaration -->
 ```csharp
-var shield = Shield.ConcurrencyLimit(options =>
+private static readonly Shield _priorityShield = Shield.ConcurrencyLimit(options =>
 {
     options.MaxConcurrency = 10;
     options.QueueLimit = 20;
@@ -75,11 +76,19 @@ var shield = Shield.ConcurrencyLimit(options =>
     options.UsePriorityQueue = true;
 });
 
-var result = await shield.ExecuteWithContextAsync(
-    10,
-    static (priority, properties) => properties.Set(KevlarKeys.Priority, priority),
-    static (_, context) => new ValueTask<int>(42));
+public static ValueTask<int> ExecutePriorityAsync(int priority, CancellationToken cancellationToken) =>
+    _priorityShield.ExecuteWithContextAsync(
+        priority,
+        static (value, properties) => properties.Set(KevlarKeys.Priority, value),
+        static async (_, context) =>
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1), context.CancellationToken);
+            return 42;
+        },
+        cancellationToken);
 ```
+
+Reuse the shield across executions; the sample delay represents cancellable work.
 
 Higher integers run first; negative values are valid. An absent priority means zero.
 Equal priorities retain FIFO arrival order. When the queue is full, a strictly higher

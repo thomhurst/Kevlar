@@ -147,6 +147,8 @@ not rejection, so hooks do not run.
 
 API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html).
 
+<div style={{overflowX: 'auto'}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `Permits` | `100` | Executions allowed per window |
@@ -156,6 +158,8 @@ API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html
 | `UsePriorityQueue` | `false` | Highest priority first, FIFO ties, and lower-priority eviction |
 | `QueueTimeout` | `null` | Maximum queue residence time; execution time is excluded |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
@@ -209,8 +213,9 @@ In synchronous `Execute`, queued waits block the calling thread. Prefer `Execute
 
 Set `UsePriorityQueue = true` to admit queued work by `KevlarKeys.Priority`:
 
+<!-- doc-test-declaration -->
 ```csharp
-var shield = Shield.RateLimit(options =>
+private static readonly Shield _priorityShield = Shield.RateLimit(options =>
 {
     options.Permits = 100;
     options.Window = TimeSpan.FromSeconds(1);
@@ -219,11 +224,19 @@ var shield = Shield.RateLimit(options =>
     options.UsePriorityQueue = true;
 });
 
-var result = await shield.ExecuteWithContextAsync(
-    10,
-    static (priority, properties) => properties.Set(KevlarKeys.Priority, priority),
-    static (_, context) => new ValueTask<int>(42));
+public static ValueTask<int> ExecutePriorityAsync(int priority, CancellationToken cancellationToken) =>
+    _priorityShield.ExecuteWithContextAsync(
+        priority,
+        static (value, properties) => properties.Set(KevlarKeys.Priority, value),
+        static async (_, context) =>
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1), context.CancellationToken);
+            return 42;
+        },
+        cancellationToken);
 ```
+
+Reuse the shield across executions; the sample delay represents cancellable work.
 
 Higher integers run first; negative values are valid. An absent priority means zero.
 Equal priorities retain FIFO arrival order. When the queue is full, a strictly higher
