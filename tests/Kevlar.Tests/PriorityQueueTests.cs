@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.Metrics;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Testing;
 using Microsoft.Extensions.Configuration;
@@ -170,6 +171,112 @@ public class PriorityQueueTests
             await Assert.That(descriptor.AssertContainsSingle<ConcurrencyLimitStrategyDescriptor>().UsePriorityQueue).IsTrue();
             await Assert.That(descriptor.AssertContainsSingle<RateLimitStrategyDescriptor>().UsePriorityQueue).IsTrue();
             await Assert.That(descriptor.AssertContainsSingle<ConcurrencyLimitStrategyDescriptor>().Description).Contains("priority queue");
+        }
+    }
+
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Eviction_Reports_Reason_Without_A_Priority_Metric_Tag(bool rateLimit)
+    {
+        using var meter = new MeterListener();
+        var measurements = new ConcurrentQueue<KeyValuePair<string, object?>[]>();
+        meter.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == KevlarDiagnostics.MeterName && instrument.Name == "kevlar.rejections")
+                listener.EnableMeasurementEvents(instrument);
+        };
+        meter.SetMeasurementEventCallback<long>((_, _, tags, _) => measurements.Enqueue(tags.ToArray()));
+        meter.Start();
+        var telemetry = new RejectionListener();
+        using var subscription = KevlarDiagnostics.Listen(telemetry);
+        await using var queue = new QueueHarness(rateLimit, capacity: 1);
+        _ = queue.Submit(0, priority: 0);
+        var evicted = queue.Submit(1, priority: -10);
+        _ = queue.Submit(2, priority: 10);
+        await evicted.WaitAsync(TestHelpers.DefaultTimeout);
+        var tags = measurements.Single();
+        await Assert.That(tags.Single(tag => tag.Key == "kevlar.rejection.reason").Value).IsEqualTo("queue_evicted");
+        await Assert.That(tags.Any(tag => tag.Key.Contains("priority"))).IsFalse();
+        await Assert.That(telemetry.Reasons.Single()).IsEqualTo("queue_evicted");
+    }
+
+    [Test]
+    public async Task Concurrent_Admission_And_Cancellation_Preserve_The_Concurrency_Bound()
+    {
+        const int limit = 3;
+        var running = 0;
+        var violations = 0;
+        var shield = Shield.ConcurrencyLimit(options =>
+        {
+            options.MaxConcurrency = limit;
+            options.QueueLimit = 4;
+            options.UsePriorityQueue = true;
+        });
+        var workers = Enumerable.Range(0, 12).Select(async worker =>
+        {
+            for (var attempt = 0; attempt < 100; attempt++)
+            {
+                using var caller = new CancellationTokenSource();
+                var execution = shield.ExecuteWithContextAsync(worker,
+                    static (priority, properties) => properties.Set(KevlarKeys.Priority, priority),
+                    async (_, _) =>
+                    {
+                        if (Interlocked.Increment(ref running) > limit) Interlocked.Increment(ref violations);
+                        try { await Task.Yield(); return 1; }
+                        finally { Interlocked.Decrement(ref running); }
+                    }, caller.Token).AsTask();
+                if (attempt % 3 == 0) caller.Cancel();
+                try { await execution; }
+                catch (OperationCanceledException) { }
+                catch (ConcurrencyLimitExceededException) { }
+            }
+        });
+        await Task.WhenAll(workers).WaitAsync(TestHelpers.DefaultTimeout);
+        var state = (ConcurrencyLimitStateSnapshot)shield.GetStateSnapshot().Strategies.Single();
+        await Assert.That(violations).IsEqualTo(0);
+        await Assert.That(state.AvailablePermits).IsEqualTo(limit);
+        await Assert.That(state.RunningExecutions).IsEqualTo(0);
+        await Assert.That(state.QueuedExecutions).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Rate_Admission_Rechecks_Time_After_Installing_The_Relative_Timer()
+    {
+        var time = new AdvancingTimerProvider();
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromSeconds(1);
+            options.QueueLimit = 1;
+            options.UsePriorityQueue = true;
+        }).WithTimeProvider(time);
+        await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
+        var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2)).AsTask();
+        await Assert.That(await queued.WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
+        await Assert.That(Queued(shield)).IsEqualTo(0);
+    }
+
+    private sealed class AdvancingTimerProvider : TimeProvider
+    {
+        private readonly FakeTimeProvider _time = new();
+        private int _created;
+        public override long TimestampFrequency => _time.TimestampFrequency;
+        public override long GetTimestamp() => _time.GetTimestamp();
+        public override DateTimeOffset GetUtcNow() => _time.GetUtcNow();
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            if (Interlocked.Increment(ref _created) == 1) _time.Advance(dueTime);
+            return _time.CreateTimer(callback, state, dueTime, period);
+        }
+    }
+
+    private sealed class RejectionListener : IKevlarTelemetryListener
+    {
+        public ConcurrentQueue<string?> Reasons { get; } = new();
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
+        {
+            if (telemetryEvent.RejectionReason is { } reason) Reasons.Enqueue(reason);
         }
     }
 

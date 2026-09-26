@@ -74,11 +74,13 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                 Task changed;
                 TimeSpan wait;
                 bool evicted;
+                long waitStartedAt;
                 lock (Gate)
                 {
                     context.CancellationToken.ThrowIfCancellationRequested();
                     timeout?.ThrowIfCancellationRequested();
                     evicted = entry.Evicted;
+                    waitStartedAt = context.TimeProvider.GetTimestamp();
                     TimeSpan? retryAfter = null;
                     if (!evicted && ReferenceEquals(_head, entry)
                         && TryAcquire(context.TimeProvider, out retryAfter))
@@ -93,7 +95,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                 {
                     return await RejectAsync<T>(context, retryAfter: null, reason: "queue_evicted").ConfigureAwait(false);
                 }
-                var waiting = WaitForChangeAsync(changed, context.TimeProvider, wait, token);
+                var waiting = WaitForChangeAsync(changed, context.TimeProvider, wait, waitStartedAt, token);
                 if (context.IsSynchronous)
                 {
                     waiting.GetAwaiter().GetResult();
@@ -127,13 +129,19 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         return await ExecuteAcquired(next, context).ConfigureAwait(false);
     }
 
-    private static async Task WaitForChangeAsync(Task changed, TimeProvider timeProvider, TimeSpan wait, CancellationToken token)
+    private static async Task WaitForChangeAsync(Task changed, TimeProvider timeProvider, TimeSpan wait, long waitStartedAt, CancellationToken token)
     {
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
         try
         {
             var delay = DelayHelper.CreateDelayTask(timeProvider, DelayHelper.Clamp(wait), cancellation.Token);
-            await Task.WhenAny(changed, delay).ConfigureAwait(false);
+            // The clock may advance between computing the remaining wait and installing its
+            // relative timer. Recheck after installation so an already-due permit is not delayed
+            // until a second clock advance. Once installed, further advances wake the timer.
+            if (wait == Timeout.InfiniteTimeSpan || timeProvider.GetElapsedTime(waitStartedAt) < wait)
+            {
+                await Task.WhenAny(changed, delay).ConfigureAwait(false);
+            }
             token.ThrowIfCancellationRequested();
         }
         finally
