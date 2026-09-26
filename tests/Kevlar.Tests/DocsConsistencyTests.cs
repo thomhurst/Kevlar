@@ -152,11 +152,15 @@ public class DocsConsistencyTests
     }
 
     [Test]
-    public async Task Migration_Guide_Mentions_Every_Public_Extension_Entry_Point()
+    public async Task Migration_Guides_Mention_Every_Public_Extension_Entry_Point()
     {
         var repositoryRoot = FindRepositoryRoot();
         var migrationGuide = await File.ReadAllTextAsync(
             Path.Combine(repositoryRoot, "docs", "docs", "polly-migration.md"));
+        await Assert.That(migrationGuide).Contains("[HTTP resilience migration guide](http-resilience-migration.md)");
+        var httpMigrationGuide = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "docs", "docs", "http-resilience-migration.md"));
+        var migrationGuides = migrationGuide + Environment.NewLine + httpMigrationGuide;
         var extensionNames = ShippedAssemblies
             .Where(static assembly => assembly.GetName().Name?.StartsWith(
                 "Kevlar.Extensions.",
@@ -175,7 +179,7 @@ public class DocsConsistencyTests
 
         foreach (var extensionName in extensionNames)
         {
-            await Assert.That(migrationGuide).Contains(extensionName);
+            await Assert.That(migrationGuides).Contains(extensionName);
         }
     }
 
