@@ -329,9 +329,6 @@ public class CircuitBreakerProbeAndSlowCallTests
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 
-    private static CircuitBreakerStateSnapshot Snapshot(Shield shield) =>
-        shield.GetStateSnapshot().Strategies.OfType<CircuitBreakerStateSnapshot>().Single();
-
     [Test]
     public async Task Cancelled_Probe_Allows_A_Replacement()
     {
@@ -459,4 +456,38 @@ public class CircuitBreakerProbeAndSlowCallTests
             _ = await Task.WhenAll(first, second, failed);
         }
     }
+
+    [Test]
+    public async Task Probe_Duration_Generator_Distinguishes_Total_And_Consecutive_Failures()
+    {
+        var time = new FakeTimeProvider();
+        long failures = 0;
+        var consecutiveFailures = 0;
+        double failureRate = 0;
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.FailureRatio = 0.5;
+            options.MinimumThroughput = 1;
+            options.HalfOpenProbes = 4;
+            options.BreakDurationGenerator = trip =>
+            {
+                failures = trip.FailureCount;
+                consecutiveFailures = trip.ConsecutiveFailures;
+                failureRate = trip.FailureRate;
+                return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+            };
+        }).WithTimeProvider(time);
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+        time.Advance(TimeSpan.FromSeconds(1));
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+        _ = shield.Execute(static _ => 42);
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
+
+        await Assert.That(failures).IsEqualTo(2L);
+        await Assert.That(consecutiveFailures).IsEqualTo(1);
+        await Assert.That(failureRate).IsEqualTo(0.5);
+    }
+
+    private static CircuitBreakerStateSnapshot Snapshot(Shield shield) =>
+        shield.GetStateSnapshot().Strategies.OfType<CircuitBreakerStateSnapshot>().Single();
 }

@@ -50,6 +50,7 @@ internal sealed class CircuitBreakerCore
     private int _probesInFlight;
     private int _completedProbes;
     private int _failedProbes;
+    private int _consecutiveProbeFailures;
     private int _slowProbes;
     private long _admissionGeneration;
     private Exception? _lastException;
@@ -835,6 +836,7 @@ internal sealed class CircuitBreakerCore
                     // probes retain their slots, so replacements cannot exceed the configured limit.
                     _completedProbes = 0;
                     _failedProbes = 0;
+                    _consecutiveProbeFailures = 0;
                     _slowProbes = 0;
                 }
             }
@@ -925,6 +927,11 @@ internal sealed class CircuitBreakerCore
         if (handledFailure)
         {
             _failedProbes++;
+            _consecutiveProbeFailures++;
+        }
+        else
+        {
+            _consecutiveProbeFailures = 0;
         }
 
         if (slow)
@@ -934,7 +941,7 @@ internal sealed class CircuitBreakerCore
 
         // Compare against the complete cohort, so one early failure need not reopen ratio mode.
         var failureRate = (double)_failedProbes / _halfOpenProbes;
-        statistics = new CircuitBreakerFailureStatistics(failureRate, _failedProbes, _failedProbes);
+        statistics = new CircuitBreakerFailureStatistics(failureRate, _failedProbes, _consecutiveProbeFailures);
         if (_openingPending)
         {
             return ProbeDecision.Pending;
@@ -1167,6 +1174,7 @@ internal sealed class CircuitBreakerCore
         _probesInFlight = 0;
         _completedProbes = 0;
         _failedProbes = 0;
+        _consecutiveProbeFailures = 0;
         _slowProbes = 0;
         _state = next;
         if (next is CircuitState.Open or CircuitState.Isolated)
