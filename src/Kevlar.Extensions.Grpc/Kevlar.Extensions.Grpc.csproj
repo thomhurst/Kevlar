@@ -5,8 +5,8 @@
     <RootNamespace>Kevlar.Extensions.Grpc</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>gRPC client integration for Kevlar: unary and streaming interceptors, transient status helpers, cancellation safety, and named-shield DI registration.</Description>
-    <PackageTags>resilience;grpc;client;interceptor;kevlar</PackageTags>
+    <Description>gRPC client and server integration for Kevlar: unary and streaming interceptors, server admission control, transient status helpers, cancellation safety, and named-shield DI registration.</Description>
+    <PackageTags>resilience;grpc;client;server;interceptor;kevlar</PackageTags>
     <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
     <CopyLocalLockFileAssemblies Condition="'$(TargetFramework)' == 'net10.0'">true</CopyLocalLockFileAssemblies>
   </PropertyGroup>

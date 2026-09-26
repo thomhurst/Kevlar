@@ -1,7 +1,9 @@
 # Kevlar.Extensions.Grpc
 
 Protect asynchronous unary and streaming gRPC client calls with Kevlar interceptors, transient
-status helpers, cancellation safety, and named-shield registration.
+status helpers, cancellation safety, and named-shield registration. `ShieldServerInterceptor`
+adds shared or partitioned admission control around all four server handler shapes, with gRPC
+status mapping for concurrency, rate-limit, and circuit-breaker rejections.
 
 ```shell
 dotnet add package Kevlar.Extensions.Grpc
