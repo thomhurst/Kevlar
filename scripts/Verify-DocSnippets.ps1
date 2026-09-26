@@ -36,6 +36,7 @@ $requiredPackages = @(
     'Kevlar.Extensions.Http'
     'Kevlar.Extensions.Diagnostics.HealthChecks'
     'Kevlar.Extensions.Logging'
+    'Kevlar.Extensions.Tracing'
     'Kevlar.Extensions.RateLimiting'
     'Kevlar.Testing'
 )

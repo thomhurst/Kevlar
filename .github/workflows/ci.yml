@@ -83,6 +83,7 @@ jobs:
             --exclude 'https://github\.com/thomhurst/Kevlar/blob/main/(CONTRIBUTING|CODE_OF_CONDUCT)\.md'
             --exclude '^https://github\.com/thomhurst/Kevlar/tree/main/samples/'
             --exclude '^https://www\.nuget\.org/packages/Kevlar\.Extensions\.Logging/?$'
+            --exclude '^https://www\.nuget\.org/packages/Kevlar\.Extensions\.Tracing/?$'
             README.md CONTRIBUTING.md CODE_OF_CONDUCT.md "docs/docs/**/*.md"
           fail: true
           failIfEmpty: true
@@ -211,6 +212,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net10.trx --results-directory artifacts/test-results/logging
 
+      - name: Tracing integration tests
+        shell: pwsh
+        run: |
+          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net8.trx --results-directory artifacts/test-results/tracing
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net10.trx --results-directory artifacts/test-results/tracing
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -330,6 +338,9 @@ jobs:
 
       - name: Collect logging integration coverage
         run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect tracing integration coverage
+        run: dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/tracing.cobertura.xml --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'

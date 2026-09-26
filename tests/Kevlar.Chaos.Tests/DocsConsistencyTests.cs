@@ -133,9 +133,21 @@ public class DocsConsistencyTests
     private static Dictionary<string, InstrumentRow> ParseInstrumentTable()
     {
         var rows = new Dictionary<string, InstrumentRow>(StringComparer.Ordinal);
+        var inInstrumentTable = false;
         foreach (var line in File.ReadLines(ObservabilityPath()))
         {
-            if (!line.StartsWith("| `kevlar.", StringComparison.Ordinal))
+            if (line.StartsWith("| Instrument |", StringComparison.Ordinal))
+            {
+                inInstrumentTable = true;
+                continue;
+            }
+
+            if (inInstrumentTable && !line.StartsWith('|'))
+            {
+                break;
+            }
+
+            if (!inInstrumentTable || !line.StartsWith("| `kevlar.", StringComparison.Ordinal))
             {
                 continue;
             }

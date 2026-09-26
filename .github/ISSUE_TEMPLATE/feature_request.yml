@@ -14,6 +14,7 @@ body:
         - Kevlar.Extensions.Grpc
         - Kevlar.Extensions.Http
         - Kevlar.Extensions.RateLimiting
+        - Kevlar.Extensions.Tracing
         - Kevlar.Testing
         - New package or cross-package feature
     validations:
