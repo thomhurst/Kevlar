@@ -10,7 +10,8 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
         int burst,
         int queueLimit,
         TimeSpan? queueTimeout,
-        bool hasNotification)
+        bool hasNotification,
+        bool usePriorityQueue = false)
         : base(StrategyKind.RateLimit, description)
     {
         Permits = permits;
@@ -19,6 +20,7 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
         QueueLimit = queueLimit;
         QueueTimeout = queueTimeout;
         HasNotification = hasNotification;
+        UsePriorityQueue = usePriorityQueue;
     }
 
     /// <summary>Permits replenished per window.</summary>
@@ -38,4 +40,7 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether admission uses highest priority first, FIFO ties, and lower-priority eviction.</summary>
+    public bool UsePriorityQueue { get; }
 }

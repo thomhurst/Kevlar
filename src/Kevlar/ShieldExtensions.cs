@@ -153,7 +153,7 @@ public static class ShieldExtensions
         shield = shield.CurrentSnapshot;
         var options = new RateLimitOptions();
         configure(options);
-        return shield.Append(new RateLimitStrategy(options));
+        return shield.Append(options.UsePriorityQueue ? new PriorityRateLimitStrategy(options) : new RateLimitStrategy(options));
     }
 
     /// <summary>Appends a concurrency limit capping concurrency at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
@@ -177,7 +177,7 @@ public static class ShieldExtensions
         shield = shield.CurrentSnapshot;
         var options = new ConcurrencyLimitOptions();
         configure(options);
-        return shield.Append(new ConcurrencyLimitStrategy(options));
+        return shield.Append(options.UsePriorityQueue ? new PriorityConcurrencyLimitStrategy(options) : new ConcurrencyLimitStrategy(options));
     }
 
     /// <summary>Appends an adaptive concurrency limit. The options are copied when the strategy is created.</summary>

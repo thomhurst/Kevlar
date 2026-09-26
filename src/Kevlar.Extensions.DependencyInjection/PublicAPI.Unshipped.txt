@@ -26,3 +26,7 @@ Kevlar.Extensions.DependencyInjection.HedgeDefinition.Budget.get -> string?
 Kevlar.Extensions.DependencyInjection.HedgeDefinition.Budget.set -> void
 static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddRetryBudget(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.RetryBudget! budget) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddRetryBudget(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, int maxTokens = 100, double tokenRatio = 0.1) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.UsePriorityQueue.get -> bool
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.UsePriorityQueue.set -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.UsePriorityQueue.get -> bool
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.UsePriorityQueue.set -> void

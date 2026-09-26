@@ -92,6 +92,16 @@ public static class ShieldStateSnapshotExtensions
             case CircuitBreakerStrategy circuit:
                 var breaker = circuit.Core.CaptureState(timeProvider);
                 return new CircuitBreakerStateSnapshot(strategyIndex, breaker.State, breaker.ProbesInFlight, breaker.SlowCallCount);
+            case PriorityRateLimitStrategy priorityRate:
+                var ratePriority = priorityRate.CapturePriorityState(timeProvider);
+                return new RateLimitStateSnapshot(strategyIndex, ratePriority.Available,
+                    ratePriority.Queued, ratePriority.Priorities);
+            case PriorityConcurrencyLimitStrategy priorityConcurrency:
+                var concurrencyPriority = priorityConcurrency.CapturePriorityState();
+                return new ConcurrencyLimitStateSnapshot(strategyIndex,
+                    priorityConcurrency.MaxConcurrency - concurrencyPriority.Running,
+                    concurrencyPriority.Running, concurrencyPriority.Queued,
+                    priorityConcurrency.MaxConcurrency, concurrencyPriority.Priorities);
             case RateLimitStrategy rateLimit:
                 var rate = rateLimit.CaptureState(timeProvider);
                 return new RateLimitStateSnapshot(strategyIndex, rate.Available, rate.Queued);

@@ -38,7 +38,7 @@ public readonly struct RateLimitRejectedEvent
     /// <summary>The configured maximum wait queue size.</summary>
     public int QueueLimit { get; }
 
-    /// <summary>The rejection reason, such as <c>queue_timeout</c>, or null for capacity rejection.</summary>
+    /// <summary>The rejection reason, such as <c>queue_timeout</c> or <c>queue_evicted</c>, or null for capacity rejection.</summary>
     public string? Reason { get; }
 
     /// <summary>

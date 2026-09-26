@@ -691,6 +691,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 Burst = ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Burst)),
                 QueueTimeout = ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.QueueTimeout)),
+                UsePriorityQueue = ReadBoolean(rateLimit, nameof(RateLimitDefinition.UsePriorityQueue)),
             };
             if (ReadInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
             {
@@ -715,6 +716,7 @@ public static class KevlarServiceCollectionExtensions
             var concurrencyDefinition = new ConcurrencyLimitDefinition
             {
                 QueueTimeout = ReadTimeSpan(concurrency, nameof(ConcurrencyLimitDefinition.QueueTimeout)),
+                UsePriorityQueue = ReadBoolean(concurrency, nameof(ConcurrencyLimitDefinition.UsePriorityQueue)),
             };
             if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
             {
@@ -873,6 +875,11 @@ public static class KevlarServiceCollectionExtensions
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : throw InvalidValue(configuration, key, value, "an integer");
+
+    private static bool ReadBoolean(IConfiguration configuration, string key) =>
+        configuration[key] is not { } value ? false
+        : bool.TryParse(value, out var parsed) ? parsed
+        : throw InvalidValue(configuration, key, value, "a boolean");
 
     private static double ParseDouble(IConfiguration configuration, string key, string value) =>
         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)

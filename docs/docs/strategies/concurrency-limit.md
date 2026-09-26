@@ -33,6 +33,7 @@ API reference: [`ConcurrencyLimitOptions`](pathname:///api/Kevlar.ConcurrencyLim
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
 | `QueueLimit` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
+| `UsePriorityQueue` | `false` | Highest priority first, FIFO ties, and lower-priority eviction |
 | `QueueTimeout` | `null` | Maximum time waiting for a slot; execution time is excluded |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
 
@@ -60,6 +61,45 @@ Cancelling a queued execution frees its queue place when the asynchronous wait o
 
 Queued cancellation is not rejection and invokes neither rejection hook. A pre-cancelled caller is
 stopped at the shield boundary before the limiter runs.
+
+## Priority queues
+
+Set `UsePriorityQueue = true` to admit queued work by `KevlarKeys.Priority`:
+
+```csharp
+var shield = Shield.ConcurrencyLimit(options =>
+{
+    options.MaxConcurrency = 10;
+    options.QueueLimit = 20;
+    options.QueueTimeout = TimeSpan.FromMilliseconds(250);
+    options.UsePriorityQueue = true;
+});
+
+var result = await shield.ExecuteWithContextAsync(
+    10,
+    static (priority, properties) => properties.Set(KevlarKeys.Priority, priority),
+    static (_, context) => new ValueTask<int>(42));
+```
+
+Higher integers run first; negative values are valid. An absent priority means zero.
+Equal priorities retain FIFO arrival order. When the queue is full, a strictly higher
+priority arrival evicts the newest waiter at the lowest priority. Equal or lower arrivals
+are rejected immediately. Running work is never evicted. Continuous high-priority traffic
+can starve lower priorities, so combine priority queueing with `QueueTimeout` when needed.
+
+Eviction returns `ConcurrencyLimitExceededException` to the evicted caller. Its `OnRejected.Reason`
+and telemetry `RejectionReason` are `queue_evicted`; the rejection counter includes
+`kevlar.rejection.reason=queue_evicted`. Cancellation remains cancellation. Queue expiry
+keeps the `queue_timeout` reason and stops affecting the call after admission.
+
+`shield.ToString()` includes `priority queue`, and its testing descriptor exposes
+`UsePriorityQueue`. With `Kevlar.Testing`, `GetStateSnapshot()` includes an immutable
+`QueuedByPriority` dictionary on the limiter snapshot. An unset priority appears under
+zero. Priority values are not metric tags. Ordinary queues return an empty dictionary.
+
+The option defaults to `false`; setting a priority alone does not change admission.
+`QueueLimit = 0` still rejects immediately. The same option is available in typed shields,
+`ShieldDefinition`, and configuration binding. Uncontended admission remains allocation-free.
 
 ## Queue timeout
 

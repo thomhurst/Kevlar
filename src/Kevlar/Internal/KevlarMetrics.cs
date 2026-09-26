@@ -25,7 +25,7 @@ internal static class KevlarMetrics
 #if NET9_0_OR_GREATER
     private static readonly StateMetricRegistry<CircuitBreakerStrategy> CircuitStates = new();
     private static readonly StateMetricRegistry<IConcurrencyLimitState> ConcurrencyStates = new();
-    private static readonly StateMetricRegistry<RateLimitStrategy> RateStates = new();
+    private static readonly StateMetricRegistry<IRateLimitState> RateStates = new();
 #endif
 
 #if NET8_0_OR_GREATER
@@ -627,12 +627,12 @@ internal static class KevlarMetrics
         StateMetricRegistration<IConcurrencyLimitState>.Disabled;
 #endif
 
-    public static StateMetricRegistration<RateLimitStrategy> RegisterRateStateSource(
-        RateLimitStrategy strategy) =>
+    public static StateMetricRegistration<IRateLimitState> RegisterRateStateSource(
+        IRateLimitState strategy) =>
 #if NET9_0_OR_GREATER
         RateStates.Register(strategy);
 #else
-        StateMetricRegistration<RateLimitStrategy>.Disabled;
+        StateMetricRegistration<IRateLimitState>.Disabled;
 #endif
 
 #if NET9_0_OR_GREATER
