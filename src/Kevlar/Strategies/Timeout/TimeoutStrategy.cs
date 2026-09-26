@@ -189,7 +189,7 @@ internal sealed class TimeoutStrategy : Strategy
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline? priorDeadline,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout,
@@ -236,7 +236,7 @@ internal sealed class TimeoutStrategy : Strategy
         Outcome<T> outcome,
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline? priorDeadline,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         long startedAt,
@@ -264,7 +264,7 @@ internal sealed class TimeoutStrategy : Strategy
     private static void Cleanup(
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline? priorDeadline,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer)
     {
@@ -279,7 +279,7 @@ internal sealed class TimeoutStrategy : Strategy
         OperationCanceledException cancellationException,
         KevlarContext context,
         CancellationToken priorToken,
-        ExecutionDeadline? priorDeadline,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout)

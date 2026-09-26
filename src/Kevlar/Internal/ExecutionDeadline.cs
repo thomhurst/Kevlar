@@ -1,23 +1,29 @@
 namespace Kevlar.Internal;
 
-// Keep timeout arithmetic monotonic while exposing a stable UTC value for downstream propagation.
-internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, DateTimeOffset utcDeadline)
+// Keep timeout arithmetic monotonic. Store UTC ticks so entering a timeout does not
+// construct a DateTimeOffset that most executions never read.
+internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, long utcTicks)
 {
-    internal DateTimeOffset UtcDeadline { get; } = utcDeadline;
+    internal bool HasValue => utcTicks != 0;
+
+    internal DateTimeOffset UtcDeadline => new(utcTicks, TimeSpan.Zero);
 
     internal TimeSpan Remaining(TimeProvider timeProvider, long timestamp) =>
         duration - timeProvider.GetElapsedTime(startedAt, timestamp);
 
     internal static ExecutionDeadline Create(TimeProvider timeProvider, long startedAt, TimeSpan duration,
-        ExecutionDeadline? parent)
+        ExecutionDeadline parent)
     {
-        var utcNow = timeProvider.GetUtcNow();
-        var utcTicks = Math.Min(DateTimeOffset.MaxValue.Ticks, utcNow.UtcDateTime.Ticks + duration.Ticks);
-        var utcDeadline = new DateTimeOffset(utcTicks, TimeSpan.Zero);
-        if (parent is { } outer && outer.UtcDeadline < utcDeadline)
+        var nowTicks = ReferenceEquals(timeProvider, TimeProvider.System)
+            ? DateTime.UtcNow.Ticks
+            : timeProvider.GetUtcNow().UtcDateTime.Ticks;
+        var deadlineTicks = Math.Min(DateTimeOffset.MaxValue.Ticks, nowTicks + duration.Ticks);
+        if (parent.HasValue && parent.UtcTicks < deadlineTicks)
         {
-            utcDeadline = outer.UtcDeadline;
+            deadlineTicks = parent.UtcTicks;
         }
-        return new ExecutionDeadline(startedAt, duration, utcDeadline);
+        return new ExecutionDeadline(startedAt, duration, deadlineTicks);
     }
+
+    private long UtcTicks => utcTicks;
 }

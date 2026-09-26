@@ -307,6 +307,50 @@ public class DeadlineTests
         await Assert.That(deadlines).IsEquivalentTo(new DateTimeOffset?[] { expected, expected });
     }
 
+    [Test]
+    public async Task Deadline_Remains_Stable_When_Wall_Clock_Moves()
+    {
+        var clock = new FakeTimeProvider();
+        var time = new AdjustableUtcProvider(clock);
+        var expected = clock.GetUtcNow().AddSeconds(2);
+        await Shield.Timeout(TimeSpan.FromSeconds(2)).WithTimeProvider(time)
+            .ExecuteWithContextAsync(async context =>
+            {
+                time.UtcOffset = TimeSpan.FromHours(1);
+                await Assert.That(context.Deadline).IsEqualTo(expected);
+                await Shield.Timeout(TimeSpan.FromSeconds(1)).ExecuteWithContextAsync(context, async child =>
+                {
+                    // A forward wall-clock change must not extend the enclosing UTC deadline.
+                    await Assert.That(child.Deadline).IsEqualTo(expected);
+                });
+                time.UtcOffset = TimeSpan.FromHours(-1);
+                await Assert.That(context.Deadline).IsEqualTo(expected);
+            });
+    }
+
+    [Test]
+    public async Task Deadline_Clamps_At_Maximum_Utc_Value()
+    {
+        var clock = new FakeTimeProvider();
+        var time = new AdjustableUtcProvider(clock)
+        {
+            UtcOffset = DateTimeOffset.MaxValue.AddSeconds(-1) - clock.GetUtcNow(),
+        };
+        var deadline = await Shield.Timeout(TimeSpan.FromSeconds(2)).WithTimeProvider(time)
+            .ExecuteWithContextAsync(context => new ValueTask<DateTimeOffset?>(context.Deadline));
+        await Assert.That(deadline).IsEqualTo(DateTimeOffset.MaxValue);
+    }
+
+    private sealed class AdjustableUtcProvider(FakeTimeProvider clock) : TimeProvider
+    {
+        public TimeSpan UtcOffset { get; set; }
+        public override long TimestampFrequency => clock.TimestampFrequency;
+        public override long GetTimestamp() => clock.GetTimestamp();
+        public override DateTimeOffset GetUtcNow() => clock.GetUtcNow() + UtcOffset;
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+            clock.CreateTimer(callback, state, dueTime, period);
+    }
+
     private sealed class TimerCountingProvider(FakeTimeProvider clock) : TimeProvider
     {
         public int TimerCount { get; private set; }

@@ -39,7 +39,7 @@ public sealed class KevlarContext
     private string? _shieldName;
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
-    internal ExecutionDeadline? DeadlineState { get; set; }
+    internal ExecutionDeadline DeadlineState { get; set; }
 
 #if DEBUG
     private bool _returnedToPool;
@@ -128,15 +128,18 @@ public sealed class KevlarContext
         get
         {
             ThrowIfReturnedToPool();
-            return DeadlineState?.UtcDeadline;
+            return DeadlineState.HasValue ? DeadlineState.UtcDeadline : null;
         }
     }
 
-    internal TimeSpan? RemainingDeadline => DeadlineState?.Remaining(TimeProvider, TimeProvider.GetTimestamp());
+    internal TimeSpan? RemainingDeadline => DeadlineState.HasValue
+        ? DeadlineState.Remaining(TimeProvider, TimeProvider.GetTimestamp())
+        : null;
 
     internal void EnterDeadline(TimeSpan timeout, long startedAt)
     {
-        if (DeadlineState is { } parent && parent.Remaining(TimeProvider, startedAt) <= timeout)
+        var parent = DeadlineState;
+        if (parent.HasValue && parent.Remaining(TimeProvider, startedAt) <= timeout)
         {
             return;
         }
@@ -485,7 +488,7 @@ public sealed class KevlarContext
             context._retryTerminalInspectionMask = 0;
             context._retryTerminalInspectionOverflow?.Clear();
             context.TimeProvider = TimeProvider.System;
-            context.DeadlineState = null;
+            context.DeadlineState = default;
             context._properties.MirrorMutationsTo(null);
             context._properties.ResetAdditionalAttemptState();
             context._properties.Clear();
