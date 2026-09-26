@@ -83,7 +83,7 @@ Await the rejected execution before assuming its queue place is reusable.
 
 The default `null` leaves the queue wait unbounded. Configured values must be positive
 and at most 4,294,967,294 milliseconds. `QueueLimit = 0` never queues, so no queue timer
-is created. `Describe()` shows `ConcurrencyLimit(10, queue 20/250ms)` for this example.
+is created. `shield.ToString()` shows `ConcurrencyLimit(10, queue 20/250ms)` for this example.
 An outer `Timeout` can still bound both queue residence and execution together.
 
 ## Adaptive concurrency

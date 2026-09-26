@@ -104,8 +104,9 @@ public class QueueTimeoutTests
             var dispatchedTimer = time.QueueTimerCallback(0);
             caller.Cancel();
             time.Advance(TimeSpan.FromSeconds(1));
-            dispatchedTimer.Fire();
             var outcome = await queued.WaitAsync(TestHelpers.DefaultTimeout);
+            // A callback dispatched before disposal may arrive after the waiter has drained.
+            dispatchedTimer.Fire();
             await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
             await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken).IsEqualTo(caller.Token);
             await Assert.That(reasons.Count).IsEqualTo(0);
@@ -227,6 +228,32 @@ public class QueueTimeoutTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Timer_Creation_Failure_Does_Not_Leak_Queue_Capacity(bool rateLimit)
+    {
+        var time = new FailingTimerProvider();
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1));
+        var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
+        try
+        {
+            var outcome = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(2));
+            await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
+            await Assert.That(Queued(shield)).IsEqualTo(0);
+            release.TrySetResult(1);
+            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            time.Advance(TimeSpan.FromSeconds(1));
+            await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(3))).IsEqualTo(3);
+        }
+        finally
+        {
+            release.TrySetResult(1);
+            await active.WaitAsync(TestHelpers.DefaultTimeout);
+        }
+    }
+
+    [Test]
     [Arguments(0d)]
     [Arguments(-1d)]
     [Arguments(4294967295d)]
@@ -263,7 +290,7 @@ public class QueueTimeoutTests
             await Assert.That(concurrency.Description).Contains("queue 2/250ms");
             await Assert.That(rate.Description).Contains("queue 3/500ms");
         }
-        await Assert.That(Shield.ConcurrencyLimit(1, queueLimit: 2).Describe()).IsEqualTo("ConcurrencyLimit(1, queue 2)");
+        await Assert.That(Shield.ConcurrencyLimit(1, queueLimit: 2).ToString()).IsEqualTo("ConcurrencyLimit(1, queue 2)");
     }
 
     private static Shield Create(bool rateLimit, TimeProvider time, TimeSpan? timeout, Action<string?>? onRejected = null)
@@ -304,5 +331,11 @@ public class QueueTimeoutTests
                 Reasons.Enqueue(telemetryEvent.RejectionReason);
             }
         }
+    }
+
+    private sealed class FailingTimerProvider : FakeTimeProvider
+    {
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
+            throw new InvalidOperationException("Timer creation failed.");
     }
 }

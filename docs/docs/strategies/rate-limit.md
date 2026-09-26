@@ -227,5 +227,5 @@ cancellation and wins when already requested as the waiter observes expiry.
 The default `null` retains unbounded queue waiting. Configured values must be positive
 and at most 4,294,967,294 milliseconds. No timer is created for immediate admission.
 Once a permit is granted the queue timer stops, so it cannot cancel protected work.
-`Describe()` includes `queue 20/250ms`. Synchronous `Execute` blocks during the wait
+`shield.ToString()` includes `queue 20/250ms`. Synchronous `Execute` blocks during the wait
 and observes the same queue timeout.
