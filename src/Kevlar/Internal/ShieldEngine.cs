@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 namespace Kevlar.Internal;
 
 /// <summary>Boundary plumbing shared by <see cref="Shield"/> and <see cref="Shield{TResult}"/>.</summary>
-internal static class ShieldEngine
+internal static partial class ShieldEngine
 {
-    public static ValueTask<T> ExecuteAsync<T, TState>(
+    private static ValueTask<T> ExecuteAsyncUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,
@@ -59,7 +59,7 @@ internal static class ShieldEngine
         return AwaitAsync(pipeline, context, startedAt);
     }
 
-    public static ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(
+    private static ValueTask<Outcome<T>> ExecuteOutcomeAsyncUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,
@@ -150,7 +150,7 @@ internal static class ShieldEngine
             cancellationToken);
     }
 
-    private static ValueTask<T> ExecuteWithContextAsyncCore<T, TState>(
+    private static ValueTask<T> ExecuteWithContextAsyncCoreUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,
@@ -204,7 +204,7 @@ internal static class ShieldEngine
         return AwaitWithContextAsync(pipeline, context, state, onCompleted, startedAt);
     }
 
-    public static ValueTask<T> ExecuteWithParentContextAsync<T, TState>(
+    private static ValueTask<T> ExecuteWithParentContextAsyncUntraced<T, TState>(
         StrategyNode? head,
         string? shieldName,
         TState state,
@@ -232,7 +232,7 @@ internal static class ShieldEngine
         return AwaitWithParentContextAsync(pipeline, context, parentContext, startedAt);
     }
 
-    public static T ExecuteWithParentContextSync<T, TState>(
+    private static T ExecuteWithParentContextSyncUntraced<T, TState>(
         StrategyNode? head,
         string? shieldName,
         TState state,
@@ -273,7 +273,7 @@ internal static class ShieldEngine
         }
     }
 
-    public static T ExecuteSync<T, TState>(
+    private static T ExecuteSyncUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,
@@ -327,7 +327,7 @@ internal static class ShieldEngine
         }
     }
 
-    public static Outcome<T> ExecuteOutcomeSync<T, TState>(
+    private static Outcome<T> ExecuteOutcomeSyncUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,
@@ -397,7 +397,7 @@ internal static class ShieldEngine
         }
     }
 
-    public static T ExecuteWithContextSync<T, TState>(
+    private static T ExecuteWithContextSyncUntraced<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
         string? shieldName,

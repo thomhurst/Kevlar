@@ -309,6 +309,28 @@ public class TracingTests
         await Assert.That(Tag(callback, "kevlar.callback.source")).IsNotNull();
     }
 
+    [Test]
+    public async Task Built_In_Source_And_Adapter_Enrich_The_Current_Execution_Span()
+    {
+        using var subscription = KevlarTracing.Listen();
+        Activity? execution = null;
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == KevlarDiagnostics.ActivitySourceName,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = activity => execution = activity,
+        };
+        ActivitySource.AddActivityListener(listener);
+        using var parent = StartRecorded("application");
+        await EmitAsync();
+        await Assert.That(execution!.OperationName).IsEqualTo("kevlar.execute");
+        await Assert.That(execution.ParentSpanId).IsEqualTo(parent.SpanId);
+        await Assert.That(execution.Events.Any(item => item.Name == "kevlar.custom")).IsTrue();
+        await Assert.That(CustomEvents(execution).Single().Name).IsEqualTo("kevlar.strategy");
+        await Assert.That(parent.Events.Any()).IsFalse();
+        await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();
+    }
+
     private static Activity StartRecorded(string name)
     {
         var activity = new Activity(name).SetIdFormat(ActivityIdFormat.W3C).Start();

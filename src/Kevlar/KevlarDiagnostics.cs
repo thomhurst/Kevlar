@@ -52,6 +52,10 @@ public static class KevlarDiagnostics
     /// <summary>The name of Kevlar's <c>Meter</c>.</summary>
     public const string MeterName = "Kevlar";
 
+    /// <summary>The name of the opt-in execution and attempt ActivitySource on .NET 8 and later.</summary>
+    /// <remarks>The .NET Standard asset does not create activities.</remarks>
+    public const string ActivitySourceName = "Kevlar";
+
     /// <summary>Registers an application-defined enricher for every Kevlar metric measurement.</summary>
     /// <param name="enricher">The enricher to register.</param>
     /// <returns>A subscription that removes the enricher when disposed.</returns>

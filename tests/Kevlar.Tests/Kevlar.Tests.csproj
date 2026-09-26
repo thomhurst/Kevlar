@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\ActivityTestConfiguration.cs" Link="ActivityTestConfiguration.cs" />
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Analyzers\Kevlar.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />

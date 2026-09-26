@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Kevlar.Internal;
 
 internal static class KevlarTelemetry
@@ -5,12 +7,24 @@ internal static class KevlarTelemetry
     private static readonly object Sync = new();
     private static IKevlarTelemetryListener[] _listeners = [];
 
-    public static bool EventEnabled =>
-        Volatile.Read(ref _listeners).Length != 0
-        || KevlarMetrics.StrategyEventsEnabled;
+    public static bool EventEnabled
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Volatile.Read(ref _listeners).Length != 0
+            || KevlarMetrics.StrategyEventsEnabled
+            || KevlarActivities.EventsEnabled;
+    }
 
-    public static bool AttemptEnabled => EventEnabled || KevlarMetrics.AttemptDurationEnabled;
+    public static bool AttemptEnabled
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // Built-in tracing already measures each attempt with a span.
+        get => Volatile.Read(ref _listeners).Length != 0
+            || KevlarMetrics.StrategyEventsEnabled
+            || KevlarMetrics.AttemptDurationEnabled;
+    }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsEventEnabled(KevlarContext context) =>
         EventEnabled || context.TelemetryListener is not null;
 
@@ -45,7 +59,8 @@ internal static class KevlarTelemetry
         var contextListener = context.TelemetryListener;
         if (listeners.Length == 0
             && contextListener is null
-            && !KevlarMetrics.StrategyEventsEnabled)
+            && !KevlarMetrics.StrategyEventsEnabled
+            && !KevlarActivities.EventsEnabled)
         {
             return;
         }
@@ -76,6 +91,7 @@ internal static class KevlarTelemetry
             context);
 
         KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration: false);
+        KevlarActivities.RecordEvent(in telemetryEvent);
         var result = outcome.Result;
         var boxedEvent = default(KevlarTelemetryEvent);
         var hasBoxedEvent = false;
@@ -172,7 +188,8 @@ internal static class KevlarTelemetry
         if (listeners.Length == 0
             && contextListener is null
             && (localOnly
-                || (!KevlarMetrics.StrategyEventsEnabled
+                || (!KevlarActivities.EventsEnabled
+                    && !KevlarMetrics.StrategyEventsEnabled
                     && (!recordAttemptDuration || !KevlarMetrics.AttemptDurationEnabled))))
         {
             return;
@@ -206,6 +223,7 @@ internal static class KevlarTelemetry
         if (!localOnly)
         {
             KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration);
+            KevlarActivities.RecordEvent(in telemetryEvent);
         }
         foreach (var listener in listeners)
         {
