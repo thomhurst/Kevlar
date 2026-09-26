@@ -32,6 +32,8 @@ Configure either `ConsecutiveFailures` *or* `FailureRatio` — not both. When ne
 
 API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOptions.html) and [`CircuitBreakerOptions<T>`](pathname:///api/Kevlar.CircuitBreakerOptions-1.html).
 
+<div style={{overflowX: 'auto'}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `ConsecutiveFailures` | — | Simple mode: open after this many failures in a row |
@@ -47,6 +49,8 @@ API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOp
 | `OnStateChanged` | — | Awaited callback on every transition: `e.From`, `e.To`, `e.LastException`, `e.Context` |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this breaker |
 | `HandlesResult` (`CircuitBreakerOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value. This also applies when
