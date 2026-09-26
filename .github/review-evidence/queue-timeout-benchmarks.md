@@ -29,7 +29,30 @@ The subsequent observability-contract test correction and this report change no
 runtime or benchmark source. The earlier pre-rebase comparison is retained at
 https://github.com/thomhurst/Kevlar/actions/runs/36253012783; it uses a different main
 baseline and is not combined with these measurements.
-# Post-adaptive-concurrency comparison
+# Final admission comparison
+
+[Run 36256193692](https://github.com/thomhurst/Kevlar/actions/runs/36256193692)
+compares baseline `4e41e545ca87e21f3f249e26fb5fa87aa898ad4d` with candidate
+`f630f579558cfbbcebfaed23bad89e2f2087753c` after retaining the original rate
+rejection call signature. Sequential phases run on one Ubuntu 24.04 runner,
+AMD EPYC 7763, .NET 10.0.12, BenchmarkDotNet 0.15.8. All cases allocate zero bytes.
+
+| Method | Baseline before ns | Candidate ns | Baseline after ns |
+|---|---:|---:|---:|
+| Concurrency | 168.1 | 176.2 | 174.0 |
+| ConcurrencyQueue | 166.9 | 169.1 | 163.5 |
+| Rate | 171.0 | 169.6 | 170.1 |
+| RateQueue | 175.2 | 178.0 | 175.6 |
+
+The non-queued rate path now beats both controls. Concurrency differs by
+2.2–8.1 ns, with 5.9 ns drift between controls; configured concurrency queues
+differ by 2.2–5.6 ns (1.3–3.4%). The queued rate path differs by 2.4–2.8 ns
+(1.4–1.6%). These small absolute shifts do not establish a material regression;
+there is no allocation increase. Candidate throughput is 5.68/5.91/5.90/5.62 M
+calls/s respectively. No speedup is claimed. Across separate runs, code generation
+and control drift prevent attributing every difference to the call-shape change.
+
+## Earlier post-adaptive-concurrency comparison
 
 The rebase onto `4e41e545ca87e21f3f249e26fb5fa87aa898ad4d` requires fresh evidence.
 [Run 36255569762](https://github.com/thomhurst/Kevlar/actions/runs/36255569762)
