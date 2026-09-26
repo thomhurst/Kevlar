@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 using Reservoir;
 
@@ -137,6 +138,7 @@ public sealed class KevlarContext
         ? DeadlineState.Remaining(TimeProvider, TimeProvider.GetTimestamp())
         : null;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void EnterDeadline(TimeSpan timeout, long startedAt)
     {
         if (DeadlineState.HasValue && DeadlineState.Remaining(TimeProvider, startedAt) <= timeout)
