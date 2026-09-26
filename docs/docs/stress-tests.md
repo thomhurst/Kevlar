@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-25 17:53 UTC (commit `52b840b`).*
+*Last updated 2026-09-26 12:23 UTC (commit `d9b6277`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.60M ops/s | 100% | 8.15 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.33M ops/s | 100% | 6.70 GiB | 48.00 B | 120.77 ms | 429 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.92M ops/s | 398% | 11.78 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.31K |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.66M ops/s | 396% | 13.39 GiB | 48.00 B | 343.58 ms | 860 / 8 / 0 | 3.94K |
-| Shared timeout → retry | 4 | Kevlar | 5.77M ops/s | 399% | 8.80 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.63K |
-| Shared timeout → retry | 4 | Polly | 3.68M ops/s | 398% | 9.26 GiB | 24.00 B | 214.33 ms | 594 / 8 / 0 | 1.19K |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.04M ops/s | 399% | 14.86 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1.31K |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.70M ops/s | 398% | 13.60 GiB | 48.00 B | 343.56 ms | 873 / 8 / 0 | 909 |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 3.93M ops/s | 100% | 7.59 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 2.17M ops/s | 100% | 10.91 GiB | 48.00 B | 43.54 ms | 137 / 8 / 0 | 2 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 1.69M ops/s | 397% | 11.36 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 277.09K |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.15M ops/s | 398% | 10.83 GiB | 48.00 B | 51.13 ms | 137 / 8 / 0 | 5.21K |
+| Shared timeout → retry | 4 | Kevlar | 1.80M ops/s | 386% | 8.84 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 978.71K |
+| Shared timeout → retry | 4 | Polly | 2.42M ops/s | 399% | 6.09 GiB | 24.00 B | 28.06 ms | 76 / 4 / 0 | 5.38K |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 1.71M ops/s | 393% | 14.58 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 639.76K |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.34M ops/s | 399% | 11.75 GiB | 48.00 B | 52.11 ms | 149 / 8 / 0 | 2.29K |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.95×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.85×** |
-| Shared timeout → retry | 4 | **1.57×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.86×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.81×** |
+| Shared timeout → retry → ratio breaker | 4 | **0.79×** |
+| Shared timeout → retry | 4 | **0.74×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **0.73×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 76.22 MiB.
+- Peak working set for the shared process: 145.62 MiB.
 
 ## Environment
 
