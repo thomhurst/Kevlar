@@ -48,6 +48,7 @@ $allowedExternalPackages = @(
 $trustedAnalyzerPackageIds = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@(
         'Kevlar'
+        'Microsoft.EntityFrameworkCore.Analyzers'
         'Microsoft.Extensions.Telemetry.Abstractions'
         'System.Text.Json'
     ),
