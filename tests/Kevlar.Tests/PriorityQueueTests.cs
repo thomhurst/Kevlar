@@ -257,6 +257,25 @@ public class PriorityQueueTests
         await Assert.That(Queued(shield)).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task Submillisecond_Rate_Wait_Yields_Instead_Of_Spinning_On_A_Stopped_Clock()
+    {
+        var time = new FakeTimeProvider();
+        using var caller = new CancellationTokenSource(TestHelpers.DefaultTimeout);
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromTicks(1);
+            options.QueueLimit = 1;
+            options.UsePriorityQueue = true;
+        }).WithTimeProvider(time);
+        await shield.ExecuteAsync(static _ => new ValueTask<int>(1), caller.Token);
+        var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2), caller.Token);
+        await Assert.That(queued.IsCompleted).IsFalse();
+        time.Advance(TimeSpan.FromMilliseconds(1));
+        await Assert.That(await queued.AsTask().WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
+    }
+
     private sealed class AdvancingTimerProvider : TimeProvider
     {
         private readonly FakeTimeProvider _time = new();

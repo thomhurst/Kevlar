@@ -89,6 +89,12 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                         break;
                     }
                     wait = retryAfter ?? Timeout.InfiniteTimeSpan;
+                    // Task.Delay rounds sub-millisecond intervals down to zero. Avoid a
+                    // synchronous spin while the provider clock has not reached the permit.
+                    if (wait != Timeout.InfiniteTimeSpan && wait < TimeSpan.FromMilliseconds(1))
+                    {
+                        wait = TimeSpan.FromMilliseconds(1);
+                    }
                     changed = entry.Changed.Task;
                 }
                 if (evicted)
