@@ -109,6 +109,15 @@ public static class ShieldDescriptorExtensions
                 timeout.HasTimeoutGenerator,
                 timeout.HasNotification),
             CircuitBreakerStrategy circuit => DescribeCircuitBreaker(description, circuit),
+            PriorityRateLimitStrategy priorityRate => new RateLimitStrategyDescriptor(
+                description, priorityRate.Configuration.Permits, priorityRate.Configuration.Window,
+                priorityRate.Configuration.Burst, priorityRate.Configuration.QueueLimit,
+                priorityRate.Configuration.QueueTimeout, priorityRate.Configuration.HasNotification,
+                usePriorityQueue: true),
+            PriorityConcurrencyLimitStrategy priorityConcurrency => new ConcurrencyLimitStrategyDescriptor(
+                description, priorityConcurrency.MaxConcurrency, priorityConcurrency.Configuration.QueueLimit,
+                priorityConcurrency.Configuration.QueueTimeout, priorityConcurrency.Configuration.HasNotification,
+                usePriorityQueue: true),
             RateLimitStrategy rateLimit => new RateLimitStrategyDescriptor(
                 description,
                 rateLimit.Permits,

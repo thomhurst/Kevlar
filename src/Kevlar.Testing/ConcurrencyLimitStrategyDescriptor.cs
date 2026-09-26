@@ -8,13 +8,15 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
         int maxConcurrency,
         int queueLimit,
         TimeSpan? queueTimeout,
-        bool hasNotification)
+        bool hasNotification,
+        bool usePriorityQueue = false)
         : base(StrategyKind.ConcurrencyLimit, description)
     {
         MaxConcurrency = maxConcurrency;
         QueueLimit = queueLimit;
         QueueTimeout = queueTimeout;
         HasNotification = hasNotification;
+        UsePriorityQueue = usePriorityQueue;
     }
 
     /// <summary>The maximum concurrent executions.</summary>
@@ -28,4 +30,7 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether admission uses highest priority first, FIFO ties, and lower-priority eviction.</summary>
+    public bool UsePriorityQueue { get; }
 }

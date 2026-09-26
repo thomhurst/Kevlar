@@ -12,13 +12,15 @@ namespace Kevlar.Tests;
 public class QueueTimeoutTests
 {
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Expiry_Rejects_And_Refunds_The_Reservation(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Expiry_Rejects_And_Refunds_The_Reservation(bool rateLimit, bool usePriorityQueue)
     {
         var time = new FakeTimeProvider();
         var reasons = new List<string?>();
-        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250), reasons.Add);
+        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250), reasons.Add, usePriorityQueue: usePriorityQueue);
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         try
@@ -51,13 +53,15 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Admission_Stops_The_Queue_Timer_And_Preserves_The_Caller_Token(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Admission_Stops_The_Queue_Timer_And_Preserves_The_Caller_Token(bool rateLimit, bool usePriorityQueue)
     {
         var time = new FakeTimeProvider();
         using var caller = new CancellationTokenSource();
-        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(2));
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(2), usePriorityQueue: usePriorityQueue);
         var releaseFirst = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseSecond = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -88,14 +92,16 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Caller_Cancellation_Wins_Over_Queue_Expiry(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Caller_Cancellation_Wins_Over_Queue_Expiry(bool rateLimit, bool usePriorityQueue)
     {
         var time = new ControlledTimeProvider();
         using var caller = new CancellationTokenSource();
         var reasons = new List<string?>();
-        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1), reasons.Add);
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1), reasons.Add, usePriorityQueue: usePriorityQueue);
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         try
@@ -120,12 +126,14 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Synchronous_Queue_Wait_Expires_On_The_Configured_TimeProvider(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Synchronous_Queue_Wait_Expires_On_The_Configured_TimeProvider(bool rateLimit, bool usePriorityQueue)
     {
         var time = new ControlledTimeProvider();
-        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1));
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1), usePriorityQueue: usePriorityQueue);
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         var queued = Task.Factory.StartNew(() => shield.ExecuteOutcome(_ => 2),
@@ -148,9 +156,11 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Queue_Expiry_Reports_Reason_In_Telemetry_And_Metrics(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Queue_Expiry_Reports_Reason_In_Telemetry_And_Metrics(bool rateLimit, bool usePriorityQueue)
     {
         var time = new FakeTimeProvider();
         var telemetry = new Listener();
@@ -175,7 +185,7 @@ public class QueueTimeoutTests
             }
         });
         meter.Start();
-        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250)).WithName("queue-timeout-telemetry");
+        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250), usePriorityQueue: usePriorityQueue).WithName("queue-timeout-telemetry");
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         try
@@ -194,12 +204,14 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Elapsed_Deadline_Rejects_Even_When_Timeout_Callback_Has_Not_Run(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Elapsed_Deadline_Rejects_Even_When_Timeout_Callback_Has_Not_Run(bool rateLimit, bool usePriorityQueue)
     {
         var time = new ControlledTimeProvider();
-        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250));
+        var shield = Create(rateLimit, time, TimeSpan.FromMilliseconds(250), usePriorityQueue: usePriorityQueue);
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         var queued = shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(2)).AsTask();
@@ -217,23 +229,27 @@ public class QueueTimeoutTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Uncontended_Admission_Does_Not_Create_A_Queue_Timer(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Uncontended_Admission_Does_Not_Create_A_Queue_Timer(bool rateLimit, bool usePriorityQueue)
     {
         var time = new ControlledTimeProvider();
-        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1));
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1), usePriorityQueue: usePriorityQueue);
         await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
         await Assert.That(time.TimerCount).IsEqualTo(0);
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Timer_Creation_Failure_Does_Not_Leak_Queue_Capacity(bool rateLimit)
+    [Arguments(false, false)]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
+    [Arguments(true, true)]
+    public async Task Timer_Creation_Failure_Does_Not_Leak_Queue_Capacity(bool rateLimit, bool usePriorityQueue)
     {
         var time = new FailingTimerProvider();
-        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1));
+        var shield = Create(rateLimit, time, TimeSpan.FromSeconds(1), usePriorityQueue: usePriorityQueue);
         var release = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var active = shield.ExecuteAsync(_ => new ValueTask<int>(release.Task)).AsTask();
         try
@@ -293,7 +309,7 @@ public class QueueTimeoutTests
         await Assert.That(Shield.ConcurrencyLimit(1, queueLimit: 2).ToString()).IsEqualTo("ConcurrencyLimit(1, queue 2)");
     }
 
-    private static Shield Create(bool rateLimit, TimeProvider time, TimeSpan? timeout, Action<string?>? onRejected = null)
+    private static Shield Create(bool rateLimit, TimeProvider time, TimeSpan? timeout, Action<string?>? onRejected = null, bool usePriorityQueue = false)
     {
         var shield = rateLimit
             ? Shield.RateLimit(options =>
@@ -302,6 +318,7 @@ public class QueueTimeoutTests
                 options.Window = TimeSpan.FromSeconds(1);
                 options.QueueLimit = 2;
                 options.QueueTimeout = timeout;
+                options.UsePriorityQueue = usePriorityQueue;
                 options.OnRejected = rejection => { onRejected?.Invoke(rejection.Reason); return default; };
             })
             : Shield.ConcurrencyLimit(options =>
@@ -309,6 +326,7 @@ public class QueueTimeoutTests
                 options.MaxConcurrency = 1;
                 options.QueueLimit = 2;
                 options.QueueTimeout = timeout;
+                options.UsePriorityQueue = usePriorityQueue;
                 options.OnRejected = rejection => { onRejected?.Invoke(rejection.Reason); return default; };
             });
         return shield.WithTimeProvider(time);

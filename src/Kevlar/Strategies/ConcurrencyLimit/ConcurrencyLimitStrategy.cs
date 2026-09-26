@@ -114,7 +114,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
         return ExecuteQueuedAsync(next, context);
     }
 
-    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, string? reason = null)
+    internal ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, string? reason = null)
     {
         var rejection = new ConcurrencyLimitExceededException();
         KevlarMetrics.Rejection(context, "concurrency_limit", rejection, _telemetryName, reason);

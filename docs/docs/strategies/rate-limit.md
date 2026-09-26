@@ -147,14 +147,19 @@ not rejection, so hooks do not run.
 
 API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html).
 
+<div style={{overflowX: 'auto'}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `Permits` | `100` | Executions allowed per window |
 | `Window` | `1s` | The replenishment window |
 | `Burst` | = `Permits` | Bucket capacity: how far above the steady rate a burst may spike |
 | `QueueLimit` | `0` | How many executions may *wait* for a permit instead of being rejected immediately |
+| `UsePriorityQueue` | `false` | Highest priority first, FIFO ties, and lower-priority eviction |
 | `QueueTimeout` | `null` | Maximum queue residence time; execution time is excluded |
 | `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
@@ -203,6 +208,58 @@ var polite = Shield
 :::warning Sync callers block
 In synchronous `Execute`, queued waits block the calling thread. Prefer `ExecuteAsync` for queue-enabled limiters.
 :::
+
+## Priority queues
+
+Set `UsePriorityQueue = true` to admit queued work by `KevlarKeys.Priority`:
+
+<!-- doc-test-declaration -->
+```csharp
+private static readonly Shield _priorityShield = Shield.RateLimit(options =>
+{
+    options.Permits = 100;
+    options.Window = TimeSpan.FromSeconds(1);
+    options.QueueLimit = 20;
+    options.QueueTimeout = TimeSpan.FromMilliseconds(250);
+    options.UsePriorityQueue = true;
+});
+
+public static ValueTask<int> ExecutePriorityAsync(int priority, CancellationToken cancellationToken) =>
+    _priorityShield.ExecuteWithContextAsync(
+        priority,
+        static (value, properties) => properties.Set(KevlarKeys.Priority, value),
+        static async (_, context) =>
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(1), context.CancellationToken);
+            return 42;
+        },
+        cancellationToken);
+```
+
+Reuse the shield across executions; the sample delay represents cancellable work.
+
+Higher integers run first; negative values are valid. An absent priority means zero.
+Equal priorities retain FIFO arrival order. When the queue is full, a strictly higher
+priority arrival evicts the newest waiter at the lowest priority. Equal or lower arrivals
+are rejected immediately. Running work is never evicted. Continuous high-priority traffic
+can starve lower priorities, so combine priority queueing with `QueueTimeout` when needed.
+
+Eviction returns `RateLimitExceededException` to the evicted caller. Its `OnRejected.Reason`
+and telemetry `RejectionReason` are `queue_evicted`; the rejection counter includes
+`kevlar.rejection.reason=queue_evicted`. Cancellation remains cancellation. Queue expiry
+keeps the `queue_timeout` reason and stops affecting the call after admission.
+
+`shield.ToString()` includes `priority queue`, and its testing descriptor exposes
+`UsePriorityQueue`. With `Kevlar.Testing`, `GetStateSnapshot()` includes an immutable
+`QueuedByPriority` dictionary on the limiter snapshot. An unset priority appears under
+zero. Priority values are not metric tags. Ordinary queues return an empty dictionary.
+
+The option defaults to `false`; setting a priority alone does not change admission.
+`QueueLimit = 0` still rejects immediately. The same option is available in typed shields,
+`ShieldDefinition`, and configuration binding. Uncontended admission remains allocation-free.
+
+Priority queues acquire tokens only at admission; waiting requests do not reserve future
+tokens. Reordering, cancellation, and eviction therefore cannot leave token debt behind.
 
 ## Queue timeout
 

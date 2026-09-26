@@ -83,7 +83,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts and tagged budget refusals | `kevlar.shield.name`, optional `reason` (`budget`) |
 | `kevlar.hedge_attempts` | Counter | `{attempt}` | `net8.0` | completed attempts within hedged executions | `kevlar.shield.name`, `result` (`won`/`lost`/`cancelled`/`failed`) |
 | `kevlar.fallbacks` | Counter | `{fallback}` | `net8.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
-| `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | admission rejections, including queue expiry | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`), optional `kevlar.rejection.reason` (`queue_timeout`) |
+| `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | admission rejections, including queue expiry and priority eviction | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`), optional `kevlar.rejection.reason` (`queue_timeout`/`queue_evicted`) |
 | `kevlar.http.replay_suppressed` | Counter | `{request}` | `net8.0` | HTTP requests whose configured additional attempts were disabled for replay safety | `kevlar.shield.name`, `kevlar.suppression.reason` (`replay_disabled`/`unsafe_method`/`non_replayable_content`) |
 | `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |

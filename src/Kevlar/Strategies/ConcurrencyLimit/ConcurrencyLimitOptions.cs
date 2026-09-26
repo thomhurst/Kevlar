@@ -32,6 +32,13 @@ public sealed class ConcurrencyLimitOptions
     public TimeSpan? QueueTimeout { get; set; }
 
     /// <summary>
+    /// Enables highest-priority-first queue admission using KevlarKeys.Priority, with FIFO ties.
+    /// Unset priorities are zero. A higher-priority arrival evicts the newest lowest-priority
+    /// waiter when the queue is full. Default false preserves the ordinary queue behavior.
+    /// </summary>
+    public bool UsePriorityQueue { get; set; }
+
+    /// <summary>
     /// Invoked and awaited when an execution is rejected. Return <see langword="default"/> from a
     /// synchronous callback.
     /// </summary>

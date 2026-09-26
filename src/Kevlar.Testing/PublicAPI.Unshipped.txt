@@ -45,3 +45,7 @@ Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.LatencyTolerance.get -
 Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?
 Kevlar.Testing.RateLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.UsePriorityQueue.get -> bool
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.QueuedByPriority.get -> System.Collections.Generic.IReadOnlyDictionary<int, int>!
+Kevlar.Testing.RateLimitStrategyDescriptor.UsePriorityQueue.get -> bool
+Kevlar.Testing.RateLimitStateSnapshot.QueuedByPriority.get -> System.Collections.Generic.IReadOnlyDictionary<int, int>!
