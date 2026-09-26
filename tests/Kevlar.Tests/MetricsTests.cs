@@ -238,6 +238,33 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Deadline_Skip_Has_Dedicated_Counter_And_Original_Outcome_Event()
+    {
+        using var listener = new KevlarMeterListener();
+        var events = new List<KevlarTelemetryEvent>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.ShieldName == "metrics-deadline-skip")
+            {
+                events.Add(telemetryEvent);
+            }
+        }));
+        var failure = new IOException("deadline failure");
+        _ = await Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
+        {
+            options.RespectDeadline = true;
+            options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(1), jitter: Jitter.None);
+        }).WithName("metrics-deadline-skip").WithTimeProvider(new FakeTimeProvider())
+            .ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
+        await Assert.That(listener.Total("kevlar.retries.skipped", "metrics-deadline-skip", ("reason", "deadline")))
+            .IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.retries", "metrics-deadline-skip")).IsEqualTo(0);
+        var skipped = events.Single(item => item.EventName == "retry.skipped_deadline");
+        await Assert.That(skipped.Exception).IsSameReferenceAs(failure);
+        await Assert.That(skipped.AttemptNumber).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Meter_And_Instrument_Schema_Is_Stable()
     {
         using var listener = new KevlarMeterListener();
@@ -248,6 +275,7 @@ public class MetricsTests
         {
             ["kevlar.executions"] = "{execution}",
             ["kevlar.retries"] = "{retry}",
+            ["kevlar.retries.skipped"] = "{retry}",
             ["kevlar.timeouts"] = "{timeout}",
             ["kevlar.hedges"] = "{hedge}",
             ["kevlar.hedge_attempts"] = "{attempt}",
@@ -582,6 +610,11 @@ public class MetricsTests
         var observed = new List<TelemetrySnapshot>();
         using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
         {
+            // Other executions, including late hedge completions, may reach a global listener.
+            if (telemetryEvent.OperationKey != "listener-operation")
+            {
+                return;
+            }
             observed.Add(new TelemetrySnapshot(
                 telemetryEvent.EventName,
                 telemetryEvent.AttemptNumber,
@@ -592,6 +625,8 @@ public class MetricsTests
                 throw new InvalidOperationException("listener");
             }
         }));
+        // An unrelated execution must not contaminate this operation's ordered assertions.
+        await Shield.Retry(0, Backoff.None).ExecuteAsync(static _ => new ValueTask<int>(0));
         var attempts = 0;
 
         var result = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(

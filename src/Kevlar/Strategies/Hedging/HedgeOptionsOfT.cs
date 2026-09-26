@@ -42,6 +42,9 @@ public sealed class HedgeOptions<TResult>
         || HandlesExceptionContext is not null
         || HandlesResultContext is not null;
 
+    /// <inheritdoc cref="HedgeOptions.RespectDeadline"/>
+    public bool RespectDeadline { get; set; }
+
     /// <inheritdoc cref="HedgeOptions.MaxHedgedAttempts"/>
     public int MaxHedgedAttempts { get; set; } = 1;
 
@@ -71,6 +74,7 @@ public sealed class HedgeOptions<TResult>
         HandlesException = HandlesException,
         MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
+        RespectDeadline = RespectDeadline,
         DelayGenerator = DelayGenerator,
     };
 }

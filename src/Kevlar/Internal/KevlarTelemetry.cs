@@ -7,6 +7,8 @@ internal static class KevlarTelemetry
     private static readonly object Sync = new();
     private static IKevlarTelemetryListener[] _listeners = [];
 
+    internal static bool HasContextListeners => Volatile.Read(ref _listeners).Length != 0;
+
     public static bool EventEnabled
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

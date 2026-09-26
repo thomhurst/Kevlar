@@ -208,3 +208,16 @@ catch (TimeoutExceededException) when (attempts == 1)
     // No retry: System.TimeoutException is the wrong clause for Kevlar timeouts.
 }
 ```
+
+## Propagating the deadline
+
+Inside a timeout, `KevlarContext.Deadline` exposes the earliest active deadline as a nullable
+UTC `DateTimeOffset`. Nested timeouts take the minimum, and explicit parent-context execution
+and hedged attempts inherit it. Exiting the timeout restores the outer deadline. Executions
+without an enclosing timeout see `null`; pooled contexts do not retain a previous deadline.
+
+The value comes from the configured `TimeProvider` and can be copied for downstream deadline
+propagation, such as a gRPC call deadline. Read it only during the current context callback.
+Kevlar uses monotonic timestamps for its own remaining-budget decisions, so wall-clock changes
+do not extend the local budget. `RetryOptions.RespectDeadline` and `HedgeOptions.RespectDeadline`
+opt into using this budget; both default to `false` in 1.x.

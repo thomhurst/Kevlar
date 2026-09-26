@@ -11,6 +11,7 @@ internal sealed class RetryStrategy : Strategy
     private readonly int _maxRetries;
     private readonly Backoff _backoff;
     private readonly TimeSpan? _maxDelay;
+    private readonly bool _respectDeadline;
     private readonly Delegate? _onRetry;
     private readonly Delegate? _delayGenerator;
     private readonly bool _inspectTerminalOutcome;
@@ -24,6 +25,7 @@ internal sealed class RetryStrategy : Strategy
             options.MaxRetries,
             options.Backoff,
             options.MaxDelay,
+            options.RespectDeadline,
             judge,
             options.OnRetry,
             options.DelayGenerator,
@@ -38,6 +40,7 @@ internal sealed class RetryStrategy : Strategy
         int maxRetries,
         Backoff backoff,
         TimeSpan? maxDelay,
+        bool respectDeadline,
         OutcomeJudge judge,
         Delegate? onRetry,
         Delegate? delayGenerator,
@@ -75,6 +78,7 @@ internal sealed class RetryStrategy : Strategy
         _maxRetries = maxRetries;
         _backoff = backoff!;
         _maxDelay = maxDelay ?? _backoff.MaxDelay;
+        _respectDeadline = respectDeadline;
         _onRetry = onRetry;
         _delayGenerator = delayGenerator;
         _inspectTerminalOutcome = delayGenerator?.Method.CustomAttributes.Any(static attribute =>
@@ -93,6 +97,7 @@ internal sealed class RetryStrategy : Strategy
             options.MaxRetries,
             options.Backoff,
             options.MaxDelay,
+            options.RespectDeadline,
             judge,
             options.OnRetry,
             options.DelayGenerator,
@@ -120,14 +125,18 @@ internal sealed class RetryStrategy : Strategy
 
     internal override bool RequiresContinuationOverlapIsolation => false;
 
+    internal override bool RequiresDeadline =>
+        _respectDeadline || _onRetry is not null || _delayGenerator is not null || _judge.IsContextAware;
+
     public override string Describe()
     {
         var cap = _maxDelay is { } max && max != _backoff.MaxDelay
             ? $", ≤{DescribeHelper.Time(max)}"
             : string.Empty;
+        var deadline = _respectDeadline ? ", deadline-aware" : string.Empty;
         return _maxRetries == int.MaxValue
-            ? $"RetryForever({_backoff}{cap})"
-            : $"Retry({_maxRetries}, {_backoff}{cap})";
+            ? $"RetryForever({_backoff}{cap}{deadline})"
+            : $"Retry({_maxRetries}, {_backoff}{cap}{deadline})";
     }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
@@ -267,7 +276,8 @@ internal sealed class RetryStrategy : Strategy
                     delay = ApplyGeneratedDelay(delay, generated);
                 }
 
-                if (context.Properties.SuppressAdditionalAttempts)
+                if (context.Properties.SuppressAdditionalAttempts
+                    || _respectDeadline && ShouldSkipForDeadline(context, delay, attempt, in outcome))
                 {
                     return outcome;
                 }
@@ -282,13 +292,15 @@ internal sealed class RetryStrategy : Strategy
                         context).ConfigureAwait(false);
                 }
 
-                if (context.Properties.SuppressAdditionalAttempts)
+                if (context.Properties.SuppressAdditionalAttempts
+                    || _respectDeadline && ShouldSkipForDeadline(context, delay, attempt, in outcome))
                 {
                     return outcome;
                 }
 
                 var deferDisposalUntilReplacement =
-                    context.Properties.CanSuppressAdditionalAttemptsConcurrently;
+                    context.Properties.CanSuppressAdditionalAttemptsConcurrently
+                    || _respectDeadline && context.DeadlineState.HasValue;
                 var disposeBeforeDelay = delay > TimeSpan.Zero
                     && !deferDisposalUntilReplacement;
                 if (disposeBeforeDelay)
@@ -315,7 +327,8 @@ internal sealed class RetryStrategy : Strategy
                     }
                 }
 
-                if (context.Properties.SuppressAdditionalAttempts)
+                if (context.Properties.SuppressAdditionalAttempts
+                    || _respectDeadline && ShouldSkipForDeadline(context, TimeSpan.Zero, attempt, in outcome))
                 {
                     return outcome;
                 }
@@ -378,6 +391,30 @@ internal sealed class RetryStrategy : Strategy
 
             context.AttemptNumber = previousAttemptNumber;
         }
+    }
+
+    private bool ShouldSkipForDeadline<T>(KevlarContext context, TimeSpan delay, int attempt, in Outcome<T> outcome)
+    {
+        if (context.CancellationToken.IsCancellationRequested
+            || context.RemainingDeadline is not { } remaining || delay < remaining)
+        {
+            return false;
+        }
+
+        KevlarMetrics.RetrySkippedDeadline(context);
+        if (KevlarTelemetry.IsEventEnabled(context))
+        {
+            KevlarTelemetry.RecordResult(
+                context,
+                strategyName: _telemetryName,
+                eventName: "retry.skipped_deadline",
+                KevlarTelemetrySeverity.Information,
+                context.StrategyIndex,
+                attempt,
+                in outcome,
+                delay: delay);
+        }
+        return true;
     }
 
     private async ValueTask<Outcome<T>> InspectCompletedTerminalOutcomeAsync<T>(

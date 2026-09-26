@@ -37,6 +37,10 @@ public abstract class Strategy
 
     internal virtual bool RequiresContinuationOverlapIsolation => !InvokesContinuationAtMostOnce;
 
+    // Custom strategies may inspect the context. Built-ins can opt out only when none
+    // of their configured callbacks or handling predicates can observe a deadline.
+    internal virtual bool RequiresDeadline => true;
+
     /// <summary>
     /// The handling clause this reactive strategy acts on, or <see langword="null"/> for a
     /// proactive strategy. Override this when the strategy receives a clause through a
@@ -427,6 +431,7 @@ internal sealed class StrategyNode
         Index = index;
         PreviousIndex = previousIndex;
         RequiresOverlapIsolation = requiresOverlapIsolation;
+        RequiresDeadline = strategy.RequiresDeadline || next?.RequiresDeadline == true;
         _shieldOwners = shieldOwners;
         SynchronousExecutionUnsupportedReason =
             strategy.SynchronousExecutionUnsupportedReason
@@ -442,6 +447,8 @@ internal sealed class StrategyNode
     internal int PreviousIndex { get; }
 
     internal bool RequiresOverlapIsolation { get; }
+
+    internal bool RequiresDeadline { get; }
 
     private readonly WeakReference<StrategyOwnerSet> _shieldOwners;
 

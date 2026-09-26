@@ -41,6 +41,12 @@ public sealed class RetryOptions
     /// </summary>
     public int MaxRetries { get; set; } = 3;
 
+    /// <summary>
+    /// Skips an additional attempt when its delay cannot fit before the active timeout deadline.
+    /// Defaults to false. The last handled outcome is returned without waiting for the deadline.
+    /// </summary>
+    public bool RespectDeadline { get; set; }
+
     /// <summary>The delay computation between attempts. Defaults to <see cref="Backoff.Default"/>.</summary>
     public Backoff Backoff { get; set; } = Backoff.Default;
 
@@ -95,6 +101,12 @@ public sealed class RetryOptions<TResult>
     /// 3 retries. Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Skips an additional attempt when its delay cannot fit before the active timeout deadline.
+    /// Defaults to false. The last handled outcome is returned without waiting for the deadline.
+    /// </summary>
+    public bool RespectDeadline { get; set; }
 
     /// <summary>The delay computation between attempts. Defaults to <see cref="Backoff.Default"/>.</summary>
     public Backoff Backoff { get; set; } = Backoff.Default;

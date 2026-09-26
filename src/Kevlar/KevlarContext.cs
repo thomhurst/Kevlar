@@ -39,6 +39,8 @@ public sealed class KevlarContext
     private string? _shieldName;
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
+    internal ExecutionDeadline DeadlineState { get; set; }
+    internal bool TrackDeadline { get; set; }
 
 #if DEBUG
     private bool _returnedToPool;
@@ -113,6 +115,36 @@ public sealed class KevlarContext
         }
 
         internal set => _timeProvider = value;
+    }
+
+    /// <summary>The earliest active timeout deadline in UTC, or null when no timeout is active.</summary>
+    /// <remarks>
+    /// The value uses this context's time provider and can be propagated to downstream operations.
+    /// Nested timeouts cannot extend it. Kevlar computes remaining time with monotonic timestamps,
+    /// so wall-clock changes do not extend the local timeout budget. The value is scoped to the
+    /// current callback or delegate and must be copied before that invocation finishes.
+    /// </remarks>
+    public DateTimeOffset? Deadline
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return DeadlineState.HasValue ? DeadlineState.UtcDeadline : null;
+        }
+    }
+
+    internal TimeSpan? RemainingDeadline => DeadlineState.HasValue
+        ? DeadlineState.Remaining(TimeProvider, TimeProvider.GetTimestamp())
+        : null;
+
+    internal void EnterDeadline(TimeSpan timeout, long startedAt)
+    {
+        var parent = DeadlineState;
+        if (parent.HasValue && parent.Remaining(TimeProvider, startedAt) <= timeout)
+        {
+            return;
+        }
+        DeadlineState = ExecutionDeadline.Create(TimeProvider, startedAt, timeout, DeadlineState);
     }
 
     /// <summary>
@@ -223,6 +255,7 @@ public sealed class KevlarContext
         context.StrategyIndex = -1;
         context.AttemptNumber = 0;
         context.TelemetryListener = null;
+        context.TrackDeadline = true;
         return context;
     }
 
@@ -247,6 +280,7 @@ public sealed class KevlarContext
             synchronousExecutionKind,
             parent.TimeProvider,
             shieldName);
+        context.DeadlineState = parent.DeadlineState;
         context._hasEmptyForkBaseline = parent.Properties.Count == 0
             && !parent.Properties.SuppressAdditionalAttempts;
         if (!context._hasEmptyForkBaseline)
@@ -297,6 +331,8 @@ public sealed class KevlarContext
             ShieldName = ShieldName,
             StrategyIndex = StrategyIndex,
             AttemptNumber = AttemptNumber,
+            DeadlineState = DeadlineState,
+            TrackDeadline = TrackDeadline,
         };
         Properties.CopyTo(snapshot.Properties);
         return snapshot;
@@ -309,6 +345,8 @@ public sealed class KevlarContext
     internal KevlarContext Fork(CancellationToken cancellationToken)
     {
         var fork = Rent(cancellationToken, SynchronousExecutionKind, TimeProvider, ShieldName);
+        fork.DeadlineState = DeadlineState;
+        fork.TrackDeadline = TrackDeadline;
         fork.StrategyIndex = StrategyIndex;
         fork.AttemptNumber = AttemptNumber;
         fork.TelemetryListener = TelemetryListener;
@@ -450,10 +488,12 @@ public sealed class KevlarContext
             context.StrategyIndex = -1;
             context.AttemptNumber = 0;
             context.TelemetryListener = null;
+            context.TrackDeadline = false;
             context._activeStrategyMask = 0;
             context._retryTerminalInspectionMask = 0;
             context._retryTerminalInspectionOverflow?.Clear();
             context.TimeProvider = TimeProvider.System;
+            context.DeadlineState = default;
             context._properties.MirrorMutationsTo(null);
             context._properties.ResetAdditionalAttemptState();
             context._properties.Clear();

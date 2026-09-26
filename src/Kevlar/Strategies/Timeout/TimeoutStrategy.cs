@@ -38,6 +38,9 @@ internal sealed class TimeoutStrategy : Strategy
         _telemetryName = options.Name ?? "Timeout";
     }
 
+    internal override bool RequiresDeadline =>
+        _timeoutGenerator is not null || _onTimeout is not null;
+
     public override string Describe() => _timeoutGenerator is null
         ? $"Timeout({DescribeHelper.Time(_timeout)})"
         : "Timeout(dynamic)";
@@ -98,6 +101,7 @@ internal sealed class TimeoutStrategy : Strategy
         TimeSpan timeout)
     {
         var priorToken = context.CancellationToken;
+        var priorDeadline = context.DeadlineState;
         var usesSystemTime = ReferenceEquals(context.TimeProvider, TimeProvider.System);
         var timeoutSource = usesSystemTime
             ? CancellationTokenSourcePool.Shared.RentLinked(priorToken)
@@ -105,7 +109,9 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
         var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
-        var startedAt = recordTimeoutIgnored ? context.TimeProvider.GetTimestamp() : 0;
+        var trackDeadline = context.TrackDeadline || KevlarTelemetry.HasContextListeners
+            || KevlarMetricEnrichment.HasEnrichers;
+        var startedAt = recordTimeoutIgnored || trackDeadline ? context.TimeProvider.GetTimestamp() : 0;
 
         try
         {
@@ -132,12 +138,16 @@ internal sealed class TimeoutStrategy : Strategy
                     System.Threading.Timeout.InfiniteTimeSpan);
             }
 
+            if (trackDeadline)
+            {
+                context.EnterDeadline(timeout, startedAt);
+            }
             context.CancellationToken = timeoutSource.Token;
             execution = next.InvokeAsync(context);
         }
         catch
         {
-            Cleanup(context, priorToken, timeoutSource, timer);
+            Cleanup(context, priorToken, priorDeadline, timeoutSource, timer);
             throw;
         }
 
@@ -147,6 +157,7 @@ internal sealed class TimeoutStrategy : Strategy
                 execution,
                 context,
                 priorToken,
+                priorDeadline,
                 timeoutSource,
                 timer,
                 timeout,
@@ -161,6 +172,7 @@ internal sealed class TimeoutStrategy : Strategy
                 outcome,
                 context,
                 priorToken,
+                priorDeadline,
                 timeoutSource,
                 timer,
                 startedAt,
@@ -172,6 +184,7 @@ internal sealed class TimeoutStrategy : Strategy
             cancellationException,
             context,
             priorToken,
+            priorDeadline,
             timeoutSource,
             timer,
             timeout);
@@ -184,6 +197,7 @@ internal sealed class TimeoutStrategy : Strategy
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
         CancellationToken priorToken,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout,
@@ -198,7 +212,7 @@ internal sealed class TimeoutStrategy : Strategy
         }
         catch
         {
-            Cleanup(context, priorToken, timeoutSource, timer);
+            Cleanup(context, priorToken, priorDeadline, timeoutSource, timer);
             throw;
         }
 
@@ -208,6 +222,7 @@ internal sealed class TimeoutStrategy : Strategy
                 outcome,
                 context,
                 priorToken,
+                priorDeadline,
                 timeoutSource,
                 timer,
                 startedAt,
@@ -219,6 +234,7 @@ internal sealed class TimeoutStrategy : Strategy
             cancellationException,
             context,
             priorToken,
+            priorDeadline,
             timeoutSource,
             timer,
             timeout).ConfigureAwait(false);
@@ -228,12 +244,14 @@ internal sealed class TimeoutStrategy : Strategy
         Outcome<T> outcome,
         KevlarContext context,
         CancellationToken priorToken,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         long startedAt,
         bool recordTimeoutIgnored)
     {
         context.CancellationToken = priorToken;
+        context.DeadlineState = priorDeadline;
         timer?.Dispose();
         var timeoutIgnored = !priorToken.IsCancellationRequested && timeoutSource.IsCancellationRequested;
         timeoutSource.Dispose();
@@ -254,10 +272,12 @@ internal sealed class TimeoutStrategy : Strategy
     private static void Cleanup(
         KevlarContext context,
         CancellationToken priorToken,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer)
     {
         context.CancellationToken = priorToken;
+        context.DeadlineState = priorDeadline;
         timer?.Dispose();
         timeoutSource.Dispose();
     }
@@ -267,11 +287,13 @@ internal sealed class TimeoutStrategy : Strategy
         OperationCanceledException cancellationException,
         KevlarContext context,
         CancellationToken priorToken,
+        ExecutionDeadline priorDeadline,
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         TimeSpan timeout)
     {
         context.CancellationToken = priorToken;
+        context.DeadlineState = priorDeadline;
         timer?.Dispose();
 
         if (priorToken.IsCancellationRequested)

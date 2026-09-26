@@ -78,6 +78,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 |---|---|---|---|---|---|
 | `kevlar.executions` | Counter | `{execution}` | `net8.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
 | `kevlar.retries` | Counter | `{retry}` | `net8.0` | retry attempts | `kevlar.shield.name` |
+| `kevlar.retries.skipped` | Counter | `{retry}` | `net8.0` | retries skipped because the remaining deadline is insufficient | `kevlar.shield.name`, `reason` (`deadline`) |
 | `kevlar.timeouts` | Counter | `{timeout}` | `net8.0` | executions cancelled by a timeout strategy, including delegates that complete after ignoring cancellation | `kevlar.shield.name`, optional `outcome` (`ignored`) |
 | `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts launched | `kevlar.shield.name` |
 | `kevlar.hedge_attempts` | Counter | `{attempt}` | `net8.0` | completed attempts within hedged executions | `kevlar.shield.name`, `result` (`won`/`lost`/`cancelled`/`failed`) |

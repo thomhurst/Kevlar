@@ -31,15 +31,20 @@ var configuredHedge = Shield.For<HttpResponseMessage>().Hedge(o =>
 
 API reference: [`HedgeOptions`](pathname:///api/Kevlar.HedgeOptions.html) and [`HedgeOptions<T>`](pathname:///api/Kevlar.HedgeOptions-1.html).
 
+<div style={{overflowX: "auto"}}>
+
 | Option | Default | What it does |
 |---|---|---|
 | `MaxHedgedAttempts` | `1` | Maximum additional attempts after the original |
+| `RespectDeadline` | `false` | Skip a timer-based hedge when its delay exceeds the remaining outer timeout budget; existing attempts continue |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
 | `DelayGenerator` | — | Awaited selector returning `ValueTask<TimeSpan>`: a delay for each pending hedge from its attempt number, context, and elapsed execution time |
 | `OnHedge` | — | Awaited callback when a hedge launches, before the attempt starts — `e.AttemptNumber` is zero-based, so `1` = first hedge after the initial attempt; typed shields also expose the latest handled `Outcome<T>` |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
 | `HandlesResult` (`HedgeOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
+
+</div>
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
@@ -172,3 +177,17 @@ var shield = Shield.For<HttpResponseMessage>()
     .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100))
     .CircuitBreaker(o => o.FailureRatio = 0.5);
 ```
+
+## Respecting an outer deadline
+
+Set `RespectDeadline = true` on `HedgeOptions` or `HedgeOptions<T>` to avoid scheduling a
+hedge delay longer than the remaining enclosing timeout budget. `DelayGenerator` values are
+checked after the generator completes. Already-running attempts remain eligible to win.
+A handled failure can still launch a replacement immediately while positive budget remains;
+the configured stagger applies only while earlier attempts are pending. No new operation
+starts after the deadline, including when a callback consumes the remaining time.
+
+This option defaults to `false` in 1.x. It does not estimate an operation's execution time or
+replace cancellation. `Describe()` includes `deadline-aware` when enabled, and DI configuration
+accepts `Hedge.RespectDeadline`. See [timeout deadlines](timeout.md#propagating-the-deadline)
+and [deadline-aware retries](retry.md#respecting-an-outer-deadline).
