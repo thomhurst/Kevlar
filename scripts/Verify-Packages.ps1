@@ -103,7 +103,8 @@ function Get-ExpectedSymbolAssets([string]$PackageId)
     if ($PackageId -eq 'Kevlar')
     {
         $assets += @(
-            'lib/netstandard2.0/Kevlar.Analyzers.pdb'
+            'lib/netstandard2.0/Kevlar.Analyzers.pdb',
+            'lib/netstandard2.0/Kevlar.CodeFixes.pdb'
         )
     }
 
@@ -114,11 +115,12 @@ function Get-ExpectedAssemblyAssets([string]$PackageId)
 {
     $assets = @(
         Get-ExpectedSymbolAssets $PackageId |
-            Where-Object { $_ -ne 'lib/netstandard2.0/Kevlar.Analyzers.pdb' } |
+            Where-Object { $_ -notmatch '/Kevlar\.(Analyzers|CodeFixes)\.pdb$' } |
             ForEach-Object { $_ -replace '\.pdb$', '.dll' })
     if ($PackageId -eq 'Kevlar')
     {
         $assets += 'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll'
+        $assets += 'analyzers/dotnet/roslyn4.8/cs/Kevlar.CodeFixes.dll'
     }
 
     return $assets
@@ -561,7 +563,8 @@ foreach ($packageId in $expectedDependencies.Keys)
             Assert-Set "$packageId analyzer assets" `
                 ($entries | Where-Object { $_ -match '^analyzers/' }) `
                 @(
-                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll'
+                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll',
+                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.CodeFixes.dll'
                 )
         }
         elseif ($entries | Where-Object { $_ -match '^analyzers/' })

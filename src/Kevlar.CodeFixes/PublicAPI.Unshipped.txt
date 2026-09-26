@@ -1,0 +1,6 @@
+#nullable enable
+Kevlar.CodeFixes.IgnoredCancellationTokenCodeFixProvider
+Kevlar.CodeFixes.IgnoredCancellationTokenCodeFixProvider.IgnoredCancellationTokenCodeFixProvider() -> void
+override Kevlar.CodeFixes.IgnoredCancellationTokenCodeFixProvider.FixableDiagnosticIds.get -> System.Collections.Immutable.ImmutableArray<string!>
+override Kevlar.CodeFixes.IgnoredCancellationTokenCodeFixProvider.GetFixAllProvider() -> Microsoft.CodeAnalysis.CodeFixes.FixAllProvider!
+override Kevlar.CodeFixes.IgnoredCancellationTokenCodeFixProvider.RegisterCodeFixesAsync(Microsoft.CodeAnalysis.CodeFixes.CodeFixContext context) -> System.Threading.Tasks.Task!

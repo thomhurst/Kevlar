@@ -24,10 +24,17 @@
     <ProjectReference Include="..\Kevlar.Analyzers\Kevlar.Analyzers.csproj"
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />
+    <ProjectReference Include="..\Kevlar.CodeFixes\Kevlar.CodeFixes.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/roslyn4.8/cs"
+          Visible="false" />
+    <None Include="$(ArtifactsPath)\bin\Kevlar.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.CodeFixes.dll"
           Pack="true"
           PackagePath="analyzers/dotnet/roslyn4.8/cs"
           Visible="false" />
@@ -44,6 +51,10 @@
       <TfmSpecificDebugSymbolsFile Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb">
         <TargetFramework>$(TargetFramework)</TargetFramework>
         <TargetPath>Kevlar.Analyzers.pdb</TargetPath>
+      </TfmSpecificDebugSymbolsFile>
+      <TfmSpecificDebugSymbolsFile Include="$(ArtifactsPath)\bin\Kevlar.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.CodeFixes.pdb">
+        <TargetFramework>$(TargetFramework)</TargetFramework>
+        <TargetPath>Kevlar.CodeFixes.pdb</TargetPath>
       </TfmSpecificDebugSymbolsFile>
     </ItemGroup>
   </Target>
