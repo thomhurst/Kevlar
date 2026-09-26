@@ -580,6 +580,22 @@ public static class KevlarServiceCollectionExtensions
             definition.Retry = retryDefinition;
         }
 
+        var hedge = configuration.GetSection(nameof(ShieldDefinition.Hedge));
+        if (HasChildren(hedge))
+        {
+            var hedgeDefinition = new HedgeDefinition();
+            if (ReadInt(hedge, nameof(HedgeDefinition.MaxHedgedAttempts)) is { } maxHedgedAttempts)
+            {
+                hedgeDefinition.MaxHedgedAttempts = maxHedgedAttempts;
+            }
+            if (ReadTimeSpan(hedge, nameof(HedgeDefinition.Delay)) is { } delay)
+            {
+                hedgeDefinition.Delay = delay;
+            }
+
+            definition.Hedge = hedgeDefinition;
+        }
+
         var breaker = configuration.GetSection(nameof(ShieldDefinition.CircuitBreaker));
         if (HasChildren(breaker))
         {

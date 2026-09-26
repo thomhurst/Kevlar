@@ -140,12 +140,41 @@ services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
 The schema is `ShieldDefinition`. `ShieldDefinition.Build()` always chains the sections it finds in one fixed order, outermost first:
 
 ```text
-Timeout → Retry → CircuitBreaker → RateLimit → ConcurrencyLimit → AttemptTimeout
+Timeout → Retry or Hedge → CircuitBreaker → RateLimit → ConcurrencyLimit → AttemptTimeout
 ```
 
-Read that the same way as any [fluent chain](composition.md): `Timeout` is the total budget wrapping everything, retries happen inside it, each attempt passes through the breaker and the two limiters, and `AttemptTimeout` is the innermost per-attempt budget. Only the sections you declare are added; the remaining ones keep their relative order. The defaults inside each section match the fluent API's.
+Read that the same way as any [fluent chain](composition.md): `Timeout` is the total budget wrapping everything, retries or hedges happen inside it, each attempt passes through the breaker and the two limiters, and `AttemptTimeout` is the innermost per-attempt budget. Only the sections you declare are added; the remaining ones keep their relative order. The defaults inside each section match the fluent API's.
 
 Configuration cannot reorder that chain — the order is what makes a definition readable across environments. Build the shield with the fluent API and register the instance when you need a different shape.
+
+### Configuring hedging
+
+Use `Hedge` instead of `Retry` to launch concurrent attempts. For example, this configuration allows
+two additional attempts, staggered by 100 milliseconds, within a 10-second total timeout:
+
+```json
+{
+  "Timeout": "00:00:10",
+  "Hedge": {
+    "MaxHedgedAttempts": 2,
+    "Delay": "00:00:00.100"
+  },
+  "AttemptTimeout": "00:00:02"
+}
+```
+
+`HedgeDefinition` defaults to one additional attempt and a one-second delay. Zero delay removes
+timer staggering; any negative delay hedges only on failure. Hedging requires asynchronous execution
+and an operation that is safe to invoke concurrently. Register the section with either
+`AddShield(name, configuration)` or `AddShield<TResult>(name, configuration)`.
+
+Setting both `Retry` and `Hedge` throws `KevlarConfigurationException` when the definition is built.
+Use the fluent API when you intentionally need both strategies. Fallback also requires the fluent API
+because its replacement operation is a delegate and cannot be represented in configuration.
+
+`AddReloadingShield` and `AddReloadingShield<TResult>` pick up changes to `Hedge` using the same
+`ReloadingShieldOptions` as other sections. An invalid reload, including one that sets both `Retry`
+and `Hedge`, keeps the last valid shield and reports the configuration error through the failure callback.
 
 ### Reloading configuration atomically
 
