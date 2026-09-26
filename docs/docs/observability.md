@@ -428,7 +428,6 @@ finally
 
 The core package does not create `ILogger` messages or `Activity` spans automatically. This avoids
 duplicate telemetry and keeps it independent of a logging provider or tracing SDK. Add
-`Kevlar.Extensions.Logging` when structured strategy logs are useful. Create custom `Activity`
-events or spans in callbacks when strategy-level tracing is useful. The delegate executed by a
+`Kevlar.Extensions.Logging` when structured strategy logs are useful. Add `Kevlar.Extensions.Tracing` for [events on existing sampled activities](#enrich-existing-traces), or use custom listeners for a different schema. The delegate executed by a
 shield runs in the caller's ambient `Activity`, so normal trace-context propagation continues
 through the protected operation.

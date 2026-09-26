@@ -19,6 +19,7 @@ for (const type of [
   'Kevlar.Shield',
   'Kevlar.Shield-1',
   'Kevlar.Testing.ShieldDescriptor',
+  'Kevlar.Extensions.Tracing.KevlarTracing',
   'Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions',
 ]) {
   test(`API links resolve from ${type}`, async ({ page, request }) => {
