@@ -9,6 +9,7 @@ public class ActivitySourceBenchmarks
 {
     private static readonly Shield Empty = Shield.Empty.WithName("benchmark");
     private static readonly Shield Retry = Shield.Retry(1, Backoff.None).WithName("benchmark");
+    // Zero delay exercises the immediate additional attempt, including its existing scheduling allocations.
     private static readonly Shield Hedge = Shield.Hedge(1, delay: TimeSpan.Zero).WithName("benchmark");
     private ActivityListener? _listener;
 
