@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Kevlar.Internal;
+using Reservoir;
 
 namespace Kevlar.Strategies;
 
@@ -99,7 +100,7 @@ internal sealed class TimeoutStrategy : Strategy
         var priorToken = context.CancellationToken;
         var usesSystemTime = ReferenceEquals(context.TimeProvider, TimeProvider.System);
         var timeoutSource = usesSystemTime
-            ? TimeoutSourcePool.RentLinked(priorToken)
+            ? CancellationTokenSourcePool.Shared.RentLinked(priorToken)
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
