@@ -9,6 +9,7 @@
             "Kevlar/release_net10.0/Kevlar.dll",
             "Kevlar.Chaos/release_net10.0/Kevlar.Chaos.dll",
             "Kevlar.Extensions.DependencyInjection/release_net10.0/Kevlar.Extensions.DependencyInjection.dll",
+            "Kevlar.Extensions.EntityFrameworkCore/release_net10.0/Kevlar.Extensions.EntityFrameworkCore.dll",
             "Kevlar.Extensions.Grpc/release_net10.0/Kevlar.Extensions.Grpc.dll",
             "Kevlar.Extensions.Http/release_net10.0/Kevlar.Extensions.Http.dll",
             "Kevlar.Extensions.Logging/release_net10.0/Kevlar.Extensions.Logging.dll",

@@ -94,6 +94,10 @@ function Invoke-DotNet([string[]]$Arguments)
 function Get-ExpectedSymbolAssets([string]$PackageId)
 {
     $frameworks = @('net10.0', 'net8.0', 'netstandard2.0')
+    if ($PackageId -eq 'Kevlar.Extensions.EntityFrameworkCore')
+    {
+        $frameworks = @('net10.0', 'net8.0')
+    }
     if ($PackageId -eq 'Kevlar.Extensions.Grpc')
     {
         $frameworks += 'netstandard2.1'
@@ -302,8 +306,13 @@ $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
 $configurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration'
 $dependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection'
+$sqliteVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.EntityFrameworkCore.Sqlite'
 
 $expectedDependencies = @{
+    'Kevlar.Extensions.EntityFrameworkCore' = @{
+        'net10.0' = @('Kevlar', 'Microsoft.EntityFrameworkCore.Relational')
+        'net8.0' = @('Kevlar', 'Microsoft.EntityFrameworkCore.Relational')
+    }
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
         'net8.0' = @('Reservoir')
@@ -376,6 +385,7 @@ $exactPinnedPackageIds = @(
 
 $expectedDependencyVersions = @{}
 foreach ($dependencyId in @(
+    'Microsoft.EntityFrameworkCore.Relational',
     'Microsoft.Bcl.AsyncInterfaces',
     'Grpc.Core.Api',
     'Grpc.Net.ClientFactory',
@@ -562,6 +572,10 @@ foreach ($packageId in $expectedDependencies.Keys)
             "lib/netstandard2.0/$packageId.dll",
             "lib/netstandard2.0/$packageId.xml"
         )
+        if ($packageId -eq 'Kevlar.Extensions.EntityFrameworkCore')
+        {
+            $expectedAssets = @($expectedAssets | Where-Object { $_ -notlike 'lib/netstandard2.0/*' })
+        }
         if ($packageId -eq 'Kevlar.Extensions.Grpc')
         {
             $expectedAssets += @(
@@ -808,6 +822,7 @@ using Kevlar.Extensions.Logging;
 using Kevlar.Extensions.Tracing;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -964,6 +979,23 @@ if (await rateLimitedShield.ExecuteAsync(static _ => new ValueTask<int>(42)) != 
 {
     throw new InvalidOperationException("Rate limiting adapter execution failed.");
 }
+using (var database = new DbContext(new DbContextOptionsBuilder()
+    .UseSqlite("Data Source=:memory:")
+    .UseKevlarExecutionStrategy(Shield.When<IOException>().Retry(1, Backoff.None)).Options))
+{
+    var databaseAttempts = 0;
+    var strategy = database.Database.CreateExecutionStrategy();
+    var result = await strategy.ExecuteAsync<object?, int>(null, (_, _, token) =>
+    {
+        token.ThrowIfCancellationRequested();
+        if (++databaseAttempts == 1) { throw new IOException("Transient"); }
+        return Task.FromResult(42);
+    }, verifySucceeded: null);
+    if (result != 42 || databaseAttempts != 2 || !strategy.RetriesOnFailure)
+    {
+        throw new InvalidOperationException("EF Core adapter execution failed.");
+    }
+}
 Console.WriteLine("Kevlar package consumer passed.");
 
 [MethodImpl(MethodImplOptions.NoInlining)]
@@ -1000,6 +1032,8 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.EntityFrameworkCore" Version="$Version" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$sqliteVersion" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$configurationVersion" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$dependencyInjectionVersion" />
   </ItemGroup>

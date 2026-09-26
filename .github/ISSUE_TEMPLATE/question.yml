@@ -11,6 +11,7 @@ body:
         - Kevlar
         - Kevlar.Chaos
         - Kevlar.Extensions.DependencyInjection
+        - Kevlar.Extensions.EntityFrameworkCore
         - Kevlar.Extensions.Grpc
         - Kevlar.Extensions.Http
         - Kevlar.Extensions.RateLimiting

@@ -21,6 +21,7 @@ public class DocsConsistencyTests
         typeof(ChaosShield).Assembly,
         typeof(KevlarServiceCollectionExtensions).Assembly,
         typeof(GrpcShield).Assembly,
+        typeof(Kevlar.Extensions.EntityFrameworkCore.KevlarExecutionStrategy).Assembly,
         typeof(HttpShield).Assembly,
         typeof(ShieldRateLimiterExtensions).Assembly,
         typeof(TelemetryRecorder).Assembly,

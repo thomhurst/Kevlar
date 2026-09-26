@@ -16,6 +16,7 @@ test('API navigation and a representative type page load', async ({ page }) => {
 });
 
 for (const type of [
+  'Kevlar.Extensions.EntityFrameworkCore.KevlarExecutionStrategy',
   'Kevlar.Shield',
   'Kevlar.Shield-1',
   'Kevlar.Testing.ShieldDescriptor',

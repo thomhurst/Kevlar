@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
     'http',
     'chaos',
     'grpc',
+    'entity-framework-core',
     'custom-strategies',
     'library-authors',
     'analyzers',

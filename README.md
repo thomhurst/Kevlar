@@ -84,6 +84,7 @@ Every sample is a small `net8.0;net10.0` application with a `--smoke` mode used 
 
 - [`samples/ConsoleRetry`](https://github.com/thomhurst/Kevlar/tree/main/samples/ConsoleRetry) — minimal retry and recovery.
 - [`samples/WebApi`](https://github.com/thomhurst/Kevlar/tree/main/samples/WebApi) — ASP.NET Core, named DI shields, `AddStandardShield`, and metrics.
+- [`samples/EntityFrameworkCore`](samples/EntityFrameworkCore) � SQLite transactions with EF Core execution strategy retries.
 - [`samples/GrpcClient`](https://github.com/thomhurst/Kevlar/tree/main/samples/GrpcClient) — transient gRPC unary retries.
 - [`samples/PartitionedWorker`](https://github.com/thomhurst/Kevlar/tree/main/samples/PartitionedWorker) — bounded per-tenant shield state.
 - [`samples/ChaosTesting`](https://github.com/thomhurst/Kevlar/tree/main/samples/ChaosTesting) — deterministic, operation-scoped fault injection.
@@ -200,6 +201,7 @@ concepts side by side.
 | [`Kevlar.Extensions.Diagnostics.HealthChecks`](src/Kevlar.Extensions.Diagnostics.HealthChecks/README.md) | Health checks for circuit breakers, registered shields, and retained partitions |
 | [`Kevlar.Extensions.Tracing`](https://www.nuget.org/packages/Kevlar.Extensions.Tracing) | Opt-in strategy events on existing application traces |
 | [`Kevlar.Extensions.Logging`](https://www.nuget.org/packages/Kevlar.Extensions.Logging) | Structured `ILogger` events for every built-in strategy |
+| [`Kevlar.Extensions.EntityFrameworkCore`](src/Kevlar.Extensions.EntityFrameworkCore/README.md) | Sequential EF Core execution strategies with provider retry policies and commit verification |
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience and server admission control for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
 | [`Kevlar.Testing`](https://www.nuget.org/packages/Kevlar.Testing) | Pipeline assertions, state snapshots and deterministic time helpers |
@@ -211,6 +213,7 @@ concepts side by side.
 | `Kevlar` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Chaos` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar.Extensions.EntityFrameworkCore` | `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Grpc` | `netstandard2.0`; `netstandard2.1`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Http` | `netstandard2.0`; `net8.0`; `net10.0` |
 | `Kevlar.Extensions.Diagnostics.HealthChecks` | `netstandard2.0`; `net8.0`; `net10.0` |

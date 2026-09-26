@@ -33,6 +33,7 @@ $requiredPackages = @(
     'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Grpc'
+    'Kevlar.Extensions.EntityFrameworkCore'
     'Kevlar.Extensions.Http'
     'Kevlar.Extensions.Diagnostics.HealthChecks'
     'Kevlar.Extensions.Logging'
@@ -47,6 +48,7 @@ $allowedExternalPackages = @(
 $trustedAnalyzerPackageIds = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@(
         'Kevlar'
+        'Microsoft.EntityFrameworkCore.Analyzers'
         'Microsoft.Extensions.Telemetry.Abstractions'
         'System.Text.Json'
     ),

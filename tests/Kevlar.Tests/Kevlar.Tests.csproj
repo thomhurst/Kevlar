@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="$(TestExtensionsTimeProviderVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -26,6 +29,7 @@
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.RateLimiting\Kevlar.Extensions.RateLimiting.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Diagnostics.HealthChecks\Kevlar.Extensions.Diagnostics.HealthChecks.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.EntityFrameworkCore\Kevlar.Extensions.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
   </ItemGroup>

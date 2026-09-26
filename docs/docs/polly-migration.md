@@ -770,3 +770,10 @@ var v7MigrationShield = Shield
 
 Port pessimistic timeouts by making the dependency cancellation-aware or isolating it outside the
 process; a shield cannot safely stop arbitrary synchronous work.
+
+## EF Core database operations
+
+Use `UseKevlarExecutionStrategy` from `Kevlar.Extensions.EntityFrameworkCore` after configuring
+your relational provider. This puts retries at EF Core's execution-strategy boundary and preserves
+transaction commit verification. See [Entity Framework Core](entity-framework-core.md) for setup
+and transaction examples.

@@ -369,9 +369,11 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task Publication_Expiration_Callback_Can_Await_Cold_Lookup()
     {
         var timeProvider = new FakeTimeProvider();
+        var nestedLookupCompleted = false;
         var factoryEntered = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseFactory = new TaskCompletionSource(
@@ -398,6 +400,7 @@ public class PartitionedShieldTests
                     if (item.Key == "expired")
                     {
                         _ = await provider!.GetShieldAsync("nested");
+                        nestedLookupCompleted = item.Reason == PartitionEvictionReason.Expiration;
                     }
                 },
             });
@@ -407,7 +410,9 @@ public class PartitionedShieldTests
         timeProvider.Advance(TimeSpan.FromMinutes(1));
 
         releaseFactory.TrySetResult();
-        _ = await publishing.WaitAsync(TimeSpan.FromSeconds(2));
+        // This bounds a deadlock regression; it is not a two-second throughput assertion.
+        _ = await publishing.WaitAsync(TimeSpan.FromSeconds(10));
+        await Assert.That(nestedLookupCompleted).IsTrue();
 
         await provider.DisposeAsync();
     }
