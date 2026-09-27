@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-27 01:48 UTC (commit `f479a8f`).*
+*Last updated 2026-09-27 13:01 UTC (commit `9b5071f`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.29M ops/s | 100% | 9.12 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.39M ops/s | 100% | 6.98 GiB | 48.00 B | 129.83 ms | 446 / 8 / 0 | 1 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.51M ops/s | 398% | 13.22 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 7 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.67M ops/s | 396% | 13.43 GiB | 48.00 B | 350.08 ms | 862 / 8 / 0 | 4.68K |
-| Shared timeout → retry | 4 | Kevlar | 7.98M ops/s | 399% | 10.88 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 4 |
-| Shared timeout → retry | 4 | Polly | 3.75M ops/s | 398% | 9.44 GiB | 24.00 B | 225.48 ms | 607 / 8 / 0 | 1.89K |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.79M ops/s | 399% | 18.09 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 5 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.71M ops/s | 398% | 13.64 GiB | 48.00 B | 348.02 ms | 876 / 8 / 0 | 1.43K |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 3.79M ops/s | 100% | 7.90 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 2.49M ops/s | 100% | 12.50 GiB | 48.00 B | 190.05 ms | 801 / 8 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 9.81M ops/s | 399% | 12.66 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 6 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 4.93M ops/s | 398% | 24.80 GiB | 48.00 B | 420.25 ms | 1594 / 8 / 0 | 4.04K |
+| Shared timeout → retry | 4 | Kevlar | 14.53M ops/s | 399% | 10.84 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 3 |
+| Shared timeout → retry | 4 | Polly | 6.88M ops/s | 399% | 17.30 GiB | 24.00 B | 148.99 ms | 1111 / 8 / 0 | 432 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 11.04M ops/s | 399% | 20.05 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 5.29M ops/s | 399% | 26.59 GiB | 48.00 B | 233.56 ms | 1709 / 8 / 0 | 325 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.65×** |
-| Shared timeout → retry → ratio breaker | 4 | **2.06×** |
-| Shared timeout → retry | 4 | **2.13×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **2.14×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.53×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.99×** |
+| Shared timeout → retry | 4 | **2.11×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **2.09×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 82.32 MiB.
+- Peak working set for the shared process: 83.57 MiB.
 
 ## Environment
 
