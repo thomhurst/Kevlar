@@ -6,15 +6,15 @@
 [![License](https://img.shields.io/github/license/thomhurst/Kevlar.svg)](https://github.com/thomhurst/Kevlar/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-Kevlar-7c3aed.svg)](https://thomhurst.github.io/Kevlar/docs/getting-started)
 
-**Fast, allocation-conscious resilience for .NET.** Kevlar brings retries, circuit breakers,
+**Fast, allocation-conscious resilience for .NET** Kevlar brings retries, circuit breakers,
 timeouts, rate limiting, concurrency limiting, hedging and fallbacks together in a fluent API.
 
 Resilience code should explain how a call is protected, not make you decode a framework. With
 Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary delegates.
 
-[Documentation](https://thomhurst.github.io/Kevlar/docs/getting-started) ·
-[Strategies](https://thomhurst.github.io/Kevlar/docs/category/strategies) ·
-[API Reference](https://thomhurst.github.io/Kevlar/api/index.html) ·
+[Documentation](https://thomhurst.github.io/Kevlar/docs/getting-started) Â·
+[Strategies](https://thomhurst.github.io/Kevlar/docs/category/strategies) Â·
+[API Reference](https://thomhurst.github.io/Kevlar/api/index.html) Â·
 [Benchmarks](https://thomhurst.github.io/Kevlar/docs/benchmarks)
 
 ## Get started
@@ -41,7 +41,7 @@ is exponential from 250 ms with factor 2, equal jitter, and a 30-second cap. It 
 exceptions such as `HttpRequestException`, but treats the `TaskCanceledException` from
 `HttpClient.Timeout` as cancellation. To retry that timeout and HTTP 5xx/429 responses, use
 `HttpShield.WhenTransient()` from `Kevlar.Extensions.Http`. The cancellation token passed to your
-delegate is important—it is how timeouts and abandoned attempts stop the underlying work.
+delegate is importantâ€”it is how timeouts and abandoned attempts stop the underlying work.
 
 When you combine strategies, the first strategy is the outermost, just like ASP.NET middleware:
 
@@ -82,12 +82,12 @@ stateful strategies: calls made through the same shield share its circuit breake
 
 Every sample is a small `net8.0;net10.0` application with a `--smoke` mode used by CI:
 
-- [`samples/ConsoleRetry`](https://github.com/thomhurst/Kevlar/tree/main/samples/ConsoleRetry) — minimal retry and recovery.
-- [`samples/WebApi`](https://github.com/thomhurst/Kevlar/tree/main/samples/WebApi) — ASP.NET Core, named DI shields, `AddStandardShield`, and metrics.
-- [`samples/EntityFrameworkCore`](samples/EntityFrameworkCore) � SQLite transactions with EF Core execution strategy retries.
-- [`samples/GrpcClient`](https://github.com/thomhurst/Kevlar/tree/main/samples/GrpcClient) — transient gRPC unary retries.
-- [`samples/PartitionedWorker`](https://github.com/thomhurst/Kevlar/tree/main/samples/PartitionedWorker) — bounded per-tenant shield state.
-- [`samples/ChaosTesting`](https://github.com/thomhurst/Kevlar/tree/main/samples/ChaosTesting) — deterministic, operation-scoped fault injection.
+- [`samples/ConsoleRetry`](https://github.com/thomhurst/Kevlar/tree/main/samples/ConsoleRetry) â€” minimal retry and recovery.
+- [`samples/WebApi`](https://github.com/thomhurst/Kevlar/tree/main/samples/WebApi) â€” ASP.NET Core, named DI shields, `AddStandardShield`, and metrics.
+- [`samples/EntityFrameworkCore`](samples/EntityFrameworkCore) — SQLite transactions with EF Core execution strategy retries.
+- [`samples/GrpcClient`](https://github.com/thomhurst/Kevlar/tree/main/samples/GrpcClient) â€” transient gRPC unary retries.
+- [`samples/PartitionedWorker`](https://github.com/thomhurst/Kevlar/tree/main/samples/PartitionedWorker) â€” bounded per-tenant shield state.
+- [`samples/ChaosTesting`](https://github.com/thomhurst/Kevlar/tree/main/samples/ChaosTesting) â€” deterministic, operation-scoped fault injection.
 
 Build all samples with `dotnet build samples/Samples.slnx -c Release`, or follow the command in a
 sample's README to run one directly.
