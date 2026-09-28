@@ -191,3 +191,53 @@ Kevlar.Testing.TelemetryEventRecord.IsCancelled.get -> bool
 Kevlar.Testing.TelemetryEventRecord.IsWinner.get -> bool
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield, bool includeTransparent) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield, bool includeTransparent) -> Kevlar.Testing.ShieldDescriptor!
+Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Finite = 0 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Indeterminate = 2 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Overflow = 3 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.AttemptBoundKind.Unbounded = 1 -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Ambient = 2 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Custom = 4 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.Default = 1 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.LocalOverride = 3 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.HandlingSource.None = 0 -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.ShieldDescriptor.Explain() -> Kevlar.Testing.ShieldExplanation!
+Kevlar.Testing.ShieldExplanation
+Kevlar.Testing.ShieldExplanation.AttemptBoundKind.get -> Kevlar.Testing.AttemptBoundKind
+Kevlar.Testing.ShieldExplanation.MaxAttempts.get -> long?
+Kevlar.Testing.ShieldExplanation.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyExplanation!>!
+Kevlar.Testing.StrategyExplanation
+Kevlar.Testing.StrategyExplanation.EnclosingAttemptStrategies.get -> System.Collections.Generic.IReadOnlyList<int>!
+Kevlar.Testing.StrategyExplanation.HandlingDescription.get -> string?
+Kevlar.Testing.StrategyExplanation.HandlingSource.get -> Kevlar.Testing.HandlingSource
+Kevlar.Testing.StrategyExplanation.Index.get -> int
+Kevlar.Testing.StrategyExplanation.Strategy.get -> Kevlar.Testing.StrategyDescriptor!
+Kevlar.Testing.StrategyExplanation.TimeoutScope.get -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Attempt = 2 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Execution = 1 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.Indeterminate = 3 -> Kevlar.Testing.TimeoutScope
+Kevlar.Testing.TimeoutScope.None = 0 -> Kevlar.Testing.TimeoutScope
+override Kevlar.Testing.ShieldExplanation.ToString() -> string!
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HalfOpenProbes.get -> int
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SlowCallRatio.get -> double?
+Kevlar.Testing.CircuitBreakerStateSnapshot.ProbesInFlight.get -> int
+Kevlar.Testing.CircuitBreakerStateSnapshot.SlowCallCount.get -> long
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.CurrentLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.Algorithm.get -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.MinLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.MaxLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.InitialLimit.get -> int
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.SamplingWindow.get -> System.TimeSpan
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.DecreaseFactor.get -> double
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.LatencyTolerance.get -> double
+Kevlar.Testing.AdaptiveConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Testing.RateLimitStrategyDescriptor.QueueTimeout.get -> System.TimeSpan?
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.UsePriorityQueue.get -> bool
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.QueuedByPriority.get -> System.Collections.Generic.IReadOnlyDictionary<int, int>!
+Kevlar.Testing.RateLimitStrategyDescriptor.UsePriorityQueue.get -> bool
+Kevlar.Testing.RateLimitStateSnapshot.QueuedByPriority.get -> System.Collections.Generic.IReadOnlyDictionary<int, int>!

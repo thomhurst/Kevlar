@@ -852,3 +852,71 @@ Kevlar.HedgeOptions.RespectDeadline.get -> bool
 Kevlar.HedgeOptions.RespectDeadline.set -> void
 Kevlar.HedgeOptions<TResult>.RespectDeadline.get -> bool
 Kevlar.HedgeOptions<TResult>.RespectDeadline.set -> void
+const Kevlar.KevlarDiagnostics.ActivitySourceName = "Kevlar" -> string!
+Kevlar.CircuitBreakerOptions.HalfOpenProbes.get -> int
+Kevlar.CircuitBreakerOptions.HalfOpenProbes.set -> void
+Kevlar.CircuitBreakerOptions.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.CircuitBreakerOptions.SlowCallThreshold.set -> void
+Kevlar.CircuitBreakerOptions.SlowCallRatio.get -> double?
+Kevlar.CircuitBreakerOptions.SlowCallRatio.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.HalfOpenProbes.get -> int
+Kevlar.CircuitBreakerOptions<TResult>.HalfOpenProbes.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.get -> System.TimeSpan?
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallThreshold.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.get -> double?
+Kevlar.CircuitBreakerOptions<TResult>.SlowCallRatio.set -> void
+Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitAlgorithm.Aimd = 0 -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitOptions
+Kevlar.AdaptiveConcurrencyLimitOptions.AdaptiveConcurrencyLimitOptions() -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.Name.get -> string?
+Kevlar.AdaptiveConcurrencyLimitOptions.Name.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.Algorithm.get -> Kevlar.AdaptiveConcurrencyLimitAlgorithm
+Kevlar.AdaptiveConcurrencyLimitOptions.Algorithm.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.MinLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.MinLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.MaxLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.MaxLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.InitialLimit.get -> int
+Kevlar.AdaptiveConcurrencyLimitOptions.InitialLimit.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.SamplingWindow.get -> System.TimeSpan
+Kevlar.AdaptiveConcurrencyLimitOptions.SamplingWindow.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.DecreaseFactor.get -> double
+Kevlar.AdaptiveConcurrencyLimitOptions.DecreaseFactor.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.LatencyTolerance.get -> double
+Kevlar.AdaptiveConcurrencyLimitOptions.LatencyTolerance.set -> void
+Kevlar.AdaptiveConcurrencyLimitOptions.OnRejected.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.AdaptiveConcurrencyLimitOptions.OnRejected.set -> void
+static Kevlar.Shield.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+Kevlar.Shield<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(Kevlar.AdaptiveConcurrencyLimitOptions! options) -> Kevlar.Shield<TResult>!
+Kevlar.ConcurrencyLimitOptions.QueueTimeout.get -> System.TimeSpan?
+Kevlar.ConcurrencyLimitOptions.QueueTimeout.set -> void
+Kevlar.RateLimitOptions.QueueTimeout.get -> System.TimeSpan?
+Kevlar.RateLimitOptions.QueueTimeout.set -> void
+Kevlar.ConcurrencyLimitRejectedEvent.Reason.get -> string?
+Kevlar.RateLimitRejectedEvent.Reason.get -> string?
+Kevlar.KevlarTelemetryEvent.RejectionReason.get -> string?
+Kevlar.RetryBudget
+Kevlar.RetryBudget.RetryBudget(int maxTokens = 100, double tokenRatio = 0.1) -> void
+Kevlar.RetryBudget.MaxTokens.get -> int
+Kevlar.RetryBudget.TokenRatio.get -> double
+Kevlar.RetryBudget.ReplenishmentPeriod.get -> System.TimeSpan?
+static Kevlar.RetryBudget.CreateReplenishing(int maxTokens, System.TimeSpan replenishmentPeriod, System.TimeProvider? timeProvider = null) -> Kevlar.RetryBudget!
+Kevlar.RetryBudget.Tokens.get -> double
+Kevlar.RetryBudget.AllowsAdditionalAttempt.get -> bool
+Kevlar.RetryOptions.Budget.get -> Kevlar.RetryBudget?
+Kevlar.RetryOptions.Budget.set -> void
+Kevlar.RetryOptions<TResult>.Budget.get -> Kevlar.RetryBudget?
+Kevlar.RetryOptions<TResult>.Budget.set -> void
+Kevlar.HedgeOptions.Budget.get -> Kevlar.RetryBudget?
+Kevlar.HedgeOptions.Budget.set -> void
+Kevlar.HedgeOptions<TResult>.Budget.get -> Kevlar.RetryBudget?
+Kevlar.HedgeOptions<TResult>.Budget.set -> void
+Kevlar.ConcurrencyLimitOptions.UsePriorityQueue.get -> bool
+Kevlar.ConcurrencyLimitOptions.UsePriorityQueue.set -> void
+Kevlar.RateLimitOptions.UsePriorityQueue.get -> bool
+Kevlar.RateLimitOptions.UsePriorityQueue.set -> void
+static Kevlar.KevlarKeys.Priority.get -> Kevlar.KevlarKey<int>

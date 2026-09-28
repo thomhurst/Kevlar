@@ -112,6 +112,7 @@ public class AnalyzerMetadataTests
     [Arguments("KEV011", "Configuration", DiagnosticSeverity.Info)]
     [Arguments("KEV012", "Reliability", DiagnosticSeverity.Warning)]
     [Arguments("KEV014", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV015", "Configuration", DiagnosticSeverity.Warning)]
     public async Task Analyzer_Releases_Shipped_Lists_Every_Rule(
         string ruleId,
         string category,
@@ -138,13 +139,6 @@ public class AnalyzerMetadataTests
         await Assert.That(descriptor.Category).IsEqualTo(shippedRule[1]);
         await Assert.That(descriptor.DefaultSeverity).IsEqualTo(severity);
         await Assert.That(descriptor.IsEnabledByDefault).IsEqualTo(!isOptIn);
-    }
-
-    [Test]
-    public async Task Duration_Rule_Is_Tracked_As_Unshipped()
-    {
-        var path = Path.Combine(FindRepositoryRoot(), "src", "Kevlar.Analyzers", "AnalyzerReleases.Unshipped.md");
-        await Assert.That(File.ReadAllText(path)).Contains("KEV015 | Configuration | Warning");
     }
 
     private static string FindRepositoryRoot()

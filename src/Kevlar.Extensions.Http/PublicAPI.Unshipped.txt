@@ -1,3 +1,1 @@
 #nullable enable
-Kevlar.Extensions.Http.HttpEndpointRoutingOptions.EndpointProvider.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Kevlar.Extensions.Http.HttpEndpoint!>!>>?
-Kevlar.Extensions.Http.HttpEndpointRoutingOptions.EndpointProvider.set -> void
