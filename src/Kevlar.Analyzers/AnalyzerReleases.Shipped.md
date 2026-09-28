@@ -20,3 +20,11 @@ KEV010 | Configuration | Disabled | Default-result clause handles a value type's
 KEV011 | Configuration | Disabled | Reactive strategy uses implicit default handling
 KEV012 | Reliability | Warning | Asynchronous strategy configuration requires asynchronous execution
 KEV014 | Reliability | Warning | Pooled event context is captured by deferred work
+
+## Release 1.2.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|--------------------
+KEV015 | Configuration | Warning | Literal timeout and retry delay budgets

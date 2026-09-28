@@ -20,3 +20,8 @@ static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.SynchronousHedgeRule -> 
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UnreachableReactiveStrategyRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UntypedHedgeRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.VoidFallbackResultExecutionRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+Kevlar.Analyzers.DurationBudgetAnalyzer
+Kevlar.Analyzers.DurationBudgetAnalyzer.DurationBudgetAnalyzer() -> void
+static readonly Kevlar.Analyzers.DurationBudgetAnalyzer.Rule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+override Kevlar.Analyzers.DurationBudgetAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
+override Kevlar.Analyzers.DurationBudgetAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
