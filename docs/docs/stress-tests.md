@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-28 18:24 UTC (commit `4fc389f`).*
+*Last updated 2026-09-28 22:53 UTC (commit `1848cfd`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.30M ops/s | 100% | 9.72 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.39M ops/s | 100% | 6.98 GiB | 48.00 B | 125.06 ms | 446 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.43M ops/s | 398% | 12.00 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 5 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.69M ops/s | 396% | 13.55 GiB | 48.00 B | 329.58 ms | 870 / 8 / 0 | 4.61K |
-| Shared timeout → retry | 4 | Kevlar | 7.52M ops/s | 399% | 10.84 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Shared timeout → retry | 4 | Polly | 3.66M ops/s | 398% | 9.21 GiB | 24.00 B | 205.63 ms | 590 / 8 / 0 | 1.86K |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.71M ops/s | 399% | 18.70 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 6 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.74M ops/s | 398% | 13.76 GiB | 48.00 B | 330.71 ms | 882 / 8 / 0 | 1.36K |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.30M ops/s | 100% | 8.52 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.35M ops/s | 100% | 6.81 GiB | 48.00 B | 118.15 ms | 435 / 8 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.29M ops/s | 399% | 12.95 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 12 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.85M ops/s | 397% | 14.32 GiB | 48.00 B | 343.88 ms | 919 / 8 / 0 | 3.58K |
+| Shared timeout → retry | 4 | Kevlar | 7.57M ops/s | 399% | 12.05 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 3 |
+| Shared timeout → retry | 4 | Polly | 4.08M ops/s | 398% | 10.27 GiB | 24.00 B | 224.44 ms | 660 / 8 / 0 | 604 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.57M ops/s | 399% | 18.83 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 10 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.89M ops/s | 398% | 14.52 GiB | 48.00 B | 340.75 ms | 933 / 8 / 0 | 416 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.65×** |
-| Shared timeout → retry → ratio breaker | 4 | **2.02×** |
-| Shared timeout → retry | 4 | **2.05×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **2.09×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.69×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.86×** |
+| Shared timeout → retry | 4 | **1.86×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.93×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 80.96 MiB.
+- Peak working set for the shared process: 81.55 MiB.
 
 ## Environment
 
