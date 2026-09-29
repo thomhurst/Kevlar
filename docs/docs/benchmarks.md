@@ -9,7 +9,7 @@ sidebar_label: Benchmarks
 
 Kevlar vs [Polly v8](https://github.com/App-vNext/Polly) across every strategy, measured with [BenchmarkDotNet](https://benchmarkdotnet.org/) on GitHub Actions and republished automatically by the [benchmarks workflow](https://github.com/thomhurst/Kevlar/actions/workflows/benchmarks.yml).
 
-*Last updated 2026-09-29 17:38 UTC (commit `76ea9e0`).*
+*Last updated 2026-09-29 22:17 UTC (commit `45c145d`).*
 
 :::note
 Microbenchmarks on shared CI runners are noisy. The **vs Polly** column is the median ratio over the most recent runs (up to 10); anything within ±20% is reported as *on par*. Absolute times move with runner hardware — the ratios are the signal.
@@ -21,17 +21,17 @@ What an empty pipeline costs per execution — the fixed tax every strategy buil
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Empty pipeline — async | 13.2 ns | 59.5 ns | 0 B | 0 B | **3.9× faster** |
-| Empty pipeline — reference-state baseline | 13.2 ns | — | 0 B | — | — |
-| Empty pipeline — caller-seeded context | 108 ns | — | 0 B | — | — |
-| EmptyOutcomeState | 7.7 ns | — | 0 B | — | — |
-| EmptyTaskOutcomeState | 7.5 ns | — | 0 B | — | — |
-| Empty pipeline — zero-closure state overload | 13.2 ns | 60.7 ns | 0 B | 0 B | **3.8× faster** |
-| Empty pipeline — sync | 6.7 ns | 37.5 ns | 0 B | 0 B | **3.2× faster** |
-| NestedEmptyAsync | 201 ns | — | 0 B | — | — |
-| NestedEmptySync | 153 ns | — | 0 B | — | — |
-| NestedWithPropertiesAsync | 202 ns | — | 0 B | — | — |
-| NestedWithPropertiesSync | 211 ns | — | 0 B | — | — |
+| Empty pipeline — async | 14.4 ns | 49.8 ns | 0 B | 0 B | **3.6× faster** |
+| Empty pipeline — reference-state baseline | 14.3 ns | — | 0 B | — | — |
+| Empty pipeline — caller-seeded context | 57.3 ns | — | 0 B | — | — |
+| EmptyOutcomeState | 9.8 ns | — | 0 B | — | — |
+| EmptyTaskOutcomeState | 13.0 ns | — | 0 B | — | — |
+| Empty pipeline — zero-closure state overload | 13.6 ns | 47.1 ns | 0 B | 0 B | **3.8× faster** |
+| Empty pipeline — sync | 8.8 ns | 23.8 ns | 0 B | 0 B | **3.2× faster** |
+| NestedEmptyAsync | 73.8 ns | — | 0 B | — | — |
+| NestedEmptySync | 71.1 ns | — | 0 B | — | — |
+| NestedWithPropertiesAsync | 124 ns | — | 0 B | — | — |
+| NestedWithPropertiesSync | 121 ns | — | 0 B | — | — |
 
 ## Retry
 
@@ -39,8 +39,8 @@ Happy path (judge overhead only) and a recovery path where every call fails twic
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Retry(3) — success on first attempt | 127 ns | 220 ns | 0 B | 24 B | **1.7× faster** |
-| Retry(3) — two failures then success | 3.39 μs | 3.87 μs | 192 B | 328 B | on par |
+| Retry(3) — success on first attempt | 109 ns | 201 ns | 0 B | 24 B | **1.7× faster** |
+| Retry(3) — two failures then success | 3.18 μs | 3.42 μs | 192 B | 328 B | on par |
 
 ## Timeout
 
@@ -48,22 +48,31 @@ The timeout never fires; this is the cost of arming and disarming the cancellati
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Timeout(10 s) — completes instantly | 210 ns | 195 ns | 0 B | 0 B | on par |
-| SynchronousGenerator_HappyPath | 240 ns | — | 0 B | — | — |
-| AsynchronousGenerator_HappyPath | 2.06 μs | — | 550 B | — | — |
-| AsyncHookConfigured_HappyPath | 241 ns | — | 0 B | — | — |
+| Timeout(10 s) — completes instantly | 134 ns | 165 ns | 0 B | 0 B | on par |
+| SynchronousGenerator_HappyPath | 168 ns | — | 0 B | — | — |
+| AsynchronousGenerator_HappyPath | 1.27 μs | — | 560 B | — | — |
+| AsyncHookConfigured_HappyPath | 162 ns | — | 0 B | — | — |
 
 ## Circuit breaker
 
-Ratio/sampling bookkeeping while closed, and the fast-fail rejection cost while manually isolated (thrown exception included).
+Ratio/sampling bookkeeping while closed, and the fast-fail rejection cost while manually isolated — caught as a thrown exception, and read from the no-throw `ExecuteOutcomeAsync` API.
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Isolated circuit — fast-fail rejection | 4.88 μs | 4.96 μs | 1.3 KB | 1.3 KB | on par |
-| Ratio breaker, closed — success | 160 ns | 248 ns | 0 B | 24 B | **1.4× faster** |
-| DynamicDurationConfigured | 191 ns | — | 0 B | — | — |
-| AsyncCallbackConfigured | 190 ns | — | 0 B | — | — |
-| SlowCallDetectionConfigured | 363 ns | — | 0 B | — | — |
+| Isolated circuit — fast-fail rejection thrown | 4.10 μs | 4.17 μs | 1.3 KB | 1.3 KB | on par |
+| Isolated circuit — fast-fail rejection via ExecuteOutcomeAsync | 88.4 ns | 149 ns | 144 B | 200 B | **1.7× faster** |
+| Ratio breaker, closed — success | 141 ns | 211 ns | 0 B | 24 B | **1.4× faster** |
+| DynamicDurationConfigured | 174 ns | — | 0 B | — | — |
+| AsyncCallbackConfigured | 173 ns | — | 0 B | — | — |
+| SlowCallDetectionConfigured | 241 ns | — | 0 B | — | — |
+
+## Circuit breaker under contention
+
+Eight workers share one open circuit, so every call is a fast-fail rejection observed as an outcome; this is the per-call cost during an outage.
+
+| Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
+|---|---|---|---|---|---|
+| Open circuit — 8 workers rejected | 50.1 ns | 162 ns | 144 B | 200 B | **3.2× faster** |
 
 ## Fallback
 
@@ -71,35 +80,39 @@ Pass-through when the execution succeeds, and substitution when it throws.
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| NoNotification | 2.13 μs | — | 200 B | — | — |
-| CompletedAsyncNotification | 2.09 μs | — | 200 B | — | — |
-| YieldingAsyncNotification | 5.73 μs | — | 791 B | — | — |
-| Fallback — not triggered | 116 ns | 111 ns | 0 B | 0 B | on par |
-| SynchronousDelegate_Triggered | 2.02 μs | — | 200 B | — | — |
-| Fallback — triggered by exception | 2.07 μs | 2.10 μs | 200 B | 256 B | on par |
-| EmptyVoid | 29.9 ns | — | 0 B | — | — |
-| VoidPassThrough | 134 ns | — | 0 B | — | — |
+| NoNotification | 1.87 μs | — | 200 B | — | — |
+| CompletedAsyncNotification | 1.88 μs | — | 200 B | — | — |
+| YieldingAsyncNotification | 4.44 μs | — | 847 B | — | — |
+| Fallback — not triggered | 107 ns | 108 ns | 0 B | 0 B | on par |
+| SynchronousDelegate_Triggered | 1.77 μs | — | 200 B | — | — |
+| Fallback — triggered by exception | 1.88 μs | 1.87 μs | 200 B | 256 B | on par |
+| EmptyVoid | 30.0 ns | — | 0 B | — | — |
+| VoidPassThrough | 123 ns | — | 0 B | — | — |
 
 ## Rate limit
 
-Uncontended token-bucket permit acquisition — every call is admitted.
+Uncontended token-bucket permit acquisition — every call is admitted — and the rejection cost once the budget is exhausted, thrown vs `ExecuteOutcomeAsync`.
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Token bucket — uncontended acquire | 141 ns | 146 ns | 0 B | 0 B | on par |
-| WithHooks_Uncontended | 150 ns | — | 0 B | — | — |
-| FrameworkAdapter_Uncontended | 150 ns | — | 0 B | — | — |
-| PartitionedFrameworkAdapter_Uncontended | 210 ns | — | 32 B | — | — |
+| Budget exhausted — rejection thrown | 4.15 μs | 48.13 μs | 1.3 KB | 41.4 KB | **12× faster** |
+| Budget exhausted — rejection via ExecuteOutcomeAsync | 123 ns | 33.09 μs | 136 B | 35.5 KB | **269× faster** |
+| Token bucket — uncontended acquire | 121 ns | 122 ns | 0 B | 0 B | on par |
+| WithHooks_Uncontended | 119 ns | — | 0 B | — | — |
+| FrameworkAdapter_Uncontended | 138 ns | — | 0 B | — | — |
+| PartitionedFrameworkAdapter_Uncontended | 149 ns | — | 32 B | — | — |
 
 ## Concurrency limit
 
-A single caller against a large permit count; acquire/release cost with no queueing.
+A single caller against a large permit count; acquire/release cost with no queueing. The rejection rows hold the only permit and compare thrown vs `ExecuteOutcomeAsync`.
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Concurrency limit — uncontended | 155 ns | 198 ns | 0 B | 40 B | **1.3× faster** |
-| WithHooks_Uncontended | 148 ns | — | 0 B | — | — |
-| Adaptive_Uncontended | 216 ns | — | 0 B | — | — |
+| Permits exhausted — rejection thrown | 4.07 μs | 44.66 μs | 1.3 KB | 39.5 KB | **11× faster** |
+| Permits exhausted — rejection via ExecuteOutcomeAsync | 82.9 ns | 29.61 μs | 136 B | 33.6 KB | **357× faster** |
+| Concurrency limit — uncontended | 117 ns | 163 ns | 0 B | 40 B | **1.3× faster** |
+| WithHooks_Uncontended | 120 ns | — | 0 B | — | — |
+| Adaptive_Uncontended | 171 ns | — | 0 B | — | — |
 
 ## Typed result handling
 
@@ -107,7 +120,7 @@ Retry configured to treat a sentinel result as a failure; the returned value nev
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Typed retry — result judged, no retry | 117 ns | 177 ns | 0 B | 0 B | **1.3× faster** |
+| Typed retry — result judged, no retry | 104 ns | 158 ns | 0 B | 0 B | **1.3× faster** |
 
 ## Composed pipelines
 
@@ -115,13 +128,13 @@ How per-call overhead scales with pipeline depth when nothing goes wrong.
 
 | Scenario | Kevlar | Polly | Kevlar allocated | Polly allocated | Kevlar vs Polly |
 |---|---|---|---|---|---|
-| Timeout → Retry → ratio breaker | 340 ns | 597 ns | 0 B | 48 B | **1.7× faster** |
-| Token bucket → Timeout → Retry → ratio breaker → Concurrency limit | 447 ns | 841 ns | 0 B | 88 B | **1.9× faster** |
-| TokenBucketRatioFiveStrategyChainSync | 408 ns | 815 ns | 0 B | 88 B | **2.0× faster** |
+| Timeout → Retry → ratio breaker | 286 ns | 533 ns | 0 B | 48 B | **1.7× faster** |
+| Token bucket → Timeout → Retry → ratio breaker → Concurrency limit | 391 ns | 804 ns | 0 B | 88 B | **1.9× faster** |
+| TokenBucketRatioFiveStrategyChainSync | 345 ns | 812 ns | 0 B | 88 B | **2.0× faster** |
 
 ## Environment
 
-- INTEL XEON PLATINUM 8573C
+- AMD EPYC 9V74
 - .NET 10.0.12 (10.0.12, 10.0.1226.42308), BenchmarkDotNet 0.15.8
 - Times are medians; allocations are per operation.
 
