@@ -512,11 +512,19 @@ internal sealed class CircuitBreakerCore
         // alternate provider anchors there (see GetCurrentTimestamp). Record the reading so that
         // anchor survives, then re-check the flag: the compare-exchange is a full fence, pairing
         // with the exchange that clears the flag, so a rejection that passes the re-check is
-        // visible to the fold, or trails a visible reading by at most one step.
+        // visible to the fold, or trails a visible reading by at most one step. The record is a
+        // monotonic max: a newer reading that loses the race to an older one retries rather than
+        // leaving the record behind.
         var recorded = Volatile.Read(ref _lockFreeRejectionTimestamp);
-        if (timestamp >= recorded + RejectionTimelineStep)
+        while (timestamp >= recorded + RejectionTimelineStep)
         {
-            Interlocked.CompareExchange(ref _lockFreeRejectionTimestamp, timestamp, recorded);
+            var observed = Interlocked.CompareExchange(ref _lockFreeRejectionTimestamp, timestamp, recorded);
+            if (observed.Equals(recorded))
+            {
+                break;
+            }
+
+            recorded = observed;
         }
 
         if (Volatile.Read(ref _systemRatioFastPathEnabled) == 0)
