@@ -511,6 +511,25 @@ internal static partial class ShieldEngine
         Func<TState, KevlarContext, ValueTask<T>> action,
         KevlarContext context)
     {
+        if (head is null)
+        {
+            // Without strategies the continuation would only wrap the delegate in an async state
+            // machine; complete synchronous results inline and await only pending ones.
+            ValueTask<T> execution;
+            try
+            {
+                execution = action(state, context);
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+            }
+
+            return execution.IsCompletedSuccessfully
+                ? new ValueTask<Outcome<T>>(Outcome<T>.FromResult(execution.Result))
+                : AwaitWithContextOutcomeAsync(execution);
+        }
+
         var continuation = new Continuation<T, ContextAsyncCallback<TState, T>>(
             head,
             static (callback, ctx) => InvokeWithContextAsync(callback, ctx),
@@ -525,6 +544,18 @@ internal static partial class ShieldEngine
         Func<TState, KevlarContext, T> action,
         KevlarContext context)
     {
+        if (head is null)
+        {
+            try
+            {
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(action(state, context)));
+            }
+            catch (Exception exception)
+            {
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+            }
+        }
+
         var continuation = new Continuation<T, ContextSyncCallback<TState, T>>(
             head,
             static (callback, ctx) =>
@@ -565,6 +596,18 @@ internal static partial class ShieldEngine
         try
         {
             return Outcome<T>.FromResult(await callback.Action(callback.State, context).ConfigureAwait(false));
+        }
+        catch (Exception exception)
+        {
+            return Outcome<T>.FromException(exception);
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitWithContextOutcomeAsync<T>(ValueTask<T> execution)
+    {
+        try
+        {
+            return Outcome<T>.FromResult(await execution.ConfigureAwait(false));
         }
         catch (Exception exception)
         {

@@ -24,6 +24,16 @@ public sealed class KevlarContext
 
     private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: PoolCapacity);
 
+    // Two reset contexts per thread in front of the shared pool: enough for an execution and
+    // one nested child. Rent and return on the same thread (every synchronously completing
+    // execution) then need no atomic operations; a context that completes on another thread
+    // lands in that thread's slots or the shared pool.
+    [ThreadStatic]
+    private static KevlarContext? t_cachedContext;
+
+    [ThreadStatic]
+    private static KevlarContext? t_cachedNestedContext;
+
     private readonly KevlarProperties _properties = new();
     private KevlarProperties? _completionProperties;
     private KevlarProperties? _forkBaseline;
@@ -246,7 +256,19 @@ public sealed class KevlarContext
         TimeProvider timeProvider,
         string? shieldName)
     {
-        var context = Pool.Rent();
+        var context = t_cachedContext;
+        if (context is not null)
+        {
+            t_cachedContext = null;
+        }
+        else if ((context = t_cachedNestedContext) is not null)
+        {
+            t_cachedNestedContext = null;
+        }
+        else
+        {
+            context = Pool.Rent();
+        }
 
         MarkRented(context);
         context.CancellationToken = cancellationToken;
@@ -314,6 +336,20 @@ public sealed class KevlarContext
     internal static void Return(KevlarContext context)
     {
         MarkReturned(context);
+        if (t_cachedContext is null)
+        {
+            PoolPolicy.Reset(context);
+            t_cachedContext = context;
+            return;
+        }
+
+        if (t_cachedNestedContext is null)
+        {
+            PoolPolicy.Reset(context);
+            t_cachedNestedContext = context;
+            return;
+        }
+
         Pool.Return(context);
     }
 
@@ -482,6 +518,12 @@ public sealed class KevlarContext
 
         public bool TryReset(KevlarContext context)
         {
+            Reset(context);
+            return true;
+        }
+
+        internal static void Reset(KevlarContext context)
+        {
             context.CancellationToken = default;
             context.SynchronousExecutionKind = SynchronousExecutionKind.None;
             context.ShieldName = null;
@@ -512,7 +554,6 @@ public sealed class KevlarContext
             context._hasCompletionProperties = false;
             context._hasForkBaseline = false;
             context._hasEmptyForkBaseline = false;
-            return true;
         }
     }
 }
