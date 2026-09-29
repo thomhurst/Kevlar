@@ -45,6 +45,12 @@ var result = await shield.ExecuteAsync(
     cancellationToken);
 ```
 
+When rejections are routine, such as load shedding behind a breaker or limiter, call
+`ExecuteOutcomeAsync` and inspect `outcome.Exception is ExecutionRejectedException` instead of
+catching. Locally that cut a circuit, rate-limit, or concurrency-limit rejection from about 3.3 μs
+and 1.3 KB to under 100 ns and about 140 B. See
+[Hot rejection paths](executing.md#hot-rejection-paths).
+
 Return an already-completed `ValueTask` for synchronous work. Do not wrap naturally asynchronous
 I/O merely to force synchronous completion, and do not pool application objects until a profile
 shows they dominate cost. Clear code around a network boundary is normally worth more than saving
