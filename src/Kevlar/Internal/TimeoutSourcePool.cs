@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Reservoir;
 
 namespace Kevlar.Internal;
@@ -6,16 +7,31 @@ namespace Kevlar.Internal;
 internal static class TimeoutSourcePool
 {
 #if NET8_0_OR_GREATER
+    // The thread-static slot is the steady-state path: one static field access instead of the
+    // pool's per-instance thread-local lookup on both rent and return. The shared pool absorbs
+    // sources returned while the slot is occupied and serves threads whose slot is empty.
+    [ThreadStatic]
+    private static Source? t_cached;
+
     private static readonly ObjectPool<Source, Policy> Pool = new(
         default,
         ObjectPool<Source, Policy>.DefaultMaximumRetained,
-        threadLocalFastPath: true);
+        threadLocalFastPath: false);
 #endif
 
     public static CancellationTokenSource RentLinked(CancellationToken upstreamToken)
     {
 #if NET8_0_OR_GREATER
-        var source = Pool.Rent();
+        var source = t_cached;
+        if (source is not null)
+        {
+            t_cached = null;
+        }
+        else
+        {
+            source = Pool.Rent();
+        }
+
         try
         {
             source.Link(upstreamToken);
@@ -54,19 +70,51 @@ internal static class TimeoutSourcePool
 #endif
     }
 
+    /// <summary>
+    /// Ends a rental from <see cref="RentLinked"/>, or disposes any other source. Pooled sources skip
+    /// the public <see cref="CancellationTokenSource.Dispose()"/> indirection.
+    /// </summary>
+    public static void Return(CancellationTokenSource source)
+    {
+#if NET8_0_OR_GREATER
+        if (source is Source pooled)
+        {
+            pooled.Release();
+            return;
+        }
+#endif
+        source.Dispose();
+    }
+
 #if NET8_0_OR_GREATER
     private sealed class Source : CancellationTokenSource
     {
-        private readonly object _gate = new();
+        // TimeProvider.System timestamps are Stopwatch timestamps. Deadlines stay in that unit so
+        // arming compares integers instead of converting elapsed time on every rental.
+        private static readonly double TimestampTicksPerTimeSpanTick =
+            (double)Stopwatch.Frequency / TimeSpan.TicksPerSecond;
+
+        // _state packs a rental generation (upper bits) with the rental kind (lower bits). Arm and
+        // Release are the per-call path and use one interlocked operation each instead of the gate;
+        // the generation stops a timer callback that read an older rental's deadline from selecting
+        // cancellation for a newer rental of the same source.
+        private const long KindMask = 3;
+        private const long Idle = 0;
+        private const long Armed = 1;
+        // Expiry selected cancellation. The source is never reused once it reaches this kind.
+        private const long Firing = 2;
+        private const long GenerationIncrement = 4;
+        // No timer wakeup is pending.
+        private const long NotScheduled = long.MaxValue;
+
+        // Serializes timer scheduling, timer callbacks, and destruction; never taken on the hot path.
+        private readonly Lock _gate = new();
         private readonly Timer _timer;
         private CancellationTokenRegistration _upstream;
+        private long _state;
         private long _startedAt;
-        private TimeSpan _timeout;
-        private long _scheduledAt;
-        private TimeSpan _scheduledDelay;
-        private bool _scheduled;
-        private bool _active;
-        private bool _cancellationInFlight;
+        private long _deadline;
+        private long _scheduledDue = NotScheduled;
         private bool _destroyed;
 
         public Source()
@@ -99,25 +147,52 @@ internal static class TimeoutSourcePool
 
         public long StartedAt => _startedAt;
 
+        private static long ToTimestampTicks(TimeSpan duration) =>
+            Stopwatch.Frequency == TimeSpan.TicksPerSecond
+                ? duration.Ticks
+                : (long)(duration.Ticks * TimestampTicksPerTimeSpanTick);
+
+        private static TimeSpan FromTimestampTicks(long timestampTicks) =>
+            Stopwatch.Frequency == TimeSpan.TicksPerSecond
+                ? new TimeSpan(timestampTicks)
+                // Round up so a wakeup never lands before the deadline it was scheduled for.
+                : new TimeSpan((long)Math.Ceiling(timestampTicks / TimestampTicksPerTimeSpanTick));
+
         public void Arm(TimeSpan timeout)
+        {
+            var now = Stopwatch.GetTimestamp();
+            var deadline = now + ToTimestampTicks(timeout);
+            _startedAt = now;
+            _deadline = deadline;
+
+            // Only the renting thread arms, and only from Idle. The full fence publishes the deadline
+            // before the new generation and orders this store before the _scheduledDue load below;
+            // OnTimer clears _scheduledDue before loading _state, so at least one side observes the
+            // other and this rental always has a wakeup at or before its deadline.
+            var state = Volatile.Read(ref _state);
+            Interlocked.Exchange(ref _state, (state & ~KindMask) + GenerationIncrement + Armed);
+
+            // Keep an earlier pending wakeup; it re-checks the current deadline when it fires.
+            if (deadline < Volatile.Read(ref _scheduledDue))
+            {
+                ScheduleIfEarlier(timeout, deadline);
+            }
+        }
+
+        private void ScheduleIfEarlier(TimeSpan delay, long due)
         {
             lock (_gate)
             {
-                _startedAt = TimeProvider.System.GetTimestamp();
-                _timeout = timeout;
-                _active = true;
-                if (!_scheduled || timeout < _scheduledDelay - TimeProvider.System.GetElapsedTime(_scheduledAt, _startedAt))
+                if (!_destroyed && due < _scheduledDue)
                 {
-                    Schedule(timeout, _startedAt);
+                    Schedule(delay, due);
                 }
             }
         }
 
-        private void Schedule(TimeSpan delay, long now)
+        private void Schedule(TimeSpan delay, long due)
         {
-            _scheduledAt = now;
-            _scheduledDelay = delay;
-            _scheduled = true;
+            Volatile.Write(ref _scheduledDue, due);
             _timer.Change(delay, Timeout.InfiniteTimeSpan);
         }
 
@@ -129,20 +204,33 @@ internal static class TimeoutSourcePool
                 {
                     return;
                 }
-                _scheduled = false;
-                if (!_active)
+
+                Volatile.Write(ref _scheduledDue, NotScheduled);
+                Interlocked.MemoryBarrier();
+                while (true)
                 {
-                    return;
+                    var state = Volatile.Read(ref _state);
+                    if ((state & KindMask) != Armed)
+                    {
+                        return;
+                    }
+
+                    var deadline = Volatile.Read(ref _deadline);
+                    var remaining = deadline - Stopwatch.GetTimestamp();
+                    if (remaining > 0)
+                    {
+                        // A deadline read from a newer rental is still a valid wakeup; one from an
+                        // older rental is at worst an early wakeup that re-checks.
+                        Schedule(FromTimestampTicks(remaining), deadline);
+                        return;
+                    }
+
+                    // Select cancellation only if the rental whose deadline expired is still armed.
+                    if (Interlocked.CompareExchange(ref _state, (state & ~KindMask) | Firing, state) == state)
+                    {
+                        break;
+                    }
                 }
-                var now = TimeProvider.System.GetTimestamp();
-                var remaining = _timeout - TimeProvider.System.GetElapsedTime(_startedAt, now);
-                if (remaining > TimeSpan.Zero)
-                {
-                    Schedule(remaining, now);
-                    return;
-                }
-                _active = false;
-                _cancellationInFlight = true;
             }
 
             // Never hold the source gate across user cancellation callbacks. Completion
@@ -155,32 +243,39 @@ internal static class TimeoutSourcePool
             {
                 // Completion destroyed this source after expiry selected cancellation.
             }
-            finally
-            {
-                lock (_gate)
-                {
-                    _cancellationInFlight = false;
-                }
-            }
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (!disposing)
+            if (disposing)
             {
-                return;
-            }
-            // Drain the previous upstream callback before publishing the source to the pool.
-            _upstream.Dispose();
-            _upstream = default;
-            lock (_gate)
-            {
-                _active = false;
-                Pool.Return(this);
+                Release();
             }
         }
 
-        public bool ResetForReuse() => !_cancellationInFlight && TryReset();
+        public void Release()
+        {
+            // Drain the previous upstream callback before publishing the source for reuse.
+            _upstream.Dispose();
+            _upstream = default;
+
+            var state = Volatile.Read(ref _state);
+            if ((state & KindMask) == Armed)
+            {
+                // Losing this race means expiry selected cancellation; ResetForReuse then refuses reuse.
+                Interlocked.CompareExchange(ref _state, state & ~KindMask, state);
+            }
+
+            if (t_cached is null && ResetForReuse())
+            {
+                t_cached = this;
+                return;
+            }
+            Pool.Return(this);
+        }
+
+        // An idle rental can no longer be cancelled by its timer, and upstream callbacks were drained.
+        public bool ResetForReuse() => (Volatile.Read(ref _state) & KindMask) == Idle && TryReset();
 
         public void Destroy()
         {
@@ -189,7 +284,6 @@ internal static class TimeoutSourcePool
             lock (_gate)
             {
                 _destroyed = true;
-                _active = false;
                 _timer.Dispose();
                 base.Dispose(disposing: true);
             }

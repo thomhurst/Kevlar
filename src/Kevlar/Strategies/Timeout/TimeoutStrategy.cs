@@ -107,16 +107,23 @@ internal sealed class TimeoutStrategy : Strategy
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
         ValueTask<Outcome<T>> execution;
-        var recordTimeoutIgnored = KevlarMetrics.TimeoutIgnoredEnabled(context);
         var trackDeadline = !context.SuppressDeadlineTracking || KevlarTelemetry.HasContextListeners
             || KevlarMetricEnrichment.HasEnrichers;
+        // Whether startedAt holds a real timestamp. Pooled .NET 8+ sources always sample the clock when
+        // arming, so there the ignored-timeout metric gate is only consulted if a timeout is ignored.
+        bool timingAvailable;
         var startedAt = 0L;
 
         try
         {
             if (usesSystemTime)
             {
-                if (recordTimeoutIgnored || trackDeadline)
+#if NET8_0_OR_GREATER
+                timingAvailable = true;
+                startedAt = TimeoutSourcePool.ArmAndGetTimestamp(timeoutSource, timeout);
+#else
+                timingAvailable = trackDeadline || KevlarMetrics.TimeoutIgnoredEnabled(context);
+                if (timingAvailable)
                 {
                     startedAt = TimeoutSourcePool.ArmAndGetTimestamp(timeoutSource, timeout);
                 }
@@ -124,10 +131,12 @@ internal sealed class TimeoutStrategy : Strategy
                 {
                     TimeoutSourcePool.Arm(timeoutSource, timeout);
                 }
+#endif
             }
             else
             {
-                startedAt = recordTimeoutIgnored || trackDeadline ? context.TimeProvider.GetTimestamp() : 0;
+                timingAvailable = trackDeadline || KevlarMetrics.TimeoutIgnoredEnabled(context);
+                startedAt = timingAvailable ? context.TimeProvider.GetTimestamp() : 0;
                 timer = context.TimeProvider.CreateTimer(
                     static state =>
                     {
@@ -169,7 +178,7 @@ internal sealed class TimeoutStrategy : Strategy
                 timer,
                 timeout,
                 startedAt,
-                recordTimeoutIgnored);
+                timingAvailable);
         }
 
         var outcome = execution.Result;
@@ -183,7 +192,7 @@ internal sealed class TimeoutStrategy : Strategy
                 timeoutSource,
                 timer,
                 startedAt,
-                recordTimeoutIgnored));
+                timingAvailable));
         }
 
         return CompleteCancellationAsync(
@@ -209,7 +218,7 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer,
         TimeSpan timeout,
         long startedAt,
-        bool recordTimeoutIgnored)
+        bool timingAvailable)
     {
         Outcome<T> outcome;
 
@@ -233,7 +242,7 @@ internal sealed class TimeoutStrategy : Strategy
                 timeoutSource,
                 timer,
                 startedAt,
-                recordTimeoutIgnored);
+                timingAvailable);
         }
 
         return await CompleteCancellationAsync(
@@ -255,15 +264,15 @@ internal sealed class TimeoutStrategy : Strategy
         CancellationTokenSource timeoutSource,
         ITimer? timer,
         long startedAt,
-        bool recordTimeoutIgnored)
+        bool timingAvailable)
     {
         context.CancellationToken = priorToken;
         context.DeadlineState = priorDeadline;
         timer?.Dispose();
         var timeoutIgnored = !priorToken.IsCancellationRequested && timeoutSource.IsCancellationRequested;
-        timeoutSource.Dispose();
+        TimeoutSourcePool.Return(timeoutSource);
 
-        if (timeoutIgnored && recordTimeoutIgnored)
+        if (timeoutIgnored && timingAvailable && KevlarMetrics.TimeoutIgnoredEnabled(context))
         {
             KevlarMetrics.TimeoutIgnored(
                 context,
@@ -286,7 +295,7 @@ internal sealed class TimeoutStrategy : Strategy
         context.CancellationToken = priorToken;
         context.DeadlineState = priorDeadline;
         timer?.Dispose();
-        timeoutSource.Dispose();
+        TimeoutSourcePool.Return(timeoutSource);
     }
 
     private ValueTask<Outcome<T>> CompleteCancellationAsync<T>(
@@ -305,7 +314,7 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (priorToken.IsCancellationRequested)
         {
-            timeoutSource.Dispose();
+            TimeoutSourcePool.Return(timeoutSource);
 
             if (cancellationException.CancellationToken == priorToken)
             {
@@ -319,7 +328,7 @@ internal sealed class TimeoutStrategy : Strategy
         }
 
         var timedOut = timeoutSource.IsCancellationRequested;
-        timeoutSource.Dispose();
+        TimeoutSourcePool.Return(timeoutSource);
 
         if (timedOut)
         {

@@ -48,7 +48,8 @@ _SECTIONS = {
         "Circuit breaker",
         3,
         "Ratio/sampling bookkeeping while closed, and the fast-fail rejection cost while "
-        "manually isolated (thrown exception included).",
+        "manually isolated — caught as a thrown exception, and read from the no-throw "
+        "`ExecuteOutcomeAsync` API.",
     ),
     "CircuitBreakerContentionBenchmarks": (
         "Circuit breaker under contention",
@@ -69,12 +70,14 @@ _SECTIONS = {
     "RateLimitBenchmarks": (
         "Rate limit",
         6,
-        "Uncontended token-bucket permit acquisition — every call is admitted.",
+        "Uncontended token-bucket permit acquisition — every call is admitted — and the "
+        "rejection cost once the budget is exhausted, thrown vs `ExecuteOutcomeAsync`.",
     ),
     "ConcurrencyLimitBenchmarks": (
         "Concurrency limit",
         7,
-        "A single caller against a large permit count; acquire/release cost with no queueing.",
+        "A single caller against a large permit count; acquire/release cost with no queueing. "
+        "The rejection rows hold the only permit and compare thrown vs `ExecuteOutcomeAsync`.",
     ),
     "TypedResultBenchmarks": (
         "Typed result handling",
@@ -101,14 +104,25 @@ _SCENARIO_LABELS = {
     ("CircuitBreakerBenchmarks", "ClosedHappyPath"): "Closed circuit — success",
     ("CircuitBreakerBenchmarks", "OpenFastFail"): "Open circuit — fast-fail rejection",
     ("CircuitBreakerBenchmarks", "RatioClosedHappyPath"): "Ratio breaker, closed — success",
-    ("CircuitBreakerBenchmarks", "IsolatedFastFail"): "Isolated circuit — fast-fail rejection",
+    ("CircuitBreakerBenchmarks", "IsolatedFastFail"): "Isolated circuit — fast-fail rejection thrown",
+    ("CircuitBreakerBenchmarks", "IsolatedFastFailOutcome"): (
+        "Isolated circuit — fast-fail rejection via ExecuteOutcomeAsync"
+    ),
     ("CircuitBreakerContentionBenchmarks", "ContendedOpenRejection"): "Open circuit — 8 workers rejected",
     ("HedgingBenchmarks", "PrimaryWins"): "Hedge(2) — primary wins",
     ("FallbackBenchmarks", "PassThrough"): "Fallback — not triggered",
     ("FallbackBenchmarks", "Triggered"): "Fallback — triggered by exception",
     ("RateLimitBenchmarks", "Uncontended"): "Rate limit — uncontended acquire",
     ("RateLimitBenchmarks", "TokenBucketUncontended"): "Token bucket — uncontended acquire",
+    ("RateLimitBenchmarks", "RejectedFastFail"): "Budget exhausted — rejection thrown",
+    ("RateLimitBenchmarks", "RejectedFastFailOutcome"): (
+        "Budget exhausted — rejection via ExecuteOutcomeAsync"
+    ),
     ("ConcurrencyLimitBenchmarks", "Uncontended"): "Concurrency limit — uncontended",
+    ("ConcurrencyLimitBenchmarks", "RejectedFastFail"): "Permits exhausted — rejection thrown",
+    ("ConcurrencyLimitBenchmarks", "RejectedFastFailOutcome"): (
+        "Permits exhausted — rejection via ExecuteOutcomeAsync"
+    ),
     ("TypedResultBenchmarks", "ResultJudged"): "Typed retry — result judged, no retry",
     ("PipelineBenchmarks", "TimeoutRetryBreaker"): "Timeout → Retry → Circuit breaker",
     ("PipelineBenchmarks", "FiveStrategyChain"): "Five-strategy chain",
