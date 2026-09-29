@@ -53,6 +53,7 @@ SCENARIO_LABELS = {
     "SharedRatioPipeline": "Shared timeout → retry → ratio breaker",
     "TimeoutRetryPipeline": "Shared timeout → retry",
     "PerWorkerRatioPipeline": "Per-worker timeout → retry → ratio breaker",
+    "SharedOpenBreaker": "Shared open breaker — every call rejected",
 }
 
 
@@ -134,6 +135,7 @@ def build_page(data, commit):
         f"- Each scenario and library warmed for {fmt_duration(data['warmup'])} before measurement.",
         "- Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).",
         "- Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.",
+        "- The shared open-breaker scenario trips one breaker for the whole run, so every call measures contended fast-fail rejection.",
         "- Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.",
         f"- Peak working set for the shared process: {fmt_bytes(data['peakWorkingSetBytes'])}.",
         "",

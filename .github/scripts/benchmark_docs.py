@@ -51,6 +51,12 @@ _SECTIONS = {
         "manually isolated — caught as a thrown exception, and read from the no-throw "
         "`ExecuteOutcomeAsync` API.",
     ),
+    "CircuitBreakerContentionBenchmarks": (
+        "Circuit breaker under contention",
+        3.5,
+        "Eight workers share one open circuit, so every call is a fast-fail rejection "
+        "observed as an outcome; this is the per-call cost during an outage.",
+    ),
     "HedgingBenchmarks": (
         "Hedging",
         4,
@@ -102,6 +108,7 @@ _SCENARIO_LABELS = {
     ("CircuitBreakerBenchmarks", "IsolatedFastFailOutcome"): (
         "Isolated circuit — fast-fail rejection via ExecuteOutcomeAsync"
     ),
+    ("CircuitBreakerContentionBenchmarks", "ContendedOpenRejection"): "Open circuit — 8 workers rejected",
     ("HedgingBenchmarks", "PrimaryWins"): "Hedge(2) — primary wins",
     ("FallbackBenchmarks", "PassThrough"): "Fallback — not triggered",
     ("FallbackBenchmarks", "Triggered"): "Fallback — triggered by exception",

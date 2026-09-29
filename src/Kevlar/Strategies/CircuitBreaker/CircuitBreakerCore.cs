@@ -14,6 +14,10 @@ internal sealed class CircuitBreakerCore
     private const int BucketCount = 10;
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
+    // Lock-free open rejections publish their clock reading at most once per step, so the
+    // shared cache line is written about a thousand times a second rather than on every call.
+    private static readonly double RejectionTimelineStep = Stopwatch.Frequency / 1_000d;
+
     private readonly Lock _gate = new();
     private readonly Lock _telemetryGate = new();
     private readonly ConditionalWeakTable<TimeProvider, TimestampOrigin> _timestampOrigins = new();
@@ -42,6 +46,7 @@ internal sealed class CircuitBreakerCore
     private double _currentBucketStart = double.NaN;
     private int _currentBucketIndex;
     private int _systemRatioFastPathEnabled = 1;
+    private double _lockFreeRejectionTimestamp = double.NegativeInfinity;
 
     private volatile CircuitState _state = CircuitState.Closed;
     private double _latestTimestamp;
@@ -54,6 +59,8 @@ internal sealed class CircuitBreakerCore
     private int _slowProbes;
     private long _admissionGeneration;
     private Exception? _lastException;
+    private RejectionSnapshot? _rejection;
+    private RejectionSnapshot? _halfOpenRejection;
     private TimeProvider? _openTimeProvider;
     private long _openingGeneration;
     private bool _openingPending;
@@ -408,6 +415,21 @@ internal sealed class CircuitBreakerCore
             return true;
         }
 
+        // Rejections reserve nothing either, so they skip the gate: during an outage every caller
+        // lands here and would otherwise serialize on _gate just to be refused. _rejection is an
+        // immutable snapshot replaced under _gate whenever the answer changes (see ChangeState and
+        // UpdateHalfOpenRejection), so one reference read yields a consistent retry deadline,
+        // isolation flag, and last exception. Reading it linearizes the rejection at that instant:
+        // a concurrent Reset, Isolate, or probe completion is ordered after it, exactly as if this
+        // caller had won the gate first. Open snapshots stay valid until the deadline passes,
+        // because only a caller observing the deadline can move Open to HalfOpen; once it has
+        // passed, or the clock cannot be read without the gate, the locked path below decides.
+        var snapshot = Volatile.Read(ref _rejection);
+        if (snapshot is not null && TryRejectWithoutGate(snapshot, timeProvider, out rejection))
+        {
+            return false;
+        }
+
         lock (_gate)
         {
             switch (_state)
@@ -433,6 +455,7 @@ internal sealed class CircuitBreakerCore
 
                     transition = ChangeState(CircuitState.HalfOpen, context);
                     _probesInFlight = 1;
+                    UpdateHalfOpenRejection();
                     admissionGeneration = _admissionGeneration;
                     return true;
 
@@ -444,10 +467,94 @@ internal sealed class CircuitBreakerCore
                     }
 
                     _probesInFlight++;
+                    UpdateHalfOpenRejection();
                     admissionGeneration = _admissionGeneration;
                     return true;
             }
         }
+    }
+
+    private bool TryRejectWithoutGate(
+        RejectionSnapshot snapshot,
+        TimeProvider timeProvider,
+        out CircuitOpenException? rejection)
+    {
+        if (!snapshot.HasDeadline)
+        {
+            rejection = new CircuitOpenException(null, snapshot.IsIsolated, snapshot.LastException);
+            return true;
+        }
+
+        rejection = null;
+
+        // Only the system clock can be read without the gate: alternate providers share a
+        // normalized timeline that the gate protects (see GetCurrentTimestamp).
+        if (!ReferenceEquals(timeProvider, TimeProvider.System)
+            || Volatile.Read(ref _systemRatioFastPathEnabled) == 0)
+        {
+            return false;
+        }
+
+        var origin = Volatile.Read(ref _systemTimestampOrigin);
+        if (origin is null)
+        {
+            return false;
+        }
+
+        var elapsedTimestamp = unchecked(Stopwatch.GetTimestamp() - origin.ProviderTimestamp);
+        var timestamp = origin.TimelineTimestamp + (elapsedTimestamp * origin.TimestampScale);
+        if (timestamp >= snapshot.OpenUntilTimestamp)
+        {
+            return false;
+        }
+
+        // A locked rejection advances the shared timeline to its reading, and the first
+        // alternate provider anchors there (see GetCurrentTimestamp). Record the reading so that
+        // anchor survives, then re-check the flag: the compare-exchange is a full fence, pairing
+        // with the exchange that clears the flag, so a rejection that passes the re-check is
+        // visible to the fold, or trails a visible reading by at most one step. The record is a
+        // monotonic max: a newer reading that loses the race to an older one retries rather than
+        // leaving the record behind.
+        var recorded = Volatile.Read(ref _lockFreeRejectionTimestamp);
+        while (timestamp >= recorded + RejectionTimelineStep)
+        {
+            var observed = Interlocked.CompareExchange(ref _lockFreeRejectionTimestamp, timestamp, recorded);
+            if (observed.Equals(recorded))
+            {
+                break;
+            }
+
+            recorded = observed;
+        }
+
+        if (Volatile.Read(ref _systemRatioFastPathEnabled) == 0)
+        {
+            return false;
+        }
+
+        rejection = new CircuitOpenException(
+            GetElapsedTime(snapshot.OpenUntilTimestamp - timestamp),
+            isIsolated: false,
+            snapshot.LastException);
+        return true;
+    }
+
+    /// <summary>
+    /// Publishes the lock-free half-open rejection while every probe slot is taken or an
+    /// opening is pending, and withdraws it in the same critical section that frees a slot.
+    /// </summary>
+    private void UpdateHalfOpenRejection()
+    {
+        if (_state != CircuitState.HalfOpen)
+        {
+            return;
+        }
+
+        Volatile.Write(
+            ref _rejection,
+            _openingPending || _probesInFlight + _completedProbes >= _halfOpenProbes
+                ? _halfOpenRejection
+                : null);
     }
 
     private async ValueTask<EntryResult> AwaitEntryPublicationAsync(
@@ -768,6 +875,7 @@ internal sealed class CircuitBreakerCore
             }
 
             _openingPending = true;
+            UpdateHalfOpenRejection();
             reservation = new OpeningReservation(
                 ++_openingGeneration,
                 admissionGeneration,
@@ -838,6 +946,7 @@ internal sealed class CircuitBreakerCore
                     _failedProbes = 0;
                     _consecutiveProbeFailures = 0;
                     _slowProbes = 0;
+                    UpdateHalfOpenRejection();
                 }
             }
         }
@@ -847,6 +956,7 @@ internal sealed class CircuitBreakerCore
     {
         _openingPending = false;
         _openingGeneration++;
+        UpdateHalfOpenRejection();
     }
 
     private void ValidateGeneratedBreakDuration(TimeSpan duration) =>
@@ -873,6 +983,7 @@ internal sealed class CircuitBreakerCore
             if (_state == CircuitState.HalfOpen && _admissionGeneration == probeGeneration && _probesInFlight > 0)
             {
                 _probesInFlight--;
+                UpdateHalfOpenRejection();
             }
         }
     }
@@ -1077,16 +1188,30 @@ internal sealed class CircuitBreakerCore
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCurrentTimestamp(TimeProvider timeProvider)
     {
-        if (!ReferenceEquals(timeProvider, TimeProvider.System))
+        var leavingSystemOnlyTimeline = false;
+        if (!ReferenceEquals(timeProvider, TimeProvider.System)
+            && Volatile.Read(ref _systemRatioFastPathEnabled) != 0)
         {
             // Alternate providers share a normalized timeline protected by _gate. Once one is
             // observed, keep every provider on that path so their epochs cannot diverge.
-            Volatile.Write(ref _systemRatioFastPathEnabled, 0);
+            leavingSystemOnlyTimeline = true;
+            Interlocked.Exchange(ref _systemRatioFastPathEnabled, 0);
         }
 
         var timestamp = timeProvider.GetTimestamp();
         if (!_timestampOrigins.TryGetValue(timeProvider, out var origin))
         {
+            if (leavingSystemOnlyTimeline)
+            {
+                // Lock-free open rejections, only possible while the timeline is system-only,
+                // skip advancing it. Replay the latest reading they recorded so the first
+                // alternate provider anchors where locked rejections would have left the
+                // timeline. The replay can trail the last rejection by up to one
+                // RejectionTimelineStep, never lead it. Afterwards every open rejection takes
+                // the gate and advances the timeline itself.
+                UpdateTimeline(Volatile.Read(ref _lockFreeRejectionTimestamp));
+            }
+
             origin = new TimestampOrigin(timeProvider, timestamp, _latestTimestamp);
             _timestampOrigins.Add(timeProvider, origin);
             if (ReferenceEquals(timeProvider, TimeProvider.System))
@@ -1144,6 +1269,21 @@ internal sealed class CircuitBreakerCore
         public double TimestampScale { get; }
     }
 
+    /// <summary>
+    /// What a rejected caller reports while the circuit refuses admissions. A NaN deadline
+    /// (isolated or saturated half-open) rejects without consulting the clock.
+    /// </summary>
+    private sealed class RejectionSnapshot(double openUntilTimestamp, bool isIsolated, Exception? lastException)
+    {
+        public double OpenUntilTimestamp { get; } = openUntilTimestamp;
+
+        public bool HasDeadline => !double.IsNaN(OpenUntilTimestamp);
+
+        public bool IsIsolated { get; } = isIsolated;
+
+        public Exception? LastException { get; } = lastException;
+    }
+
     private sealed class RatioBucket
     {
         public RatioBucket(double endTimestamp)
@@ -1176,6 +1316,17 @@ internal sealed class CircuitBreakerCore
         _failedProbes = 0;
         _consecutiveProbeFailures = 0;
         _slowProbes = 0;
+        _halfOpenRejection = next == CircuitState.HalfOpen
+            ? new RejectionSnapshot(double.NaN, isIsolated: false, _lastException)
+            : null;
+        Volatile.Write(ref _rejection, next switch
+        {
+            // Every caller that opens the circuit stores its deadline and exception first, and
+            // neither changes until the circuit leaves Open or Isolated through ChangeState.
+            CircuitState.Open => new RejectionSnapshot(_openUntilTimestamp, isIsolated: false, _lastException),
+            CircuitState.Isolated => new RejectionSnapshot(double.NaN, isIsolated: true, _lastException),
+            _ => null,
+        });
         _state = next;
         if (next is CircuitState.Open or CircuitState.Isolated)
         {
