@@ -267,6 +267,22 @@ public class AllocationBudgetTests
                     static (_, properties) => _ = properties.GetOrDefault(MetadataValue))
                 .GetAwaiter()
                 .GetResult());
+        AssertZero("empty nested async context", this, static test =>
+            test._empty.ExecuteWithContextAsync(
+                    test,
+                    static (_, _) => { },
+                    static (state, parentContext) => state._empty.ExecuteWithContextAsync(
+                        parentContext,
+                        static _ => new ValueTask<int>(42)))
+                .GetAwaiter()
+                .GetResult());
+        AssertZero("empty nested sync context", this, static test =>
+            test._empty.ExecuteWithContext(
+                test,
+                static (_, _) => { },
+                static (state, parentContext) => state._empty.ExecuteWithContext(
+                    parentContext,
+                    static _ => 42)));
         AssertZero("retry sync happy path", this, static test =>
             test._retry.Execute(static _ => 42));
         AssertZero("budget retry sync happy path", this, static test =>
