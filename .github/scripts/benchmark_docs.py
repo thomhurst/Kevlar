@@ -50,6 +50,12 @@ _SECTIONS = {
         "Ratio/sampling bookkeeping while closed, and the fast-fail rejection cost while "
         "manually isolated (thrown exception included).",
     ),
+    "CircuitBreakerContentionBenchmarks": (
+        "Circuit breaker under contention",
+        3.5,
+        "Eight workers share one open circuit, so every call is a fast-fail rejection "
+        "observed as an outcome; this is the per-call cost during an outage.",
+    ),
     "HedgingBenchmarks": (
         "Hedging",
         4,
@@ -96,6 +102,7 @@ _SCENARIO_LABELS = {
     ("CircuitBreakerBenchmarks", "OpenFastFail"): "Open circuit — fast-fail rejection",
     ("CircuitBreakerBenchmarks", "RatioClosedHappyPath"): "Ratio breaker, closed — success",
     ("CircuitBreakerBenchmarks", "IsolatedFastFail"): "Isolated circuit — fast-fail rejection",
+    ("CircuitBreakerContentionBenchmarks", "ContendedOpenRejection"): "Open circuit — 8 workers rejected",
     ("HedgingBenchmarks", "PrimaryWins"): "Hedge(2) — primary wins",
     ("FallbackBenchmarks", "PassThrough"): "Fallback — not triggered",
     ("FallbackBenchmarks", "Triggered"): "Fallback — triggered by exception",

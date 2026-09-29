@@ -432,7 +432,71 @@ internal static class StressRunner
             cases.Add(CreatePerWorkerRatioCase(workers));
         }
 
+        cases.Add(CreateSharedOpenBreakerCase(workers));
         return cases;
+    }
+
+    /// <summary>
+    /// Every worker hits one breaker that stays open for the whole run, so each operation is a
+    /// rejection and throughput measures contention on the breaker's shared rejection path.
+    /// Admitted executions return 0, which fails the run if either breaker ever closes.
+    /// </summary>
+    private static StressCase CreateSharedOpenBreakerCase(int workers)
+    {
+        var kevlar = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromDays(1));
+        _ = kevlar.ExecuteOutcomeAsync<int>(static _ => throw new IOException("Injected outage."))
+            .AsTask().GetAwaiter().GetResult();
+
+        var polly = new ResiliencePipelineBuilder()
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                MinimumThroughput = 2,
+                SamplingDuration = TimeSpan.FromSeconds(30),
+                BreakDuration = TimeSpan.FromDays(1),
+            })
+            .Build();
+        for (var failure = 0; failure < 2; failure++)
+        {
+            _ = ExecutePollyOutcomeAsync(
+                    polly,
+                    static () => Polly.Outcome.FromExceptionAsValueTask<int>(new IOException("Injected outage.")))
+                .AsTask().GetAwaiter().GetResult();
+        }
+
+        return new StressCase(
+            "SharedOpenBreaker",
+            workers,
+            Repeat(workers, async () =>
+            {
+                var outcome = await kevlar.ExecuteOutcomeAsync(static _ => new ValueTask<int>(0)).ConfigureAwait(false);
+                return outcome.Exception is CircuitOpenException ? 42 : 0;
+            }),
+            Repeat(workers, async () =>
+            {
+                var outcome = await ExecutePollyOutcomeAsync(
+                    polly,
+                    static () => Polly.Outcome.FromResultAsValueTask(0)).ConfigureAwait(false);
+                return outcome.Exception is BrokenCircuitException ? 42 : 0;
+            }));
+    }
+
+    private static async ValueTask<Polly.Outcome<int>> ExecutePollyOutcomeAsync(
+        ResiliencePipeline pipeline,
+        Func<ValueTask<Polly.Outcome<int>>> callback)
+    {
+        var context = ResilienceContextPool.Shared.Get();
+        try
+        {
+            return await pipeline.ExecuteOutcomeAsync(
+                static (_, callback) => callback(),
+                context,
+                callback).ConfigureAwait(false);
+        }
+        finally
+        {
+            ResilienceContextPool.Shared.Return(context);
+        }
     }
 
     private static StressCase CreateSharedRatioCase(int workers) => new(
