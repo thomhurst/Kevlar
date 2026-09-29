@@ -4,6 +4,9 @@ namespace Kevlar.Tests;
 /// Rejections reported through <c>ExecuteOutcomeAsync</c> must never be thrown and caught
 /// inside the pipeline: that throw is the cost the outcome API exists to avoid on hot
 /// fast-fail paths. A first-chance exception probe scoped to the current async flow proves it.
+/// The probe records only <see cref="ExecutionRejectedException"/> throws, so unrelated
+/// first-chance exceptions (for example, timer or cancellation callbacks from timeout and hedging
+/// plumbing that inherit the flow) cannot make these tests flaky.
 /// </summary>
 public class OutcomeRejectionNoThrowTests
 {
@@ -144,7 +147,7 @@ public class OutcomeRejectionNoThrowTests
         await Assert.That(thrown).IsEmpty();
     }
 
-    /// <summary>Records first-chance exceptions raised within the async flow that started it.</summary>
+    /// <summary>Records first-chance rejection exceptions raised within the async flow that started it.</summary>
     private sealed class FirstChanceProbe : IDisposable
     {
         private static readonly AsyncLocal<FirstChanceProbe?> Current = new();
@@ -180,7 +183,7 @@ public class OutcomeRejectionNoThrowTests
 
         private void OnFirstChance(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs args)
         {
-            if (!ReferenceEquals(Current.Value, this))
+            if (args.Exception is not ExecutionRejectedException || !ReferenceEquals(Current.Value, this))
             {
                 return;
             }

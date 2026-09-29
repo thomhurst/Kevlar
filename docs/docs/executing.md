@@ -369,8 +369,8 @@ Almost all of the remaining allocation is the rejection exception object itself.
 
 Rejections keep their type and recovery metadata, such as `CircuitOpenException.RetryAfter`.
 Timeout, retry, and hedging layers around the rejecting strategy pass the outcome along without
-throwing, and a fallback substitutes for it the same way. Only `ExecuteAsync` converts a rejection
-into an exception, at the boundary. See
+throwing, and a fallback substitutes for it the same way. Only the throwing APIs, `ExecuteAsync` and
+`Execute`, convert a rejection into an exception, at the boundary. See
 [Benchmarks](benchmarks.md) for the CI-published comparison with Polly's `ExecuteOutcomeAsync`.
 
 When an exception does surface from `ExecuteAsync`/`Execute`, the original stack trace is preserved (`ExceptionDispatchInfo`) — it's thrown once, at the boundary.
