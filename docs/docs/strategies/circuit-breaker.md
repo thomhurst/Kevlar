@@ -147,6 +147,37 @@ Closed ──(threshold crossed)──► Open ──(BreakDuration elapses)─�
 - **HalfOpen** — after the break duration, up to `HalfOpenProbes` calls are admitted (default **one**). A healthy completed cohort closes the circuit and resets metrics; reaching a configured failure or slow-call threshold reopens it. Calls beyond the cohort limit are rejected (`RetryAfter == null`).
 - **Isolated** — manually forced open via the monitor; rejected until `Reset()`.
 
+:::tip Fast-fail without throwing
+While the circuit is open, every call is a rejection. If callers handle that rejection routinely,
+execute with `ExecuteOutcomeAsync`. It returns the `CircuitOpenException`, including
+`RetryAfter`, as a value instead of throwing it:
+
+<!-- doc-test-declaration -->
+```csharp
+private static readonly Shield _userBreaker = Shield.CircuitBreaker(
+    consecutiveFailures: 5,
+    breakDuration: TimeSpan.FromSeconds(30));
+
+static async ValueTask<User?> LoadUnlessOpenAsync(
+    CancellationToken cancellationToken)
+{
+    Outcome<User> outcome = await _userBreaker.ExecuteOutcomeAsync(
+        ct => LoadAsync(ct),
+        cancellationToken);
+    if (outcome.Exception is CircuitOpenException open)
+    {
+        Console.WriteLine($"Circuit open; retry after {open.RetryAfter}");
+        return null;
+    }
+
+    return outcome.GetResultOrRethrow();
+}
+```
+
+In a local BenchmarkDotNet run, an isolated-circuit rejection cost 3.21 μs and 1,312 B when thrown
+and caught, and 86 ns and 144 B through `ExecuteOutcomeAsync`. See [Hot rejection paths](../executing.md#hot-rejection-paths).
+:::
+
 After the break duration elapses, `CircuitBreakerMonitor.State` reports `HalfOpen` immediately,
 even before another execution arrives. Admission remains lazy: the actual `Open` → `HalfOpen`
 transition and its state-change callbacks occur when the next execution claims the probe slot.

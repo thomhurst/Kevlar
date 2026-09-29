@@ -7,7 +7,9 @@ namespace Kevlar.Benchmarks;
 
 /// <summary>
 /// Circuit breaker: the closed happy path (success bookkeeping per call) and the open
-/// fast-fail path (rejection cost while the circuit is broken, exception included).
+/// fast-fail path (rejection cost while the circuit is broken). The <c>FastFail</c> pair
+/// catches the thrown rejection; the <c>FastFailOutcome</c> pair reads it from the no-throw
+/// outcome API instead.
 /// </summary>
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
@@ -53,10 +55,10 @@ public class CircuitBreakerBenchmarks
         .AddCircuitBreaker(CreatePollyRatioBreakerOptions(PollyManualControl))
         .Build();
 
-    [GlobalSetup(Target = nameof(Kevlar_IsolatedFastFail))]
+    [GlobalSetup(Targets = [nameof(Kevlar_IsolatedFastFail), nameof(Kevlar_IsolatedFastFailOutcome)])]
     public ValueTask IsolateKevlarBreaker() => KevlarManualControl.IsolateAsync();
 
-    [GlobalSetup(Target = nameof(Polly_IsolatedFastFail))]
+    [GlobalSetup(Targets = [nameof(Polly_IsolatedFastFail), nameof(Polly_IsolatedFastFailOutcome)])]
     public Task IsolatePollyBreaker() => PollyManualControl.IsolateAsync();
 
     private static void ConfigureKevlarRatioBreaker(CircuitBreakerOptions options)
@@ -122,6 +124,31 @@ public class CircuitBreakerBenchmarks
         catch (BrokenCircuitException)
         {
             return true;
+        }
+    }
+
+    [BenchmarkCategory("IsolatedFastFail"), Benchmark]
+    public async ValueTask<bool> Kevlar_IsolatedFastFailOutcome()
+    {
+        var outcome = await KevlarOpenBreaker.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+        return outcome.Exception is CircuitOpenException;
+    }
+
+    [BenchmarkCategory("IsolatedFastFail"), Benchmark]
+    public async ValueTask<bool> Polly_IsolatedFastFailOutcome()
+    {
+        var context = ResilienceContextPool.Shared.Get();
+        try
+        {
+            var outcome = await PollyOpenBreaker.ExecuteOutcomeAsync(
+                static (_, _) => Polly.Outcome.FromResultAsValueTask(42),
+                context,
+                state: 0);
+            return outcome.Exception is BrokenCircuitException;
+        }
+        finally
+        {
+            ResilienceContextPool.Shared.Return(context);
         }
     }
 }

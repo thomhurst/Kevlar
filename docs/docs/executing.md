@@ -327,4 +327,50 @@ so mutable state used by a hedged action must be thread-safe.
 
 This is also how failures travel *between* strategies internally — as `Outcome<T>` structs, not thrown exceptions — which is a big part of why the pipeline is cheap. `ExecuteOutcomeAsync` just hands you the same struct instead of unwrapping it.
 
+### Hot rejection paths
+
+An open circuit, an exhausted rate limit, or a full concurrency limit rejects work precisely when a
+service is under the most pressure. `ExecuteAsync` has to throw that rejection at the boundary, and
+the throw and catch cost far more than the rejection itself. `ExecuteOutcomeAsync` returns the same
+`ExecutionRejectedException` as a value, so shedding load costs no throw at all:
+
+<!-- doc-test-declaration -->
+```csharp
+static async ValueTask<User> LoadOrShedAsync(
+    Shield shield,
+    StubClient client,
+    int id,
+    StubCache cache)
+{
+    Outcome<User> outcome = await shield.ExecuteOutcomeAsync(
+        (client, id),
+        static (s, ct) => s.client.GetUserAsync(s.id, ct));
+
+    if (outcome.Exception is ExecutionRejectedException)
+    {
+        // Circuit open or limit reached: degrade without paying for a throw.
+        return cache.GetUser();
+    }
+
+    return outcome.GetResultOrRethrow();
+}
+```
+
+Measured on the rejection path alone (BenchmarkDotNet, .NET 10, Intel Core i7-12700K; mean per
+call, lower is better):
+
+| Rejection | `ExecuteAsync` + `catch` | `ExecuteOutcomeAsync` |
+|---|---|---|
+| Isolated circuit breaker | 3.21 μs, 1,312 B | 86 ns, 144 B |
+| Exhausted rate limit | 3.35 μs, 1,304 B | 94 ns, 136 B |
+| Full concurrency limit | 3.21 μs, 1,304 B | 77 ns, 136 B |
+
+Almost all of the remaining allocation is the rejection exception object itself.
+
+Rejections keep their type and recovery metadata, such as `CircuitOpenException.RetryAfter`.
+Timeout, retry, and hedging layers around the rejecting strategy pass the outcome along without
+throwing, and a fallback substitutes for it the same way. Only `ExecuteAsync` converts a rejection
+into an exception, at the boundary. See
+[Benchmarks](benchmarks.md) for the CI-published comparison with Polly's `ExecuteOutcomeAsync`.
+
 When an exception does surface from `ExecuteAsync`/`Execute`, the original stack trace is preserved (`ExceptionDispatchInfo`) — it's thrown once, at the boundary.
