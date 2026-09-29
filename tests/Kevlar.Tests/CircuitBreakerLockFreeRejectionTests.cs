@@ -279,26 +279,44 @@ public class CircuitBreakerLockFreeRejectionTests
     }
 
     [Test]
-    public async Task Provider_First_Observed_After_Lock_Free_Rejections_Anchors_At_The_Current_Time()
+    public async Task Provider_First_Observed_After_Lock_Free_Rejections_Anchors_At_The_Last_Rejection()
     {
-        // The opening sample anchors the shared timeline at T0. Lock-free rejections do not
-        // record their clock reads, so a provider first observed later must still anchor at
-        // the current time, as it did when every rejection advanced the timeline under the gate.
+        // Every locked rejection used to advance the shared timeline, so a provider first observed
+        // later anchored at the last rejection's reading: not at the opening sample, and not at
+        // the time of the switch. Lock-free rejections must leave the same anchor behind.
         var breakDuration = TimeSpan.FromSeconds(5);
         var shield = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: breakDuration);
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         await Task.Delay(TimeSpan.FromSeconds(1));
-        await RejectAsync(shield);
+        var lastRejection = await RejectAsync(shield);
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
 
         var fakeTime = new FakeTimeProvider();
         var fakeCopy = shield.WithTimeProvider(fakeTime);
-        await fakeCopy.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
-        // Anchored at T0 this would still be 900 ms short of the deadline.
-        fakeTime.Advance(TimeSpan.FromSeconds(4.1));
+        var anchored = await RejectAsync(fakeCopy);
 
+        var drift = (anchored.RetryAfter!.Value - lastRejection.RetryAfter!.Value).Duration();
+        await Assert.That(drift).IsLessThan(TimeSpan.FromMilliseconds(5));
+
+        fakeTime.Advance(anchored.RetryAfter.Value + TimeSpan.FromMilliseconds(1));
         var result = await fakeCopy.ExecuteAsync(_ => new ValueTask<int>(42));
 
         await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Provider_First_Observed_Without_An_Intervening_Rejection_Anchors_At_The_Opening_Sample()
+    {
+        // No rejection ran between opening on the system clock and the switch, so there is no
+        // skipped reading to recover: the new provider anchors where the circuit opened.
+        var breakDuration = TimeSpan.FromMilliseconds(200);
+        var shield = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: breakDuration);
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await Task.Delay(TimeSpan.FromMilliseconds(400));
+
+        var rejection = await RejectAsync(shield.WithTimeProvider(new FakeTimeProvider()));
+
+        await Assert.That(rejection.RetryAfter!.Value > TimeSpan.FromMilliseconds(190)).IsTrue();
     }
 
     [Test]

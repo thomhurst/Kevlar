@@ -14,6 +14,10 @@ internal sealed class CircuitBreakerCore
     private const int BucketCount = 10;
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
+    // Lock-free open rejections publish their clock reading at most once per step, so the
+    // shared cache line is written about a thousand times a second rather than on every call.
+    private static readonly double RejectionTimelineStep = Stopwatch.Frequency / 1_000d;
+
     private readonly Lock _gate = new();
     private readonly Lock _telemetryGate = new();
     private readonly ConditionalWeakTable<TimeProvider, TimestampOrigin> _timestampOrigins = new();
@@ -42,6 +46,7 @@ internal sealed class CircuitBreakerCore
     private double _currentBucketStart = double.NaN;
     private int _currentBucketIndex;
     private int _systemRatioFastPathEnabled = 1;
+    private double _lockFreeRejectionTimestamp = double.NegativeInfinity;
 
     private volatile CircuitState _state = CircuitState.Closed;
     private double _latestTimestamp;
@@ -498,8 +503,23 @@ internal sealed class CircuitBreakerCore
 
         var elapsedTimestamp = unchecked(Stopwatch.GetTimestamp() - origin.ProviderTimestamp);
         var timestamp = origin.TimelineTimestamp + (elapsedTimestamp * origin.TimestampScale);
-        if (timestamp >= snapshot.OpenUntilTimestamp
-            || Volatile.Read(ref _systemRatioFastPathEnabled) == 0)
+        if (timestamp >= snapshot.OpenUntilTimestamp)
+        {
+            return false;
+        }
+
+        // A locked rejection advances the shared timeline to its reading, and the first
+        // alternate provider anchors there (see GetCurrentTimestamp). Record the reading so that
+        // anchor survives, then re-check the flag: the compare-exchange is a full fence, pairing
+        // with the exchange that clears the flag, so a rejection that passes the re-check is
+        // visible to the fold, or trails a visible reading by at most one step.
+        var recorded = Volatile.Read(ref _lockFreeRejectionTimestamp);
+        if (timestamp >= recorded + RejectionTimelineStep)
+        {
+            Interlocked.CompareExchange(ref _lockFreeRejectionTimestamp, timestamp, recorded);
+        }
+
+        if (Volatile.Read(ref _systemRatioFastPathEnabled) == 0)
         {
             return false;
         }
@@ -1167,25 +1187,21 @@ internal sealed class CircuitBreakerCore
             // Alternate providers share a normalized timeline protected by _gate. Once one is
             // observed, keep every provider on that path so their epochs cannot diverge.
             leavingSystemOnlyTimeline = true;
-            Volatile.Write(ref _systemRatioFastPathEnabled, 0);
+            Interlocked.Exchange(ref _systemRatioFastPathEnabled, 0);
         }
 
         var timestamp = timeProvider.GetTimestamp();
         if (!_timestampOrigins.TryGetValue(timeProvider, out var origin))
         {
-            if (leavingSystemOnlyTimeline
-                && _rejection is { HasDeadline: true }
-                && _systemTimestampOrigin is { } systemOrigin)
+            if (leavingSystemOnlyTimeline)
             {
-                // Lock-free open rejections read the system clock without advancing the shared
-                // timeline, and they are only possible while the timeline is system-only, so the
-                // current open episode was opened on the system clock. Fold in the reading they
-                // would have recorded so the first alternate provider anchors at the current
-                // time rather than at the last locked sample. After that, every open rejection
-                // takes the gate and records its own reading, so there is nothing to fold.
-                UpdateTimeline(systemOrigin.TimelineTimestamp
-                    + (unchecked(Stopwatch.GetTimestamp() - systemOrigin.ProviderTimestamp)
-                        * systemOrigin.TimestampScale));
+                // Lock-free open rejections, only possible while the timeline is system-only,
+                // skip advancing it. Replay the latest reading they recorded so the first
+                // alternate provider anchors where locked rejections would have left the
+                // timeline. The replay can trail the last rejection by up to one
+                // RejectionTimelineStep, never lead it. Afterwards every open rejection takes
+                // the gate and advances the timeline itself.
+                UpdateTimeline(Volatile.Read(ref _lockFreeRejectionTimestamp));
             }
 
             origin = new TimestampOrigin(timeProvider, timestamp, _latestTimestamp);
