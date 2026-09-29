@@ -210,6 +210,82 @@ public class TimeoutPoolTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Fired_Timeout_Does_Not_Leak_Cancellation_Into_Next_Call_On_Same_Thread(bool observeToken)
+    {
+        // Runs synchronously on one dedicated thread so each call reuses that thread's cached source.
+        var timeout = Shield.Timeout(TimeSpan.FromMilliseconds(20));
+        var errors = new List<string>();
+        var worker = Task.Factory.StartNew(() =>
+        {
+            for (var iteration = 0; iteration < 5; iteration++)
+            {
+                var firedOutcome = timeout.ExecuteOutcome<int>(token =>
+                {
+                    using var fired = new ManualResetEventSlim();
+                    using var registration = token.Register(fired.Set);
+                    if (!fired.Wait(TestHelpers.DefaultTimeout))
+                    {
+                        throw new InvalidOperationException("The timeout did not fire.");
+                    }
+                    if (observeToken)
+                    {
+                        token.ThrowIfCancellationRequested();
+                    }
+                    return 1;
+                });
+                if (observeToken ? firedOutcome.Exception is not TimeoutExceededException : !firedOutcome.IsSuccess)
+                {
+                    errors.Add($"Unexpected first outcome: {firedOutcome.Exception}");
+                }
+
+                var nextToken = CancellationToken.None;
+                var next = timeout.ExecuteOutcome<int>(token =>
+                {
+                    nextToken = token;
+                    token.ThrowIfCancellationRequested();
+                    return 42;
+                });
+                if (!next.IsSuccess || next.Result != 42 || nextToken.IsCancellationRequested)
+                {
+                    errors.Add($"Cancellation leaked into the next call: {next.Exception}");
+                }
+            }
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+        await worker.WaitAsync(TimeSpan.FromSeconds(30));
+        await Assert.That(errors).IsEmpty();
+    }
+
+    [Test]
+    public async Task Reused_Source_Fires_At_Shorter_Deadline_After_Longer_Rental_On_Same_Thread()
+    {
+        var worker = Task.Factory.StartNew(() =>
+        {
+            var longRental = TimeoutSourcePool.RentLinked(CancellationToken.None);
+            TimeoutSourcePool.Arm(longRental, TimeSpan.FromMinutes(5));
+            TimeoutSourcePool.Return(longRental);
+
+            var shortRental = TimeoutSourcePool.RentLinked(CancellationToken.None);
+            var reused = ReferenceEquals(longRental, shortRental);
+            TimeoutSourcePool.Arm(shortRental, TimeSpan.FromMilliseconds(30));
+            var fired = shortRental.Token.WaitHandle.WaitOne(TestHelpers.DefaultTimeout);
+            TimeoutSourcePool.Return(shortRental);
+
+            var fresh = TimeoutSourcePool.RentLinked(CancellationToken.None);
+            var freshCancelled = fresh.IsCancellationRequested;
+            TimeoutSourcePool.Return(fresh);
+            return (reused, fired, freshCancelled);
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+        var (reused, fired, freshCancelled) = await worker.WaitAsync(TimeSpan.FromSeconds(30));
+        await Assert.That(reused).IsTrue();
+        await Assert.That(fired).IsTrue();
+        await Assert.That(freshCancelled).IsFalse();
+    }
+
+    [Test]
     public async Task Timer_Does_Not_Flow_A_Creating_Callers_ExecutionContext()
     {
         var local = new AsyncLocal<string?>();
