@@ -301,6 +301,33 @@ public class CircuitBreakerLockFreeRejectionTests
         await Assert.That(result).IsEqualTo(42);
     }
 
+    [Test]
+    public async Task Provider_First_Observed_While_A_Custom_Provider_Holds_The_Circuit_Open_Ignores_The_System_Clock()
+    {
+        // Once a custom provider is observed, open rejections always take the gate, so no system
+        // reading can be missing from the timeline. A later provider must anchor at the last
+        // recorded sample even if the system clock has run past the break deadline meanwhile.
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMilliseconds(200);
+            options.Monitor = monitor;
+        });
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await monitor.ResetAsync();
+
+        var frozenTime = new FakeTimeProvider();
+        await shield.WithTimeProvider(frozenTime)
+            .ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+        await Task.Delay(TimeSpan.FromMilliseconds(400));
+
+        var rejection = await RejectAsync(shield.WithTimeProvider(new FakeTimeProvider()));
+
+        await Assert.That(rejection.RetryAfter!.Value > TimeSpan.FromMilliseconds(190)).IsTrue();
+    }
+
     private static async Task<CircuitOpenException> RejectAsync(Shield shield)
     {
         var outcome = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));

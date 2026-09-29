@@ -1160,23 +1160,29 @@ internal sealed class CircuitBreakerCore
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCurrentTimestamp(TimeProvider timeProvider)
     {
-        if (!ReferenceEquals(timeProvider, TimeProvider.System))
+        var leavingSystemOnlyTimeline = false;
+        if (!ReferenceEquals(timeProvider, TimeProvider.System)
+            && Volatile.Read(ref _systemRatioFastPathEnabled) != 0)
         {
             // Alternate providers share a normalized timeline protected by _gate. Once one is
             // observed, keep every provider on that path so their epochs cannot diverge.
+            leavingSystemOnlyTimeline = true;
             Volatile.Write(ref _systemRatioFastPathEnabled, 0);
         }
 
         var timestamp = timeProvider.GetTimestamp();
         if (!_timestampOrigins.TryGetValue(timeProvider, out var origin))
         {
-            if (_rejection is { HasDeadline: true }
-                && _systemTimestampOrigin is { } systemOrigin
-                && !ReferenceEquals(timeProvider, TimeProvider.System))
+            if (leavingSystemOnlyTimeline
+                && _rejection is { HasDeadline: true }
+                && _systemTimestampOrigin is { } systemOrigin)
             {
                 // Lock-free open rejections read the system clock without advancing the shared
-                // timeline. Fold in the reading they would have recorded so a newly observed
-                // provider anchors at the current time rather than at the last locked sample.
+                // timeline, and they are only possible while the timeline is system-only, so the
+                // current open episode was opened on the system clock. Fold in the reading they
+                // would have recorded so the first alternate provider anchors at the current
+                // time rather than at the last locked sample. After that, every open rejection
+                // takes the gate and records its own reading, so there is nothing to fold.
                 UpdateTimeline(systemOrigin.TimelineTimestamp
                     + (unchecked(Stopwatch.GetTimestamp() - systemOrigin.ProviderTimestamp)
                         * systemOrigin.TimestampScale));
