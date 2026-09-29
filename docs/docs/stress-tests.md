@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-09-29 00:55 UTC (commit `fa356b6`).*
+*Last updated 2026-09-29 16:58 UTC (commit `76ea9e0`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,23 +19,23 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.27M ops/s | 100% | 9.12 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 1.35M ops/s | 100% | 6.80 GiB | 48.00 B | 125.14 ms | 434 / 8 / 0 | 1 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.34M ops/s | 398% | 12.95 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 12 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 2.71M ops/s | 397% | 13.62 GiB | 48.00 B | 348.75 ms | 875 / 8 / 0 | 4.58K |
-| Shared timeout → retry | 4 | Kevlar | 7.76M ops/s | 399% | 12.05 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Shared timeout → retry | 4 | Polly | 3.77M ops/s | 398% | 9.48 GiB | 24.00 B | 219.26 ms | 608 / 8 / 0 | 1.89K |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.50M ops/s | 399% | 17.67 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.77M ops/s | 398% | 13.94 GiB | 48.00 B | 337.59 ms | 895 / 8 / 0 | 1.24K |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.04M ops/s | 100% | 8.51 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.39M ops/s | 100% | 7.01 GiB | 48.00 B | 144.48 ms | 449 / 8 / 0 | 0 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 4.83M ops/s | 398% | 12.72 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 14 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.69M ops/s | 397% | 13.53 GiB | 48.00 B | 377.96 ms | 869 / 8 / 0 | 3.97K |
+| Shared timeout → retry | 4 | Kevlar | 6.88M ops/s | 399% | 11.16 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2 |
+| Shared timeout → retry | 4 | Polly | 3.90M ops/s | 398% | 9.80 GiB | 24.00 B | 249.82 ms | 628 / 8 / 0 | 468 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 5.13M ops/s | 399% | 17.48 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 5 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.71M ops/s | 398% | 13.65 GiB | 48.00 B | 369.15 ms | 877 / 8 / 0 | 359 |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.68×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.97×** |
-| Shared timeout → retry | 4 | **2.06×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **1.98×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.46×** |
+| Shared timeout → retry → ratio breaker | 4 | **1.79×** |
+| Shared timeout → retry | 4 | **1.77×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **1.89×** |
 
 ## Method
 
@@ -44,7 +44,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Shared and per-worker ratio-breaker scenarios run Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 81.95 MiB.
+- Peak working set for the shared process: 81.88 MiB.
 
 ## Environment
 
