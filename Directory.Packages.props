@@ -20,7 +20,7 @@
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
     <PackageVersion Include="Reservoir" Version="[1.9.1,2.0.0)" />
-    <PackageVersion Include="Polyfill" Version="11.4.1" />
+    <PackageVersion Include="Polyfill" Version="11.4.2" />
 
     <!-- Satellites -->
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.31" />
