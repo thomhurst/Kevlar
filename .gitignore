@@ -23,6 +23,10 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# Local SDK installs and agent scratch space
+/.dotnet/
+/.tmp/
+
 # .NET Core
 project.lock.json
 project.fragment.lock.json
