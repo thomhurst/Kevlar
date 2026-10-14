@@ -37,8 +37,8 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.11.0" />
     <PackageVersion Include="System.Threading.RateLimiting" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.10.0" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.84.0" />
@@ -61,7 +61,7 @@
     <PackageVersion Include="Grpc.Net.Client" Version="2.84.0" />
     <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="10.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="10.11.0" />
 
     <!-- Benchmarks -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
