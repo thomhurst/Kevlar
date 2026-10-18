@@ -69,6 +69,20 @@ try {
     Assert ((& git -C $repo rev-parse "refs/heads/retained-worktrees/$head") -eq $head) 'Detached commit was lost.'
 
     if ($IsWindows) {
+        # Git follows a junction while deleting a worktree; release must delete the link only.
+        $linkTarget = Join-Path $testRoot 'shared-store/pkg'
+        New-Item -ItemType Directory $linkTarget -Force | Out-Null
+        Set-Content (Join-Path $linkTarget 'keep.txt') 'outside the worktree'
+        $path = New-Checkout junction
+        New-Item -ItemType Directory (Join-Path $path 'bin') | Out-Null
+        New-Item -ItemType Junction -Path (Join-Path $path 'bin/pkg') -Target $linkTarget | Out-Null
+        $key = Claim junction $path
+        Lock release -LockName $key
+        Assert (-not (Test-Path $path)) 'Checkout with a junction survived release.'
+        Assert (Test-Path (Join-Path $linkTarget 'keep.txt')) 'Release deleted the contents of a junction target.'
+    }
+
+    if ($IsWindows) {
         # A parent shell started inside the worktree blocks deletion of that directory.
         # Release must leave a pending removal that the sweep finishes after it exits.
         . (Join-Path $PSScriptRoot 'WorktreeCleanup.ps1')

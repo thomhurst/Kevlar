@@ -47,6 +47,21 @@ try {
     Remove-MergedWorktree -Repo $repo -Worktree $artifactWorktree -Label 'artifact fixture'
     Assert-True (-not (Test-Path -LiteralPath $artifactWorktree)) 'Artifact-only worktree was not removed.'
 
+    if ($IsWindows) {
+        # Git follows a junction while deleting a worktree; removal must delete the link only.
+        $linkWorktree = Join-Path $testRoot 'issue-127-junction'
+        $linkTarget = Join-Path $testRoot 'shared-store/pkg'
+        New-Item -ItemType Directory -Path $linkTarget | Out-Null
+        $keep = Join-Path $linkTarget 'keep.txt'
+        Set-Content -LiteralPath $keep -Value 'outside the worktree'
+        git -C $repo worktree add --quiet -b issue-127-junction $linkWorktree
+        New-Item -ItemType Directory -Path (Join-Path $linkWorktree 'node_modules') | Out-Null
+        New-Item -ItemType Junction -Path (Join-Path $linkWorktree 'node_modules/pkg') -Target $linkTarget | Out-Null
+        Remove-MergedWorktree -Repo $repo -Worktree $linkWorktree -Label 'junction fixture'
+        Assert-True (-not (Test-Path -LiteralPath $linkWorktree)) 'Worktree with a junction was not removed.'
+        Assert-True (Test-Path -LiteralPath $keep) 'Worktree removal deleted the contents of a junction target.'
+    }
+
     $logWorktree = Join-Path $testRoot 'issue-125-logs'
     git -C $repo worktree add --quiet -b issue-125-logs $logWorktree
     $logPath = Join-Path $logWorktree 'test-run.log'
