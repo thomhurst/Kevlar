@@ -67,6 +67,11 @@ const config: Config = {
           target: '_self',
         },
         {
+          href: 'https://tomlonghurst.dev/',
+          label: 'More libraries',
+          position: 'right',
+        },
+        {
           href: 'https://www.nuget.org/packages/Kevlar',
           label: 'NuGet',
           position: 'right',
@@ -101,6 +106,17 @@ const config: Config = {
           items: [
             { label: 'GitHub', href: 'https://github.com/thomhurst/Kevlar' },
             { label: 'NuGet', href: 'https://www.nuget.org/packages/Kevlar' },
+          ],
+        },
+        {
+          title: 'More libraries',
+          items: [
+            { label: 'TUnit', href: 'https://tunit.dev/' },
+            { label: 'ModularPipelines', href: 'https://modularpipelines.tomlonghurst.dev/' },
+            { label: 'Respire', href: 'https://respire.tomlonghurst.dev/' },
+            { label: 'Dekaf', href: 'https://dekaf.tomlonghurst.dev/' },
+            { label: 'BDTest', href: 'https://bdtest.tomlonghurst.dev/' },
+            { label: 'All projects', href: 'https://tomlonghurst.dev/' },
           ],
         },
       ],
