@@ -21,6 +21,11 @@
     <PackageReference Include="Microsoft.Extensions.Http" VersionOverride="$(TestExtensionsHttpVersion)" />
   </ItemGroup>
 
+  <!-- Microsoft.Data.SqlClient (via EF Core SqlServer 10) floors Pkcs at a version with known advisories. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\ActivityTestConfiguration.cs" Link="ActivityTestConfiguration.cs" />
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
