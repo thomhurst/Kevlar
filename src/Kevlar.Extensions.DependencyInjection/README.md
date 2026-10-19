@@ -17,5 +17,5 @@ services.AddShield(
     Shield.Timeout(TimeSpan.FromSeconds(10)).Retry(3));
 ```
 
-See the [dependency-injection guide](https://thomhurst.github.io/Kevlar/docs/dependency-injection)
+See the [dependency-injection guide](https://kevlar.tomlonghurst.dev/docs/dependency-injection)
 for factories, configuration reload, partitioning, and registry behavior.

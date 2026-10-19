@@ -17,5 +17,5 @@ var shield = GrpcShield.WhenTransient()
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
-See the [gRPC integration guide](https://thomhurst.github.io/Kevlar/docs/grpc) for interceptor
+See the [gRPC integration guide](https://kevlar.tomlonghurst.dev/docs/grpc) for interceptor
 registration, streaming progress boundaries, deadlines, and replay safety.

@@ -25,5 +25,5 @@ callback can finish after disposal. Async retries and hedges use normal executio
 If transport spans finish before a retry callback, that callback enriches the enclosing application
 activity. Keep an application activity open across the full protected operation.
 
-See the [observability guide](https://thomhurst.github.io/Kevlar/docs/observability)
+See the [observability guide](https://kevlar.tomlonghurst.dev/docs/observability)
 for a runnable example, the event schema, and integration limits.

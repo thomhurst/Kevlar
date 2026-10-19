@@ -75,7 +75,7 @@ public class AnalyzerMetadataTests
     [Test]
     public async Task Analyzer_Help_Links_Target_Published_Documentation_Anchors()
     {
-        const string helpBase = "https://thomhurst.github.io/Kevlar/docs/analyzers#";
+        const string helpBase = "https://kevlar.tomlonghurst.dev/docs/analyzers#";
         var analyzerDocsPath = Path.Combine(FindRepositoryRoot(), "docs", "docs", "analyzers.md");
         var anchorsByRuleId = File.ReadLines(analyzerDocsPath)
             .Where(static line => line.StartsWith("## KEV", StringComparison.Ordinal))

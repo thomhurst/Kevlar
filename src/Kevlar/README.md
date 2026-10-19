@@ -38,5 +38,5 @@ Expect MSBuild to generate binding redirects for the transitive compatibility de
 `System.Runtime.CompilerServices.Unsafe` 6.1.2, `System.Threading.Tasks.Extensions` 4.6.3, and
 `System.ValueTuple` 4.5.0.
 
-Start with the [Kevlar getting-started guide](https://thomhurst.github.io/Kevlar/docs/getting-started)
-or browse the [API reference](https://thomhurst.github.io/Kevlar/api/index.html).
+Start with the [Kevlar getting-started guide](https://kevlar.tomlonghurst.dev/docs/getting-started)
+or browse the [API reference](https://kevlar.tomlonghurst.dev/api/index.html).

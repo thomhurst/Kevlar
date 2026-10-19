@@ -21,4 +21,4 @@ Set `IncludeRegistry = false` for monitor-only checks or custom registry impleme
 
 Report data includes every inspected breaker state and retained-partition counts without partition keys.
 Inspection builds selected lazy registry entries but never executes protected operations or creates partitions.
-See the [health check guide](https://thomhurst.github.io/Kevlar/docs/health-checks) for selection, report data, and readiness guidance.
+See the [health check guide](https://kevlar.tomlonghurst.dev/docs/health-checks) for selection, report data, and readiness guidance.

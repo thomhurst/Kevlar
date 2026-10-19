@@ -7,8 +7,8 @@ const config: Config = {
   tagline: 'Fast resilience for .NET',
   favicon: 'img/logo.svg',
 
-  url: 'https://thomhurst.github.io',
-  baseUrl: '/Kevlar/',
+  url: 'https://kevlar.tomlonghurst.dev',
+  baseUrl: '/',
 
   organizationName: 'thomhurst',
   projectName: 'Kevlar',

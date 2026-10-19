@@ -17,5 +17,5 @@ var shield = Shield.Retry(3)
     .WithLogging(NullLogger.Instance);
 ```
 
-See the [structured logging guide](https://thomhurst.github.io/Kevlar/docs/logging) for event IDs,
+See the [structured logging guide](https://kevlar.tomlonghurst.dev/docs/logging) for event IDs,
 severity mapping, scopes, throttling, and result formatting.

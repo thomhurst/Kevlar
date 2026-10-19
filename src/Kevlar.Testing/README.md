@@ -30,5 +30,5 @@ This optional inspection API remains in `Kevlar.Testing`; it is suitable for on-
 diagnostics as well as tests. It does not instrument execution or add dependencies to `Kevlar`.
 Explanation and text formatting allocate, so keep them outside request hot paths.
 
-See the [testing guide](https://thomhurst.github.io/Kevlar/docs/testing) for descriptors,
+See the [testing guide](https://kevlar.tomlonghurst.dev/docs/testing) for descriptors,
 assertions, state snapshots, execution probes, fake time, and `TelemetryRecorder`.

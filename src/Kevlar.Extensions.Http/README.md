@@ -15,5 +15,5 @@ services.AddHttpClient("catalog")
     .AddStandardShield();
 ```
 
-See the [HTTP integration guide](https://thomhurst.github.io/Kevlar/docs/http) for pipeline
+See the [HTTP integration guide](https://kevlar.tomlonghurst.dev/docs/http) for pipeline
 defaults, request replay safety, hedging, routing, and configuration reload.

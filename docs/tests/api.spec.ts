@@ -6,7 +6,7 @@ test('API navigation and a representative type page load', async ({ page }) => {
   const apiLink = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /^API/ });
   await expect(apiLink).toBeVisible();
   const apiHref = await apiLink.getAttribute('href');
-  expect(apiHref).toBe('/Kevlar/api/index.html');
+  expect(apiHref).toBe('/api/index.html');
   await page.goto('http://127.0.0.1:3001/index.html');
   await expect(page).toHaveURL(/:3001\/index\.html$/);
 

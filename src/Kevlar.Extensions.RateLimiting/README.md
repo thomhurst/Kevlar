@@ -23,5 +23,5 @@ using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
 var shield = Shield.Empty.UseRateLimiter(limiter);
 ```
 
-See the [rate-limiting guide](https://thomhurst.github.io/Kevlar/docs/strategies/rate-limit) for
+See the [rate-limiting guide](https://kevlar.tomlonghurst.dev/docs/strategies/rate-limit) for
 ownership, rejection metadata, partitioning, and custom lease acquisition.

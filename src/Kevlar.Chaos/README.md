@@ -19,5 +19,5 @@ var latency = ChaosShield.Latency(options =>
 });
 ```
 
-See the [chaos engineering guide](https://thomhurst.github.io/Kevlar/docs/chaos) for deterministic
+See the [chaos engineering guide](https://kevlar.tomlonghurst.dev/docs/chaos) for deterministic
 runs, operation scopes, safety controls, and telemetry.
