@@ -171,6 +171,22 @@ try {
             "Repository-generated path was not treated as disposable: $generatedPath"
     }
 
+    # `git worktree add` copies the source's config.worktree; only the worktree whose
+    # path a lock marker records may use it.
+    git -C $repo config --local extensions.worktreeConfig true
+    $markedWorktree = Join-Path $testRoot 'marked'
+    $inheritedWorktree = Join-Path $testRoot 'inherited'
+    git -C $repo worktree add --quiet -b marked $markedWorktree
+    git -C $markedWorktree config --worktree agent.lockName 'pr-7'
+    git -C $markedWorktree config --worktree agent.lockWorktree (ConvertTo-LockMarkerPath $markedWorktree)
+    git -C $markedWorktree worktree add --quiet -b inherited $inheritedWorktree
+    Assert-True ((git -C $inheritedWorktree config --worktree --get agent.lockName) -ceq 'pr-7') 'Fixture did not reproduce lock marker inheritance.'
+    Assert-True ((Get-OwnedWorktreeLockMarker -Worktree $markedWorktree) -ceq 'pr-7') 'Lock marker was not trusted in its own worktree.'
+    Assert-True ($null -eq (Get-OwnedWorktreeLockMarker -Worktree $inheritedWorktree)) 'Inherited lock marker was trusted.'
+    Assert-True (@(Get-WorktreeAgentLockNames -Worktree $inheritedWorktree -Branch 'inherited').Count -eq 0) 'Inherited lock marker named a cleanup lock.'
+    git -C $markedWorktree config --worktree --unset agent.lockWorktree
+    Assert-True ($null -eq (Get-OwnedWorktreeLockMarker -Worktree $markedWorktree)) 'Lock marker without a recorded worktree path was trusted.'
+
     Write-Host 'OK worktree cleanup safety tests passed.'
 }
 finally {

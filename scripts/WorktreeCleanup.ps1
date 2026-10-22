@@ -262,6 +262,78 @@ function Remove-WorktreeDirectory {
     return -not (Test-Path -LiteralPath $Worktree)
 }
 
+# AGENT EVIDENCE
+# Agents keep logs, reports and PR-body drafts for a work item under
+# <main checkout>-evidence/<lock name>/, beside the worktree root, so nothing lands
+# loose in the parent directory. Evidence matters only while its item is active.
+function Get-AgentEvidenceRoot {
+    param([Parameter(Mandatory)][string]$MainCheckout)
+
+    return "$(($MainCheckout -replace '\\', '/').TrimEnd('/'))-evidence"
+}
+
+# Removes each top-level entry of the evidence root whose newest write is older than
+# the retention window. Returns the number of entries removed (or that would be).
+function Remove-StaleAgentEvidence {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][int]$RetentionDays,
+        [switch]$WhatIf
+    )
+
+    if (-not (Test-Path -LiteralPath $Root -PathType Container)) { return 0 }
+    $cutoff = [DateTime]::UtcNow.AddDays(-$RetentionDays)
+    $removed = 0
+    foreach ($entry in (Get-ChildItem -LiteralPath $Root -Force -ErrorAction SilentlyContinue)) {
+        if (($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            Write-Host "sweep: skipping evidence entry that is a link: $($entry.FullName)"
+            continue
+        }
+        $items = @($entry)
+        if ($entry.PSIsContainer) {
+            $items += @(Get-ChildItem -LiteralPath $entry.FullName -Recurse -Force -ErrorAction SilentlyContinue)
+        }
+        $newest = ($items | Measure-Object -Property LastWriteTimeUtc -Maximum).Maximum
+        if ($newest -ge $cutoff) { continue }
+        if ($WhatIf) {
+            Write-Host "sweep: WOULD remove stale evidence $($entry.FullName)"
+            $removed++
+            continue
+        }
+        if ($entry.PSIsContainer -and -not (Remove-WorktreeDirectoryLinks -Worktree $entry.FullName -Label '(evidence)')) { continue }
+        Remove-Item -LiteralPath $entry.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path -LiteralPath $entry.FullName) {
+            Write-Host "sweep: WARNING could not remove stale evidence $($entry.FullName)"
+            continue
+        }
+        Write-Host "sweep: removed stale evidence $($entry.FullName)"
+        $removed++
+    }
+    return $removed
+}
+
+# LOCK MARKERS
+# AgentLocks.ps1 records a worktree's lock name in its config.worktree as
+# agent.lockName, plus agent.lockWorktree = that worktree's path. `git worktree add`
+# copies the source checkout's config.worktree into the new worktree, so a marker
+# counts only in the worktree whose path it records.
+function ConvertTo-LockMarkerPath([string]$Path) {
+    return [IO.Path]::GetFullPath($Path.Trim()).TrimEnd('\', '/')
+}
+
+function Get-OwnedWorktreeLockMarker {
+    param([Parameter(Mandatory)][string]$Worktree)
+
+    $marker = git -C $Worktree config --worktree --get agent.lockName 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $marker) { return $null }
+    $owner = git -C $Worktree config --worktree --get agent.lockWorktree 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $owner) { return $null }
+    $top = git -C $Worktree rev-parse --show-toplevel 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $top) { return $null }
+    if ((ConvertTo-LockMarkerPath $owner) -ne (ConvertTo-LockMarkerPath $top)) { return $null }
+    return $marker.Trim()
+}
+
 # PENDING REMOVALS
 # On Windows a directory cannot be deleted while any process has its current directory
 # inside it, and build or test processes can hold files open briefly. Git then deletes
@@ -283,8 +355,8 @@ function Get-WorktreeAgentLockNames {
     param([Parameter(Mandatory)][string]$Worktree, [string]$Branch = '')
 
     $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    $marker = git -C $Worktree config --worktree --get agent.lockName 2>$null
-    if ($LASTEXITCODE -eq 0 -and $marker) { [void]$names.Add($marker.Trim()) }
+    $marker = Get-OwnedWorktreeLockMarker -Worktree $Worktree
+    if ($marker) { [void]$names.Add($marker) }
     foreach ($text in @((Split-Path -Path $Worktree -Leaf), $Branch)) {
         foreach ($match in [regex]::Matches([string]$text, '(?:^|[-/])((?:pr|issue)-\d+)(?=$|[-/])', 'IgnoreCase')) {
             [void]$names.Add($match.Groups[1].Value.ToLowerInvariant())

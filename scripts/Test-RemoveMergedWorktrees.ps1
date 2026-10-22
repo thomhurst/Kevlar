@@ -55,6 +55,12 @@ try {
         }
     ) | ConvertTo-Json
     $openJson = @(@{ headRefName = 'open'; headRefOid = $openHead }) | ConvertTo-Json -AsArray
+    $staleEvidence = Join-Path $testRoot 'repo-evidence/issue-9'
+    New-Item -ItemType Directory -Path $staleEvidence | Out-Null
+    Set-Content -LiteralPath (Join-Path $staleEvidence 'build.log') -Value 'old evidence'
+    foreach ($item in @((Get-Item -LiteralPath (Join-Path $staleEvidence 'build.log')), (Get-Item -LiteralPath $staleEvidence))) {
+        $item.LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-8)
+    }
 
     Push-Location $repo
     try {
@@ -68,12 +74,16 @@ try {
         Assert-True ($preview -match 'NewFeature.cs') 'Preview did not report untracked source blocker.'
         Assert-True ($preview -notmatch 'WOULD remove .*[\\/]dirty') 'Preview claimed a dirty worktree would be removed.'
         Assert-True (Test-Path -LiteralPath $mergedWorktree) 'Preview removed worktree.'
+        Assert-True ($preview -match 'WOULD remove stale evidence .*issue-9') 'Preview did not identify stale evidence.'
+        Assert-True ($preview -match '1 stale evidence entr') 'Preview summary did not count stale evidence.'
+        Assert-True (Test-Path -LiteralPath $staleEvidence) 'Preview removed evidence.'
 
         & $sweep -Repo fixture/repo
         Assert-True (-not (Test-Path -LiteralPath $mergedWorktree)) 'Merged worktree was not removed autonomously.'
         Assert-True (Test-Path -LiteralPath $dirtyWorktree) 'Dirty worktree was removed.'
         Assert-True (Test-Path -LiteralPath $divergentWorktree) 'Divergent local commit was removed.'
         Assert-True (Test-Path -LiteralPath $openWorktree) 'Open PR worktree was removed.'
+        Assert-True (-not (Test-Path -LiteralPath $staleEvidence)) 'Stale evidence was not removed.'
         git -C $repo show-ref --verify --quiet refs/heads/merged
         Assert-True ($LASTEXITCODE -ne 0) 'Merged branch was not cleaned up.'
         git -C $repo show-ref --verify --quiet refs/heads/divergent

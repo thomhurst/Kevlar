@@ -137,13 +137,30 @@ try {
             locked { Invoke-TestGit -C $repo worktree lock $path }
         }
         $key = Claim $kind $path
+        if ($kind -eq 'main') {
+            # New worktrees inherit the main checkout's config.worktree.
+            Assert (-not (& git -C $repo config --worktree --get agent.lockName)) 'Main checkout received a lock marker.'
+        }
         if ($kind -eq 'reassigned') { Invoke-TestGit -C $path config --worktree agent.lockName 'another-item' }
         Lock release -LockName $key
         Assert (Test-Path $path) "$kind checkout was removed."
         $status = & pwsh -NoProfile -File $agentLocks status -LockName $key -OwnerId $owner
         Assert ($status -eq 'FREE') "$kind lock was not released."
     }
-    Write-Host 'OK released worktree cleanup: generated output, unpublished branches, detached commits, re-checkout, busy-directory pending removal, dirty/ignored/locked/main/foreign/harness/reassigned preservation.'
+    # `git worktree add` copies the source's config.worktree; the copy records the
+    # source's path, so it must not resolve a lock in the new worktree.
+    $path = New-Checkout marker-source
+    $key = Claim marker-source $path
+    $inherited = Join-Path $testRoot 'marker-inherited'
+    Invoke-TestGit -C $path worktree add -b marker-inherited $inherited HEAD
+    Assert ((& git -C $inherited config --worktree --get agent.lockName) -ceq $key) 'Fixture did not reproduce lock marker inheritance.'
+    Push-Location $inherited
+    try { $resolved = @(& pwsh -NoProfile -File $agentLocks status -OwnerId $owner 2>&1) } finally { Pop-Location }
+    Assert ($LASTEXITCODE -ne 0) "Inherited lock marker resolved a lock: $resolved"
+    Lock release -LockName $key
+    Assert (Test-Path $inherited) 'Releasing the source lock removed the worktree that inherited its marker.'
+
+    Write-Host 'OK released worktree cleanup: generated output, unpublished branches, detached commits, re-checkout, busy-directory pending removal, dirty/ignored/locked/main/foreign/harness/reassigned preservation, inherited and main-checkout lock markers.'
 } finally {
     if (Test-Path $repo) {
         Set-Location $repo

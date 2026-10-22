@@ -4,6 +4,10 @@
 
 Before local benchmarks, profiling, stress runs, builds, tests, restores, or other heavy work, follow [the shared performance lock workflow](scripts/PerformanceLock.md). All four repositories reserve the same Redis `performance` key through `C:/git/Dekaf/scripts/AgentLocks.ps1`; this repository's item-lock backend is separate. Reading and editing can continue while another agent owns the reservation.
 
+## Agent output locations
+
+Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded tools each have one home outside the main checkout; never write loose files beside the repository. The locations are in [issue-pr-loop § Isolation and ownership](.agents/skills/issue-pr-loop/SKILL.md#isolation-and-ownership).
+
 ## Validation
 
 - Build: `dotnet build Kevlar.slnx -c Release`.
