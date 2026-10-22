@@ -50,8 +50,9 @@ try {
     git -C $openWorktree commit --quiet -am 'open PR'
     $openHead = git -C $openWorktree rev-parse HEAD
     $mergedJson = @(
+        $number = 900000
         foreach ($name in @('merged', 'dirty', 'divergent', 'open')) {
-            @{ headRefName = $name; headRefOid = $baseHead }
+            @{ number = ++$number; headRefName = $name; headRefOid = $baseHead }
         }
     ) | ConvertTo-Json
     $openJson = @(@{ headRefName = 'open'; headRefOid = $openHead }) | ConvertTo-Json -AsArray

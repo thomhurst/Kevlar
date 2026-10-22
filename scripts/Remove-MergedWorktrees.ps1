@@ -94,9 +94,10 @@ try {
     # falls through to the per-commit association tier below.
     $mergedNames = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
     $mergedOids = New-OrdinalStringMap
+    $mergedNumberByOid = [System.Collections.Generic.Dictionary[string, int]]::new([System.StringComparer]::Ordinal)
     $openNames = New-OrdinalStringMap
     $openOids = New-OrdinalStringMap
-    $rawMerged = gh pr list @repoArgs --state merged --limit 1000 --json headRefName,headRefOid 2>$null
+    $rawMerged = gh pr list @repoArgs --state merged --limit 1000 --json number,headRefName,headRefOid 2>$null
     if ($LASTEXITCODE -ne 0) { Warn "could not list merged PRs (exit $LASTEXITCODE) -- skipping sweep this round"; exit 0 }
     foreach ($p in (($rawMerged -join "`n") | ConvertFrom-Json)) {
         if ($p.headRefName -and $p.headRefOid) {
@@ -104,7 +105,10 @@ try {
             if (-not $mergedNames.ContainsKey($name)) { $mergedNames[$name] = @() }
             $mergedNames[$name] += $p.headRefOid.Trim()
         }
-        if ($p.headRefOid) { $mergedOids[$p.headRefOid.Trim()] = $true }
+        if ($p.headRefOid) {
+            $mergedOids[$p.headRefOid.Trim()] = $true
+            if ($p.number) { $mergedNumberByOid[$p.headRefOid.Trim()] = [int]$p.number }
+        }
     }
 
     # Open-PR head branches/tips: never remove a worktree that is actively in review.
@@ -167,12 +171,16 @@ try {
 
         # Tier 1: a merged branch name identifies the PR, but a reused branch or
         # local commits after the merge must not be discarded.
-        $why = $null
+        # A named branch proven to be a merged PR's own head branch also takes that PR's
+        # pr-<N> identity, so a busy-directory retry of a checkout at a non-canonical path
+        # still reserves it. Detached checkouts never borrow one: a fresh setup checkout of
+        # main may sit on a merged tip before its owner registers.
+        $why = $null; $evidenceLocks = @()
         if ($w.Branch -and $mergedNames.ContainsKey($w.Branch)) {
             foreach ($mergedHead in $mergedNames[$w.Branch]) {
                 if (Test-WorktreeHeadMerged -Repo $mainRepo -Head $sha -MergedHead $mergedHead) {
                     $why = "merged PR head branch '$($w.Branch)'"
-                    break
+                    if ($mergedNumberByOid.ContainsKey($mergedHead)) { $evidenceLocks += "pr-$($mergedNumberByOid[$mergedHead])" }
                 }
             }
             if (-not $why) {
@@ -204,6 +212,8 @@ try {
                     if ($association.head.sha -and
                         (Test-WorktreeHeadMerged -Repo $mainRepo -Head $sha -MergedHead $association.head.sha)) {
                         $why = 'merged PR via commit association'
+                        # Test-WorktreeMatchesMergedPullRequest matched head.ref for a named branch.
+                        if ($w.Branch -and -not $w.Detached -and $association.number) { $evidenceLocks += "pr-$([int]$association.number)" }
                         break
                     }
                 }
@@ -221,7 +231,7 @@ try {
 
         if (-not $why) { $unmatched += $w; continue }
 
-        Remove-MergedWorktree -Repo $mainRepo -Worktree $w.Path -Label "($why)" -ExpectedHead $sha -WhatIf:$WhatIf
+        Remove-MergedWorktree -Repo $mainRepo -Worktree $w.Path -Label "($why)" -ExpectedHead $sha -LockNames $evidenceLocks -WhatIf:$WhatIf
         if ($WhatIf) { continue }
         if (-not (Test-Path -LiteralPath $w.Path)) {
             $removed++
