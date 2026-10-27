@@ -1082,17 +1082,36 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     {
         public T Current => reader.Current;
 
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        public async Task<bool> MoveNext(CancellationToken cancellationToken)
         {
-            var operationToken = cancellationToken.CanBeCanceled ? cancellationToken : lifetimeToken;
-            var visibleToken = cancellationToken.CanBeCanceled ? cancellationToken : callerToken;
-            return shield.ExecuteAsync(
-                (Reader: reader, VisibleToken: visibleToken),
-                static (state, token) => AwaitGrpcOperationAsync(
-                    state.Reader.MoveNext(token),
-                    token,
-                    state.VisibleToken),
-                operationToken).AsTask();
+            using var operation = cancellationToken.CanBeCanceled
+                ? CancellationTokenSource.CreateLinkedTokenSource(lifetimeToken, cancellationToken)
+                : null;
+            var operationToken = operation?.Token ?? lifetimeToken;
+            try
+            {
+                return await shield.ExecuteAsync(
+                    reader,
+                    static (stream, token) => AwaitGrpcOperationAsync(stream.MoveNext(token), token),
+                    operationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (operationToken.IsCancellationRequested)
+            {
+                var visibleToken = cancellationToken.IsCancellationRequested
+                    ? cancellationToken
+                    : callerToken.IsCancellationRequested
+                        ? callerToken
+                        : lifetimeToken;
+                if (exception.CancellationToken == visibleToken)
+                {
+                    throw;
+                }
+
+                throw new OperationCanceledException(
+                    exception.Message,
+                    exception,
+                    visibleToken);
+            }
         }
     }
 
