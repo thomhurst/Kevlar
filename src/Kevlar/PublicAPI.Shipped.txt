@@ -920,3 +920,11 @@ Kevlar.ConcurrencyLimitOptions.UsePriorityQueue.set -> void
 Kevlar.RateLimitOptions.UsePriorityQueue.get -> bool
 Kevlar.RateLimitOptions.UsePriorityQueue.set -> void
 static Kevlar.KevlarKeys.Priority.get -> Kevlar.KevlarKey<int>
+Kevlar.CircuitBreakerOptions.Clone() -> Kevlar.CircuitBreakerOptions!
+Kevlar.CircuitBreakerOptions<TResult>.Clone() -> Kevlar.CircuitBreakerOptions<TResult>!
+Kevlar.ConcurrencyLimitOptions.Clone() -> Kevlar.ConcurrencyLimitOptions!
+Kevlar.HedgeOptions.Clone() -> Kevlar.HedgeOptions!
+Kevlar.HedgeOptions<TResult>.Clone() -> Kevlar.HedgeOptions<TResult>!
+Kevlar.RetryOptions.Clone() -> Kevlar.RetryOptions!
+Kevlar.RetryOptions<TResult>.Clone() -> Kevlar.RetryOptions<TResult>!
+Kevlar.TimeoutOptions.Clone() -> Kevlar.TimeoutOptions!
