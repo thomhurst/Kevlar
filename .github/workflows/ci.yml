@@ -288,6 +288,10 @@ jobs:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Run-SampleSmokes.ps1 -UsePackedPackages -Version $env:PACKAGE_VERSION
 
+      - name: Verify documentation analyzer trust
+        shell: pwsh
+        run: ./scripts/Test-DocSnippetAnalyzers.ps1
+
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
