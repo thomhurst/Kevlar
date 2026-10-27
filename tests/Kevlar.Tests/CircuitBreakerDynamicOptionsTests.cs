@@ -69,7 +69,7 @@ public class CircuitBreakerDynamicOptionsTests
     [Test]
     public async Task BreakDurationGenerator_Typed_Result_Not_Boxed()
     {
-        await Assert.That(GC.GetConfigurationVariables()["ConcurrentGC"]).IsEqualTo(false);
+        await Assert.That((bool)GC.GetConfigurationVariables()["ConcurrentGC"]).IsFalse();
 
         var generator = CircuitBreakerBreakDurationGenerator.Create<int>(static item =>
         {
