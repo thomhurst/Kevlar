@@ -643,14 +643,19 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    [Arguments(SharedRegistrationKind.ShieldFactory)]
-    [Arguments(SharedRegistrationKind.ShieldAndOptionsFactories)]
-    [Arguments(SharedRegistrationKind.StandardServiceProvider)]
-    [Arguments(SharedRegistrationKind.StandardConfiguration)]
-    [Arguments(SharedRegistrationKind.HedgeConfiguration)]
+    [Arguments(SharedRegistrationKind.ShieldFactory, false)]
+    [Arguments(SharedRegistrationKind.ShieldFactory, true)]
+    [Arguments(SharedRegistrationKind.ShieldAndOptionsFactories, false)]
+    [Arguments(SharedRegistrationKind.ShieldAndOptionsFactories, true)]
+    [Arguments(SharedRegistrationKind.StandardServiceProvider, false)]
+    [Arguments(SharedRegistrationKind.StandardServiceProvider, true)]
+    [Arguments(SharedRegistrationKind.StandardConfiguration, false)]
+    [Arguments(SharedRegistrationKind.StandardConfiguration, true)]
+    [Arguments(SharedRegistrationKind.HedgeConfiguration, false)]
+    [Arguments(SharedRegistrationKind.HedgeConfiguration, true)]
     [NotInParallel]
     public async Task Handler_Rotation_Reuses_Service_Created_Pipeline(
-        SharedRegistrationKind registrationKind)
+        SharedRegistrationKind registrationKind, bool useDefaults)
     {
         var configuration = BuildConfiguration(
             ("Retry:MaxRetries", "0"),
@@ -667,43 +672,55 @@ public class HttpConfigurationReloadTests
                 return new FuncHandler((_, _) =>
                     Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
             });
-        switch (registrationKind)
+        void Register(IHttpClientBuilder target)
         {
-            case SharedRegistrationKind.ShieldFactory:
-                builder.AddShield(_ =>
-                {
-                    Interlocked.Increment(ref configurations);
-                    return Shield<HttpResponseMessage>.Empty;
-                });
-                break;
-            case SharedRegistrationKind.ShieldAndOptionsFactories:
-                builder.AddShield(
-                    _ =>
+            switch (registrationKind)
+            {
+                case SharedRegistrationKind.ShieldFactory:
+                    target.AddShield(_ =>
                     {
                         Interlocked.Increment(ref configurations);
                         return Shield<HttpResponseMessage>.Empty;
-                    },
-                    _ =>
-                    {
-                        Interlocked.Increment(ref handlerOptionFactories);
-                        return new ShieldHttpHandlerOptions();
                     });
-                break;
-            case SharedRegistrationKind.StandardServiceProvider:
-                builder.AddStandardShield((_, _) => Interlocked.Increment(ref configurations));
-                break;
-            case SharedRegistrationKind.StandardConfiguration:
-                builder.AddStandardShield(
-                    configuration,
-                    (_, _) => Interlocked.Increment(ref configurations));
-                break;
-            case SharedRegistrationKind.HedgeConfiguration:
-                builder.AddStandardHedgeShield(
-                    configuration,
-                    (_, _) => Interlocked.Increment(ref configurations));
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(registrationKind));
+                    break;
+                case SharedRegistrationKind.ShieldAndOptionsFactories:
+                    target.AddShield(
+                        _ =>
+                        {
+                            Interlocked.Increment(ref configurations);
+                            return Shield<HttpResponseMessage>.Empty;
+                        },
+                        _ =>
+                        {
+                            Interlocked.Increment(ref handlerOptionFactories);
+                            return new ShieldHttpHandlerOptions();
+                        });
+                    break;
+                case SharedRegistrationKind.StandardServiceProvider:
+                    target.AddStandardShield((_, _) => Interlocked.Increment(ref configurations));
+                    break;
+                case SharedRegistrationKind.StandardConfiguration:
+                    target.AddStandardShield(
+                        configuration,
+                        (_, _) => Interlocked.Increment(ref configurations));
+                    break;
+                case SharedRegistrationKind.HedgeConfiguration:
+                    target.AddStandardHedgeShield(
+                        configuration,
+                        (_, _) => Interlocked.Increment(ref configurations));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(registrationKind));
+            }
+        }
+
+        if (useDefaults)
+        {
+            services.ConfigureHttpClientDefaults(Register);
+        }
+        else
+        {
+            Register(builder);
         }
 
         using var provider = services.BuildServiceProvider();

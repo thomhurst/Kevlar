@@ -3,12 +3,15 @@ namespace Kevlar.Extensions.Http;
 internal sealed class HttpShieldPipelineRegistry(IServiceProvider services) : IDisposable
 {
     private readonly object _gate = new();
-    private readonly Dictionary<HttpShieldPipelineRegistration, object> _pipelines = [];
+    private readonly Dictionary<(HttpShieldPipelineRegistration Registration, string? ClientName), object> _pipelines = [];
     private bool _disposed;
 
     public IServiceProvider Services { get; } = services;
 
-    public T GetOrAdd<T>(HttpShieldPipelineRegistration registration, Func<T> factory)
+    public T GetOrAdd<T>(
+        HttpShieldPipelineRegistration registration,
+        string? clientName,
+        Func<T> factory)
         where T : class
     {
         lock (_gate)
@@ -17,13 +20,13 @@ internal sealed class HttpShieldPipelineRegistry(IServiceProvider services) : ID
             {
                 throw new ObjectDisposedException(nameof(HttpShieldPipelineRegistry));
             }
-            if (_pipelines.TryGetValue(registration, out var existing))
+            if (_pipelines.TryGetValue((registration, clientName), out var existing))
             {
                 return (T)existing;
             }
 
             var pipeline = factory();
-            _pipelines.Add(registration, pipeline);
+            _pipelines.Add((registration, clientName), pipeline);
             return pipeline;
         }
     }
@@ -50,7 +53,7 @@ internal sealed class HttpShieldPipelineRegistry(IServiceProvider services) : ID
     }
 }
 
-internal sealed class HttpShieldPipelineRegistration(string clientName)
+// Reference identity keeps repeated shield registrations on the same client independent.
+internal sealed class HttpShieldPipelineRegistration
 {
-    public string ClientName { get; } = clientName;
 }

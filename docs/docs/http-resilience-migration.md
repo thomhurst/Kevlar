@@ -322,8 +322,11 @@ If Microsoft handlers are still registered through another defaults callback, re
 the other library's handlers. Apply per-client overrides after global defaults and avoid adding a
 second standard shield on top of the inherited one.
 
+Global defaults create separate pipelines for each named, typed, and default factory client. A circuit
+opening or a concurrency limit being reached for one client does not affect the others.
+
 `IHttpClientFactory` rotates handler instances. Kevlar's standard registrations and service-provider
-factories cache strategy state per named client registration across those rotations. Shortening
+factories cache strategy state per client name and shield registration across those rotations. Shortening
 `SetHandlerLifetime` does **not** reset a breaker, limiter, or endpoint cache. Configuration reload
 publishes a new snapshot; executions already in flight keep the old one. If state should intentionally
 restart for each handler lifetime, construct `ShieldDelegatingHandler` in `AddHttpMessageHandler`

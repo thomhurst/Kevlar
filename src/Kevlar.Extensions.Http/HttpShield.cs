@@ -81,6 +81,25 @@ public static class HttpShield
             : shield.Timeout(timeout => Copy(options.AttemptTimeout, timeout));
     }
 
+    internal static StandardHttpShieldOptions SnapshotStrategyOptions(StandardHttpShieldOptions source)
+    {
+        var snapshot = new StandardHttpShieldOptions
+        {
+            UseRetryAfterHeader = source.UseRetryAfterHeader,
+        };
+        Copy(source.TotalTimeout, snapshot.TotalTimeout);
+        Copy(source.AttemptTimeout, snapshot.AttemptTimeout);
+        Copy(source.Retry, snapshot.Retry, useRetryAfterHeader: false);
+        Copy(source.CircuitBreaker, snapshot.CircuitBreaker);
+        if (source.ConcurrencyLimit is { } concurrencyLimit)
+        {
+            snapshot.ConcurrencyLimit = new ConcurrencyLimitOptions();
+            Copy(concurrencyLimit, snapshot.ConcurrencyLimit);
+        }
+
+        return snapshot;
+    }
+
     /// <summary>
     /// A <see cref="RetryOptions{TResult}.DelayGenerator"/> honouring the response's
     /// <c>Retry-After</c> header when present and longer than the computed backoff, capped at the
