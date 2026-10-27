@@ -19,6 +19,22 @@ on:
         default: true
 
 jobs:
+  measurement-publication:
+    name: Measurement docs publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify publication and deployment retries
+        run: |
+          python3 -m pip install 'PyYAML>=6,<7'
+          bash -n .github/scripts/publish_measurement_docs.sh
+          python3 .github/scripts/test_measurement_publish.py
+
   allocation-gates:
     name: Allocation gates (.NET 8/10, Ubuntu)
     runs-on: ubuntu-latest

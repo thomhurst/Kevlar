@@ -8,6 +8,7 @@ on:
       - 'benchmarks/Kevlar.OutageTests/**'
       - 'tests/Kevlar.OutageTests.Tests/**'
       - '.github/scripts/outage_docs.py'
+      - '.github/scripts/publish_measurement_docs.sh'
       - '.github/workflows/outage.yml'
       - 'Directory.Build.props'
       - 'Directory.Packages.props'
@@ -17,6 +18,7 @@ on:
       - 'benchmarks/Kevlar.OutageTests/**'
       - 'tests/Kevlar.OutageTests.Tests/**'
       - '.github/scripts/outage_docs.py'
+      - '.github/scripts/publish_measurement_docs.sh'
       - '.github/workflows/outage.yml'
   schedule:
     - cron: '0 7 * * 1'
@@ -68,11 +70,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Keep generation on fresh main and prevent two reruns replacing this pair.
+    concurrency:
+      group: outage-docs-publication
+      cancel-in-progress: false
     permissions:
       contents: write
       actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
       - uses: actions/download-artifact@v8
         with:
           name: outage-results
@@ -88,16 +96,4 @@ jobs:
       - name: Commit and deploy
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if git diff --quiet docs/docs/outage-recovery.md docs/static/measurements/outage-results.json; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/docs/outage-recovery.md docs/static/measurements/outage-results.json
-          git commit -m "docs: update outage measurements [skip ci]"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          run_url=$(gh workflow run docs.yml --ref main)
-          run_id="${run_url##*/}"
-          gh run watch "$run_id" --exit-status
+        run: bash .github/scripts/publish_measurement_docs.sh outage
