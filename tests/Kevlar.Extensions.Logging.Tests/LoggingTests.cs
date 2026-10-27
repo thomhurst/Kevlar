@@ -438,6 +438,34 @@ public class LoggingTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    [NotInParallel]
+    public async Task SeverityProvider_Can_Preserve_Retry_Default_With_Or_Without_Result(bool resultBased)
+    {
+        var logger = new FakeLogger();
+        KevlarLogEvent? observed = null;
+        var shield = (resultBased
+                ? Shield.For<int>().WhenResultEquals(-1).Retry(1, Backoff.None)
+                : Shield.For<int>().Retry(1, Backoff.None))
+            .WithLogging(logger, options => options.SeverityProvider = logEvent =>
+            {
+                observed = logEvent;
+                return logEvent.DefaultLevel;
+            });
+
+        _ = await shield.ExecuteOutcomeAsync(_ => resultBased
+            ? new ValueTask<int>(-1)
+            : throw new TestException("failure"));
+
+        await Assert.That(observed.HasValue).IsTrue();
+        await Assert.That(observed.GetValueOrDefault().DefaultLevel).IsEqualTo(LogLevel.Warning);
+        await Assert.That(observed.GetValueOrDefault().Result).IsEqualTo(resultBased ? (object)(-1) : null);
+        await Assert.That(logger.Collector.Count).IsEqualTo(1);
+        await Assert.That(logger.LatestRecord.Level).IsEqualTo(LogLevel.Warning);
+    }
+
+    [Test]
     public async Task SeverityProvider_Receives_Zero_Based_AttemptNumber()
     {
         var logger = new FakeLogger();
@@ -690,13 +718,16 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
-    public async Task Breaker_HalfOpen_And_Closed_Log_Information()
+    public async Task SeverityProvider_Preserves_Circuit_Opening_And_Recovery_Levels()
     {
         var logger = new FakeLogger();
         var time = new FakeTimeProvider();
-        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1))
+        var shield = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromSeconds(1))
             .WithTimeProvider(time)
-            .WithLogging(logger);
+            .WithLogging(logger, options => options.SeverityProvider = static logEvent =>
+                logEvent.Kind == KevlarLogEventKind.AttemptsSuppressed
+                    ? LogLevel.Debug
+                    : logEvent.DefaultLevel);
 
         _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
             new ValueTask<int>(Task.FromException<int>(new TestException("failure"))));
@@ -707,6 +738,7 @@ public class LoggingTests
             .Where(record => record.Id == new EventId(1003, "CircuitState"))
             .ToArray();
         await Assert.That(transitions.Length).IsEqualTo(3);
+        await Assert.That(transitions[0].Level).IsEqualTo(LogLevel.Error);
         await Assert.That(transitions[1].GetStructuredStateValue("ToState")).IsEqualTo("HalfOpen");
         await Assert.That(transitions[1].Level).IsEqualTo(LogLevel.Information);
         await Assert.That(transitions[2].GetStructuredStateValue("ToState")).IsEqualTo("Closed");

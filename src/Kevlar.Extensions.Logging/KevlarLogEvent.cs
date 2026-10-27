@@ -1,11 +1,17 @@
+using Microsoft.Extensions.Logging;
+
 namespace Kevlar.Extensions.Logging;
 
 /// <summary>Describes one strategy event before its log level is selected.</summary>
 public readonly struct KevlarLogEvent
 {
-    internal KevlarLogEvent(KevlarLogEventKind kind, in KevlarTelemetryEvent telemetryEvent)
+    internal KevlarLogEvent(
+        KevlarLogEventKind kind,
+        LogLevel defaultLevel,
+        in KevlarTelemetryEvent telemetryEvent)
     {
         Kind = kind;
+        DefaultLevel = defaultLevel;
         EventName = telemetryEvent.EventName;
         ShieldName = telemetryEvent.ShieldName;
         StrategyName = telemetryEvent.StrategyName;
@@ -27,6 +33,9 @@ public readonly struct KevlarLogEvent
 
     /// <summary>The mapped logging event kind.</summary>
     public KevlarLogEventKind Kind { get; }
+
+    /// <summary>The level Kevlar would use for this event without a severity override.</summary>
+    public LogLevel DefaultLevel { get; }
 
     /// <summary>The stable telemetry event name.</summary>
     public string EventName { get; }
