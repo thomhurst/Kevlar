@@ -92,7 +92,7 @@ public class HttpDecorationTests
         }
 
         await Assert.That(decorator.Calls.Select(call => call.Name))
-            .IsEquivalentTo(new[] { "first", "second", "first", "second" });
+            .IsEquivalentTo(new string?[] { "first", "second", "first", "second" });
     }
 
     [Test]
