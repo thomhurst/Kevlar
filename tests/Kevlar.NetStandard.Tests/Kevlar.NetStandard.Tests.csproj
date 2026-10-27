@@ -21,6 +21,8 @@
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
     <Compile Remove="NetFrameworkCompatibilityTests.cs" />
+    <Compile Include="..\Kevlar.Tests\GrpcSelectedServerReadCancellationTests.cs"
+             Link="GrpcSelectedServerReadCancellationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -164,9 +164,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 if (TryGetSelected(out var selected))
                 {
-                    var operationToken = cancellationToken.CanBeCanceled
-                        ? cancellationToken
-                        : _lifetime.Token;
+                    using var selectedOperation = CreateOperationCancellation(cancellationToken);
+                    var operationToken = selectedOperation?.Token ?? _lifetime.Token;
                     try
                     {
                         if (_operationShield is null)
@@ -183,15 +182,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                                 token),
                             operationToken).ConfigureAwait(false);
                     }
-                    catch (Exception exception) when (
-                        exception is OperationCanceledException
-                            or RpcException { StatusCode: StatusCode.Cancelled }
-                        && _context.Options.CancellationToken.IsCancellationRequested)
+                    catch (OperationCanceledException exception)
                     {
-                        throw new OperationCanceledException(
-                            exception.Message,
-                            exception,
-                            _context.Options.CancellationToken);
+                        RethrowNormalized(exception, cancellationToken);
+                        throw;
                     }
                 }
 
