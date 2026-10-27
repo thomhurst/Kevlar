@@ -800,12 +800,14 @@ public static class ShieldHttpClientBuilderExtensions
         HedgeOptions<HttpResponseMessage> source,
         HedgeOptions<HttpResponseMessage> target)
     {
+        target.Budget = source.Budget;
         target.Name = source.Name;
         target.HandlesException = source.HandlesException;
         target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
         target.HandlesResultContext = source.HandlesResultContext;
         target.MaxHedgedAttempts = source.MaxHedgedAttempts;
+        target.RespectDeadline = source.RespectDeadline;
         target.Delay = source.Delay;
         target.DelayGenerator = source.DelayGenerator;
         target.OnHedge = source.OnHedge;
@@ -817,6 +819,8 @@ public static class ShieldHttpClientBuilderExtensions
         target.Name = source.Name;
         target.MaxConcurrency = source.MaxConcurrency;
         target.QueueLimit = source.QueueLimit;
+        target.QueueTimeout = source.QueueTimeout;
+        target.UsePriorityQueue = source.UsePriorityQueue;
         target.OnRejected = source.OnRejected;
     }
 
@@ -831,6 +835,9 @@ public static class ShieldHttpClientBuilderExtensions
         target.HandlesResultContext = source.HandlesResultContext;
         target.ConsecutiveFailures = source.ConsecutiveFailures;
         target.FailureRatio = source.FailureRatio;
+        target.HalfOpenProbes = source.HalfOpenProbes;
+        target.SlowCallThreshold = source.SlowCallThreshold;
+        target.SlowCallRatio = source.SlowCallRatio;
         target.MinimumThroughput = source.MinimumThroughput;
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
