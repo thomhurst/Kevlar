@@ -766,6 +766,58 @@ function Test-PathWithinDirectory
         -and -not $relativePath.StartsWith("..$([IO.Path]::DirectorySeparatorChar)", $comparison)
 }
 
+function Get-FrameworkAnalyzerPaths
+{
+    param(
+        [AllowEmptyCollection()]
+        [object[]]$FrameworkReferences
+    )
+
+    # Use active SDK framework references, installed under dotnet/packs or restored
+    # from NuGet. ResolvedTargetingPack also contains packs the project does not use.
+    # Trust individual manifest entries, never a whole package directory.
+    $frameworkPackages = @{
+        'Microsoft.NETCore.App' = 'Microsoft.NETCore.App.Ref'
+        'Microsoft.AspNetCore.App' = 'Microsoft.AspNetCore.App.Ref'
+    }
+    foreach ($pack in $FrameworkReferences)
+    {
+        $expectedPackageId = $frameworkPackages[$pack.Identity]
+        if (-not $expectedPackageId -or $pack.TargetingPackName -ine $expectedPackageId)
+        {
+            throw "Unexpected documentation targeting pack '$($pack.Identity)' / '$($pack.TargetingPackName)'."
+        }
+
+        if ([string]::IsNullOrWhiteSpace($pack.TargetingPackPath) -or -not [IO.Path]::IsPathFullyQualified($pack.TargetingPackPath))
+        {
+            throw "Documentation targeting pack '$($pack.Identity)' has no absolute resolved path."
+        }
+
+        $packDirectory = [IO.Path]::GetFullPath($pack.TargetingPackPath)
+        $manifestPath = Join-Path $packDirectory 'data/FrameworkList.xml'
+        [xml]$manifest = Get-Content -Raw -LiteralPath $manifestPath
+        if ($manifest.FileList.FrameworkName -cne $pack.Identity)
+        {
+            throw "Documentation targeting pack manifest has unexpected framework in $manifestPath."
+        }
+
+        $analyzerDirectory = Join-Path $packDirectory 'analyzers'
+        foreach ($file in $manifest.FileList.File | Where-Object { $_.Type -eq 'Analyzer' })
+        {
+            $relativePath = $file.Path.Replace('\', '/')
+            $analyzerPath = [IO.Path]::GetFullPath((Join-Path $packDirectory $relativePath))
+            if ($relativePath -notmatch '^analyzers/.+\.dll$' `
+                -or -not (Test-PathWithinDirectory -Path $analyzerPath -Directory $analyzerDirectory) `
+                -or -not (Test-Path -LiteralPath $analyzerPath -PathType Leaf))
+            {
+                throw "Documentation targeting pack manifest has invalid analyzer '$relativePath' in $manifestPath."
+            }
+
+            $analyzerPath
+        }
+    }
+}
+
 function Assert-EffectiveAnalyzerConfiguration
 {
     param(
@@ -780,7 +832,7 @@ function Assert-EffectiveAnalyzerConfiguration
         $projectPath
         '-target:Build'
         "-getProperty:$($queriedPropertyNames -join ',')"
-        '-getItem:CscCommandLineArgs'
+        '-getItem:CscCommandLineArgs,ResolvedFrameworkReference'
         '-p:Configuration=Release'
         "-p:TargetFramework=$Framework"
     ) + $documentationBuildProperties
@@ -946,20 +998,16 @@ function Assert-EffectiveAnalyzerConfiguration
                 }
             }
     )
-    $dotnetRoot = [IO.Directory]::GetParent(
-        [IO.Directory]::GetParent($configuration.Properties.MSBuildToolsPath).FullName).FullName
-    $dotnetPacksDirectory = Join-Path $dotnetRoot 'packs'
+    $trustedFrameworkAnalyzerPaths = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
+    foreach ($frameworkAnalyzerPath in Get-FrameworkAnalyzerPaths -FrameworkReferences @($configuration.Items.ResolvedFrameworkReference))
+    {
+        [void]$trustedFrameworkAnalyzerPaths.Add($frameworkAnalyzerPath)
+    }
     foreach ($compilerAnalyzerPath in $compilerAnalyzerPaths)
     {
-        $relativePackPath = if (Test-PathWithinDirectory `
-            -Path $compilerAnalyzerPath `
-            -Directory $dotnetPacksDirectory)
-        {
-            [IO.Path]::GetRelativePath($dotnetPacksDirectory, $compilerAnalyzerPath).Replace('\', '/')
-        }
         if ($trustedPackageAnalyzerPaths.Contains($compilerAnalyzerPath) `
             -or (Test-PathWithinDirectory -Path $compilerAnalyzerPath -Directory $selectedSdkDirectory) `
-            -or ($relativePackPath -match '(?i)(?:^|/)analyzers/'))
+            -or $trustedFrameworkAnalyzerPaths.Contains($compilerAnalyzerPath))
         {
             continue
         }
