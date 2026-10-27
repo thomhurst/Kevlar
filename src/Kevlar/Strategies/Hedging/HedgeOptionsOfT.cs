@@ -11,6 +11,14 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions<TResult>
 {
+    /// <summary>Creates an independent copy of this configuration.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance containing the same property values.</returns>
+    public HedgeOptions<TResult> Clone() => (HedgeOptions<TResult>)MemberwiseClone();
+
     /// <inheritdoc cref="HedgeOptions.Budget"/>
     public RetryBudget? Budget { get; set; }
 

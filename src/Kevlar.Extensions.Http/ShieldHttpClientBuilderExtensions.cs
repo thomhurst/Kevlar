@@ -359,7 +359,7 @@ public static class ShieldHttpClientBuilderExtensions
         // Validate eagerly, but create independent strategy state when each client is first resolved.
         _ = HttpShield.Standard(options);
         var optionsSnapshot = HttpShield.SnapshotStrategyOptions(options);
-        var handlerOptions = Snapshot(options.Handler);
+        var handlerOptions = optionsSnapshot.Handler;
         var registration = RegisterSharedPipeline(builder);
         return AddShieldHandler(UseStandardTimeout(builder), (services, name) =>
         {
@@ -498,41 +498,7 @@ public static class ShieldHttpClientBuilderExtensions
         return builder.ConfigureHttpClient(configuration.Apply);
     }
 
-    private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source)
-    {
-        var snapshot = new ShieldHttpHandlerOptions
-        {
-            ContentReplayPolicy = source.ContentReplayPolicy,
-            MaxBufferSize = source.MaxBufferSize,
-            AllowUnsafeMethodReplay = source.AllowUnsafeMethodReplay,
-            IsReplaySafeMethod = source.IsReplaySafeMethod,
-            RequestFactory = source.RequestFactory,
-            Routing = Snapshot(source.Routing),
-        };
-        return snapshot;
-    }
-
-    private static HttpEndpointRoutingOptions? Snapshot(HttpEndpointRoutingOptions? source)
-    {
-        if (source is null)
-        {
-            return null;
-        }
-
-        var snapshot = new HttpEndpointRoutingOptions
-        {
-            EndpointProvider = source.EndpointProvider,
-            SelectionMode = source.SelectionMode,
-            Seed = source.Seed,
-            ShieldFactory = source.ShieldFactory,
-        };
-        foreach (var endpoint in source.Endpoints)
-        {
-            snapshot.Endpoints.Add(endpoint);
-        }
-
-        return snapshot;
-    }
+    private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source) => source.Clone();
 
     /// <summary>
     /// Adds one shared standard pipeline that hedges against the request's authority: total timeout,
@@ -767,9 +733,9 @@ public static class ShieldHttpClientBuilderExtensions
     {
         var concurrencyLimit = options.ConcurrencyLimit is null
             ? null
-            : Clone(options.ConcurrencyLimit);
-        var circuitBreaker = Clone(options.CircuitBreaker);
-        var attemptTimeout = Clone(options.AttemptTimeout);
+            : options.ConcurrencyLimit.Clone();
+        var circuitBreaker = options.CircuitBreaker.Clone();
+        var attemptTimeout = options.AttemptTimeout.Clone();
 
         Shield<HttpResponseMessage> CreateEndpointShield(Uri _)
         {
@@ -804,28 +770,6 @@ public static class ShieldHttpClientBuilderExtensions
 
     private static bool IsDisabled(TimeoutOptions options) =>
         options.Timeout == Timeout.InfiniteTimeSpan;
-
-    private static TimeoutOptions Clone(TimeoutOptions source)
-    {
-        var target = new TimeoutOptions();
-        Copy(source, target);
-        return target;
-    }
-
-    private static ConcurrencyLimitOptions Clone(ConcurrencyLimitOptions source)
-    {
-        var target = new ConcurrencyLimitOptions();
-        Copy(source, target);
-        return target;
-    }
-
-    private static CircuitBreakerOptions<HttpResponseMessage> Clone(
-        CircuitBreakerOptions<HttpResponseMessage> source)
-    {
-        var target = new CircuitBreakerOptions<HttpResponseMessage>();
-        Copy(source, target);
-        return target;
-    }
 
     private static void Copy(TimeoutOptions source, TimeoutOptions target)
     {

@@ -4,6 +4,28 @@ namespace Kevlar.Extensions.Http;
 /// <remarks>The endpoint list and scalar values are snapshotted with the handler options.</remarks>
 public sealed class HttpEndpointRoutingOptions
 {
+    /// <summary>Creates a copy with an independent endpoint collection.</summary>
+    /// <remarks>
+    /// Immutable endpoints and delegate references are shared. Captured delegate state is not cloned.
+    /// </remarks>
+    /// <returns>A new routing configuration containing the same endpoints and property values.</returns>
+    public HttpEndpointRoutingOptions Clone()
+    {
+        var copy = new HttpEndpointRoutingOptions
+        {
+            EndpointProvider = EndpointProvider,
+            SelectionMode = SelectionMode,
+            Seed = Seed,
+            ShieldFactory = ShieldFactory,
+        };
+        foreach (var endpoint in Endpoints)
+        {
+            copy.Endpoints.Add(endpoint);
+        }
+
+        return copy;
+    }
+
     /// <summary>The static endpoint authorities, used when <see cref="EndpointProvider"/> is not set.</summary>
     public IList<HttpEndpoint> Endpoints { get; } = new List<HttpEndpoint>();
 

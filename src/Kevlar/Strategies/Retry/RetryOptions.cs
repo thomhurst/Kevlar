@@ -13,6 +13,14 @@ namespace Kevlar;
 /// </remarks>
 public sealed class RetryOptions
 {
+    /// <summary>Creates an independent copy of this configuration.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance containing the same property values.</returns>
+    public RetryOptions Clone() => (RetryOptions)MemberwiseClone();
+
     /// <summary>An optional shared retry/hedge budget. The initial attempt is always allowed.</summary>
     public RetryBudget? Budget { get; set; }
 
@@ -95,6 +103,14 @@ public sealed class RetryOptions
 /// </remarks>
 public sealed class RetryOptions<TResult>
 {
+    /// <summary>Creates an independent copy of this configuration.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance containing the same property values.</returns>
+    public RetryOptions<TResult> Clone() => (RetryOptions<TResult>)MemberwiseClone();
+
     /// <inheritdoc cref="RetryOptions.Budget"/>
     public RetryBudget? Budget { get; set; }
 

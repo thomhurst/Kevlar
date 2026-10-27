@@ -13,6 +13,14 @@ namespace Kevlar;
 /// </remarks>
 public sealed class TimeoutOptions
 {
+    /// <summary>Creates an independent copy of this configuration.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance containing the same property values.</returns>
+    public TimeoutOptions Clone() => (TimeoutOptions)MemberwiseClone();
+
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
     public string? Name { get; set; }
 

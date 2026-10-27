@@ -16,6 +16,14 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions
 {
+    /// <summary>Creates an independent copy of this configuration.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance containing the same property values.</returns>
+    public HedgeOptions Clone() => (HedgeOptions)MemberwiseClone();
+
     /// <summary>An optional shared retry/hedge budget. Already-running contenders are preserved.</summary>
     public RetryBudget? Budget { get; set; }
 

@@ -3,6 +3,25 @@ namespace Kevlar.Extensions.Http;
 /// <summary>Configures the standard HTTP hedging pipeline.</summary>
 public sealed class StandardHedgeShieldOptions
 {
+    /// <summary>Creates a copy with independent nested configuration objects.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance with copied configuration containers.</returns>
+    public StandardHedgeShieldOptions Clone()
+    {
+        var copy = (StandardHedgeShieldOptions)MemberwiseClone();
+        copy.TotalTimeout = TotalTimeout?.Clone()!;
+        copy.Hedge = Hedge?.Clone()!;
+        copy.ConcurrencyLimit = ConcurrencyLimit?.Clone();
+        copy.CircuitBreaker = CircuitBreaker?.Clone()!;
+        copy.AttemptTimeout = AttemptTimeout?.Clone()!;
+        copy.Handler = Handler?.Clone()!;
+        copy.Routing = Routing?.Clone();
+        return copy;
+    }
+
     /// <summary>
     /// Configures the outer total timeout. Defaults to 30 seconds. Set
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.

@@ -7,6 +7,19 @@ namespace Kevlar.Extensions.Http;
 /// </remarks>
 public sealed class ShieldHttpHandlerOptions
 {
+    /// <summary>Creates a copy with independent nested configuration objects.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance with copied configuration containers.</returns>
+    public ShieldHttpHandlerOptions Clone()
+    {
+        var copy = (ShieldHttpHandlerOptions)MemberwiseClone();
+        copy.Routing = Routing?.Clone();
+        return copy;
+    }
+
     /// <summary>The request-content replay policy. The default never buffers caller content.</summary>
     public HttpContentReplayPolicy ContentReplayPolicy { get; set; }
 
