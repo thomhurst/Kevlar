@@ -10,12 +10,15 @@ namespace Kevlar.Extensions.EntityFrameworkCore;
 /// <remarks>
 /// The strategy belongs to one DbContext and must not be used concurrently. Transaction delegates
 /// must recreate and dispose their transaction on each attempt. Hedging, timeout strategies that can
-/// abandon active database work, and live-forwarding shields are not supported.
+/// abandon active database work, and live-forwarding shields are not supported. Commit verification
+/// uses the shield's retry strategies inside the original admitted execution; other strategies are
+/// applied only to the outer operation.
 /// </remarks>
 public sealed class KevlarExecutionStrategy : IExecutionStrategy
 {
     private readonly DbContext _context;
     private readonly Shield _shield;
+    private readonly Shield _verificationShield;
     private readonly ExecutionScope _scope;
     private readonly Func<Exception, bool> _shouldVerifySuccess;
     private readonly bool _retriesOnFailure;
@@ -58,6 +61,13 @@ public sealed class KevlarExecutionStrategy : IExecutionStrategy
 
         _context = dependencies.CurrentContext.Context;
         _shield = shield;
+        // The original execution still owns its admission permits while verification runs.
+        // Reuse the configured retry policies (including predicates, budgets, and delays),
+        // without re-entering admission or other single-invocation strategies.
+        var retries = shield.Strategies.Where(static strategy => strategy is RetryStrategy).ToArray();
+        _verificationShield = retries.Length == shield.Strategies.Length
+            ? shield
+            : new Shield(retries, shield.Ambient, shield.Name, shield.Time);
         _shouldVerifySuccess = shouldVerifySuccessOn ?? (static exception => exception is not OperationCanceledException);
         _retriesOnFailure = shield.Strategies.OfType<RetryStrategy>().Any(static retry => retry.MaxRetries > 0);
         _scope = new ExecutionScope(dependencies, this);
@@ -112,7 +122,7 @@ public sealed class KevlarExecutionStrategy : IExecutionStrategy
                     ExecutionResult<TResult> verified;
                     try
                     {
-                        verified = _shield.Execute(_ => _scope.Run(() => verifySucceeded!(_context, state)), verification!.Token);
+                        verified = _verificationShield.Execute(_ => _scope.Run(() => verifySucceeded!(_context, state)), verification!.Token);
                     }
                     catch (Exception verificationException)
                     {
@@ -176,7 +186,7 @@ public sealed class KevlarExecutionStrategy : IExecutionStrategy
                     ExecutionResult<TResult> verified;
                     try
                     {
-                        verified = await _shield.ExecuteAsync(
+                        verified = await _verificationShield.ExecuteAsync(
                             verifyToken => new ValueTask<ExecutionResult<TResult>>(
                                 _scope.RunAsync(() => verifySucceeded!(_context, state, verifyToken))),
                             token).ConfigureAwait(false);

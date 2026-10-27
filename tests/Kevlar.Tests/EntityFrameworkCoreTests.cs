@@ -113,12 +113,64 @@ public class EntityFrameworkCoreTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Failed_Verification_Never_Replays_An_Ambiguous_Operation(bool asynchronous)
+    [Arguments(false, 0, false, 0)]
+    [Arguments(false, 1, false, 0)]
+    [Arguments(true, 0, false, 0)]
+    [Arguments(true, 1, false, 0)]
+    [Arguments(false, 0, true, 1)]
+    [Arguments(false, 1, true, 1)]
+    [Arguments(true, 0, true, 1)]
+    [Arguments(true, 1, true, 1)]
+    public async Task Commit_Verification_Reuses_Admission_And_Retries_Without_Replaying(
+        bool asynchronous, int queueLimit, bool retryOutermost, int verificationFailures)
+    {
+        var shield = VerificationShield(asynchronous, queueLimit, retryOutermost);
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var context = CreateContext(connection, shield);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var strategy = context.Database.CreateExecutionStrategy();
+        var state = new object();
+        var operations = 0;
+        var verifications = 0;
+        var scopePreserved = true;
+        int Operation() { operations++; throw new IOException("Ambiguous commit"); }
+        ExecutionResult<int> Verify(DbContext database, object callerState)
+        {
+            scopePreserved &= ReferenceEquals(database, context) && ReferenceEquals(callerState, state)
+                && ExecutionStrategy.Current is not null;
+            if (++verifications <= verificationFailures) { throw new IOException("Verification temporarily unavailable"); }
+            // Nested EF operations must bypass admission and the outer retry allowance.
+            return new ExecutionResult<int>(true,
+                database.Database.CreateExecutionStrategy().Execute(() => 42));
+        }
+
+        var result = asynchronous
+            ? await strategy.ExecuteAsync(state,
+                async (_, _, token) => { await Task.Yield(); token.ThrowIfCancellationRequested(); return Operation(); },
+                async (database, value, token) => { await Task.Yield(); token.ThrowIfCancellationRequested(); return Verify(database, value); },
+                cancellation.Token)
+            : strategy.Execute(state, (_, _) => Operation(), Verify);
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(operations).IsEqualTo(1);
+        await Assert.That(verifications).IsEqualTo(verificationFailures + 1);
+        await Assert.That(scopePreserved).IsTrue();
+        await Assert.That(ExecutionStrategy.Current).IsNull();
+        await Assert.That(shield.Execute(_ => 7)).IsEqualTo(7);
+    }
+
+    [Test]
+    [Arguments(false, -1)]
+    [Arguments(true, -1)]
+    [Arguments(false, 0)]
+    [Arguments(true, 0)]
+    [Arguments(false, 1)]
+    [Arguments(true, 1)]
+    public async Task Failed_Verification_Never_Replays_An_Ambiguous_Operation(bool asynchronous, int queueLimit)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
-        await using var context = CreateContext(connection, RetryShield);
+        var shield = VerificationShield(asynchronous, queueLimit);
+        await using var context = CreateContext(connection, shield);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var strategy = context.Database.CreateExecutionStrategy();
         var operations = 0;
         var verifications = 0;
@@ -132,7 +184,7 @@ public class EntityFrameworkCoreTests
             {
                 await strategy.ExecuteAsync<object?, int>(null,
                     (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Operation()); },
-                    (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Verify()); });
+                    (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Verify()); }, cancellation.Token);
             }
             else
             {
@@ -144,30 +196,73 @@ public class EntityFrameworkCoreTests
         await Assert.That(operations).IsEqualTo(1);
         await Assert.That(verifications).IsEqualTo(2);
         await Assert.That(ExecutionStrategy.Current).IsNull();
+        await Assert.That(shield.Execute(_ => 7)).IsEqualTo(7);
     }
 
     [Test]
-    public async Task Negative_Verification_Allows_Retry_And_Returns_Real_Result()
+    [Arguments(false, -1)]
+    [Arguments(true, -1)]
+    [Arguments(false, 0)]
+    [Arguments(true, 0)]
+    [Arguments(false, 1)]
+    [Arguments(true, 1)]
+    public async Task Negative_Verification_Allows_Retry_And_Returns_Real_Result(bool asynchronous, int queueLimit)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
-        await using var context = CreateContext(connection, RetryShield);
+        var shield = VerificationShield(asynchronous, queueLimit);
+        await using var context = CreateContext(connection, shield);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var strategy = context.Database.CreateExecutionStrategy();
         var operations = 0;
         var verifications = 0;
-        var result = await strategy.ExecuteAsync<object?, int>(null, (_, _, token) =>
+        int Operation()
         {
-            token.ThrowIfCancellationRequested();
             if (++operations == 1) { throw new IOException("Not committed"); }
-            return Task.FromResult(42);
-        }, (_, _, token) =>
+            return 42;
+        }
+        ExecutionResult<int> Verify()
         {
-            token.ThrowIfCancellationRequested();
             verifications++;
-            return Task.FromResult(new ExecutionResult<int>(successful: false, result: -1));
-        });
+            return new ExecutionResult<int>(successful: false, result: -1);
+        }
+
+        var result = asynchronous
+            ? await strategy.ExecuteAsync<object?, int>(null,
+                (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Operation()); },
+                (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Verify()); }, cancellation.Token)
+            : strategy.Execute<object?, int>(null, (_, _) => Operation(), (_, _) => Verify());
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(operations).IsEqualTo(2);
         await Assert.That(verifications).IsEqualTo(1);
+        await Assert.That(ExecutionStrategy.Current).IsNull();
+        await Assert.That(shield.Execute(_ => 7)).IsEqualTo(7);
+    }
+
+    [Test]
+    [Arguments(0)]
+    [Arguments(1)]
+    public async Task Cancellation_During_Verification_Releases_Admission_Without_Replaying(int queueLimit)
+    {
+        var shield = VerificationShield(asynchronous: true, queueLimit);
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var context = CreateContext(connection, shield);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var strategy = context.Database.CreateExecutionStrategy();
+        var operations = 0;
+        var verifications = 0;
+        await Assert.That(() => strategy.ExecuteAsync<object?, int>(null,
+            (_, _, token) => { token.ThrowIfCancellationRequested(); operations++; throw new IOException("Ambiguous commit"); },
+            async (_, _, token) =>
+            {
+                verifications++;
+                cancellation.Cancel();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                return new ExecutionResult<int>(true, 42);
+            }, cancellation.Token)).Throws<OperationCanceledException>();
+        await Assert.That(operations).IsEqualTo(1);
+        await Assert.That(verifications).IsEqualTo(1);
+        await Assert.That(ExecutionStrategy.Current).IsNull();
+        await Assert.That(shield.Execute(_ => 7)).IsEqualTo(7);
     }
 
     [Test]
@@ -395,6 +490,20 @@ public class EntityFrameworkCoreTests
             counts.Add(ExceptionsEncountered.Count);
             return TimeSpan.Zero;
         }
+    }
+
+    private static Shield VerificationShield(bool asynchronous, int queueLimit, bool retryOutermost = true)
+    {
+        if (queueLimit < 0) { return RetryShield; }
+        var admission = Shield.ConcurrencyLimit(options =>
+        {
+            options.MaxConcurrency = 1;
+            options.QueueLimit = queueLimit;
+            // Sync execution has no caller token. Bound a broken implementation's circular wait;
+            // async cases leave queue timeout unset and use the caller's cancellation watchdog.
+            options.QueueTimeout = asynchronous ? null : TimeSpan.FromSeconds(5);
+        });
+        return retryOutermost ? RetryShield.Wrap(admission) : admission.Wrap(RetryShield);
     }
 
     private static TestContext CreateContext(SqliteConnection connection, Shield shield, params IInterceptor[] interceptors) =>
