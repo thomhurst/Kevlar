@@ -86,11 +86,11 @@ public class HttpOptionForwardingTests
         var factory = provider.GetRequiredService<IHttpClientFactory>();
         using var client = factory.CreateClient("standard");
         using var other = factory.CreateClient(defaults ? "other" : "standard");
-        await Task.WhenAll(Enumerable.Range(0, 12).Select(async index =>
+        await Task.WhenAll(Enumerable.Range(0, 12).Select(index => Task.Run(async () =>
         {
             using var response = await (index % 2 == 0 ? client : other).GetAsync("https://dependency.test/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
-        }));
+        })));
         await Assert.That(inner.Calls).IsEqualTo(13);
         await Assert.That(budget.Tokens).IsEqualTo(0);
     }
