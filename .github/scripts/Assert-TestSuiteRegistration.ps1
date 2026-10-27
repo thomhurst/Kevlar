@@ -34,9 +34,31 @@ Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'tests') -Recurse -Filter 
         }
     }
 
+# TUnit can resolve relative results directories from the test binary directory.
+# Anchor reports to the workspace so the upload step finds them on every platform.
+$workflow -split '\r?\n' | Where-Object { $_ -match '--report-trx(?:\s|$)' } | ForEach-Object {
+    if ($_ -notmatch '--results-directory "\$\{\{ github\.workspace \}\}/artifacts/test-results/[^"\s]+"')
+    {
+        $failures.Add("TRX command must use a quoted workspace-absolute results directory: $($_.Trim())")
+    }
+}
+
+# Coverage settings and reports also resolve relative to the test binary directory.
+$workflow -split '\r?\n' | Where-Object { $_ -match '--coverage(?:\s|$)' } | ForEach-Object {
+    if ($_ -notmatch '--coverage-settings "\$\{\{ github\.workspace \}\}/\.github/coverage\.runsettings"')
+    {
+        $failures.Add("Coverage command must use a quoted workspace-absolute settings file: $($_.Trim())")
+    }
+
+    if ($_ -notmatch '--coverage-output "\$\{\{ github\.workspace \}\}/artifacts/coverage/raw/[^"\s]+"')
+    {
+        $failures.Add("Coverage command must use a quoted workspace-absolute output path: $($_.Trim())")
+    }
+}
+
 if ($failures.Count -gt 0)
 {
     throw ($failures -join [Environment]::NewLine)
 }
 
-Write-Host 'Every TUnit project is registered in Kevlar.slnx and CI.'
+Write-Host 'Every TUnit project is registered in Kevlar.slnx and CI, and TRX/coverage commands use workspace-absolute paths.'

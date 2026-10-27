@@ -161,65 +161,65 @@ jobs:
       - name: Unit tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net8.trx --results-directory artifacts/test-results/unit
+          dotnet run --project tests/Kevlar.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/unit"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net10.trx --results-directory artifacts/test-results/unit
+          dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/unit"
 
       - name: Chaos tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net8.trx --results-directory artifacts/test-results/chaos
+          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/chaos"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net10.trx --results-directory artifacts/test-results/chaos
+          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/chaos"
 
       - name: Compatibility asset tests
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory "${{ github.workspace }}/artifacts/test-results/netstandard"
 
       - name: .NET Framework compatibility asset tests
         if: matrix.os == 'windows-latest'
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net48 --no-build
 
       - name: Modern gRPC compatibility asset tests
-        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename netstandard21.trx --results-directory artifacts/test-results/netstandard21
+        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename netstandard21.trx --results-directory "${{ github.workspace }}/artifacts/test-results/netstandard21"
 
       - name: Observability contract (.NET 8)
-        run: dotnet run --project tests/Kevlar.Observability.Net8.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict --report-trx --report-trx-filename observability-net8.trx --results-directory artifacts/test-results/observability-net8
+        run: dotnet run --project tests/Kevlar.Observability.Net8.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict --report-trx --report-trx-filename observability-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/observability-net8"
 
       - name: Integration tests
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory "${{ github.workspace }}/artifacts/test-results/integration"
 
       - name: Analyzer tests
-        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory artifacts/test-results/analyzers
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory "${{ github.workspace }}/artifacts/test-results/analyzers"
 
       - name: Testing package tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net8.trx --results-directory artifacts/test-results/testing
+          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/testing"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net10.trx --results-directory artifacts/test-results/testing
+          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/testing"
 
       - name: Rate limiting adapter tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net8.trx --results-directory artifacts/test-results/rate-limiting
+          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/rate-limiting"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net10.trx --results-directory artifacts/test-results/rate-limiting
+          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/rate-limiting"
 
       - name: Logging integration tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net8.trx --results-directory artifacts/test-results/logging
+          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/logging"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net10.trx --results-directory artifacts/test-results/logging
+          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/logging"
 
       - name: Tracing integration tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net8.trx --results-directory artifacts/test-results/tracing
+          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/tracing"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net10.trx --results-directory artifacts/test-results/tracing
+          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/tracing"
       - name: Outage measurement accounting tests
-        run: dotnet run --project tests/Kevlar.OutageTests.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename outage.trx --results-directory artifacts/test-results/outage
+        run: dotnet run --project tests/Kevlar.OutageTests.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename outage.trx --results-directory "${{ github.workspace }}/artifacts/test-results/outage"
 
       - name: Upload test reports
         if: always()
@@ -315,34 +315,34 @@ jobs:
         run: mkdir -p artifacts/coverage/raw
 
       - name: Collect unit coverage
-        run: dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect chaos coverage
-        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect compatibility asset coverage
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect modern gRPC compatibility asset coverage
-        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard21.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/netstandard21.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect integration coverage
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect analyzer coverage
-        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect testing package coverage
-        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect rate limiting adapter coverage
-        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect logging integration coverage
-        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect tracing integration coverage
-        run: dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/tracing.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/tracing.cobertura.xml" --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
