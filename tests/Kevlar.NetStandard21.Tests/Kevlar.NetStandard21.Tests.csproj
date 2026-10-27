@@ -15,6 +15,8 @@
   <ItemGroup>
     <Compile Include="..\Kevlar.NetStandard.Tests\GrpcStreamingCancellationTests.cs"
              Link="GrpcStreamingCancellationTests.cs" />
+    <Compile Include="..\Kevlar.Tests\GrpcSelectedServerReadCancellationTests.cs"
+             Link="GrpcSelectedServerReadCancellationTests.cs" />
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj"
                       SetTargetFramework="TargetFramework=netstandard2.0" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj"
