@@ -62,10 +62,14 @@ public class IntegrationTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
+    [Arguments("POST", false, false)]
+    [Arguments("POST", false, true)]
+    [Arguments("PUT", true, false)]
+    [Arguments("PUT", true, true)]
+    [Arguments("DELETE", true, false)]
+    [Arguments("DELETE", true, true)]
     [NotInParallel]
-    public async Task Unsafe_Method_Suppression_Exposes_Default_Levels(bool demoteSuppression)
+    public async Task Unsafe_Method_Suppression_Exposes_Default_Levels(string method, bool narrowMethods, bool demoteSuppression)
     {
         var logs = new FakeLoggerProvider();
         var defaultLevels = new List<LogLevel>();
@@ -98,11 +102,14 @@ public class IntegrationTests
         });
         services.AddHttpClient("unsafe-method")
             .ConfigurePrimaryHttpMessageHandler(() => transport)
-            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None), new ShieldHttpHandlerOptions
+            {
+                IsReplaySafeMethod = narrowMethods ? static method => method == HttpMethod.Get : null,
+            });
         using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unsafe-method");
-        using var firstRequest = new HttpRequestMessage(HttpMethod.Post, "https://example.test/first");
-        using var secondRequest = new HttpRequestMessage(HttpMethod.Post, "https://example.test/second");
+        using var firstRequest = new HttpRequestMessage(new HttpMethod(method), "https://example.test/first");
+        using var secondRequest = new HttpRequestMessage(new HttpMethod(method), "https://example.test/second");
 
         using var firstResponse = await client.SendAsync(firstRequest);
         using var secondResponse = await client.SendAsync(secondRequest);

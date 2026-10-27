@@ -10,6 +10,7 @@ internal sealed class HttpShieldPipelineOptions
         ContentReplayPolicy = source.ContentReplayPolicy;
         MaxBufferSize = source.MaxBufferSize;
         AllowUnsafeMethodReplay = source.AllowUnsafeMethodReplay;
+        IsReplaySafeMethod = source.IsReplaySafeMethod;
         RequestFactory = source.RequestFactory;
         Routing = source.Routing is null ? null : new RoutingSnapshot(source.Routing);
     }
@@ -19,6 +20,8 @@ internal sealed class HttpShieldPipelineOptions
     public long MaxBufferSize { get; }
 
     public bool AllowUnsafeMethodReplay { get; }
+
+    public Func<HttpMethod, bool>? IsReplaySafeMethod { get; }
 
     public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory { get; }
 
