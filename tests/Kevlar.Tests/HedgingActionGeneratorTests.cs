@@ -944,59 +944,49 @@ public class HedgingActionGeneratorTests
     public async Task Original_Action_Releases_Contexts_When_Property_Merge_Throws(
         bool completesAsynchronously)
     {
-        var heldContexts = RentContexts(KevlarContext.PoolCapacity);
-        KevlarContext[]? recycledContexts = null;
-
-        try
+        var contexts = new List<KevlarContext>();
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
         {
-            KevlarContext? attemptContext = null;
-            var attempts = 0;
-            var shield = Shield.For<int>().Hedge(options =>
+            options.MaxHedgedAttempts = 1;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
             {
-                options.MaxHedgedAttempts = 1;
-                options.Delay = Timeout.InfiniteTimeSpan;
-                options.ActionGenerator = hedge =>
+                contexts.Add(hedge.Context);
+                return hedge.OriginalAction;
+            };
+        });
+
+        var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync(
+                0,
+                static (_, properties) =>
+                    properties.Set(ThrowingEqualityKey, new ThrowingEquality()),
+                async (_, context) =>
                 {
-                    attemptContext = hedge.Context;
-                    return hedge.OriginalAction;
-                };
-            });
-
-            var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync(
-                    0,
-                    static (_, properties) =>
-                        properties.Set(ThrowingEqualityKey, new ThrowingEquality()),
-                    async (_, _) =>
+                    contexts.Add(context);
+                    if (Interlocked.Increment(ref attempts) == 1)
                     {
-                        if (Interlocked.Increment(ref attempts) == 1)
-                        {
-                            throw new InvalidOperationException("primary");
-                        }
+                        throw new InvalidOperationException("primary");
+                    }
 
-                        if (completesAsynchronously)
-                        {
-                            await Task.Yield();
-                        }
+                    if (completesAsynchronously)
+                    {
+                        await Task.Yield();
+                    }
 
-                        return 42;
-                    },
-                    static (_, _) => { }))
-                .Throws<InvalidOperationException>();
-            await Assert.That(exception!.Message).IsEqualTo("Property equality failed.");
+                    return 42;
+                },
+                static (_, _) => { }))
+            .Throws<InvalidOperationException>();
+        await Assert.That(exception!.Message).IsEqualTo("Property equality failed.");
 
-            recycledContexts = RentContexts(KevlarContext.PoolCapacity);
-
-            await Assert.That(recycledContexts.Any(context =>
-                ReferenceEquals(context, attemptContext))).IsTrue();
-        }
-        finally
+        // Async completion can return contexts to another thread's cache. Inspect reset
+        // state directly rather than assuming that this thread can rent them again.
+        await Assert.That(contexts.Count).IsEqualTo(3);
+        foreach (var context in contexts)
         {
-            if (recycledContexts is not null)
-            {
-                ReturnContexts(recycledContexts);
-            }
-
-            ReturnContexts(heldContexts);
+            KevlarContext.AllowPooledInspection(context);
+            await Assert.That(context.Properties.Count).IsEqualTo(0);
         }
     }
 
@@ -1178,23 +1168,6 @@ public class HedgingActionGeneratorTests
             obj is ThrowingEquality other && Equals(other);
 
         public override int GetHashCode() => 0;
-    }
-
-    private static KevlarContext[] RentContexts(int count) =>
-        Enumerable.Range(0, count)
-            .Select(_ => KevlarContext.Rent(
-                default,
-                isSynchronous: false,
-                TimeProvider.System,
-                shieldName: null))
-            .ToArray();
-
-    private static void ReturnContexts(IEnumerable<KevlarContext> contexts)
-    {
-        foreach (var context in contexts)
-        {
-            KevlarContext.Return(context);
-        }
     }
 
     private sealed class PropertySeedingStrategy(KevlarKey<string> key, string value) : Strategy
