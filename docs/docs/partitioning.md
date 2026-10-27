@@ -106,6 +106,37 @@ the same operation and observe the same failure. Synchronous removal and disposa
 partition providers registered through DI are singleton-owned and are therefore disposed with the
 service provider.
 
+## Cache and strategy clocks
+
+`PartitionedShieldOptions<TKey>.TimeProvider` and
+`PartitionedShieldOptions<TKey, TResult>.TimeProvider` control **idle expiry only**. They have no
+timing effect when `IdleExpiration` is not set. The cache clock does not flow into the shields
+returned by the partition factory: strategy timeouts, retry delays, and circuit-breaker windows
+use each shield's own clock, configured with `WithTimeProvider` (system time by default).
+
+For deterministic tests that exercise both idle expiry and strategy timing, configure both clocks
+with the same `FakeTimeProvider` in a test project targeting .NET 8 or later:
+
+```csharp
+using Microsoft.Extensions.Time.Testing;
+
+var timeProvider = new FakeTimeProvider();
+using var partitions = new PartitionedShield<string>(
+    _ => Shield.CircuitBreaker(
+            consecutiveFailures: 1,
+            breakDuration: TimeSpan.FromMinutes(1))
+        .WithTimeProvider(timeProvider), // Strategy timing.
+    new PartitionedShieldOptions<string>
+    {
+        IdleExpiration = TimeSpan.FromMinutes(5),
+        TimeProvider = timeProvider, // Cache idle expiry.
+    });
+```
+
+Advancing the fake clock makes idle entries eligible for eviction; a later provider operation or
+`PruneExpired()` removes them. See [testing partitioned shields](testing.md#testing-partitioned-shields)
+for an executable example that advances both a breaker window and idle expiry.
+
 ## Dependency injection
 
 `AddPartitionedShield` registers a named provider as a keyed singleton. The factory receives the

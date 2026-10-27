@@ -18,7 +18,13 @@ public sealed class PartitionedShieldOptions<TKey>
     /// </summary>
     public TimeSpan? IdleExpiration { get; set; }
 
-    /// <summary>Gets or sets the time source used for idle expiry. Defaults to system time.</summary>
+    /// <summary>Gets or sets the time source used only for partition idle expiry. Defaults to system time.</summary>
+    /// <remarks>
+    /// Has no timing effect when <see cref="IdleExpiration"/> is <see langword="null"/>.
+    /// This clock does not flow into partition strategies. Configure strategy delays, timeouts, and
+    /// time windows by calling <see cref="ShieldExtensions.WithTimeProvider(Shield, TimeProvider)"/> on each
+    /// shield returned by the partition factory.
+    /// </remarks>
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
