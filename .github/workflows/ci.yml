@@ -113,6 +113,13 @@ jobs:
         run: npm run build
         working-directory: docs
 
+      - name: Use Ubuntu archive for browser dependencies
+        # Azure mirror downloads stalled until the docs job timed out (issue #657).
+        run: |
+          sudo find /etc/apt -type f \
+            \( -name '*.list' -o -name '*.sources' -o -name 'apt-mirrors*.txt' \) \
+            -exec sed -i -E 's|https?://azure\.archive\.ubuntu\.com/|https://archive.ubuntu.com/|g' {} +
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
         working-directory: docs
