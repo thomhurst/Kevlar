@@ -1,6 +1,6 @@
 # Kevlar
 
-Before heavy local work, follow [the shared performance lock workflow](../../../../scripts/PerformanceLock.md). Reserve `performance` through the current shared `C:/git/Dekaf/scripts/AgentLocks.ps1`, using `$performanceLocks` separately from this repository's `$agentLocks`. Acquire it after the item lock and release it first. Repository-local Redis namespaces do not provide cross-repository isolation.
+Before heavy local work, follow [the shared performance lock workflow](../../../../scripts/PerformanceLock.md). Resolve the canonical shared Dekaf checkout from `SHARED_PERFORMANCE_LOCK_CHECKOUT` (default `C:/git/Dekaf`), using the same setting in every cooperating repository. Reserve `performance` through that checkout's `scripts/AgentLocks.ps1`, using `$performanceLocks` separately from this repository's `$agentLocks` and the same explicit owner ID for every performance-lock verb. Acquire it after the item lock and release it first. If the configured checkout or backend is unavailable, defer heavy work; repository-local Redis namespaces do not provide cross-repository isolation.
 
 Read [AGENTS.md](../../../../AGENTS.md) for commands, test matrix, commit style, and docs conventions.
 
