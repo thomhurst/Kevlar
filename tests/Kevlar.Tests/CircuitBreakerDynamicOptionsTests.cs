@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime;
 using Kevlar.Internal;
 using Kevlar.Strategies;
 using Microsoft.Extensions.Time.Testing;
@@ -67,10 +68,10 @@ public class CircuitBreakerDynamicOptionsTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task BreakDurationGenerator_Typed_Result_Not_Boxed()
     {
-        await Assert.That((bool)GC.GetConfigurationVariables()["ConcurrentGC"]).IsFalse();
-
+        var originalLatencyMode = GCSettings.LatencyMode;
         var generator = CircuitBreakerBreakDurationGenerator.Create<int>(static item =>
         {
             if (item.Outcome.Result != 42)
@@ -86,11 +87,14 @@ public class CircuitBreakerDynamicOptionsTests
         var allocated = MeasureBreakDurationGeneratorAllocations(generator);
         Console.WriteLine($"Typed generator: {allocated} bytes for 10,000 invocations.");
         await Assert.That(allocated).IsLessThanOrEqualTo(16 * 1024);
+        await Assert.That(GCSettings.LatencyMode).IsEqualTo(originalLatencyMode);
     }
 
     [Test]
+    [NotInParallel]
     public async Task BreakDurationGenerator_Untyped_Result_Boxing_Exceeds_Typed_Budget()
     {
+        var originalLatencyMode = GCSettings.LatencyMode;
         // Exercise real boxing through the untyped adapter as a positive control for the
         // typed guard. The same measured loop must still detect per-invocation allocations.
         object? boxedResult = null;
@@ -105,6 +109,40 @@ public class CircuitBreakerDynamicOptionsTests
         Console.WriteLine($"Untyped generator: {allocated} bytes for 10,000 invocations.");
         await Assert.That(boxedResult).IsEqualTo(42);
         await Assert.That(allocated).IsGreaterThan(16 * 1024);
+        await Assert.That(GCSettings.LatencyMode).IsEqualTo(originalLatencyMode);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task BreakDurationGenerator_Allocation_Measurement_Restores_GC_After_Callback_Failure()
+    {
+        var originalLatencyMode = GCSettings.LatencyMode;
+        var expected = new InvalidOperationException("measurement callback");
+        var measuredCalls = 0;
+        var generator = CircuitBreakerBreakDurationGenerator.Create<int>(_ =>
+        {
+            if (GCSettings.LatencyMode == GCLatencyMode.NoGCRegion)
+            {
+                measuredCalls++;
+                throw expected;
+            }
+
+            return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+        });
+
+        Exception? observed = null;
+        try
+        {
+            _ = MeasureBreakDurationGeneratorAllocations(generator);
+        }
+        catch (Exception exception)
+        {
+            observed = exception;
+        }
+
+        await Assert.That(ReferenceEquals(observed, expected)).IsTrue();
+        await Assert.That(measuredCalls).IsEqualTo(1);
+        await Assert.That(GCSettings.LatencyMode).IsEqualTo(originalLatencyMode);
     }
 
     private static long MeasureBreakDurationGeneratorAllocations(
@@ -125,13 +163,29 @@ public class CircuitBreakerDynamicOptionsTests
                 _ = generator.Invoke(in outcome, in statistics, context).Result;
             }
 
-            var before = GC.GetAllocatedBytesForCurrentThread();
-            for (var index = 0; index < 10_000; index++)
+            // A collection can perturb allocation-context accounting even when this loop
+            // allocates nothing. Isolate only the measurement, with room for the boxing
+            // positive control and coverage probes. Callers must run without parallel tests.
+            if (!GC.TryStartNoGCRegion(16 * 1024 * 1024))
             {
-                _ = generator.Invoke(in outcome, in statistics, context).Result;
+                throw new InvalidOperationException("Could not reserve a GC-free allocation measurement.");
             }
 
-            return GC.GetAllocatedBytesForCurrentThread() - before;
+            try
+            {
+                var before = GC.GetAllocatedBytesForCurrentThread();
+                for (var index = 0; index < 10_000; index++)
+                {
+                    _ = generator.Invoke(in outcome, in statistics, context).Result;
+                }
+
+                return GC.GetAllocatedBytesForCurrentThread() - before;
+            }
+            finally
+            {
+                // EndNoGCRegion also fails the test if a collection invalidated the region.
+                GC.EndNoGCRegion();
+            }
         }
         finally
         {
