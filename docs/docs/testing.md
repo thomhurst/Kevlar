@@ -341,7 +341,59 @@ if (failure.Exception is not InvalidOperationException ||
 
 Use the same key to test shared state and different keys to test isolation. Capacity and idle
 expiration tests can assert `Count`, `CreatedCount`, `CapacityEvictionCount`, and
-`ExpirationEvictionCount`; advance the configured fake clock before calling `PruneExpired()`.
+`ExpirationEvictionCount`.
+
+Partitioned providers have two separate clock settings. `PartitionedShieldOptions<TKey>.TimeProvider`
+and `PartitionedShieldOptions<TKey, TResult>.TimeProvider` affect cache idle expiry only and have no
+timing effect without `IdleExpiration`. They do not configure strategy clocks. Set
+`WithTimeProvider` on the shields returned by the factory to control strategy timeouts, retry delays,
+and breaker windows; otherwise those shields use system time by default.
+
+When testing both, pass the same `FakeTimeProvider` to the options and the factory-created shields.
+This typed example recovers a breaker after one fake minute, then evicts its idle partition without
+sleeping. Idle expiry remains opportunistic: advance the clock, then call `PruneExpired()` or
+perform another provider operation.
+
+<!-- doc-test-run: testing-partition-clocks -->
+```csharp
+using Microsoft.Extensions.Time.Testing;
+
+var timeProvider = new FakeTimeProvider();
+using var partitions = new PartitionedShield<string, int>(
+    _ => Shield.For<int>()
+        .CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromMinutes(1))
+        .WithTimeProvider(timeProvider),
+    new PartitionedShieldOptions<string, int>
+    {
+        IdleExpiration = TimeSpan.FromMinutes(5),
+        TimeProvider = timeProvider,
+    });
+var partition = partitions.GetShield("north");
+
+var failure = await partition.ExecuteOutcomeAsync(static _ =>
+    ValueTask.FromException<int>(new InvalidOperationException("north failed")));
+var rejected = await partition.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+if (failure.Exception is not InvalidOperationException ||
+    rejected.Exception is not CircuitOpenException)
+{
+    throw new InvalidOperationException("The partition's breaker did not open.");
+}
+
+timeProvider.Advance(TimeSpan.FromMinutes(1));
+var recovered = await partition.ExecuteAsync(static _ => new ValueTask<int>(42));
+if (recovered != 42)
+{
+    throw new InvalidOperationException("The breaker did not recover using fake time.");
+}
+
+timeProvider.Advance(TimeSpan.FromMinutes(5));
+var removed = partitions.PruneExpired();
+if (removed != 1 || partitions.Count != 0 ||
+    partitions.ExpirationEvictionCount != 1)
+{
+    throw new InvalidOperationException("Idle expiry did not use the fake clock.");
+}
+```
 
 ## Chaos in tests
 
