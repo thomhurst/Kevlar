@@ -290,7 +290,7 @@ internal static class TimeoutSourcePool
         }
     }
 
-    private readonly struct Policy : IPooledObjectPolicy<Source>
+    private readonly struct Policy : IPooledObjectPolicy<Source>, INonThrowingResetPolicy
     {
         public Source Create() => new();
         public bool TryReset(Source source) => source.ResetForReuse();

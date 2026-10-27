@@ -514,7 +514,7 @@ public sealed class KevlarProperties
     }
 
     private readonly struct AdditionalAttemptStatePoolPolicy
-        : IPooledObjectPolicy<AdditionalAttemptState>
+        : IPooledObjectPolicy<AdditionalAttemptState>, INonThrowingResetPolicy
     {
         public AdditionalAttemptState Create() => new();
 

@@ -507,7 +507,7 @@ public sealed class KevlarContext
 #endif
     }
 
-    private readonly struct PoolPolicy : IPooledObjectPolicy<KevlarContext>
+    private readonly struct PoolPolicy : IPooledObjectPolicy<KevlarContext>, INonThrowingResetPolicy
     {
         public KevlarContext Create() => new();
 

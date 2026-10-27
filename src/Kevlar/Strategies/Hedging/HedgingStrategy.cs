@@ -1160,7 +1160,7 @@ internal sealed class HedgingStrategy : Strategy
             KevlarContext Context,
             Outcome<T> Outcome);
 
-        private readonly struct PoolPolicy : IPooledObjectPolicy<OriginalActionContextCapture<T>>
+        private readonly struct PoolPolicy : IPooledObjectPolicy<OriginalActionContextCapture<T>>, INonThrowingResetPolicy
         {
             public OriginalActionContextCapture<T> Create() => new();
 
