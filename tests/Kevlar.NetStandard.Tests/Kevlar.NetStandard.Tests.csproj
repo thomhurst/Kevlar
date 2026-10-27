@@ -23,6 +23,8 @@
     <Compile Remove="NetFrameworkCompatibilityTests.cs" />
     <Compile Include="..\Kevlar.Tests\GrpcSelectedServerReadCancellationTests.cs"
              Link="GrpcSelectedServerReadCancellationTests.cs" />
+    <Compile Include="..\Kevlar.IntegrationTests\GrpcDuplexCancellationTests.cs"
+             Link="GrpcDuplexCancellationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

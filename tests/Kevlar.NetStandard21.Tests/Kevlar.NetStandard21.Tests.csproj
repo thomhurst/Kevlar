@@ -13,6 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Kevlar.IntegrationTests\GrpcDuplexCancellationTests.cs"
+             Link="GrpcDuplexCancellationTests.cs" />
     <Compile Include="..\Kevlar.NetStandard.Tests\GrpcStreamingCancellationTests.cs"
              Link="GrpcStreamingCancellationTests.cs" />
     <Compile Include="..\Kevlar.Tests\GrpcSelectedServerReadCancellationTests.cs"

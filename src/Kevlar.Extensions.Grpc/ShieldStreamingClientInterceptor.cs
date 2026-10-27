@@ -1084,15 +1084,61 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         public Task<bool> MoveNext(CancellationToken cancellationToken)
         {
-            var operationToken = cancellationToken.CanBeCanceled ? cancellationToken : lifetimeToken;
-            var visibleToken = cancellationToken.CanBeCanceled ? cancellationToken : callerToken;
-            return shield.ExecuteAsync(
-                (Reader: reader, VisibleToken: visibleToken),
-                static (state, token) => AwaitGrpcOperationAsync(
-                    state.Reader.MoveNext(token),
-                    token,
-                    state.VisibleToken),
-                operationToken).AsTask();
+            var operation = cancellationToken.CanBeCanceled
+                ? CancellationTokenSource.CreateLinkedTokenSource(lifetimeToken, cancellationToken)
+                : null;
+            var operationToken = operation?.Token ?? lifetimeToken;
+            ValueTask<bool> pending;
+            try
+            {
+                pending = shield.ExecuteAsync(
+                    reader,
+                    static (stream, token) => AwaitGrpcOperationAsync(stream.MoveNext(token), token),
+                    operationToken);
+            }
+            catch (Exception exception)
+            {
+                // Normalize synchronous failures through the same cancellation path.
+                pending = new ValueTask<bool>(Task.FromException<bool>(exception));
+            }
+
+            if (pending.IsCompletedSuccessfully)
+            {
+                operation?.Dispose();
+                return pending.AsTask();
+            }
+
+            return AwaitReadAsync(pending, operation, operationToken, cancellationToken);
+        }
+
+        private async Task<bool> AwaitReadAsync(
+            ValueTask<bool> pending,
+            CancellationTokenSource? operation,
+            CancellationToken operationToken,
+            CancellationToken cancellationToken)
+        {
+            using var registrationLifetime = operation;
+            try
+            {
+                return await pending.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (operationToken.IsCancellationRequested)
+            {
+                var visibleToken = cancellationToken.IsCancellationRequested
+                    ? cancellationToken
+                    : callerToken.IsCancellationRequested
+                        ? callerToken
+                        : lifetimeToken;
+                if (exception.CancellationToken == visibleToken)
+                {
+                    throw;
+                }
+
+                throw new OperationCanceledException(
+                    exception.Message,
+                    exception,
+                    visibleToken);
+            }
         }
     }
 
