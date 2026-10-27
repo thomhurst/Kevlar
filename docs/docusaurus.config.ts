@@ -1,6 +1,7 @@
 import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import llmsPlugin from './plugins/llms';
 
 const config: Config = {
   title: 'Kevlar',
@@ -25,6 +26,8 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+
+  plugins: [llmsPlugin],
 
   presets: [
     [
