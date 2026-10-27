@@ -685,8 +685,27 @@ accepts `RateLimiter`, `PartitionedRateLimiter<KevlarContext>`, or a custom leas
   unhandled exception as a breaker failure nor resets prior consecutive failures.
 - **State is by instance.** Both libraries share breaker and limiter state only when the same built
   pipeline or shield instance is reused. `Wrap` and `Compose` reference rather than copy state.
-- **Timeout exceptions are library-specific.** `TimeoutRejectedException` maps to
-  `TimeoutExceededException`; neither derives from `System.TimeoutException`.
+- **Timeout exception hierarchies differ.** Polly v8's `TimeoutRejectedException` derives from
+  `Polly.ExecutionRejectedException`. Kevlar's `TimeoutExceededException` derives directly from
+  `KevlarException`, so catching `Kevlar.ExecutionRejectedException` alone still handles circuit
+  and limiter rejections but **does not catch timeouts**. A mechanical port of the catch can compile
+  while allowing a timeout to escape instead of returning the intended HTTP 503 response. Neither
+  timeout exception derives from `System.TimeoutException`.
+
+  A Polly v8 catch (with `ExecutionRejectedException` from `Polly`):
+
+  ```text
+  catch (ExecutionRejectedException) { return Unavailable(); }
+  ```
+
+  The Kevlar equivalent (with the exception types from `Kevlar`):
+
+  ```text
+  catch (Exception ex) when (ex is ExecutionRejectedException or TimeoutExceededException)
+  {
+      return Unavailable();
+  }
+  ```
 - **Circuit rejection details differ.** `BrokenCircuitException` maps to `CircuitOpenException`;
   `IsolatedCircuitException` maps to `CircuitOpenException.IsIsolated`.
 
