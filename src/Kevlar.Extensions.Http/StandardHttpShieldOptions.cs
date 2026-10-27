@@ -3,6 +3,24 @@ namespace Kevlar.Extensions.Http;
 /// <summary>Configures the standard HTTP resilience pipeline and its request handler.</summary>
 public sealed class StandardHttpShieldOptions
 {
+    /// <summary>Creates a copy with independent nested configuration objects.</summary>
+    /// <remarks>
+    /// Delegates and runtime collaborators, such as retry budgets and circuit monitors, retain
+    /// their references. Captured delegate state and collaborator state are not cloned.
+    /// </remarks>
+    /// <returns>A new options instance with copied configuration containers.</returns>
+    public StandardHttpShieldOptions Clone()
+    {
+        var copy = (StandardHttpShieldOptions)MemberwiseClone();
+        copy.TotalTimeout = TotalTimeout?.Clone()!;
+        copy.Retry = Retry?.Clone()!;
+        copy.CircuitBreaker = CircuitBreaker?.Clone()!;
+        copy.ConcurrencyLimit = ConcurrencyLimit?.Clone();
+        copy.AttemptTimeout = AttemptTimeout?.Clone()!;
+        copy.Handler = Handler?.Clone()!;
+        return copy;
+    }
+
     internal static readonly TimeSpan DefaultRetryMaxDelay = TimeSpan.FromSeconds(10);
 
     /// <summary>

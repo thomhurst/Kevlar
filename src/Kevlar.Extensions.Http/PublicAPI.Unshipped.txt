@@ -1,1 +1,5 @@
 #nullable enable
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Clone() -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions!
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Clone() -> Kevlar.Extensions.Http.ShieldHttpHandlerOptions!
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.Clone() -> Kevlar.Extensions.Http.StandardHedgeShieldOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Clone() -> Kevlar.Extensions.Http.StandardHttpShieldOptions!
