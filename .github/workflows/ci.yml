@@ -315,34 +315,34 @@ jobs:
         run: mkdir -p artifacts/coverage/raw
 
       - name: Collect unit coverage
-        run: dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect chaos coverage
-        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect compatibility asset coverage
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect modern gRPC compatibility asset coverage
-        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard21.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/netstandard21.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect integration coverage
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect analyzer coverage
-        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect testing package coverage
-        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect rate limiting adapter coverage
-        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect logging integration coverage
-        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml" --coverage-output-format cobertura
 
       - name: Collect tracing integration coverage
-        run: dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/tracing.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings "${{ github.workspace }}/.github/coverage.runsettings" --coverage-output "${{ github.workspace }}/artifacts/coverage/raw/tracing.cobertura.xml" --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'

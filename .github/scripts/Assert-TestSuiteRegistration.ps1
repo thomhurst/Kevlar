@@ -43,9 +43,22 @@ $workflow -split '\r?\n' | Where-Object { $_ -match '--report-trx(?:\s|$)' } | F
     }
 }
 
+# Coverage settings and reports also resolve relative to the test binary directory.
+$workflow -split '\r?\n' | Where-Object { $_ -match '--coverage(?:\s|$)' } | ForEach-Object {
+    if ($_ -notmatch '--coverage-settings "\$\{\{ github\.workspace \}\}/\.github/coverage\.runsettings"')
+    {
+        $failures.Add("Coverage command must use a quoted workspace-absolute settings file: $($_.Trim())")
+    }
+
+    if ($_ -notmatch '--coverage-output "\$\{\{ github\.workspace \}\}/artifacts/coverage/raw/[^"\s]+"')
+    {
+        $failures.Add("Coverage command must use a quoted workspace-absolute output path: $($_.Trim())")
+    }
+}
+
 if ($failures.Count -gt 0)
 {
     throw ($failures -join [Environment]::NewLine)
 }
 
-Write-Host 'Every TUnit project is registered in Kevlar.slnx and CI, and TRX reports use workspace-absolute paths.'
+Write-Host 'Every TUnit project is registered in Kevlar.slnx and CI, and TRX/coverage commands use workspace-absolute paths.'
