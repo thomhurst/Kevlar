@@ -195,6 +195,13 @@ public static class ShieldHttpClientBuilderExtensions
     public static IHttpClientBuilder AddShield(
         this IHttpClientBuilder builder,
         Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>> shieldSelector)
+        => AddShield(builder, shieldSelector, new ShieldHttpHandlerOptions());
+
+    /// <summary>Selects one shield for each request with snapshotted replay and routing options.</summary>
+    public static IHttpClientBuilder AddShield(
+        this IHttpClientBuilder builder,
+        Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>> shieldSelector,
+        ShieldHttpHandlerOptions options)
     {
         if (builder is null)
         {
@@ -206,10 +213,16 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldSelector));
         }
 
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        var optionsSnapshot = Snapshot(options);
         return AddShieldHandler(builder, (services, name) =>
             new ShieldDelegatingHandler(request =>
                 Decorate(services, shieldSelector(request, services), name),
-                new ShieldHttpHandlerOptions(),
+                optionsSnapshot,
                 CreateDecorator(services, name)));
     }
 
@@ -218,6 +231,15 @@ public static class ShieldHttpClientBuilderExtensions
         this IHttpClientBuilder builder,
         PartitionedShield<TKey, HttpResponseMessage> partitions,
         Func<HttpRequestMessage, TKey> keySelector)
+        where TKey : notnull
+        => AddShield(builder, partitions, keySelector, new ShieldHttpHandlerOptions());
+
+    /// <summary>Selects a bounded partition shield with snapshotted replay and routing options.</summary>
+    public static IHttpClientBuilder AddShield<TKey>(
+        this IHttpClientBuilder builder,
+        PartitionedShield<TKey, HttpResponseMessage> partitions,
+        Func<HttpRequestMessage, TKey> keySelector,
+        ShieldHttpHandlerOptions options)
         where TKey : notnull
     {
         if (builder is null)
@@ -235,6 +257,12 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(keySelector));
         }
 
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        var optionsSnapshot = Snapshot(options);
         return AddShieldHandler(builder, (services, name) =>
             new ShieldDelegatingHandler(
                 request => GetDecoratedPartitionAsync(
@@ -242,7 +270,7 @@ public static class ShieldHttpClientBuilderExtensions
                     partitions,
                     keySelector(request),
                     name),
-                new ShieldHttpHandlerOptions(),
+                optionsSnapshot,
                 CreateDecorator(services, name)));
     }
 
@@ -464,6 +492,7 @@ public static class ShieldHttpClientBuilderExtensions
             ContentReplayPolicy = source.ContentReplayPolicy,
             MaxBufferSize = source.MaxBufferSize,
             AllowUnsafeMethodReplay = source.AllowUnsafeMethodReplay,
+            IsReplaySafeMethod = source.IsReplaySafeMethod,
             RequestFactory = source.RequestFactory,
             Routing = Snapshot(source.Routing),
         };
@@ -718,6 +747,7 @@ public static class ShieldHttpClientBuilderExtensions
             ContentReplayPolicy = options.Handler.ContentReplayPolicy,
             MaxBufferSize = options.Handler.MaxBufferSize,
             AllowUnsafeMethodReplay = options.Handler.AllowUnsafeMethodReplay,
+            IsReplaySafeMethod = options.Handler.IsReplaySafeMethod,
             RequestFactory = options.Handler.RequestFactory,
             Routing = routing,
         };

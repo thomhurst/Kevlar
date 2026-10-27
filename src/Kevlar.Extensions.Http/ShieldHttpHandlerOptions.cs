@@ -14,10 +14,21 @@ public sealed class ShieldHttpHandlerOptions
     public long MaxBufferSize { get; set; } = 1024 * 1024;
 
     /// <summary>
-    /// Explicitly permits another attempt for methods other than GET, HEAD, OPTIONS, TRACE, PUT,
-    /// and DELETE. A request factory also counts as explicit opt-in.
+    /// Explicitly permits another attempt for methods rejected by <see cref="IsReplaySafeMethod"/>.
+    /// A request factory also counts as explicit opt-in. Content must still be replayable.
     /// </summary>
     public bool AllowUnsafeMethodReplay { get; set; }
+
+    /// <summary>
+    /// Optionally determines whether an HTTP method permits additional attempts. A null value
+    /// uses GET, HEAD, OPTIONS, TRACE, PUT, and DELETE, the RFC 9110 idempotent methods.
+    /// </summary>
+    /// <remarks>
+    /// The predicate may run concurrently and must be thread-safe. Explicit replay opt-ins bypass
+    /// it; per-request <see cref="KevlarHttpRequestExtensions.DisableReplay"/> always takes precedence.
+    /// Content must still be replayable when the predicate returns true.
+    /// </remarks>
+    public Func<HttpMethod, bool>? IsReplaySafeMethod { get; set; }
 
     /// <summary>
     /// Optionally creates a fresh complete request for each zero-based attempt. Returned requests

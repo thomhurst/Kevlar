@@ -201,9 +201,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             return ReplayDecision.Allowed;
         }
 
-        if (!RequestExecution.IsReplaySafeMethod(request.Method)
-            && requestOptions?.AllowReplay != true
-            && !options.AllowUnsafeMethodReplay)
+        if (requestOptions?.AllowReplay != true
+            && !options.AllowUnsafeMethodReplay
+            && !(options.IsReplaySafeMethod?.Invoke(request.Method)
+                ?? RequestExecution.IsReplaySafeMethod(request.Method)))
         {
             return ReplayDecision.Suppressed("unsafe_method");
         }

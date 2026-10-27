@@ -1,1 +1,5 @@
 #nullable enable
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.IsReplaySafeMethod.get -> System.Func<System.Net.Http.HttpMethod!, bool>?
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.IsReplaySafeMethod.set -> void
+static Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.Net.Http.HttpRequestMessage!, System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldSelector, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield<TKey>(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.PartitionedShield<TKey, System.Net.Http.HttpResponseMessage!>! partitions, System.Func<System.Net.Http.HttpRequestMessage!, TKey>! keySelector, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

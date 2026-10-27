@@ -6,6 +6,36 @@ namespace Kevlar.NetStandard.Tests;
 public class HttpPropertiesReplayTests
 {
     [Test]
+    [Arguments(false, 1)]
+    [Arguments(true, 2)]
+    public async Task Custom_Method_Policy_Preserves_Per_Request_Opt_In(bool allowReplay, int expectedAttempts)
+    {
+        var attempts = 0;
+        using var invoker = new HttpMessageInvoker(new ShieldDelegatingHandler(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions
+            {
+                IsReplaySafeMethod = static method => method == HttpMethod.Get,
+            })
+        {
+            InnerHandler = new DelegateHandler((_, _) =>
+            {
+                attempts++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }),
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://example.test/");
+        if (allowReplay)
+        {
+            request.AllowReplay();
+        }
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(attempts).IsEqualTo(expectedAttempts);
+    }
+
+    [Test]
     public async Task Transient_Classifier_Handles_NetStandard_Timeout_Shape()
     {
         using var callerCancellation = new CancellationTokenSource();
