@@ -192,6 +192,10 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     /// <summary>Selects one shield for each request using the request and service provider.</summary>
+    /// <remarks>
+    /// Selection runs for every request. Registered decorators are applied once per selected
+    /// shield snapshot during each handler's lifetime.
+    /// </remarks>
     public static IHttpClientBuilder AddShield(
         this IHttpClientBuilder builder,
         Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>> shieldSelector)
@@ -220,13 +224,20 @@ public static class ShieldHttpClientBuilderExtensions
 
         var optionsSnapshot = Snapshot(options);
         return AddShieldHandler(builder, (services, name) =>
-            new ShieldDelegatingHandler(request =>
-                Decorate(services, shieldSelector(request, services), name),
+        {
+            var decorate = CreateDecorator(services, name);
+            return new ShieldDelegatingHandler(request =>
+                decorate(shieldSelector(request, services)),
                 optionsSnapshot,
-                CreateDecorator(services, name)));
+                decorate);
+        });
     }
 
     /// <summary>Selects a bounded partition shield from each request.</summary>
+    /// <remarks>
+    /// Registered decorators are applied once per selected shield snapshot during each handler's
+    /// lifetime. Evicted partition shields are not retained by the decoration cache.
+    /// </remarks>
     public static IHttpClientBuilder AddShield<TKey>(
         this IHttpClientBuilder builder,
         PartitionedShield<TKey, HttpResponseMessage> partitions,
@@ -264,14 +275,16 @@ public static class ShieldHttpClientBuilderExtensions
 
         var optionsSnapshot = Snapshot(options);
         return AddShieldHandler(builder, (services, name) =>
-            new ShieldDelegatingHandler(
+        {
+            var decorate = CreateDecorator(services, name);
+            return new ShieldDelegatingHandler(
                 request => GetDecoratedPartitionAsync(
-                    services,
                     partitions,
                     keySelector(request),
-                    name),
+                    decorate),
                 optionsSnapshot,
-                CreateDecorator(services, name)));
+                decorate);
+        });
     }
 
     /// <summary>
@@ -674,18 +687,14 @@ public static class ShieldHttpClientBuilderExtensions
     private static Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> CreateDecorator(
         IServiceProvider serviceProvider,
         string? name) =>
-        shield => Decorate(serviceProvider, shield, name);
+        new HttpShieldDecorationCache(shield => Decorate(serviceProvider, shield, name)).Decorate;
 
-    private static async ValueTask<Shield<TResult>> GetDecoratedPartitionAsync<TKey, TResult>(
-        IServiceProvider serviceProvider,
-        PartitionedShield<TKey, TResult> partitions,
+    private static async ValueTask<Shield<HttpResponseMessage>> GetDecoratedPartitionAsync<TKey>(
+        PartitionedShield<TKey, HttpResponseMessage> partitions,
         TKey key,
-        string? name)
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> decorate)
         where TKey : notnull =>
-        Decorate(
-            serviceProvider,
-            await partitions.GetShieldAsync(key).ConfigureAwait(false),
-            name);
+        decorate(await partitions.GetShieldAsync(key).ConfigureAwait(false));
 
     private static void ValidateHedgeConfiguration(IConfiguration configuration)
     {
