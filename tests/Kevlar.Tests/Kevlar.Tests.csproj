@@ -4,9 +4,6 @@
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
-    <!-- Background GC can charge unused allocation-context bytes to the measured thread
-         (dotnet/runtime#134724). Keep this test host's allocation assertions deterministic. -->
-    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
