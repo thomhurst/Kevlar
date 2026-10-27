@@ -31,7 +31,8 @@ test('LLM documentation endpoints serve the index and full Markdown', async ({ r
     expect((await request.get(link!.pathname)).status(), file).toBe(200);
 
     const source = await readFile(join('docs', file), 'utf8');
-    const body = source.slice(source.indexOf('\n# ')).trim();
+    // A page may start directly with Markdown, without YAML or a preceding newline.
+    const body = source.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '').trim();
     expect(body, file).not.toBe('');
     expect(full, file).toContain(body);
     expect(full, file).toContain(link!.href);
