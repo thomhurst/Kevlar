@@ -229,6 +229,7 @@ public static class HttpShield
 
     private static void Copy(TimeoutOptions source, TimeoutOptions target)
     {
+        target.Name = source.Name;
         target.Timeout = source.Timeout;
         target.TimeoutGenerator = source.TimeoutGenerator;
         target.OnTimeout = source.OnTimeout;
@@ -239,14 +240,19 @@ public static class HttpShield
         RetryOptions<HttpResponseMessage> target,
         bool useRetryAfterHeader)
     {
+        target.Budget = source.Budget;
+        target.Name = source.Name;
         target.MaxRetries = source.MaxRetries;
+        target.RespectDeadline = source.RespectDeadline;
         target.Backoff = source.Backoff;
         target.MaxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
         target.DelayGenerator = ComposeRetryDelayGenerator(
             source.DelayGenerator,
             useRetryAfterHeader);
         target.HandlesException = source.HandlesException;
+        target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
+        target.HandlesResultContext = source.HandlesResultContext;
         target.OnRetry = source.OnRetry;
     }
 
@@ -296,21 +302,31 @@ public static class HttpShield
         CircuitBreakerOptions<HttpResponseMessage> source,
         CircuitBreakerOptions<HttpResponseMessage> target)
     {
+        target.Name = source.Name;
         target.ConsecutiveFailures = source.ConsecutiveFailures;
         target.FailureRatio = source.FailureRatio;
+        target.HalfOpenProbes = source.HalfOpenProbes;
+        target.SlowCallThreshold = source.SlowCallThreshold;
+        target.SlowCallRatio = source.SlowCallRatio;
         target.MinimumThroughput = source.MinimumThroughput;
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
         target.BreakDurationGenerator = source.BreakDurationGenerator;
         target.HandlesException = source.HandlesException;
+        target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
+        target.HandlesResultContext = source.HandlesResultContext;
         target.Monitor = source.Monitor;
         target.OnStateChanged = source.OnStateChanged;
     }
 
     private static void Copy(ConcurrencyLimitOptions source, ConcurrencyLimitOptions target)
     {
+        target.Name = source.Name;
         target.MaxConcurrency = source.MaxConcurrency;
         target.QueueLimit = source.QueueLimit;
+        target.QueueTimeout = source.QueueTimeout;
+        target.UsePriorityQueue = source.UsePriorityQueue;
+        target.OnRejected = source.OnRejected;
     }
 }
