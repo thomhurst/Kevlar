@@ -23,9 +23,12 @@ Use `IsReplaySafeMethod` to narrow this set for APIs whose PUT or DELETE operati
 cannot safely be repeated. Selector and partition registrations also accept handler options:
 
 ```csharp
+using System.Net.Http;
 using Kevlar;
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
+var services = new ServiceCollection();
 var shield = HttpShield.WhenTransient().Retry(1, Backoff.None);
 using var partitions = new PartitionedShield<string, HttpResponseMessage>(_ => shield);
 var replayOptions = new ShieldHttpHandlerOptions
