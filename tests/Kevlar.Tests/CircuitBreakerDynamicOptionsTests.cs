@@ -69,11 +69,8 @@ public class CircuitBreakerDynamicOptionsTests
     [Test]
     public async Task BreakDurationGenerator_Typed_Result_Not_Boxed()
     {
-        var context = KevlarContext.Rent(
-            CancellationToken.None,
-            isSynchronous: false,
-            TimeProvider.System,
-            shieldName: null);
+        await Assert.That((bool)GC.GetConfigurationVariables()["ConcurrentGC"]).IsFalse();
+
         var generator = CircuitBreakerBreakDurationGenerator.Create<int>(static item =>
         {
             if (item.Outcome.Result != 42)
@@ -83,6 +80,41 @@ public class CircuitBreakerDynamicOptionsTests
 
             return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
         });
+
+        // Keep the original allowance for coverage instrumentation. Boxing on every call
+        // would add about 240 KB, well above this 16 KB guard.
+        var allocated = MeasureBreakDurationGeneratorAllocations(generator);
+        Console.WriteLine($"Typed generator: {allocated} bytes for 10,000 invocations.");
+        await Assert.That(allocated).IsLessThanOrEqualTo(16 * 1024);
+    }
+
+    [Test]
+    public async Task BreakDurationGenerator_Untyped_Result_Boxing_Exceeds_Typed_Budget()
+    {
+        // Exercise real boxing through the untyped adapter as a positive control for the
+        // typed guard. The same measured loop must still detect per-invocation allocations.
+        object? boxedResult = null;
+        var generator = CircuitBreakerBreakDurationGenerator.Create(item =>
+        {
+            // Retain the object outside the callback so the JIT cannot elide its boxing.
+            boxedResult = item.Result;
+            return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+        });
+
+        var allocated = MeasureBreakDurationGeneratorAllocations(generator);
+        Console.WriteLine($"Untyped generator: {allocated} bytes for 10,000 invocations.");
+        await Assert.That(boxedResult).IsEqualTo(42);
+        await Assert.That(allocated).IsGreaterThan(16 * 1024);
+    }
+
+    private static long MeasureBreakDurationGeneratorAllocations(
+        CircuitBreakerBreakDurationGenerator generator)
+    {
+        var context = KevlarContext.Rent(
+            CancellationToken.None,
+            isSynchronous: false,
+            TimeProvider.System,
+            shieldName: null);
         var outcome = Outcome<int>.FromResult(42);
         var statistics = new CircuitBreakerFailureStatistics(1, 1, 1);
 
@@ -99,11 +131,7 @@ public class CircuitBreakerDynamicOptionsTests
                 _ = generator.Invoke(in outcome, in statistics, context).Result;
             }
 
-            // Coverage probes and TUnit may allocate a small fixed amount on this thread. A boxed
-            // int would add roughly 24 bytes for every invocation (about 240 KB), well above this
-            // allowance.
-            await Assert.That(GC.GetAllocatedBytesForCurrentThread() - before)
-                .IsLessThanOrEqualTo(16 * 1024);
+            return GC.GetAllocatedBytesForCurrentThread() - before;
         }
         finally
         {
