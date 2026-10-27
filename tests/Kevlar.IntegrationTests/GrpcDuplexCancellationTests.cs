@@ -160,7 +160,9 @@ public class GrpcDuplexCancellationTests
     }
 
     [Test]
-    public async Task Completed_Read_Disposes_Linked_Cancellation_Registrations()
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Completed_Read_Disposes_Linked_Cancellation_Registrations(bool hasItem)
     {
         using var callerCancellation = new CancellationTokenSource();
         using var readCancellation = new CancellationTokenSource();
@@ -168,10 +170,10 @@ public class GrpcDuplexCancellationTests
         using var call = CreateCall(Shield.Empty, callerCancellation.Token, token =>
         {
             operationToken = token;
-            return Task.FromResult(false);
+            return Task.FromResult(hasItem);
         });
 
-        await Assert.That(await call.ResponseStream.MoveNext(readCancellation.Token)).IsFalse();
+        await Assert.That(await call.ResponseStream.MoveNext(readCancellation.Token)).IsEqualTo(hasItem);
         callerCancellation.Cancel();
         readCancellation.Cancel();
 

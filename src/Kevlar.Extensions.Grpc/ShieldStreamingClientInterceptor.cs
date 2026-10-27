@@ -1082,18 +1082,45 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     {
         public T Current => reader.Current;
 
-        public async Task<bool> MoveNext(CancellationToken cancellationToken)
+        public Task<bool> MoveNext(CancellationToken cancellationToken)
         {
-            using var operation = cancellationToken.CanBeCanceled
+            var operation = cancellationToken.CanBeCanceled
                 ? CancellationTokenSource.CreateLinkedTokenSource(lifetimeToken, cancellationToken)
                 : null;
             var operationToken = operation?.Token ?? lifetimeToken;
+            ValueTask<bool> pending;
             try
             {
-                return await shield.ExecuteAsync(
+                pending = shield.ExecuteAsync(
                     reader,
                     static (stream, token) => AwaitGrpcOperationAsync(stream.MoveNext(token), token),
-                    operationToken).ConfigureAwait(false);
+                    operationToken);
+            }
+            catch (Exception exception)
+            {
+                // Normalize synchronous failures through the same cancellation path.
+                pending = new ValueTask<bool>(Task.FromException<bool>(exception));
+            }
+
+            if (pending.IsCompletedSuccessfully)
+            {
+                operation?.Dispose();
+                return pending.AsTask();
+            }
+
+            return AwaitReadAsync(pending, operation, operationToken, cancellationToken);
+        }
+
+        private async Task<bool> AwaitReadAsync(
+            ValueTask<bool> pending,
+            CancellationTokenSource? operation,
+            CancellationToken operationToken,
+            CancellationToken cancellationToken)
+        {
+            using var registrationLifetime = operation;
+            try
+            {
+                return await pending.ConfigureAwait(false);
             }
             catch (OperationCanceledException exception) when (operationToken.IsCancellationRequested)
             {
