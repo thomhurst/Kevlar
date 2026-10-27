@@ -62,10 +62,13 @@ public class IntegrationTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
     [NotInParallel]
-    public async Task Unsafe_Method_First_Suppression_Warns_Then_Uses_Information()
+    public async Task Unsafe_Method_Suppression_Exposes_Default_Levels(bool demoteSuppression)
     {
         var logs = new FakeLoggerProvider();
+        var defaultLevels = new List<LogLevel>();
         var telemetry = new List<KevlarTelemetrySeverity>();
         using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
         {
@@ -79,8 +82,20 @@ public class IntegrationTests
             HttpStatusCode.ServiceUnavailable,
             HttpStatusCode.ServiceUnavailable);
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddProvider(logs));
-        services.AddKevlarLogging();
+        services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Debug).AddProvider(logs));
+        services.AddKevlarLogging(options => options.SeverityProvider = logEvent =>
+        {
+            if (logEvent.Kind == KevlarLogEventKind.AttemptsSuppressed)
+            {
+                defaultLevels.Add(logEvent.DefaultLevel);
+                if (demoteSuppression)
+                {
+                    return LogLevel.Debug;
+                }
+            }
+
+            return logEvent.DefaultLevel;
+        });
         services.AddHttpClient("unsafe-method")
             .ConfigurePrimaryHttpMessageHandler(() => transport)
             .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
@@ -97,12 +112,15 @@ public class IntegrationTests
             .ToArray();
         await Assert.That(transport.Attempts).IsEqualTo(2);
         await Assert.That(suppressions.Length).IsEqualTo(2);
-        await Assert.That(suppressions[0].Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(defaultLevels).IsEquivalentTo([LogLevel.Warning, LogLevel.Information]);
+        await Assert.That(suppressions[0].Level)
+            .IsEqualTo(demoteSuppression ? LogLevel.Debug : LogLevel.Warning);
         await Assert.That(suppressions[0].GetStructuredStateValue("SuppressionReason"))
             .IsEqualTo("unsafe_method");
         await Assert.That(suppressions[0].Message).Contains("AllowUnsafeMethodReplay");
         await Assert.That(suppressions[0].Message).Contains("KevlarHttp.GetRequestOptions");
-        await Assert.That(suppressions[1].Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(suppressions[1].Level)
+            .IsEqualTo(demoteSuppression ? LogLevel.Debug : LogLevel.Information);
         await Assert.That(telemetry).IsEquivalentTo([
             KevlarTelemetrySeverity.Warning,
             KevlarTelemetrySeverity.Information,

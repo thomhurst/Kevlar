@@ -6,7 +6,10 @@ namespace Kevlar.Extensions.Logging;
 /// <summary>Controls how Kevlar strategy events are written to an <see cref="ILogger"/>.</summary>
 public sealed class KevlarLoggingOptions
 {
-    /// <summary>Overrides the default level for an event. Return <see cref="LogLevel.None"/> to suppress it.</summary>
+    /// <summary>
+    /// Overrides the level for an event. Return <see cref="KevlarLogEvent.DefaultLevel"/> to retain
+    /// Kevlar's default level, or <see cref="LogLevel.None"/> to suppress the event.
+    /// </summary>
     public Func<KevlarLogEvent, LogLevel>? SeverityProvider { get; set; }
 
     /// <summary>Formats a handled result for the structured <c>Outcome</c> field.</summary>

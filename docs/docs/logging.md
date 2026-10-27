@@ -27,13 +27,16 @@ var loggedShield = Shield
         options.MaxLogsPerSecond = 100;
         options.ResultFormatter = static result => result?.ToString();
         options.SeverityProvider = static logEvent =>
-            logEvent.Kind == KevlarLogEventKind.Hedge
+            logEvent.Kind == KevlarLogEventKind.AttemptsSuppressed
                 ? LogLevel.Debug
-                : logEvent.Kind == KevlarLogEventKind.Retry
-                    ? LogLevel.Warning
-                    : LogLevel.Information;
+                : logEvent.DefaultLevel;
     });
 ```
+
+Return `logEvent.DefaultLevel` from `SeverityProvider` to keep Kevlar's computed level for events
+you do not override. The example demotes attempt suppression while preserving other defaults,
+including Information logs when a circuit half-opens or closes. The default is computed for each
+event, so events of the same kind can have different levels.
 
 Return `LogLevel.None` from `SeverityProvider` to suppress an event. Suppression happens before
 `ResultFormatter`, so disabled events do not format results. `MaxLogsPerSecond` bounds each logging

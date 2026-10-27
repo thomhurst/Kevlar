@@ -1,1 +1,2 @@
 #nullable enable
+Kevlar.Extensions.Logging.KevlarLogEvent.DefaultLevel.get -> Microsoft.Extensions.Logging.LogLevel

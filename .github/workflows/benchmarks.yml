@@ -94,6 +94,7 @@ jobs:
           # Use identical candidate fixture source with each revision's product/build inputs.
           if [[ "$COPY_CANDIDATE_FIXTURES" != "false" ]]; then
             cp benchmarks/Kevlar.Benchmarks/*.cs "$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/"
+            cp benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj "$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/"
           fi
           baseline_project="$RUNNER_TEMP/benchmark-baseline/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"
           candidate_project="$GITHUB_WORKSPACE/benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj"

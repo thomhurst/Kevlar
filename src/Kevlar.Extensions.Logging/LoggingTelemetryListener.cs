@@ -59,7 +59,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         LogLevel defaultLevel,
         in KevlarTelemetryEvent telemetryEvent)
     {
-        var logEvent = new KevlarLogEvent(kind, in telemetryEvent);
+        var logEvent = new KevlarLogEvent(kind, defaultLevel, in telemetryEvent);
         LogLevel level;
         try
         {
@@ -95,7 +95,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         var level = defaultLevel;
         if (options.CanEvaluateSeverityWithoutResult)
         {
-            var preview = new KevlarLogEvent(kind, in telemetryEvent);
+            var preview = new KevlarLogEvent(kind, defaultLevel, in telemetryEvent);
             try
             {
                 level = options.SeverityProvider?.Invoke(preview) ?? defaultLevel;
@@ -126,7 +126,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         {
             try
             {
-                level = options.SeverityProvider?.Invoke(new KevlarLogEvent(kind, in resultEvent))
+                level = options.SeverityProvider?.Invoke(new KevlarLogEvent(kind, defaultLevel, in resultEvent))
                     ?? defaultLevel;
             }
             catch (Exception severityException)
