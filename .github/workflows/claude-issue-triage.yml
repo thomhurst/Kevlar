@@ -12,14 +12,21 @@ jobs:
       contents: read
       issues: write
     env:
+      CLAUDE_TRIAGE_ENABLED: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
       # Cap the write-capable helper so an injected instruction cannot spam the issue.
       CLAUDE_CODE_SCRIPT_CAPS: '{"triage-issue.sh":3}'
     steps:
+      - name: Report unconfigured optional triage
+        if: env.CLAUDE_TRIAGE_ENABLED != 'true'
+        run: echo 'Claude issue triage skipped because CLAUDE_CODE_OAUTH_TOKEN is not configured.' >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@v7.0.1
+        if: env.CLAUDE_TRIAGE_ENABLED == 'true'
         with:
           fetch-depth: 1
 
       - uses: anthropics/claude-code-action@v1
+        if: env.CLAUDE_TRIAGE_ENABLED == 'true'
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           GH_REPO: ${{ github.repository }}
