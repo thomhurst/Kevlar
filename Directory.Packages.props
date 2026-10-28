@@ -67,10 +67,10 @@
     <!-- Benchmarks -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.0" />
-    <PackageVersion Include="Polly" Version="8.8.1" />
-    <PackageVersion Include="Polly.Extensions" Version="8.8.1" />
-    <PackageVersion Include="Polly.RateLimiting" Version="8.8.1" />
-    <PackageVersion Include="Polly.Testing" Version="8.8.1" />
+    <PackageVersion Include="Polly" Version="8.9.0" />
+    <PackageVersion Include="Polly.Extensions" Version="8.9.0" />
+    <PackageVersion Include="Polly.RateLimiting" Version="8.9.0" />
+    <PackageVersion Include="Polly.Testing" Version="8.9.0" />
   </ItemGroup>
 
 </Project>
