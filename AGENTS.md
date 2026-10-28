@@ -26,7 +26,7 @@ Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded 
 
 ## Pull request reviews
 
-- Open every agent-created PR as a draft (`gh pr create --draft`) and follow [issue-pr-loop § Draft review lifecycle](.agents/skills/issue-pr-loop/SKILL.md#draft-review-lifecycle), even outside the loop. Mark it ready only after every active reviewer approves the current head and findings are dispositioned, then arm auto-merge with `scripts/Enable-AutoMerge.ps1`; never call `gh pr merge --auto` directly. Pull-request CI runs once the PR is ready, and `CI Passed` is the only required check.
+- Open every agent-created PR as a draft (`gh pr create --draft`) and follow [issue-pr-loop § Draft review lifecycle](.agents/skills/issue-pr-loop/SKILL.md#draft-review-lifecycle), even outside the loop. Mark it ready only after every active reviewer approves the current head and findings are dispositioned, then arm auto-merge with `scripts/Enable-AutoMerge.ps1`; never call `gh pr merge --auto` directly. Pull-request CI runs once the PR is ready; `CI Passed` gates merging.
 - Resolve each PR review thread, whether a human or a bot opened it, as soon as you have dispositioned it: the fix is pushed to the PR head and your reply names the commit, or your reply pushes back on the finding with evidence. Leave a thread open only while it has no disposition. If the reviewer replies after your disposition, unresolve the thread and handle the reply.
 
 ## Autonomous self-improvement
