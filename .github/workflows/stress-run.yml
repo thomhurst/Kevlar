@@ -1,0 +1,60 @@
+name: Stress run
+
+# Reusable stress run: the 30-second smoke leg of CI (ci.yml) and the 15-minute
+# measurement in stress.yml. Read-only on purpose: ci.yml runs it against pull
+# request code, and stress.yml publishes from main in a separate job.
+on:
+  workflow_call:
+    inputs:
+      smoke:
+        description: Run the 30-second smoke test instead of the 15-minute measurement
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  run-stress-test:
+    name: ${{ inputs.smoke && 'Run 30-second stress smoke test' || 'Run 15-minute stress test' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Test stress publication
+        run: python3 .github/scripts/test_stress_publish.py
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj -c Release
+
+      - name: Run stress test
+        run: >-
+          dotnet run --project benchmarks/Kevlar.StressTests -c Release --no-build --
+          --duration ${{ inputs.smoke && '00:00:30' || '00:15:00' }}
+          --warmup ${{ inputs.smoke && '00:00:01' || '00:00:02' }}
+          --output artifacts/stress/stress-results.json
+
+      - name: Generate run summary
+        run: >-
+          python3 .github/scripts/stress_docs.py
+          --input artifacts/stress/stress-results.json
+          --commit "${GITHUB_SHA::7}"
+          --output artifacts/stress/stress-results.md
+
+      - name: Write run summary
+        run: cat artifacts/stress/stress-results.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: stress-results
+          path: artifacts/stress/stress-results.*
+          retention-days: 30

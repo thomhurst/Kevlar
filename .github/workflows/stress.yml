@@ -1,19 +1,8 @@
 name: Stress tests
 
+# The pull-request smoke run is part of CI (ci.yml), so the required `CI Passed`
+# check covers it.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/Kevlar/**'
-      - 'benchmarks/Kevlar.StressTests/**'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - '.github/workflows/stress.yml'
-      - '.github/scripts/stress_docs.py'
-      - '.github/scripts/publish_stress_docs.sh'
-      - '.github/scripts/test_stress_publish.py'
-    # ready_for_review starts CI for a reviewed draft; converted_to_draft cancels an in-progress run.
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [main]
     paths:
@@ -22,6 +11,7 @@ on:
       - 'Directory.Build.props'
       - 'Directory.Packages.props'
       - '.github/workflows/stress.yml'
+      - '.github/workflows/stress-run.yml'
       - '.github/scripts/stress_docs.py'
       - '.github/scripts/publish_stress_docs.sh'
       - '.github/scripts/test_stress_publish.py'
@@ -38,50 +28,10 @@ concurrency:
 
 jobs:
   run-stress-test:
-    # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    name: ${{ github.event_name == 'pull_request' && 'Run 30-second stress smoke test' || 'Run 15-minute stress test' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Test stress publication
-        run: python3 .github/scripts/test_stress_publish.py
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Build
-        run: dotnet build benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj -c Release
-
-      - name: Run stress test
-        run: >-
-          dotnet run --project benchmarks/Kevlar.StressTests -c Release --no-build --
-          --duration ${{ github.event_name == 'pull_request' && '00:00:30' || '00:15:00' }}
-          --warmup ${{ github.event_name == 'pull_request' && '00:00:01' || '00:00:02' }}
-          --output artifacts/stress/stress-results.json
-
-      - name: Generate run summary
-        run: >-
-          python3 .github/scripts/stress_docs.py
-          --input artifacts/stress/stress-results.json
-          --commit "${GITHUB_SHA::7}"
-          --output artifacts/stress/stress-results.md
-
-      - name: Write run summary
-        run: cat artifacts/stress/stress-results.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: stress-results
-          path: artifacts/stress/stress-results.*
-          retention-days: 30
+    name: Run 15-minute stress test
+    uses: ./.github/workflows/stress-run.yml
+    with:
+      smoke: false
 
   publish-docs:
     name: Publish stress results to docs

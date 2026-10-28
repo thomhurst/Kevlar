@@ -26,6 +26,59 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Routes the path-specific pull-request legs (model sweep, stress smoke). They run
+  # inside this workflow so that `CI Passed` can require them; a path filter on a
+  # separate workflow would leave a required check that never starts.
+  changes:
+    name: Detect changes
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      model: ${{ steps.filter.outputs.model }}
+      stress: ${{ steps.filter.outputs.stress }}
+    steps:
+      # dorny/paths-filter@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d
+        id: filter
+        with:
+          filters: |
+            model:
+              - 'src/Kevlar/**'
+              - 'tests/Kevlar.Tests/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - 'Kevlar.slnx'
+              - '.github/workflows/model-tests.yml'
+              - '.github/workflows/ci.yml'
+            stress:
+              - 'src/Kevlar/**'
+              - 'benchmarks/Kevlar.StressTests/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - '.github/workflows/stress-run.yml'
+              - '.github/workflows/ci.yml'
+              - '.github/scripts/stress_docs.py'
+              - '.github/scripts/publish_stress_docs.sh'
+              - '.github/scripts/test_stress_publish.py'
+
+  model-tests:
+    name: Model tests
+    needs: changes
+    if: needs.changes.outputs.model == 'true'
+    uses: ./.github/workflows/model-tests.yml
+
+  stress-smoke:
+    name: Stress smoke
+    needs: changes
+    if: needs.changes.outputs.stress == 'true'
+    uses: ./.github/workflows/stress-run.yml
+    with:
+      smoke: true
+
   measurement-publication:
     name: Measurement docs publication
     # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
@@ -401,6 +454,29 @@ jobs:
           path: artifacts/coverage/
           if-no-files-found: error
           retention-days: 14
+
+  # The only required check on main. Every job above except `publish` MUST be listed in
+  # `needs`, or its failure would not block merging. Path-skipped legs pass; a failed or
+  # cancelled job fails it. A draft run skips this job, and GitHub reports a skipped
+  # job under its unevaluated name expression, so a draft can never post `CI Passed`.
+  ci-passed:
+    name: ${{ needs.build-and-test.result == 'skipped' && 'CI Passed (not run)' || 'CI Passed' }}
+    needs: [changes, model-tests, stress-smoke, measurement-publication, allocation-gates, docs, build-and-test, coverage]
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Verify every CI job passed or was skipped by its path filter
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          failed=$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')
+          if [ -n "$failed" ]; then
+            echo "::error::CI jobs did not pass: $failed"
+            exit 1
+          fi
 
   # Only reachable from a manual run with the "Upload package to NuGet"
   # checkbox ticked, and only after tests, coverage, and allocation gates are green.

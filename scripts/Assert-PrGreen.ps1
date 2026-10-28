@@ -2,7 +2,7 @@
 # Fail-closed merge gate for the issue-pr-loop skill.
 #
 # Exits 0 ONLY when PR #<N> is provably safe to merge:
-#   - state OPEN
+#   - state OPEN and not a draft
 #   - mergeable == MERGEABLE
 #   - mergeStateStatus == CLEAN
 #   - every status check is terminal AND passing (CheckRun: status=COMPLETED and
@@ -13,6 +13,13 @@
 #   - no current-head top-level review has actionable finding headings
 #   - no unresolved review threads
 #
+# -ForAutoMerge is the gate for arming native auto-merge (Enable-AutoMerge.ps1) right
+# after the PR is marked ready. CI may still be pending or not yet started, because
+# GitHub then waits for the required `CI Passed` check itself, and a draft run cannot
+# post that name. It therefore drops the CLEAN, terminal-check, and ran-since-ready
+# rules, but still requires: OPEN, not draft, MERGEABLE, no failed check on any
+# workflow's newest run, no actionable review body, and no unresolved threads.
+#
 # Any other state — pending/queued/in-progress checks, an empty rollup, a failed
 # check, an unresolved thread, or an API hiccup — exits 1 so the caller MUST NOT
 # merge. The default on uncertainty is DENY.
@@ -21,13 +28,14 @@
 # This script is the deterministic gate the prose rules alone cannot guarantee —
 # the skill calls it immediately before `gh pr merge`, and only merges if it exits 0.
 #
-# Usage: pwsh scripts/Assert-PrGreen.ps1 -Pr 1234 [-Repo owner/name]
-# Exit:  0 = safe to merge; 1 = DO NOT MERGE (reason printed to stderr).
+# Usage: pwsh scripts/Assert-PrGreen.ps1 -Pr 1234 [-Repo owner/name] [-ForAutoMerge]
+# Exit:  0 = safe to merge (or arm); 1 = DO NOT MERGE (reason printed to stderr).
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][int]$Pr,
-    [string]$Repo
+    [string]$Repo,
+    [switch]$ForAutoMerge
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,7 +50,7 @@ $repoArgs = @()
 if ($Repo) { $repoArgs = @('--repo', $Repo) }
 
 # Re-fetch fresh — survey output goes stale within seconds.
-$raw = gh pr view $Pr @repoArgs --json number,state,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,latestReviews,commits 2>$null
+$raw = gh pr view $Pr @repoArgs --json number,state,isDraft,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,latestReviews,commits 2>$null
 if ($LASTEXITCODE -ne 0) { Deny "gh pr view failed (exit $LASTEXITCODE)" }
 try {
     $view = $raw | ConvertFrom-Json
@@ -52,8 +60,9 @@ catch {
 }
 
 if ($view.state -ne 'OPEN') { Deny "state=$($view.state) (need OPEN)" }
+if ($view.isDraft) { Deny "PR is a draft; mark it ready after review approval" }
 if ($view.mergeable -ne 'MERGEABLE') { Deny "mergeable=$($view.mergeable) (need MERGEABLE)" }
-if ($view.mergeStateStatus -ne 'CLEAN') { Deny "mergeStateStatus=$($view.mergeStateStatus) (need CLEAN)" }
+if (-not $ForAutoMerge -and $view.mergeStateStatus -ne 'CLEAN') { Deny "mergeStateStatus=$($view.mergeStateStatus) (need CLEAN)" }
 
 $checks = @(Select-LatestRunStatusChecks $view.statusCheckRollup)
 if ($checks.Count -eq 0) {
@@ -61,11 +70,16 @@ if ($checks.Count -eq 0) {
 }
 
 $allowedConclusions = @('SUCCESS', 'SKIPPED', 'NEUTRAL')
+# Auto-merge waits for pending CI itself. Unknown states fail closed rather than
+# being mistaken for pending work.
+$pendingStatuses = @('QUEUED', 'IN_PROGRESS', 'WAITING', 'PENDING', 'REQUESTED')
+$pendingStates = @('PENDING', 'EXPECTED')
 $bad = @()
 foreach ($c in $checks) {
     if ($null -ne $c.status) {
         # CheckRun: must be terminal AND passing.
         if ($c.status -ne 'COMPLETED') {
+            if ($ForAutoMerge -and $pendingStatuses -contains $c.status) { continue }
             $bad += "$($c.name): status=$($c.status)"
             continue
         }
@@ -76,6 +90,7 @@ foreach ($c in $checks) {
     elseif ($null -ne $c.state) {
         # StatusContext: state must be SUCCESS.
         if ($c.state -ne 'SUCCESS') {
+            if ($ForAutoMerge -and $pendingStates -contains $c.state) { continue }
             $bad += "$($c.context): state=$($c.state)"
         }
     }
@@ -96,15 +111,18 @@ else {
     $owner, $name = $nwo.Trim() -split '/', 2
 }
 
-$readyEvents = @(gh api --paginate "repos/$owner/$name/issues/$Pr/timeline?per_page=100" --jq '.[] | select(.event == "ready_for_review") | .created_at' 2>$null)
-if ($LASTEXITCODE -ne 0) { Deny "could not fetch PR timeline (exit $LASTEXITCODE)" }
-$lastReadyAt = @($readyEvents | Where-Object { $_ } | ForEach-Object { ConvertTo-UtcDateTimeOffset $_ } | Sort-Object) | Select-Object -Last 1
-if ($null -ne $lastReadyAt) {
-    $runs = @(gh api --paginate "repos/$owner/$name/actions/runs?head_sha=$($view.headRefOid)&event=pull_request&per_page=100" --jq '.workflow_runs[] | {name, created_at}' 2>$null | ForEach-Object { $_ | ConvertFrom-Json })
-    if ($LASTEXITCODE -ne 0) { Deny "could not list workflow runs for the head (exit $LASTEXITCODE)" }
-    $notRun = @(Get-WorkflowsNotRunSinceReady -Runs $runs -ReadyAtUtc $lastReadyAt)
-    if ($notRun.Count -gt 0) {
-        Deny ("workflows have not run since the PR was marked ready: " + ($notRun -join '; '))
+# Immediate merge only: auto-merge waits for the required `CI Passed` check instead.
+if (-not $ForAutoMerge) {
+    $readyEvents = @(gh api --paginate "repos/$owner/$name/issues/$Pr/timeline?per_page=100" --jq '.[] | select(.event == "ready_for_review") | .created_at' 2>$null)
+    if ($LASTEXITCODE -ne 0) { Deny "could not fetch PR timeline (exit $LASTEXITCODE)" }
+    $lastReadyAt = @($readyEvents | Where-Object { $_ } | ForEach-Object { ConvertTo-UtcDateTimeOffset $_ } | Sort-Object) | Select-Object -Last 1
+    if ($null -ne $lastReadyAt) {
+        $runs = @(gh api --paginate "repos/$owner/$name/actions/runs?head_sha=$($view.headRefOid)&event=pull_request&per_page=100" --jq '.workflow_runs[] | {name, created_at}' 2>$null | ForEach-Object { $_ | ConvertFrom-Json })
+        if ($LASTEXITCODE -ne 0) { Deny "could not list workflow runs for the head (exit $LASTEXITCODE)" }
+        $notRun = @(Get-WorkflowsNotRunSinceReady -Runs $runs -ReadyAtUtc $lastReadyAt)
+        if ($notRun.Count -gt 0) {
+            Deny ("workflows have not run since the PR was marked ready: " + ($notRun -join '; '))
+        }
     }
 }
 
@@ -165,5 +183,10 @@ do {
 
 if ($unresolved -gt 0) { Deny "$unresolved unresolved review thread(s)" }
 
-Write-Host "OK #${Pr} -- MERGEABLE, CLEAN, $($checks.Count) check(s) green, no unresolved threads. Safe to merge."
+if ($ForAutoMerge) {
+    Write-Host "OK #${Pr} -- ready, MERGEABLE, no failed checks, no unresolved threads. Safe to arm auto-merge."
+}
+else {
+    Write-Host "OK #${Pr} -- MERGEABLE, CLEAN, $($checks.Count) check(s) green, no unresolved threads. Safe to merge."
+}
 exit 0
