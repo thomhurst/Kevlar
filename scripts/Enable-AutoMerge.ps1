@@ -43,16 +43,16 @@ if ($Repo) { $repoArgs = @('--repo', $Repo) }
 
 # Capture the head before the gate so a push racing the gate cannot be armed unreviewed:
 # --match-head-commit makes GitHub refuse if the head moved since.
-$pr = gh pr view $Pr @repoArgs --json headRefOid,baseRefName 2>$null | ConvertFrom-Json
-if ($LASTEXITCODE -ne 0 -or -not $pr.headRefOid) { Fail "could not read PR head (exit $LASTEXITCODE)" }
-$head = $pr.headRefOid
+$prView = gh pr view $Pr @repoArgs --json headRefOid,baseRefName 2>$null | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0 -or -not $prView.headRefOid) { Fail "could not read PR head (exit $LASTEXITCODE)" }
+$head = $prView.headRefOid
 
 $nwo = if ($Repo) { $Repo } else { (gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>$null) }
 if ($LASTEXITCODE -ne 0 -or -not $nwo) { Fail 'could not resolve repo' }
-$required = @(gh api --paginate "repos/$($nwo.Trim())/rules/branches/$($pr.baseRefName)" --jq '.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context' 2>$null)
-if ($LASTEXITCODE -ne 0) { Fail "could not read the $($pr.baseRefName) branch rules (exit $LASTEXITCODE)" }
+$required = @(gh api --paginate "repos/$($nwo.Trim())/rules/branches/$($prView.baseRefName)" --jq '.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context' 2>$null)
+if ($LASTEXITCODE -ne 0) { Fail "could not read the $($prView.baseRefName) branch rules (exit $LASTEXITCODE)" }
 if ($required -notcontains $requiredCheck) {
-    Fail "$($pr.baseRefName) does not actively require '$requiredCheck'; auto-merge would merge before CI"
+    Fail "$($prView.baseRefName) does not actively require '$requiredCheck'; auto-merge would merge before CI"
 }
 
 $gateArgs = @('-Pr', $Pr, '-ForAutoMerge')
