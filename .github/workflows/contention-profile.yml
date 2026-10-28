@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/contention-profile.yml'
       - 'tools/Kevlar.ContentionReport/**'
+    # ready_for_review starts CI for a reviewed draft; converted_to_draft cancels an in-progress run.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
     inputs:
       baseline_sha:
@@ -16,9 +18,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   profile:
     name: Attribute runtime contention
+    # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

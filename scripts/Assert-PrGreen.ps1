@@ -6,7 +6,10 @@
 #   - mergeable == MERGEABLE
 #   - mergeStateStatus == CLEAN
 #   - every status check is terminal AND passing (CheckRun: status=COMPLETED and
-#     conclusion in SUCCESS/SKIPPED/NEUTRAL; StatusContext: state=SUCCESS)
+#     conclusion in SUCCESS/SKIPPED/NEUTRAL; StatusContext: state=SUCCESS), judged
+#     on each workflow's newest run for the head
+#   - every pull_request workflow on the head has run since the PR was last marked
+#     ready (drafts skip CI, so a draft run's skipped jobs are not results)
 #   - no current-head top-level review has actionable finding headings
 #   - no unresolved review threads
 #
@@ -39,7 +42,7 @@ $repoArgs = @()
 if ($Repo) { $repoArgs = @('--repo', $Repo) }
 
 # Re-fetch fresh — survey output goes stale within seconds.
-$raw = gh pr view $Pr @repoArgs --json number,state,mergeable,mergeStateStatus,statusCheckRollup,latestReviews,commits 2>$null
+$raw = gh pr view $Pr @repoArgs --json number,state,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,latestReviews,commits 2>$null
 if ($LASTEXITCODE -ne 0) { Deny "gh pr view failed (exit $LASTEXITCODE)" }
 try {
     $view = $raw | ConvertFrom-Json
@@ -52,7 +55,7 @@ if ($view.state -ne 'OPEN') { Deny "state=$($view.state) (need OPEN)" }
 if ($view.mergeable -ne 'MERGEABLE') { Deny "mergeable=$($view.mergeable) (need MERGEABLE)" }
 if ($view.mergeStateStatus -ne 'CLEAN') { Deny "mergeStateStatus=$($view.mergeStateStatus) (need CLEAN)" }
 
-$checks = @($view.statusCheckRollup | Where-Object { $null -ne $_ })
+$checks = @(Select-LatestRunStatusChecks $view.statusCheckRollup)
 if ($checks.Count -eq 0) {
     Deny "statusCheckRollup is empty -- no checks registered yet; refusing to merge blind"
 }
@@ -82,6 +85,27 @@ foreach ($c in $checks) {
 }
 if ($bad.Count -gt 0) {
     Deny ("checks not green: " + ($bad -join '; '))
+}
+
+if ($Repo) {
+    $owner, $name = $Repo -split '/', 2
+}
+else {
+    $nwo = gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $nwo) { Deny "could not resolve repo" }
+    $owner, $name = $nwo.Trim() -split '/', 2
+}
+
+$readyEvents = @(gh api --paginate "repos/$owner/$name/issues/$Pr/timeline?per_page=100" --jq '.[] | select(.event == "ready_for_review") | .created_at' 2>$null)
+if ($LASTEXITCODE -ne 0) { Deny "could not fetch PR timeline (exit $LASTEXITCODE)" }
+$lastReadyAt = @($readyEvents | Where-Object { $_ } | ForEach-Object { ConvertTo-UtcDateTimeOffset $_ } | Sort-Object) | Select-Object -Last 1
+if ($null -ne $lastReadyAt) {
+    $runs = @(gh api --paginate "repos/$owner/$name/actions/runs?head_sha=$($view.headRefOid)&event=pull_request&per_page=100" --jq '.workflow_runs[] | {name, created_at}' 2>$null | ForEach-Object { $_ | ConvertFrom-Json })
+    if ($LASTEXITCODE -ne 0) { Deny "could not list workflow runs for the head (exit $LASTEXITCODE)" }
+    $notRun = @(Get-WorkflowsNotRunSinceReady -Runs $runs -ReadyAtUtc $lastReadyAt)
+    if ($notRun.Count -gt 0) {
+        Deny ("workflows have not run since the PR was marked ready: " + ($notRun -join '; '))
+    }
 }
 
 $headCommit = @($view.commits | Where-Object { $null -ne $_ }) | Select-Object -Last 1
@@ -117,15 +141,6 @@ if ($actionableReviews.Count -gt 0) {
 }
 
 # Unresolved review threads block merge even when a review's state is COMMENTED.
-if ($Repo) {
-    $owner, $name = $Repo -split '/', 2
-}
-else {
-    $nwo = gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>$null
-    if ($LASTEXITCODE -ne 0 -or -not $nwo) { Deny "could not resolve repo for review-thread check" }
-    $owner, $name = $nwo.Trim() -split '/', 2
-}
-
 $query = 'query($owner:String!,$repo:String!,$pr:Int!,$after:String){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{isResolved}}}}}'
 $after = $null
 $unresolved = 0

@@ -12,6 +12,8 @@ on:
       - '.github/scripts/stress_docs.py'
       - '.github/scripts/publish_stress_docs.sh'
       - '.github/scripts/test_stress_publish.py'
+    # ready_for_review starts CI for a reviewed draft; converted_to_draft cancels an in-progress run.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [main]
     paths:
@@ -36,6 +38,8 @@ concurrency:
 
 jobs:
   run-stress-test:
+    # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     name: ${{ github.event_name == 'pull_request' && 'Run 30-second stress smoke test' || 'Run 15-minute stress test' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25

@@ -9,8 +9,12 @@ on:
   # This trigger runs in the context of the base repository, so the checked-out
   # PR head is UNTRUSTED CODE. Keep permissions minimal, never check the head
   # out at the workspace root, and never grant Claude an unrestricted tool.
+  #
+  # Drafts are reviewed too: agent PRs are reviewed while draft, and CI starts
+  # only once they are marked ready. Readiness keeps the head, so it does not
+  # trigger another review of an already reviewed commit.
   pull_request_target:
-    types: [opened, synchronize, ready_for_review, reopened]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -104,6 +108,7 @@ jobs:
             `pr-head/`. Use `gh pr diff` for the change set.
 
             Instructions:
+            - Review the current PR head even when the PR is a draft or already has earlier reviews. Draft status and earlier reviews are not reasons to skip.
             - ALWAYS post a review, even if no issues are found. If the code is good, acknowledge it.
             - Compare the current state of the PR against any previous PR comments to make sure they have been addressed.
             - You MUST post your review before finishing, by running:
@@ -119,6 +124,6 @@ jobs:
             - Skip minor style/formatting issues unless they impact readability significantly.
             - Always explain WHY the suggested approach is better, not just WHAT to change.
 
-            Use the code review skill to run this review: /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number || inputs.pr_number }}
+            Check draft status with `gh pr view --json isDraft`. For a draft PR, perform the review directly using the instructions above; do not invoke /code-review:code-review, whose eligibility check skips drafts. For a ready PR, use the code review skill: /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number || inputs.pr_number }}, overriding its previous-review skip so every new head receives a review.
           claude_args: |
             --add-dir pr-head --allowedTools "Read,Glob,Grep,Bash(.github/scripts/pr-review-comment.sh:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"

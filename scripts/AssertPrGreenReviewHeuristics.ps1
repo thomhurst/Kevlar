@@ -28,6 +28,73 @@ function ConvertTo-UtcDateTimeOffset {
         return $null
     }
 }
+function Get-CheckRunWorkflowRunId {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]$Check
+    )
+
+    if ([string]$Check.detailsUrl -match '/actions/runs/(\d+)/') {
+        return [long]$Matches[1]
+    }
+
+    return $null
+}
+
+# The rollup keeps the jobs of every workflow run on the head commit: a run
+# cancelled by `converted_to_draft`, the all-skipped run of a draft, and the run
+# started by `ready_for_review` all appear side by side. Only each workflow's
+# newest run describes the head, so drop the jobs of its superseded runs.
+function Select-LatestRunStatusChecks {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]$Checks
+    )
+
+    $all = @($Checks | Where-Object { $null -ne $_ })
+    $latestRun = @{}
+    foreach ($check in $all) {
+        $runId = Get-CheckRunWorkflowRunId $check
+        if ($null -eq $runId) { continue }
+        $workflow = [string]$check.workflowName
+        if (-not $latestRun.ContainsKey($workflow) -or $runId -gt $latestRun[$workflow]) {
+            $latestRun[$workflow] = $runId
+        }
+    }
+
+    return @(
+        foreach ($check in $all) {
+            $runId = Get-CheckRunWorkflowRunId $check
+            if ($null -eq $runId -or $runId -eq $latestRun[[string]$check.workflowName]) {
+                $check
+            }
+        }
+    )
+}
+
+# CI skips every job of a draft; `ready_for_review` starts the real run. Until
+# that run registers, the draft run's skipped jobs read as green. Returns the
+# workflows whose newest `pull_request` run on the head predates readiness.
+function Get-WorkflowsNotRunSinceReady {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]$Runs,
+        [AllowNull()]$ReadyAtUtc
+    )
+
+    $readyAt = ConvertTo-UtcDateTimeOffset $ReadyAtUtc
+    if ($null -eq $readyAt) {
+        return @()
+    }
+
+    return @(
+        $Runs | Where-Object { $null -ne $_ } | Group-Object { [string]$_.name } | ForEach-Object {
+            $newest = @($_.Group | ForEach-Object { ConvertTo-UtcDateTimeOffset $_.created_at } | Sort-Object) | Select-Object -Last 1
+            if ($null -eq $newest -or $newest -lt $readyAt) { $_.Name }
+        }
+    )
+}
+
 function Test-ReviewSubmittedBeforeInstant {
     [CmdletBinding()]
     param(

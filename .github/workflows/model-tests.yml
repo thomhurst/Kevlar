@@ -10,6 +10,8 @@ on:
       - 'Directory.Packages.props'
       - 'Kevlar.slnx'
       - '.github/workflows/model-tests.yml'
+    # ready_for_review starts CI for a reviewed draft; converted_to_draft cancels an in-progress run.
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   schedule:
     - cron: '17 3 * * 1-5'
   workflow_dispatch:
@@ -23,9 +25,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   model-sweep:
     name: Deterministic model sweep
+    # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
