@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Local regression suite: requires PowerShell 7 only.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'WorktreeCleanup.ps1')

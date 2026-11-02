@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 [CmdletBinding()]
 param(
     [string]$WorkflowPath = (Join-Path (Split-Path -Parent $PSScriptRoot) '.github/workflows/ci.yml')
