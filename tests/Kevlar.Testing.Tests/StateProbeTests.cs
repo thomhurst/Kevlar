@@ -197,6 +197,57 @@ public class StateProbeTests
     }
 
     [Test]
+    public async Task ExecutionProbe_Counts_Cancellation_When_Action_Completes_Before_Probe_Callback()
+    {
+        // Cancel() runs callbacks newest first. The action's own callback completes the action inline,
+        // so the attempt ends before the probe's older callback would run.
+        var probe = new ExecutionProbe();
+        using var cancellation = new CancellationTokenSource();
+        var execution = probe.Wrap(static async token =>
+        {
+            var completed = new TaskCompletionSource<bool>();
+            using var registration = token.Register(
+                static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true), completed);
+            await completed.Task.ConfigureAwait(false);
+        })(cancellation.Token).AsTask();
+
+        var typedProbe = new ExecutionProbe();
+        using var typedCancellation = new CancellationTokenSource();
+        var typedExecution = typedProbe.Wrap<int>(static async token =>
+        {
+            var completed = new TaskCompletionSource<bool>();
+            using var registration = token.Register(
+                static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true), completed);
+            await completed.Task.ConfigureAwait(false);
+            return 42;
+        })(typedCancellation.Token).AsTask();
+
+        cancellation.Cancel();
+        typedCancellation.Cancel();
+        await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        var result = await typedExecution.WaitForTestAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(probe.AttemptCount).IsEqualTo(1);
+        await Assert.That(probe.CancellationCount).IsEqualTo(1);
+        await Assert.That(typedProbe.AttemptCount).IsEqualTo(1);
+        await Assert.That(typedProbe.CancellationCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ExecutionProbe_Counts_Each_Attempt_Cancellation_Once()
+    {
+        var probe = new ExecutionProbe();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await probe.Wrap(static _ => ValueTask.CompletedTask)(cancellation.Token);
+
+        await Assert.That(probe.AttemptCount).IsEqualTo(1);
+        await Assert.That(probe.CancellationCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task StateSnapshot_Supports_Typed_Shields_And_Immutable_Collections()
     {
         var shield = Shield.For<int>().ConcurrencyLimit(3, queueLimit: 2);

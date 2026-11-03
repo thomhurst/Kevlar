@@ -55,20 +55,39 @@ public sealed class ExecutionProbe
         Func<CancellationToken, ValueTask> action,
         CancellationToken cancellationToken)
     {
-        RecordAttempt();
-        using var registration = cancellationToken.Register(
-            static state => ((ExecutionProbe)state!).RecordCancellation(), this);
-        await action(cancellationToken).ConfigureAwait(false);
+        var attempt = BeginAttempt(cancellationToken);
+        try
+        {
+            await action(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            attempt.Complete(cancellationToken);
+        }
     }
 
     private async ValueTask<TResult> InvokeAsync<TResult>(
         Func<CancellationToken, ValueTask<TResult>> action,
         CancellationToken cancellationToken)
     {
+        var attempt = BeginAttempt(cancellationToken);
+        try
+        {
+            return await action(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            attempt.Complete(cancellationToken);
+        }
+    }
+
+    private AttemptCancellation BeginAttempt(CancellationToken cancellationToken)
+    {
         RecordAttempt();
-        using var registration = cancellationToken.Register(
-            static state => ((ExecutionProbe)state!).RecordCancellation(), this);
-        return await action(cancellationToken).ConfigureAwait(false);
+        var attempt = new AttemptCancellation(this);
+        attempt.Registration = cancellationToken.Register(
+            static state => ((AttemptCancellation)state!).Record(), attempt);
+        return attempt;
     }
 
     private void RecordAttempt()
@@ -145,6 +164,35 @@ public sealed class ExecutionProbe
 
     private static TaskCompletionSource<bool> CreateSignal() =>
         new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// Records at most one cancellation per attempt. <see cref="CancellationTokenSource.Cancel()"/> runs
+    /// callbacks newest first, so a newer callback can finish the action, and the action can dispose the
+    /// probe's registration, before the probe's callback runs. <see cref="Complete"/> counts that case.
+    /// </summary>
+    private sealed class AttemptCancellation(ExecutionProbe probe)
+    {
+        private int _recorded;
+
+        public CancellationTokenRegistration Registration;
+
+        public void Record()
+        {
+            if (Interlocked.Exchange(ref _recorded, 1) == 0)
+            {
+                probe.RecordCancellation();
+            }
+        }
+
+        public void Complete(CancellationToken cancellationToken)
+        {
+            Registration.Dispose();
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Record();
+            }
+        }
+    }
 
     private (int Attempts, int Cancellations) CaptureCounts()
     {
