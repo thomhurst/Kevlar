@@ -155,8 +155,7 @@ public class HedgingActionGeneratorTests
 
         var result = await shield.ExecuteAsync(async token =>
         {
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
@@ -288,8 +287,7 @@ public class HedgingActionGeneratorTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
@@ -460,8 +458,7 @@ public class HedgingActionGeneratorTests
 
         var execution = shield.ExecuteAsync(async token =>
         {
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         }).AsTask();
 

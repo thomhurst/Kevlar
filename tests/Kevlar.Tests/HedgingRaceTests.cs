@@ -212,9 +212,8 @@ public class HedgingRaceTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
             primaryStarted.TrySetResult();
-            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
@@ -327,6 +326,50 @@ public class HedgingRaceTests
             .IsEquivalentTo(Enumerable.Range(0, 64));
         await Assert.That(results.All(result => result.attempts == 2)).IsTrue();
         await Assert.That(results.All(result => result.wasCancelled)).IsTrue();
+    }
+
+    [Test]
+    public async Task Concurrent_Generated_Hedge_Wins_Cancel_Every_Losing_Primary()
+    {
+        // Stress guard for #686: every losing primary must observe cancellation after a generated
+        // hedge wins. A failure lists, per missed execution, whether the primary ran and whether
+        // its token was cancelled.
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxHedgedAttempts = 1;
+            options.Delay = TimeSpan.Zero;
+            options.ActionGenerator = static _ => static _ => new ValueTask<int>(42);
+        });
+        const int Iterations = 2_000;
+        var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();
+
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, Iterations),
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
+            async (_, _) =>
+            {
+                var invoked = 0;
+                var primaryToken = CancellationToken.None;
+                var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                var result = await shield.ExecuteAsync(async token =>
+                {
+                    primaryToken = token;
+                    Volatile.Write(ref invoked, 1);
+                    await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
+                    return 1;
+                });
+
+                var observed = await Task.WhenAny(primaryCancelled.Task, Task.Delay(TimeSpan.FromSeconds(5)))
+                    == primaryCancelled.Task;
+                if (result != 42 || !observed)
+                {
+                    failures.Enqueue(
+                        $"result={result} invoked={Volatile.Read(ref invoked)} " +
+                        $"tokenCancelled={primaryToken.IsCancellationRequested} observed={observed}");
+                }
+            }).WaitForTestAsync(TimeSpan.FromMinutes(1));
+
+        await Assert.That(string.Join(Environment.NewLine, failures)).IsEmpty();
     }
 
     private static async Task RunUnhandledExceptionAndSuccessRace(bool unhandledExceptionWins)
