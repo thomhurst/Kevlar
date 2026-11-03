@@ -242,7 +242,9 @@ internal sealed class HedgingStrategy : Strategy
                 hedgesLaunched++;
             }
 
-            while (true)
+            // for (;;) rather than while (true): Stryker mutates the literal, which leaves a path
+            // without a return and makes Safe Mode drop every mutant in this method.
+            for (;;)
             {
                 // Preserve fixed zero-delay parallel mode by launching the first hedge before
                 // selecting even an already-completed primary. Shared suppression can stop later
@@ -712,7 +714,9 @@ internal sealed class HedgingStrategy : Strategy
         CancellationToken cancellationToken)
     {
         var invocationContext = contextCapture.Fork(captureVersion, cancellationToken);
-        ValueTask<Outcome<T>> execution;
+        // Initialized so that a mutant that removes the rethrow still compiles;
+        // otherwise mutation testing drops every mutant in this method (Safe Mode).
+        ValueTask<Outcome<T>> execution = default;
         try
         {
             execution = next.InvokeAsync(invocationContext);

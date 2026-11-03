@@ -365,7 +365,9 @@ internal sealed class CircuitBreakerCore
             out var rejection,
             out var transition,
             out var admissionGeneration);
-        ValueTask publication;
+        // Initialized so that a mutant that removes the rethrow still compiles;
+        // otherwise mutation testing drops every mutant in this method (Safe Mode).
+        ValueTask publication = default;
         try
         {
             publication = PublishAsync(transition);
@@ -728,7 +730,9 @@ internal sealed class CircuitBreakerCore
             return PublishAsync(transition);
         }
 
-        ValueTask<TimeSpan> generation;
+        // Initialized so that mutants that remove a rethrow still compile;
+        // otherwise mutation testing drops every mutant in this method (Safe Mode).
+        ValueTask<TimeSpan> generation = default;
         try
         {
             var statistics = reservation.Statistics;
@@ -752,7 +756,7 @@ internal sealed class CircuitBreakerCore
             return AwaitBreakDurationAsync(generation, reservation, timeProvider);
         }
 
-        TimeSpan duration;
+        TimeSpan duration = default;
         try
         {
             duration = generation.Result;
@@ -892,7 +896,8 @@ internal sealed class CircuitBreakerCore
         OpeningReservation reservation,
         TimeProvider timeProvider)
     {
-        TimeSpan duration;
+        // Initialized so that a mutant that removes the rethrow still compiles (see RecordOutcomeAsync).
+        TimeSpan duration = default;
         try
         {
             duration = await generation.ConfigureAwait(false);
@@ -1570,7 +1575,10 @@ internal sealed class CircuitBreakerCore
         }
 
         publication.Completion.TrySetResult(true);
-        if (publication.Parent is not { } parent)
+        // A plain local, not a pattern variable, so that a mutant that removes the return still
+        // compiles; otherwise mutation testing drops every mutant in this method (Safe Mode).
+        var parent = publication.Parent;
+        if (parent is null)
         {
             return;
         }
