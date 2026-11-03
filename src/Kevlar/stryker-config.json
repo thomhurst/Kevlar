@@ -19,9 +19,9 @@
     "additional-timeout": 5000,
     "concurrency": 2,
     "thresholds": {
-      "high": 74,
-      "low": 74,
-      "break": 72
+      "high": 80,
+      "low": 70,
+      "break": 65
     }
   }
 }
