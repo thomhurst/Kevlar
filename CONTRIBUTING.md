@@ -135,7 +135,7 @@ sudo apt-get install --yes clang zlib1g-dev
 ```
 
 `Verify-PublishCompatibility.ps1` is normally invoked by `Verify-Packages.ps1`; run the wrapper so
-package layout, dependency versions, and consumers are checked together.
+package layout, dependencies, and consumers are checked together.
 
 ## Pull requests
 
