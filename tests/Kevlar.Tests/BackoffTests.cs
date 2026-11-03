@@ -175,6 +175,113 @@ public class BackoffTests
     }
 
     [Test]
+    public async Task Constant_Jitter_Decorrelated_Stays_Between_Base_And_Three_Times_Previous()
+    {
+        var baseDelay = TimeSpan.FromMilliseconds(100);
+        var backoff = Backoff.Constant(baseDelay, Jitter.Decorrelated);
+        var firstInRange = true;
+        var inRange = true;
+
+        for (var sample = 0; sample < 10_000; sample++)
+        {
+            var first = backoff.GetDelay(1, TimeSpan.Zero);
+            firstInRange &= first >= baseDelay && first <= baseDelay * 3;
+        }
+
+        var previousDelay = TimeSpan.Zero;
+        for (var attempt = 1; attempt <= 10_000; attempt++)
+        {
+            var delay = backoff.GetDelay(attempt, previousDelay);
+            var effectivePrevious = previousDelay > TimeSpan.Zero ? previousDelay : baseDelay;
+            inRange &= delay >= baseDelay && delay <= effectivePrevious * 3;
+            previousDelay = delay;
+        }
+
+        await Assert.That(firstInRange).IsTrue();
+        await Assert.That(inRange).IsTrue();
+    }
+
+    [Test]
+    public async Task Linear_Jitter_Decorrelated_Stays_Between_Step_And_Three_Times_Previous_Capped_By_MaxDelay()
+    {
+        var step = TimeSpan.FromMilliseconds(100);
+        var maxDelay = TimeSpan.FromMilliseconds(250);
+        var backoff = Backoff.Linear(step, maxDelay: maxDelay, jitter: Jitter.Decorrelated);
+        var firstInRange = true;
+        var inRange = true;
+        var reachedCap = false;
+
+        for (var sample = 0; sample < 10_000; sample++)
+        {
+            var first = backoff.GetDelay(1, TimeSpan.Zero);
+            firstInRange &= first >= step && first <= maxDelay;
+        }
+
+        var previousDelay = TimeSpan.Zero;
+        for (var attempt = 1; attempt <= 10_000; attempt++)
+        {
+            var delay = backoff.GetDelay(attempt, previousDelay);
+            var effectivePrevious = previousDelay > TimeSpan.Zero ? previousDelay : step;
+            var upperBound = effectivePrevious * 3 > maxDelay ? maxDelay : effectivePrevious * 3;
+            inRange &= delay >= step && delay <= upperBound;
+            reachedCap |= delay == maxDelay;
+            previousDelay = delay;
+        }
+
+        await Assert.That(firstInRange).IsTrue();
+        await Assert.That(inRange).IsTrue();
+        await Assert.That(reachedCap).IsTrue();
+    }
+
+    [Test]
+    public async Task Single_Argument_GetDelay_With_Decorrelated_Jitter_Stays_Between_Base_And_MaxDelay()
+    {
+        var baseDelay = TimeSpan.FromMilliseconds(100);
+        var maxDelay = TimeSpan.FromMilliseconds(250);
+        var cappedBackoffs = new[]
+        {
+            Backoff.Linear(baseDelay, maxDelay: maxDelay, jitter: Jitter.Decorrelated),
+            Backoff.Exponential(baseDelay, maxDelay: maxDelay, jitter: Jitter.Decorrelated),
+        };
+        var constant = Backoff.Constant(baseDelay, Jitter.Decorrelated);
+        var inRange = true;
+
+        for (var attempt = 1; attempt <= 20; attempt++)
+        {
+            for (var sample = 0; sample < 500; sample++)
+            {
+                foreach (var backoff in cappedBackoffs)
+                {
+                    var delay = backoff.GetDelay(attempt);
+                    inRange &= delay >= baseDelay && delay <= maxDelay;
+                }
+
+                var constantDelay = constant.GetDelay(attempt);
+                inRange &= constantDelay >= baseDelay && constantDelay <= MaximumRuntimeDelay;
+            }
+        }
+
+        await Assert.That(inRange).IsTrue();
+    }
+
+    [Test]
+    public async Task Single_Argument_GetDelay_With_Decorrelated_Jitter_Validates_The_Attempt()
+    {
+        var backoffs = new[]
+        {
+            Backoff.Constant(TimeSpan.FromMilliseconds(100), Jitter.Decorrelated),
+            Backoff.Linear(TimeSpan.FromMilliseconds(100), jitter: Jitter.Decorrelated),
+            Backoff.Exponential(TimeSpan.FromMilliseconds(100), jitter: Jitter.Decorrelated),
+        };
+
+        foreach (var backoff in backoffs)
+        {
+            await Assert.That(() => backoff.GetDelay(0)).Throws<ArgumentOutOfRangeException>();
+            await Assert.That(() => backoff.GetDelay(0, TimeSpan.Zero)).Throws<ArgumentOutOfRangeException>();
+        }
+    }
+
+    [Test]
     public async Task Jitter_Uses_SharedRandom_And_Is_Thread_Safe()
     {
         var backoff = Backoff.Exponential(TimeSpan.FromSeconds(1), factor: 1, jitter: Jitter.Equal);

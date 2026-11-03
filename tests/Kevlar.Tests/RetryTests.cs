@@ -176,6 +176,38 @@ public class RetryTests
     }
 
     [Test]
+    public async Task Linear_Backoff_Waits_Increasing_Steps_Capped_By_MaxDelay()
+    {
+        var time = new ControlledTimeProvider();
+        var attemptsStarted = new AsyncCounter("linear backoff attempts");
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.Linear(TimeSpan.FromSeconds(1), maxDelay: TimeSpan.FromSeconds(2));
+        }).WithTimeProvider(time);
+
+        var task = shield.ExecuteAsync<int>(_ =>
+        {
+            attemptsStarted.Signal();
+            throw new InvalidOperationException();
+        }).AsTask();
+
+        var waited = new List<TimeSpan>();
+        for (var retry = 0; retry < 3; retry++)
+        {
+            await attemptsStarted.WaitForAsync(retry + 1);
+            await time.WaitForTimersAsync(retry + 1);
+            waited.Add(time.GetTimerDueTime(retry));
+            time.FireTimer(retry);
+        }
+
+        await attemptsStarted.WaitForAsync(4);
+        await Assert.That(async () => await task).Throws<InvalidOperationException>();
+        await Assert.That(waited.SequenceEqual(
+            [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2)])).IsTrue();
+    }
+
+    [Test]
     public async Task Retry_Event_AttemptNumbers_Are_Zero_Based()
     {
         var events = new List<(int AttemptNumber, TimeSpan Delay, Exception? Exception)>();

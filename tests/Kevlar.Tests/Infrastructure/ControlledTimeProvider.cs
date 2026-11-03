@@ -70,6 +70,8 @@ internal sealed class ControlledTimeProvider : TimeProvider
 
     public bool IsTimerDisposed(int timerIndex) => GetTimer(timerIndex).IsDisposed;
 
+    public TimeSpan GetTimerDueTime(int timerIndex) => GetTimer(timerIndex).DueTime;
+
     private ControlledTimer GetTimer(int timerIndex)
     {
         lock (_sync)
