@@ -236,12 +236,7 @@ public class RateLimiterAdapterTests
         var limiter = new TrackingLimiter();
         using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
-        _ = registry.GetOrAdd(
-            "first-owner",
-            _ => Shield.Empty.UseRateLimiter(limiter, ownsLimiter: true));
-        _ = registry.GetOrAdd(
-            "second-owner",
-            _ => Shield.Empty.UseRateLimiter(limiter, ownsLimiter: true));
+        RegisterOwningShields(registry, limiter, "first-owner", "second-owner");
 
         var first = ResolveAndRemove(registry, "first-owner");
         Collect(first);
@@ -940,6 +935,17 @@ public class RateLimiterAdapterTests
         await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
         await Assert.That(async () => await shield.ExecuteAsync(static _ => new ValueTask<int>(2)))
             .Throws<RateLimiterAdapterRejectedException>();
+    }
+
+    // Registers in a non-inlined helper so that Debug builds, which keep temporaries alive until the
+    // method returns, cannot root the registered shields from the calling test method.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void RegisterOwningShields(IKevlarRegistry registry, RateLimiter limiter, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            _ = registry.GetOrAdd(name, _ => Shield.Empty.UseRateLimiter(limiter, ownsLimiter: true));
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
