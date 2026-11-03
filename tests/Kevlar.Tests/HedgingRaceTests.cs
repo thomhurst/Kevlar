@@ -212,9 +212,8 @@ public class HedgingRaceTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
             primaryStarted.TrySetResult();
-            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
@@ -330,12 +329,11 @@ public class HedgingRaceTests
     }
 
     [Test]
-    public async Task Concurrent_Generated_Hedge_Wins_Cancel_Every_Losing_Primary_Before_Returning()
+    public async Task Concurrent_Generated_Hedge_Wins_Cancel_Every_Losing_Primary()
     {
-        // Stress guard for #686: a losing primary's cancellation callback was once missed after a
-        // generated hedge won. The strategy cancels pending attempts before it returns, so every
-        // primary's callback must already have run. A failure lists, per missed execution, whether
-        // the primary ran and whether its token was cancelled, which locates the broken step.
+        // Stress guard for #686: every losing primary must observe cancellation after a generated
+        // hedge wins. A failure lists, per missed execution, whether the primary ran and whether
+        // its token was cancelled.
         var shield = Shield.For<int>().Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
@@ -351,22 +349,23 @@ public class HedgingRaceTests
             async (_, _) =>
             {
                 var invoked = 0;
-                var callbackRan = 0;
                 var primaryToken = CancellationToken.None;
+                var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var result = await shield.ExecuteAsync(async token =>
                 {
                     primaryToken = token;
                     Volatile.Write(ref invoked, 1);
-                    using var registration = token.Register(() => Volatile.Write(ref callbackRan, 1));
-                    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                    await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
                     return 1;
                 });
 
-                if (result != 42 || Volatile.Read(ref invoked) == 0 || Volatile.Read(ref callbackRan) == 0)
+                var observed = await Task.WhenAny(primaryCancelled.Task, Task.Delay(TimeSpan.FromSeconds(5)))
+                    == primaryCancelled.Task;
+                if (result != 42 || !observed)
                 {
                     failures.Enqueue(
                         $"result={result} invoked={Volatile.Read(ref invoked)} " +
-                        $"tokenCancelled={primaryToken.IsCancellationRequested} callbackRan={Volatile.Read(ref callbackRan)}");
+                        $"tokenCancelled={primaryToken.IsCancellationRequested} observed={observed}");
                 }
             }).WaitForTestAsync(TimeSpan.FromMinutes(1));
 

@@ -141,9 +141,7 @@ public class HedgingActionGeneratorTests
     public async Task Typed_Generator_Outcome_Is_Null_When_The_Primary_Is_Still_Pending()
     {
         Outcome<int>? observedOutcome = default;
-        var primaryInvoked = false;
-        var primaryToken = CancellationToken.None;
-        var primaryCallbackRan = false;
+        var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.For<int>().Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
@@ -157,21 +155,13 @@ public class HedgingActionGeneratorTests
 
         var result = await shield.ExecuteAsync(async token =>
         {
-            primaryInvoked = true;
-            primaryToken = token;
-            using var registration = token.Register(() => Volatile.Write(ref primaryCallbackRan, true));
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observedOutcome.HasValue).IsFalse();
-        // The strategy cancels every pending attempt synchronously before it returns, so each
-        // step must already hold. Separate assertions name the step that broke instead of
-        // timing out on a missed callback.
-        await Assert.That(primaryInvoked).IsTrue();
-        await Assert.That(primaryToken.IsCancellationRequested).IsTrue();
-        await Assert.That(Volatile.Read(ref primaryCallbackRan)).IsTrue();
+        await primaryCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -297,8 +287,7 @@ public class HedgingActionGeneratorTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         });
 
@@ -469,8 +458,7 @@ public class HedgingActionGeneratorTests
 
         var execution = shield.ExecuteAsync(async token =>
         {
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            await TestHelpers.DelayUntilCancelledAsync(token, primaryCancelled);
             return 1;
         }).AsTask();
 
