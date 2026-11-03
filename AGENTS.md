@@ -2,7 +2,7 @@
 
 ## Local workload coordination
 
-Before local benchmarks, profiling, stress runs, builds, tests, restores, or other heavy work, follow [the shared performance lock workflow](scripts/PerformanceLock.md). Reserve the cross-repository Redis `performance` key through the canonical shared Dekaf checkout, configured by `SHARED_PERFORMANCE_LOCK_CHECKOUT` (default `C:/git/Dekaf`). Use the same checkout setting in every cooperating repository; this repository's item-lock backend is separate. Reading and editing can continue while another agent owns the reservation.
+Before local benchmarks, profiling, stress runs, builds, tests, restores, or other heavy work, follow [the local performance lock workflow](scripts/PerformanceLock.md). Reserve the Redis `performance` lock with this repository's `scripts/AgentLocks.ps1`; it coordinates Kevlar agents only, since the other repositories no longer share a cross-repository lock. Reading and editing can continue while another agent owns the reservation.
 
 ## Agent output locations
 
