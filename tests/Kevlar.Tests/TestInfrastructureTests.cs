@@ -107,6 +107,32 @@ public class TestInfrastructureTests
     }
 
     [Test]
+    public async Task Controlled_Timers_Fire_By_Due_Time_Regardless_Of_Creation_Order()
+    {
+        var provider = new ControlledTimeProvider();
+        var fired = new List<string>();
+        using var late = provider.CreateTimer(_ => fired.Add("late"), null, TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+        using var early = provider.CreateTimer(_ => fired.Add("early"), null, TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan);
+        using var disposed = provider.CreateTimer(_ => fired.Add("disposed"), null, TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan);
+        using var periodic = provider.CreateTimer(_ => fired.Add("periodic"), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        disposed.Dispose();
+
+        await Assert.That(provider.FireDueTimers()).IsEqualTo(0);
+
+        provider.Advance(TimeSpan.FromSeconds(1));
+        await Assert.That(provider.FireDueTimers()).IsEqualTo(2);
+        await Assert.That(provider.FireDueTimers()).IsEqualTo(0);
+
+        provider.Advance(TimeSpan.FromSeconds(1));
+        await Assert.That(provider.FireDueTimers()).IsEqualTo(2);
+        await Assert.That(fired).IsEquivalentTo(["early", "periodic", "late", "periodic"]);
+
+        early.Change(TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan);
+        provider.Advance(TimeSpan.FromSeconds(1));
+        await Assert.That(provider.FireDueTimers()).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Race_Runner_Names_And_Exercises_Both_Orders()
     {
         var orders = new List<RaceOrder>();

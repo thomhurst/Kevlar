@@ -36,7 +36,7 @@ internal sealed class ControlledTimeProvider : TimeProvider
 
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {
-        var timer = new ControlledTimer(callback, state, dueTime, period);
+        var timer = new ControlledTimer(this, callback, state, dueTime, period);
         lock (_sync)
         {
             _timers.Add(timer);
@@ -46,7 +46,35 @@ internal sealed class ControlledTimeProvider : TimeProvider
         return timer;
     }
 
-    public Task<int> WaitForTimersAsync(int count) => _createdTimers.WaitForAsync(count);
+    public Task<int> WaitForTimersAsync(int count, TimeSpan? timeout = null) =>
+        _createdTimers.WaitForAsync(count, timeout);
+
+    /// <summary>
+    /// Fires every undisposed timer whose due time has been reached, whatever order the timers were created in.
+    /// </summary>
+    /// <returns>The number of timer callbacks invoked.</returns>
+    public int FireDueTimers()
+    {
+        ControlledTimer[] timers;
+        long now;
+        lock (_sync)
+        {
+            timers = [.. _timers];
+            now = _timestamp;
+        }
+
+        var fired = 0;
+        foreach (var timer in timers)
+        {
+            if (timer.TryClaimDue(now))
+            {
+                timer.FireCaptured();
+                fired++;
+            }
+        }
+
+        return fired;
+    }
 
     public void Advance(TimeSpan elapsed)
     {
@@ -104,20 +132,33 @@ internal sealed class ControlledTimeProvider : TimeProvider
         }
     }
 
-    private sealed class ControlledTimer(
-        TimerCallback callback,
-        object? state,
-        TimeSpan dueTime,
-        TimeSpan period) : ITimer
+    private sealed class ControlledTimer : ITimer
     {
         private readonly object _sync = new();
+        private readonly ControlledTimeProvider _owner;
+        private readonly TimerCallback _callback;
+        private readonly object? _state;
+        private long _dueTimestamp;
         private int _disposed;
+
+        public ControlledTimer(
+            ControlledTimeProvider owner,
+            TimerCallback callback,
+            object? state,
+            TimeSpan dueTime,
+            TimeSpan period)
+        {
+            _owner = owner;
+            _callback = callback;
+            _state = state;
+            Schedule(dueTime, period);
+        }
 
         public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
-        public TimeSpan DueTime { get; private set; } = dueTime;
+        public TimeSpan DueTime { get; private set; }
 
-        public TimeSpan Period { get; private set; } = period;
+        public TimeSpan Period { get; private set; }
 
         public bool Change(TimeSpan dueTime, TimeSpan period)
         {
@@ -128,11 +169,35 @@ internal sealed class ControlledTimeProvider : TimeProvider
                     return false;
                 }
 
-                DueTime = dueTime;
-                Period = period;
+                Schedule(dueTime, period);
                 return true;
             }
         }
+
+        // Claims one due firing at the provider timestamp `now`. One-shot timers fire once; periodic timers re-arm.
+        public bool TryClaimDue(long now)
+        {
+            lock (_sync)
+            {
+                if (IsDisposed || _dueTimestamp > now)
+                {
+                    return false;
+                }
+
+                _dueTimestamp = IsUnscheduled(Period) ? long.MaxValue : _dueTimestamp + Period.Ticks;
+                return true;
+            }
+        }
+
+        private void Schedule(TimeSpan dueTime, TimeSpan period)
+        {
+            DueTime = dueTime;
+            Period = period;
+            // Provider timestamps are in TimeSpan ticks (TimestampFrequency is TicksPerSecond).
+            _dueTimestamp = dueTime == Timeout.InfiniteTimeSpan ? long.MaxValue : _owner.GetTimestamp() + dueTime.Ticks;
+        }
+
+        private static bool IsUnscheduled(TimeSpan period) => period == Timeout.InfiniteTimeSpan || period == TimeSpan.Zero;
 
         public void Dispose()
         {
@@ -151,10 +216,10 @@ internal sealed class ControlledTimeProvider : TimeProvider
         public void Fire()
         {
             EnsureActive();
-            callback(state);
+            _callback(_state);
         }
 
-        public void FireCaptured() => callback(state);
+        public void FireCaptured() => _callback(_state);
 
         public void EnsureActive()
         {
