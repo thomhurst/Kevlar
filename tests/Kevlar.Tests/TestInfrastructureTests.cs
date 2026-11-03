@@ -37,6 +37,28 @@ public class TestInfrastructureTests
     }
 
     [Test]
+    public async Task Test_Executor_Returns_Before_A_Synchronously_Blocking_Test_Completes()
+    {
+        // A test that blocks before its first await must still hand TUnit a task, or its timeout cannot fire.
+        using var release = new ManualResetEventSlim();
+        using var entered = new ManualResetEventSlim();
+        var executor = new ThreadPoolTestExecutor();
+
+        var execution = executor.ExecuteTest(TestContext.Current!, () =>
+        {
+            entered.Set();
+            release.Wait();
+            return ValueTask.CompletedTask;
+        }).AsTask();
+
+        await Assert.That(entered.Wait(TimeSpan.FromSeconds(30))).IsTrue();
+        await Assert.That(execution.IsCompleted).IsFalse();
+
+        release.Set();
+        await execution.WaitAsync(TimeSpan.FromSeconds(30));
+    }
+
+    [Test]
     public async Task Barrier_Reports_All_Participants_Before_Release()
     {
         var barrier = new AsyncBarrier("helper test", 2);
