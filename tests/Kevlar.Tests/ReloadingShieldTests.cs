@@ -394,6 +394,59 @@ public class ReloadingShieldTests
     }
 
     [Test]
+    public async Task Failure_Callback_Overload_Replaces_An_Existing_Registration()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        var fixedShield = Shield.Timeout(TimeSpan.FromSeconds(1));
+        using var services = new ServiceCollection()
+            .AddShield("dynamic", fixedShield)
+            .AddReloadingShield("dynamic", configuration, onReloadFailure: null, replace: true)
+            .BuildServiceProvider();
+
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
+
+        await Assert.That(registry.GetShield("dynamic").ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
+        await Assert.That(shieldProvider.Current.ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
+        await Assert.That(services.GetKeyedService<Shield>("dynamic")).IsNull();
+    }
+
+    [Test]
+    public async Task Failure_Callback_Overload_Rejects_A_Duplicate_Name_Without_Replace()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        var services = new ServiceCollection()
+            .AddShield("dynamic", Shield.Timeout(TimeSpan.FromSeconds(1)));
+
+        var error = await Assert.That(
+                () => services.AddReloadingShield("dynamic", configuration, onReloadFailure: null, replace: false))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(error!.Message).IsEqualTo("A shield named 'dynamic' is already registered.");
+    }
+
+    [Test]
+    public async Task Failure_Callback_Overload_Reports_An_Invalid_Reload()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        var reported = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", configuration, error => reported.TrySetResult(error), replace: false)
+            .BuildServiceProvider();
+        var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
+        var lastGood = shieldProvider.Current;
+
+        // This overload uses the default 250 ms debounce on the system clock.
+        configuration["Retry:MaxRetries"] = "invalid";
+        configuration.Reload();
+        var error = await reported.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+        await Assert.That(error).IsTypeOf<KevlarConfigurationException>();
+        await Assert.That(error.Message).Contains("Retry:MaxRetries");
+        await Assert.That(ReferenceEquals(shieldProvider.Current, lastGood)).IsTrue();
+    }
+
+    [Test]
     public async Task Invalid_Reload_Keeps_Last_Good_And_Reports_The_Full_Key()
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
