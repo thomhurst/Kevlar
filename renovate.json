@@ -9,7 +9,7 @@
       "groupName": "gRPC packages"
     },
     {
-      "description": "Keep .NET 8/Standard dependency floors on the 8.x line while allowing compatible updates",
+      "description": "Keep netstandard/.NET 8 dependency floors on the 8.x line while allowing compatible updates",
       "matchManagers": ["nuget"],
       "matchFileNames": ["Directory.Packages.props"],
       "matchPackageNames": [
@@ -22,6 +22,29 @@
       ],
       "matchCurrentVersion": "<9.0.0",
       "allowedVersions": "<9.0.0"
+    },
+    {
+      "description": "Keep net10.0 dependency versions on the 10.x line while allowing compatible updates",
+      "matchManagers": ["nuget"],
+      "matchFileNames": ["Directory.Packages.props"],
+      "matchPackageNames": [
+        "Microsoft.EntityFrameworkCore.*",
+        "Microsoft.Extensions.Configuration.Abstractions",
+        "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "Microsoft.Extensions.Diagnostics.HealthChecks",
+        "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions",
+        "Microsoft.Extensions.Hosting",
+        "Microsoft.Extensions.Http",
+        "Microsoft.Extensions.Logging",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Options",
+        "Microsoft.Extensions.Primitives",
+        "Microsoft.Extensions.TimeProvider.Testing",
+        "Npgsql.EntityFrameworkCore.PostgreSQL",
+        "System.Threading.RateLimiting"
+      ],
+      "matchCurrentVersion": ">=10.0.0 <11.0.0",
+      "allowedVersions": "<11.0.0"
     }
   ]
 }
