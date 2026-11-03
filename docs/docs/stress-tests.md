@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.
 
-*Last updated 2026-11-02 18:17 UTC (commit `dcac64b`).*
+*Last updated 2026-11-03 10:56 UTC (commit `4574783`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,26 +19,26 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Scenario | Workers | Library | Throughput | CPU | Allocated | Allocated/op | GC pause | GC collections (0 / 1 / 2) | Process lock contentions |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | Kevlar | 4.07M ops/s | 100% | 7.34 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 1 | Polly | 2.51M ops/s | 100% | 10.09 GiB | 48.00 B | 118.91 ms | 646 / 8 / 0 | 0 |
-| Shared timeout → retry → ratio breaker | 4 | Kevlar | 10.67M ops/s | 399% | 12.23 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 12 |
-| Shared timeout → retry → ratio breaker | 4 | Polly | 5.44M ops/s | 397% | 21.89 GiB | 48.00 B | 382.89 ms | 1407 / 8 / 0 | 3.33K |
-| Shared timeout → retry | 4 | Kevlar | 18.86M ops/s | 399% | 11.16 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
-| Shared timeout → retry | 4 | Polly | 6.99M ops/s | 399% | 14.06 GiB | 24.00 B | 172.30 ms | 903 / 8 / 0 | 447 |
-| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 12.15M ops/s | 399% | 16.27 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
-| Per-worker timeout → retry → ratio breaker | 4 | Polly | 5.41M ops/s | 398% | 21.78 GiB | 48.00 B | 284.59 ms | 1399 / 8 / 0 | 393 |
-| Shared open breaker — every call rejected | 4 | Kevlar | 22.15M ops/s | 392% | 267.39 GiB | 144.00 B | 1.99 s | 17458 / 8 / 0 | 0 |
-| Shared open breaker — every call rejected | 4 | Polly | 6.07M ops/s | 395% | 101.81 GiB | 200.00 B | 879.73 ms | 6537 / 8 / 0 | 68.23K |
+| Shared timeout → retry → ratio breaker | 1 | Kevlar | 2.55M ops/s | 100% | 8.51 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 1 | Polly | 1.41M ops/s | 100% | 5.69 GiB | 48.00 B | 103.22 ms | 363 / 8 / 0 | 1 |
+| Shared timeout → retry → ratio breaker | 4 | Kevlar | 5.97M ops/s | 398% | 12.97 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 4 |
+| Shared timeout → retry → ratio breaker | 4 | Polly | 2.88M ops/s | 397% | 11.59 GiB | 48.00 B | 294.31 ms | 744 / 8 / 0 | 3.60K |
+| Shared timeout → retry | 4 | Kevlar | 9.66M ops/s | 399% | 11.39 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 2 |
+| Shared timeout → retry | 4 | Polly | 3.84M ops/s | 398% | 7.73 GiB | 24.00 B | 178.87 ms | 495 / 8 / 0 | 918 |
+| Per-worker timeout → retry → ratio breaker | 4 | Kevlar | 6.62M ops/s | 399% | 16.14 KiB | 0.00 B | 0.00 ms | 0 / 0 / 0 | 0 |
+| Per-worker timeout → retry → ratio breaker | 4 | Polly | 2.87M ops/s | 398% | 11.56 GiB | 48.00 B | 282.09 ms | 741 / 8 / 0 | 698 |
+| Shared open breaker — every call rejected | 4 | Kevlar | 11.49M ops/s | 392% | 138.72 GiB | 144.00 B | 1.91 s | 9056 / 8 / 0 | 0 |
+| Shared open breaker — every call rejected | 4 | Polly | 4.80M ops/s | 394% | 80.48 GiB | 200.00 B | 1.33 s | 5167 / 8 / 0 | 30.44K |
 
 ## Comparisons
 
 | Scenario | Workers | Kevlar / Polly throughput |
 |---|---:|---:|
-| Shared timeout → retry → ratio breaker | 1 | **1.62×** |
-| Shared timeout → retry → ratio breaker | 4 | **1.96×** |
-| Shared timeout → retry | 4 | **2.70×** |
-| Per-worker timeout → retry → ratio breaker | 4 | **2.24×** |
-| Shared open breaker — every call rejected | 4 | **3.65×** |
+| Shared timeout → retry → ratio breaker | 1 | **1.80×** |
+| Shared timeout → retry → ratio breaker | 4 | **2.07×** |
+| Shared timeout → retry | 4 | **2.51×** |
+| Per-worker timeout → retry → ratio breaker | 4 | **2.31×** |
+| Shared open breaker — every call rejected | 4 | **2.39×** |
 
 ## Method
 
@@ -48,7 +48,7 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 - Timeout/retry isolates pipeline overhead from circuit-breaker shared-state contention.
 - The shared open-breaker scenario trips one breaker for the whole run, so every call measures contended fast-fail rejection.
 - Process-wide CPU, allocation, GC pause, collection, and managed-lock contention counters are captured separately for each phase.
-- Peak working set for the shared process: 82.14 MiB.
+- Peak working set for the shared process: 81.39 MiB.
 
 ## Environment
 
