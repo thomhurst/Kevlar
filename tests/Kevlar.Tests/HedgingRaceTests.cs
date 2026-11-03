@@ -329,6 +329,50 @@ public class HedgingRaceTests
         await Assert.That(results.All(result => result.wasCancelled)).IsTrue();
     }
 
+    [Test]
+    public async Task Concurrent_Generated_Hedge_Wins_Cancel_Every_Losing_Primary_Before_Returning()
+    {
+        // Stress guard for #686: a losing primary's cancellation callback was once missed after a
+        // generated hedge won. The strategy cancels pending attempts before it returns, so every
+        // primary's callback must already have run. A failure lists, per missed execution, whether
+        // the primary ran and whether its token was cancelled, which locates the broken step.
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxHedgedAttempts = 1;
+            options.Delay = TimeSpan.Zero;
+            options.ActionGenerator = static _ => static _ => new ValueTask<int>(42);
+        });
+        const int Iterations = 2_000;
+        var failures = new System.Collections.Concurrent.ConcurrentQueue<string>();
+
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, Iterations),
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
+            async (_, _) =>
+            {
+                var invoked = 0;
+                var callbackRan = 0;
+                var primaryToken = CancellationToken.None;
+                var result = await shield.ExecuteAsync(async token =>
+                {
+                    primaryToken = token;
+                    Volatile.Write(ref invoked, 1);
+                    using var registration = token.Register(() => Volatile.Write(ref callbackRan, 1));
+                    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                    return 1;
+                });
+
+                if (result != 42 || Volatile.Read(ref invoked) == 0 || Volatile.Read(ref callbackRan) == 0)
+                {
+                    failures.Enqueue(
+                        $"result={result} invoked={Volatile.Read(ref invoked)} " +
+                        $"tokenCancelled={primaryToken.IsCancellationRequested} callbackRan={Volatile.Read(ref callbackRan)}");
+                }
+            }).WaitForTestAsync(TimeSpan.FromMinutes(1));
+
+        await Assert.That(string.Join(Environment.NewLine, failures)).IsEmpty();
+    }
+
     private static async Task RunUnhandledExceptionAndSuccessRace(bool unhandledExceptionWins)
     {
         var releases = new[]
