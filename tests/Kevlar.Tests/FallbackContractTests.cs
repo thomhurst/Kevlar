@@ -59,7 +59,7 @@ public class FallbackContractTests
         var execution = shield.ExecuteAsync<int>(_ =>
             throw new InvalidOperationException("original"), cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         release.SetResult();
         var caught = await CaptureCancellationAsync(execution);
@@ -90,7 +90,7 @@ public class FallbackContractTests
         var execution = shield.ExecuteAsync(_ =>
             throw new InvalidOperationException("original"), cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         release.SetResult();
         var caught = await CaptureCancellationAsync(execution);
@@ -165,7 +165,7 @@ public class FallbackContractTests
             return 1;
         }, cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         var caught = await CaptureCancellationAsync(execution);
 
@@ -206,9 +206,9 @@ public class FallbackContractTests
             return 0;
         }, cancellation.Token).AsTask();
 
-        await actionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await actionStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(fallbackToken).IsEqualTo(cancellation.Token);
@@ -239,7 +239,7 @@ public class FallbackContractTests
         var execution = shield.ExecuteAsync<int>(_ =>
             throw new InvalidOperationException("original"), cancellation.Token).AsTask();
 
-        await fallbackStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await fallbackStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
         var failure = await CaptureFailureAsync(execution);
 
@@ -383,7 +383,7 @@ public class FallbackContractTests
     {
         try
         {
-            await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
             return null;
         }
         catch (OperationCanceledException exception)
@@ -396,7 +396,7 @@ public class FallbackContractTests
     {
         try
         {
-            await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
             return null;
         }
         catch (Exception exception)

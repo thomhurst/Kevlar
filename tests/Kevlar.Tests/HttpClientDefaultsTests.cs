@@ -77,7 +77,7 @@ public class HttpClientDefaultsTests
         var inFlight = busy.GetAsync("https://dependency.test/");
         try
         {
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(async () => await busy.GetAsync("https://dependency.test/"))
                 .Throws<ConcurrencyLimitExceededException>();
             using var response = await healthy.GetAsync("https://dependency.test/");

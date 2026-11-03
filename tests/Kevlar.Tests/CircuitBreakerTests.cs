@@ -202,7 +202,7 @@ public class CircuitBreakerTests
                 return 1;
             }, cancellation.Token).AsTask();
 
-            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             cancellation.Cancel();
             var exception = await Assert.That(async () => await execution)
                 .Throws<OperationCanceledException>();

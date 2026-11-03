@@ -94,7 +94,7 @@ public class StrategyModelTests
                 throw cancellation ?? new OperationCanceledException(token);
             }, callerCancellation.Token).AsTask();
 
-            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             if (command.Signal == TimeoutSignal.CallerAndTimeout)
             {
                 callerCancellation.Cancel();
@@ -105,7 +105,7 @@ public class StrategyModelTests
                 timeProvider.Advance(TimeSpan.FromSeconds(1));
             }
 
-            var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
             if (command.Signal == TimeoutSignal.Timeout)
             {
                 Ensure(outcome.Exception is TimeoutExceededException, index, command, "timeout outcome differs");

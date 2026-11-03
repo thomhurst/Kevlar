@@ -153,7 +153,7 @@ public class DatabaseResilienceTests
         var query = shield.ExecuteAsync(
             ct => new ValueTask<string>(database.QueryAsync("select blocked", ct)),
             cancellation.Token).AsTask();
-        await database.FirstQueryStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await database.FirstQueryStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await query)

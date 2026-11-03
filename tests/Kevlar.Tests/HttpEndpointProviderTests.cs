@@ -93,11 +93,11 @@ public class HttpEndpointProviderTests
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example");
         if (requestOption) { request.WithKevlarCancellationToken(cancellation.Token); }
         var send = invoker.SendAsync(request, requestOption ? CancellationToken.None : cancellation.Token);
-        var providerToken = await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var providerToken = await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         try
         {
-            await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+            await Assert.That(async () => await send.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<OperationCanceledException>();
             await Assert.That(providerToken.IsCancellationRequested).IsTrue();
             await Assert.That(sends).IsEqualTo(0);

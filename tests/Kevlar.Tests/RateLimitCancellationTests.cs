@@ -21,7 +21,7 @@ public class RateLimitCancellationTests
         await Assert.That(replacement.IsCompleted).IsFalse();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
+        await Assert.That(await replacement.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
     }
 
     [Test]
@@ -65,13 +65,13 @@ public class RateLimitCancellationTests
         var queued = shield.ExecuteAsync(_ => new ValueTask<int>(1), cancellation.Token).AsTask();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await queued.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
+        await Assert.That(await queued.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
         cancellation.Cancel();
 
         var replacement = shield.ExecuteAsync(_ => new ValueTask<int>(2)).AsTask();
         await Assert.That(replacement.IsCompleted).IsFalse();
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
+        await Assert.That(await replacement.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
     }
 
     [Test]
@@ -96,11 +96,11 @@ public class RateLimitCancellationTests
         else
         {
             fakeTime.Advance(TimeSpan.FromSeconds(1));
-            await Assert.That(await head.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
+            await Assert.That(await head.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
             cancellation.Cancel();
         }
 
-        await Assert.That(await head.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
+        await Assert.That(await head.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
         await Assert.That(async () => await successor).Throws<OperationCanceledException>();
     }
 
@@ -182,7 +182,7 @@ public class RateLimitCancellationTests
 
         var final = shield.ExecuteAsync(_ => new ValueTask<int>(51)).AsTask();
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await final.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(51);
+        await Assert.That(await final.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(51);
     }
 
     private static Shield CreateShield(FakeTimeProvider fakeTime, int queueLimit) => Shield
@@ -199,7 +199,7 @@ public class RateLimitCancellationTests
     {
         try
         {
-            return await task.WaitAsync(TimeSpan.FromSeconds(5));
+            return await task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
         catch (TimeoutException exception)
         {

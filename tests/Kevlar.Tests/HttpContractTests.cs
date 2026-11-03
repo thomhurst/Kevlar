@@ -886,7 +886,7 @@ public class HttpContractTests
             Content = new StringContent("payload"),
         };
 
-        using var response = await client.SendAsync(request).WaitAsync(TimeSpan.FromSeconds(5));
+        using var response = await client.SendAsync(request).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(retryCallbacks).IsEqualTo(0);

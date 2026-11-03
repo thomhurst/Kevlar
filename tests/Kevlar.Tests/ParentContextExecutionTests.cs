@@ -64,7 +64,7 @@ public class ParentContextExecutionTests
                 await release.Task;
             });
 
-            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             parent.Properties.Set(RequestId, "parent");
             release.SetResult();
             await childTask;
@@ -254,7 +254,7 @@ public class ParentContextExecutionTests
                 });
         }, cancellation.Token).AsTask();
 
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
         var exception = await Assert.That(async () => await execution).Throws<OperationCanceledException>();

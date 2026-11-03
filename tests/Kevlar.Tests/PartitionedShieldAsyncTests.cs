@@ -23,11 +23,11 @@ public class PartitionedShieldAsyncTests
         var lookups = Enumerable.Range(0, 64)
             .Select(_ => provider.GetShieldAsync("tenant").AsTask())
             .ToArray();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(lookups.All(lookup => !lookup.IsCompleted)).IsTrue();
         release.TrySetResult();
-        var shields = await Task.WhenAll(lookups).WaitAsync(TimeSpan.FromSeconds(5));
+        var shields = await Task.WhenAll(lookups).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(creations).IsEqualTo(1);
         await Assert.That(shields.All(shield => ReferenceEquals(shield, Shield.Empty))).IsTrue();
@@ -52,7 +52,7 @@ public class PartitionedShieldAsyncTests
 
         await Assert.That(second.IsCompleted).IsFalse();
         release.Set();
-        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(first, second).WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -87,7 +87,7 @@ public class PartitionedShieldAsyncTests
             .SelectMany(_ => Enumerable.Range(0, 100))
             .Select(key => provider.GetShieldAsync(key).AsTask())
             .ToArray();
-        await Task.WhenAll(lookups).WaitAsync(TimeSpan.FromSeconds(10));
+        await Task.WhenAll(lookups).WaitForTestAsync(TimeSpan.FromSeconds(10));
 
         await Assert.That(provider.Count).IsEqualTo(100);
         await Assert.That(creations.Count).IsEqualTo(100);
@@ -180,12 +180,12 @@ public class PartitionedShieldAsyncTests
         _ = provider.GetShield("first");
 
         var second = provider.GetShieldAsync("second").AsTask();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(second.IsCompleted).IsFalse();
         await Assert.That(provider.Count).IsEqualTo(0);
         release.TrySetResult();
-        _ = await second.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await second.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(provider.Count).IsEqualTo(1);
     }
 
@@ -250,8 +250,8 @@ public class PartitionedShieldAsyncTests
                 },
             });
 
-        _ = await provider.GetShieldAsync("first").AsTask().WaitAsync(TimeSpan.FromSeconds(5));
-        _ = await provider.GetShieldAsync("second").AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await provider.GetShieldAsync("first").AsTask().WaitForTestAsync(TimeSpan.FromSeconds(5));
+        _ = await provider.GetShieldAsync("second").AsTask().WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(createdCallbacks).IsEqualTo(2);
         await Assert.That(evictedCallbacks).IsEqualTo(1);
@@ -277,7 +277,7 @@ public class PartitionedShieldAsyncTests
         _ = provider.GetShield("first");
 
         var second = provider.GetShieldAsync("second").AsTask();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var third = provider.GetShieldAsync("third").AsTask();
         await Task.Yield();
 
@@ -286,7 +286,7 @@ public class PartitionedShieldAsyncTests
         await Assert.That(provider.Count).IsEqualTo(0);
 
         release.TrySetResult();
-        _ = await Task.WhenAll(second, third).WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await Task.WhenAll(second, third).WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(provider.Count).IsEqualTo(1);
         await Assert.That(provider.CapacityEvictionCount).IsEqualTo(2);
     }
@@ -313,7 +313,7 @@ public class PartitionedShieldAsyncTests
 
         var second = await provider.GetShieldAsync("second")
             .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(second).IsSameReferenceAs(Shield.Empty);
         await Assert.That(nested).IsSameReferenceAs(Shield.Empty);
@@ -347,7 +347,7 @@ public class PartitionedShieldAsyncTests
 
         var second = await provider.GetShieldAsync("second")
             .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(nested).IsNotNull();
         await Assert.That(nested).IsNotSameReferenceAs(second);
@@ -395,14 +395,14 @@ public class PartitionedShieldAsyncTests
         _ = provider.GetShield("first");
 
         var second = provider.GetShieldAsync("second").AsTask();
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await callbackEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var nested = provider.GetShieldAsync("nested").AsTask();
-        await nestedFactoryEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await nestedFactoryEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(nested.IsCompleted).IsFalse();
 
         continueCallback.TrySetResult();
-        _ = await second.WaitAsync(TimeSpan.FromSeconds(5));
-        var retainedNested = await nested.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await second.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        var retainedNested = await nested.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(callbackShield).IsNotNull();
         await Assert.That(callbackShield).IsNotSameReferenceAs(retainedNested);
@@ -437,7 +437,7 @@ public class PartitionedShieldAsyncTests
 
         var published = await provider.GetShieldAsync("publisher")
             .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(callbackShield).IsNotNull();
         await Assert.That(callbackShield).IsNotSameReferenceAs(published);
@@ -476,7 +476,7 @@ public class PartitionedShieldAsyncTests
 
         var published = await provider.GetShieldAsync("publisher")
             .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(callbackShield).IsNotNull();
         await Assert.That(callbackShield).IsNotSameReferenceAs(published);
@@ -521,13 +521,13 @@ public class PartitionedShieldAsyncTests
             });
         _ = provider.GetShield("removed");
         var pending = provider.GetShieldAsync("pending").AsTask();
-        await pendingFactoryEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await pendingFactoryEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var removal = provider.TryRemoveAsync("removed").AsTask();
         await Task.Yield();
         releasePendingFactory.TrySetResult();
-        var retained = await pending.WaitAsync(TimeSpan.FromSeconds(5));
-        await removal.WaitAsync(TimeSpan.FromSeconds(5));
+        var retained = await pending.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await removal.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(callbackShield).IsSameReferenceAs(retained);
         await Assert.That(pendingFactoryCalls).IsEqualTo(1);

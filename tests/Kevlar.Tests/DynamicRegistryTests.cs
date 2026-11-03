@@ -612,8 +612,8 @@ public class DynamicRegistryTests
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("async-scavenge", _ => Shield.Empty));
 
-        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
-        await strategy.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await strategy.Disposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(retired.IsAlive).IsFalse();
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
     }
@@ -630,8 +630,8 @@ public class DynamicRegistryTests
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("async-dispose-scavenge", _ => Shield.Empty));
 
-        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
-        await strategy.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await strategy.Disposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
         await Assert.That(() => registry.GetShield("async-dispose-scavenge"))
             .Throws<ObjectDisposedException>();
@@ -650,11 +650,11 @@ public class DynamicRegistryTests
 
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("escaped-lifecycle-scavenge", _ => Shield.Empty));
-        await strategy.ChildStarted.WaitAsync(TimeSpan.FromSeconds(5));
-        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.ChildStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         strategy.ReleaseChild();
-        await strategy.ChildCompleted.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.ChildCompleted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(survivor.DisposeCount).IsEqualTo(1);
         await Assert.That(() => registry.GetShield("escaped-lifecycle-survivor"))
@@ -673,7 +673,7 @@ public class DynamicRegistryTests
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("sync-dispose-scavenge", _ => Shield.Empty));
 
-        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
         await Assert.That(() => registry.GetShield("sync-dispose-scavenge"))
             .Throws<ObjectDisposedException>();
@@ -692,7 +692,7 @@ public class DynamicRegistryTests
             return Shield.Use(strategy);
         }));
 
-        _ = await resolving.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await resolving.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
         await Assert.That(() => registry.GetShield("factory-dispose-reentry"))
             .Throws<ObjectDisposedException>();
@@ -708,7 +708,7 @@ public class DynamicRegistryTests
         Collect(retired);
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("pending-async-scavenge", _ => Shield.Empty));
-        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
@@ -719,7 +719,7 @@ public class DynamicRegistryTests
         finally
         {
             strategy.ReleaseDisposal();
-            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
 
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
@@ -736,7 +736,7 @@ public class DynamicRegistryTests
         Collect(retired);
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("rejected-publication-scavenge", _ => Shield.Empty));
-        await claimed.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await claimed.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
@@ -748,7 +748,7 @@ public class DynamicRegistryTests
         finally
         {
             claimed.ReleaseDisposal();
-            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
 
         registry.Dispose();
@@ -768,7 +768,7 @@ public class DynamicRegistryTests
         Collect(retired);
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("pending-shutdown-scavenge", _ => Shield.Empty));
-        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var disposing = Task.Run(registry.Dispose);
 
         try
@@ -783,7 +783,7 @@ public class DynamicRegistryTests
             strategy.ReleaseDisposal();
         }
 
-        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         _ = await Assert.That(async () => await disposing)
             .Throws<InvalidOperationException>()
             .WithMessage(disposalFailure.Message);
@@ -814,7 +814,7 @@ public class DynamicRegistryTests
         Collect(retired);
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("claimed-reload-scavenge", _ => Shield.Empty));
-        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
@@ -835,7 +835,7 @@ public class DynamicRegistryTests
         finally
         {
             strategy.ReleaseDisposal();
-            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
 
         registry.Dispose();
@@ -864,7 +864,7 @@ public class DynamicRegistryTests
         Collect(retired);
         var scavenging = Task.Run(() =>
             registry.GetOrAdd("claimed-initial-scavenge", _ => Shield.Empty));
-        await claimed.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await claimed.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
@@ -877,7 +877,7 @@ public class DynamicRegistryTests
         finally
         {
             claimed.ReleaseDisposal();
-            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+            _ = await scavenging.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
 
         registry.Dispose();
@@ -955,7 +955,7 @@ public class DynamicRegistryTests
             registry,
             blocker,
             downstream);
-        await blocker.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await blocker.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         Collect(registered);
         Collect(derived);
@@ -964,7 +964,7 @@ public class DynamicRegistryTests
         await Assert.That(downstream.DisposeCount).IsEqualTo(0);
 
         blocker.Release();
-        await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]

@@ -17,11 +17,11 @@ public class HttpBufferCancellationTests
         };
 
         var send = invoker.SendAsync(request, CancellationToken.None);
-        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
-            _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+            _ = await Assert.That(async () => await send.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<TimeoutExceededException>();
         }
         finally
@@ -41,13 +41,13 @@ public class HttpBufferCancellationTests
             Content = content,
         };
         var send = invoker.SendAsync(request, cancellation.Token);
-        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         OperationCanceledException? exception;
         try
         {
             cancellation.Cancel();
-            exception = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+            exception = await Assert.That(async () => await send.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<OperationCanceledException>();
         }
         finally
@@ -72,11 +72,11 @@ public class HttpBufferCancellationTests
             Content = content,
         };
         var send = invoker.SendAsync(request, CancellationToken.None);
-        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
-            _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+            _ = await Assert.That(async () => await send.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<TimeoutExceededException>();
             await Assert.That(content.SerializationAttempts).IsEqualTo(1);
         }

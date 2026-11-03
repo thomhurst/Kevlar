@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestWait.cs" Link="TestWait.cs" />
+    <Using Include="Kevlar.Tests" />
+  </ItemGroup>
+
 </Project>

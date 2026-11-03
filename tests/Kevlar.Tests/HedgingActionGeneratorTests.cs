@@ -162,7 +162,7 @@ public class HedgingActionGeneratorTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observedOutcome.HasValue).IsFalse();
-        await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await primaryCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -255,7 +255,7 @@ public class HedgingActionGeneratorTests
         var execution = shield.ExecuteAsync(_ =>
             ValueTask.FromException<int>(new InvalidOperationException("primary"))).AsTask();
 
-        await hookStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await hookStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(order.SequenceEqual(["hook-start"])).IsTrue();
         releaseHook.SetResult();
 
@@ -293,7 +293,7 @@ public class HedgingActionGeneratorTests
             return 1;
         });
 
-        await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await primaryCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(result).IsEqualTo(42);
     }
 
@@ -412,7 +412,7 @@ public class HedgingActionGeneratorTests
             return 42;
         }).AsTask();
 
-        await generatorFailed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorFailed.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releasePrimary.SetResult();
 
         var outcome = await execution;
@@ -466,13 +466,13 @@ public class HedgingActionGeneratorTests
         }).AsTask();
 
         await Task.WhenAll(attemptTwoStarted.Task, attemptThreeStarted.Task)
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(ReferenceEquals(contexts[1], contexts[2])).IsFalse();
 
         releaseWinner.SetResult();
         await Assert.That(await execution).IsEqualTo(42);
         await Task.WhenAll(primaryCancelled.Task, loserCancelled.Task)
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -522,7 +522,7 @@ public class HedgingActionGeneratorTests
 
         var execution = shield.ExecuteAsync<int>(_ =>
             ValueTask.FromException<int>(new InvalidOperationException("primary"))).AsTask();
-        await hookStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await hookStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         release.SetResult();
 
         _ = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
@@ -899,7 +899,7 @@ public class HedgingActionGeneratorTests
 
         try
         {
-            await allRented.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await allRented.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(rentedContexts.Any(context =>
                 ReferenceEquals(context, attemptContext))).IsFalse();
         }
@@ -1152,7 +1152,7 @@ public class HedgingActionGeneratorTests
                     _concurrentInvocations.TrySetResult();
                 }
 
-                await _concurrentInvocations.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                await _concurrentInvocations.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             }
 
             return await next.InvokeAsync(context);

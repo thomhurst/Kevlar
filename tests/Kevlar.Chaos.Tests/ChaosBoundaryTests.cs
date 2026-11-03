@@ -211,7 +211,7 @@ public class ChaosBoundaryTests
             }
         });
 
-        var results = await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        var results = await Task.WhenAll(first, second).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(results[0]).IsEqualTo(("first", "one"));
         await Assert.That(results[1]).IsEqualTo(("second", "two"));

@@ -641,12 +641,12 @@ public class HttpReplayTests
         };
 
         var send = invoker.SendAsync(request, cancellation.Token);
-        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
         var exception = await Assert.That(async () => await send).Throws<OperationCanceledException>();
         await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
-        await content.Cancelled.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Cancelled.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(transport.Attempts).IsEqualTo(0);
     }
 
@@ -668,7 +668,7 @@ public class HttpReplayTests
         _ = await Assert.That(async () => await invoker.SendAsync(request, CancellationToken.None))
             .Throws<TimeoutExceededException>();
 
-        await content.Cancelled.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Cancelled.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(transport.Attempts).IsEqualTo(0);
     }
 
@@ -710,12 +710,12 @@ public class HttpReplayTests
         };
 
         var send = invoker.SendAsync(request, CancellationToken.None);
-        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
-        await hedgeLaunched.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await attemptTimedOut.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await content.Started.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await hedgeLaunched.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await attemptTimedOut.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         content.Release();
 
-        using var response = await send.WaitAsync(TimeSpan.FromSeconds(5));
+        using var response = await send.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(content.SerializationAttempts).IsEqualTo(1);
@@ -815,13 +815,13 @@ public class HttpReplayTests
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/path?q=1");
 
         using var response = await invoker.SendAsync(request, CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(destinations.Take(2).Select(static item => item.Host)
             .SequenceEqual(["first.example", "second.example"])).IsTrue();
         await Assert.That(destinations.All(static item => item.PathAndQuery == "/path?q=1")).IsTrue();
-        await loserContent.WaitForDisposalAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        await loserContent.WaitForDisposalAsync().WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(loserContent.DisposeCount).IsEqualTo(1);
     }
 
@@ -887,10 +887,10 @@ public class HttpReplayTests
         using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         using var response = await client.GetAsync("https://origin.example/api")
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await timedOut.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await timedOut.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(transport.Attempts).IsEqualTo(2);
     }
 
@@ -1033,7 +1033,7 @@ public class HttpReplayTests
 
         try
         {
-            await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await allStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(2));
         }
         finally
         {
@@ -1080,7 +1080,7 @@ public class HttpReplayTests
         var first = client.GetAsync("https://origin.example/first");
         var second = client.GetAsync("https://origin.example/second");
 
-        await twoStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await twoStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(2));
         try
         {
             await Assert.That(async () => await client.GetAsync("https://origin.example/third"))
@@ -1129,11 +1129,11 @@ public class HttpReplayTests
         using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         var holding = client.GetAsync("https://origin.example/holding");
-        await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await firstStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         using var overflow = await client.GetAsync("https://origin.example/overflow")
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
         release.TrySetResult();
-        using var held = await holding.WaitAsync(TimeSpan.FromSeconds(5));
+        using var held = await holding.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(overflow.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(held.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -1238,7 +1238,7 @@ public class HttpReplayTests
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
             using var response = await invoker.SendAsync(request, CancellationToken.None)
-                .WaitAsync(TimeSpan.FromSeconds(5));
+                .WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
 

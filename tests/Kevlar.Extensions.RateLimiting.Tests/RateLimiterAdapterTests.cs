@@ -376,7 +376,7 @@ public class RateLimiterAdapterTests
         var replacement = shield.ExecuteAsync(static _ => new ValueTask<int>(3)).AsTask();
         release.SetResult();
         await Assert.That(await occupying).IsEqualTo(1);
-        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
+        await Assert.That(await replacement.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
     }
 
     [Test]
@@ -440,7 +440,7 @@ public class RateLimiterAdapterTests
             static _ => new ValueTask<int>(3)).AsTask();
         release.SetResult();
         await Assert.That(await occupying).IsEqualTo(1);
-        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
+        await Assert.That(await replacement.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
     }
 
     [Test]

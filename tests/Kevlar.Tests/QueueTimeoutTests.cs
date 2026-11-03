@@ -32,7 +32,7 @@ public class QueueTimeoutTests
                 return new ValueTask<int>(2);
             }).AsTask();
             time.Advance(TimeSpan.FromMilliseconds(250));
-            var outcome = await queued.WaitAsync(TestHelpers.DefaultTimeout);
+            var outcome = await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
             await Assert.That(outcome.Exception?.GetType()).IsEqualTo(rateLimit
                 ? typeof(RateLimitExceededException) : typeof(ConcurrencyLimitExceededException));
             await Assert.That(invoked).IsFalse();
@@ -40,7 +40,7 @@ public class QueueTimeoutTests
             await Assert.That(Queued(shield)).IsEqualTo(0);
 
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
             time.Advance(TimeSpan.FromMilliseconds(750));
             var replacement = await shield.ExecuteAsync(_ => new ValueTask<int>(3));
             await Assert.That(replacement).IsEqualTo(3);
@@ -48,7 +48,7 @@ public class QueueTimeoutTests
         finally
         {
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 
@@ -75,19 +75,19 @@ public class QueueTimeoutTests
         {
             releaseFirst.TrySetResult(1);
             time.Advance(TimeSpan.FromSeconds(1));
-            var token = await entered.Task.WaitAsync(TestHelpers.DefaultTimeout);
+            var token = await entered.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
             time.Advance(TimeSpan.FromSeconds(10));
             await Assert.That(token).IsEqualTo(caller.Token);
             await Assert.That(token.IsCancellationRequested).IsFalse();
             await Assert.That(second.IsCompleted).IsFalse();
             releaseSecond.TrySetResult(2);
-            await Assert.That(await second.WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
+            await Assert.That(await second.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
         }
         finally
         {
             releaseFirst.TrySetResult(1);
             releaseSecond.TrySetResult(2);
-            await Task.WhenAll(first, second).WaitAsync(TestHelpers.DefaultTimeout);
+            await Task.WhenAll(first, second).WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 
@@ -110,7 +110,7 @@ public class QueueTimeoutTests
             var dispatchedTimer = time.QueueTimerCallback(0);
             caller.Cancel();
             time.Advance(TimeSpan.FromSeconds(1));
-            var outcome = await queued.WaitAsync(TestHelpers.DefaultTimeout);
+            var outcome = await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
             // A callback dispatched before disposal may arrive after the waiter has drained.
             dispatchedTimer.Fire();
             await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
@@ -121,7 +121,7 @@ public class QueueTimeoutTests
         finally
         {
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 
@@ -143,7 +143,7 @@ public class QueueTimeoutTests
             await time.WaitForTimersAsync(rateLimit ? 2 : 1);
             time.Advance(TimeSpan.FromSeconds(1));
             time.FireTimer(0);
-            var outcome = await queued.WaitAsync(TestHelpers.DefaultTimeout);
+            var outcome = await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
             await Assert.That(outcome.Exception?.GetType()).IsEqualTo(rateLimit
                 ? typeof(RateLimitExceededException) : typeof(ConcurrencyLimitExceededException));
             await Assert.That(Queued(shield)).IsEqualTo(0);
@@ -151,7 +151,7 @@ public class QueueTimeoutTests
         finally
         {
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 
@@ -192,14 +192,14 @@ public class QueueTimeoutTests
         {
             var queued = shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(2)).AsTask();
             time.Advance(TimeSpan.FromMilliseconds(250));
-            await queued.WaitAsync(TestHelpers.DefaultTimeout);
+            await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
             await Assert.That(telemetry.Reasons.Single()).IsEqualTo("queue_timeout");
             await Assert.That(rejectionReasons.Single()).IsEqualTo("queue_timeout");
         }
         finally
         {
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 
@@ -222,8 +222,8 @@ public class QueueTimeoutTests
             // Wake the permit delay without dispatching the queue-timeout callback.
             time.FireTimer(1);
         }
-        var outcome = await queued.WaitAsync(TestHelpers.DefaultTimeout);
-        await active.WaitAsync(TestHelpers.DefaultTimeout);
+        var outcome = await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
+        await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(outcome.Exception is ExecutionRejectedException).IsTrue();
         await Assert.That(Queued(shield)).IsEqualTo(0);
     }
@@ -258,14 +258,14 @@ public class QueueTimeoutTests
             await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
             await Assert.That(Queued(shield)).IsEqualTo(0);
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
             time.Advance(TimeSpan.FromSeconds(1));
             await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(3))).IsEqualTo(3);
         }
         finally
         {
             release.TrySetResult(1);
-            await active.WaitAsync(TestHelpers.DefaultTimeout);
+            await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
     }
 

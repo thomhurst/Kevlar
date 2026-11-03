@@ -53,10 +53,10 @@ public class RetryCancellationTests
             attempts++;
             throw new InvalidOperationException("retry me");
         }, cancellation.Token).AsTask();
-        await retryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await retryStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken)

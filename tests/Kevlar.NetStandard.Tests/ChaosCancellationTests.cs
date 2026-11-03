@@ -27,10 +27,10 @@ public class ChaosCancellationTests
             actionCalls++;
             return new ValueTask<int>(42);
         }, cancellation.Token).AsTask();
-        await injectionStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await injectionStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken)

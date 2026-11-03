@@ -438,7 +438,7 @@ public class CircuitBreakerProbeAndSlowCallTests
         var failed = shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException())).AsTask();
         try
         {
-            await generationStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await generationStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             release.SetResult(42);
             _ = await Task.WhenAll(first, second);
             await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);

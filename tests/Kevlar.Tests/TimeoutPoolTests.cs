@@ -30,7 +30,7 @@ public class TimeoutPoolTests
                 });
             }
         }));
-        await Task.WhenAll(workers).WaitAsync(TimeSpan.FromSeconds(20));
+        await Task.WhenAll(workers).WaitForTestAsync(TimeSpan.FromSeconds(20));
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class TimeoutPoolTests
                 }
             }
         }));
-        await Task.WhenAll(workers).WaitAsync(TimeSpan.FromSeconds(20));
+        await Task.WhenAll(workers).WaitForTestAsync(TimeSpan.FromSeconds(20));
     }
 
     [Test]
@@ -118,7 +118,7 @@ public class TimeoutPoolTests
         {
             var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             using var registration = next.Token.Register(() => cancelled.TrySetResult());
-            await cancelled.Task.WaitAsync(TestHelpers.DefaultTimeout);
+            await cancelled.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
         else
         {
@@ -146,7 +146,7 @@ public class TimeoutPoolTests
             await Assert.That(entered.Wait(TestHelpers.DefaultTimeout)).IsTrue();
             returning = Task.Factory.StartNew(source.Dispose, CancellationToken.None,
                 TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            await returning.WaitAsync(TestHelpers.DefaultTimeout);
+            await returning.WaitForTestAsync(TestHelpers.DefaultTimeout);
             using var next = TimeoutSourcePool.RentLinked(CancellationToken.None);
             await Assert.That(ReferenceEquals(source, next)).IsFalse();
             await Assert.That(next.IsCancellationRequested).IsFalse();
@@ -156,7 +156,7 @@ public class TimeoutPoolTests
             release.Set();
             if (returning is not null)
             {
-                await returning.WaitAsync(TestHelpers.DefaultTimeout);
+                await returning.WaitForTestAsync(TestHelpers.DefaultTimeout);
             }
             else
             {
@@ -189,16 +189,16 @@ public class TimeoutPoolTests
                 returningStarted.TrySetResult();
                 source.Dispose();
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            await returningStarted.Task.WaitAsync(TestHelpers.DefaultTimeout);
+            await returningStarted.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
             await Assert.That(returning.IsCompleted).IsFalse();
         }
         finally
         {
             release.Set();
-            await cancellation.WaitAsync(TestHelpers.DefaultTimeout);
+            await cancellation.WaitForTestAsync(TestHelpers.DefaultTimeout);
             if (returning is not null)
             {
-                await returning.WaitAsync(TestHelpers.DefaultTimeout);
+                await returning.WaitForTestAsync(TestHelpers.DefaultTimeout);
             }
             else
             {
@@ -254,7 +254,7 @@ public class TimeoutPoolTests
             }
         }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        await worker.WaitAsync(TimeSpan.FromSeconds(30));
+        await worker.WaitForTestAsync(TimeSpan.FromSeconds(30));
         await Assert.That(errors).IsEmpty();
     }
 
@@ -279,7 +279,7 @@ public class TimeoutPoolTests
             return (reused, fired, freshCancelled);
         }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        var (reused, fired, freshCancelled) = await worker.WaitAsync(TimeSpan.FromSeconds(30));
+        var (reused, fired, freshCancelled) = await worker.WaitForTestAsync(TimeSpan.FromSeconds(30));
         await Assert.That(reused).IsTrue();
         await Assert.That(fired).IsTrue();
         await Assert.That(freshCancelled).IsFalse();
@@ -298,7 +298,7 @@ public class TimeoutPoolTests
             TimeoutSourcePool.Arm(source, TimeSpan.FromMilliseconds(20));
             _ = completion.Task.Wait(TestHelpers.DefaultTimeout);
         }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        await Assert.That(await completion.Task.WaitAsync(TestHelpers.DefaultTimeout)).IsNull();
-        await worker.WaitAsync(TestHelpers.DefaultTimeout);
+        await Assert.That(await completion.Task.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsNull();
+        await worker.WaitForTestAsync(TestHelpers.DefaultTimeout);
     }
 }

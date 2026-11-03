@@ -97,10 +97,10 @@ public class RetryHookCancellationTests
             return ValueTask.FromException<int>(failure);
         }, cancellation.Token).AsTask();
 
-        await hookStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await hookStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         releaseHook.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await AssertCancellationAsync(outcome, cancellation.Token);
         await Assert.That(attempts).IsEqualTo(1);
@@ -365,7 +365,7 @@ public class RetryHookCancellationTests
 
         await Assert.That(attempts).IsEqualTo(1);
         cancellation.Cancel();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken)

@@ -131,7 +131,7 @@ public class CircuitBreakerTransitionOrderingTests
 
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException())
             .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(transitions.SequenceEqual(
         [
@@ -186,7 +186,7 @@ public class CircuitBreakerTransitionOrderingTests
 
         var opening = Task.Run(async () =>
             await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()));
-        await openingEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await openingEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var reset = Task.Run(monitor.Reset);
         await WaitForStateAsync(monitor, CircuitState.Closed);
@@ -194,7 +194,7 @@ public class CircuitBreakerTransitionOrderingTests
         await WaitForStateAsync(monitor, CircuitState.Isolated);
 
         releaseOpening.TrySetResult();
-        await Task.WhenAll(opening, reset, isolate).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(opening, reset, isolate).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         (CircuitState From, CircuitState To)[] expected =
         [
@@ -336,7 +336,7 @@ public class CircuitBreakerTransitionOrderingTests
             await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
         }
 
-        await Task.Run(monitor.Reset).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Run(monitor.Reset).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(observed.SequenceEqual([CircuitState.Isolated, CircuitState.Closed])).IsTrue();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
@@ -509,7 +509,7 @@ public class CircuitBreakerTransitionOrderingTests
             CancellationToken.None,
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);
-        await firstObserverEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await firstObserverEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var second = Task.Factory.StartNew(
             monitor.Reset,
             CancellationToken.None,
@@ -518,8 +518,8 @@ public class CircuitBreakerTransitionOrderingTests
         await WaitForStateAsync(monitor, CircuitState.Closed);
 
         releaseFirstObserver.TrySetResult();
-        await first.WaitAsync(TimeSpan.FromSeconds(5));
-        await second.WaitAsync(TimeSpan.FromSeconds(5));
+        await first.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await second.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
     }
 

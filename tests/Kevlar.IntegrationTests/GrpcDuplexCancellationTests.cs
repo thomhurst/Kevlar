@@ -54,7 +54,7 @@ public class GrpcDuplexCancellationTests
             }
 
             var exception = await Assert.That(async () =>
-                    await move.WaitAsync(TimeSpan.FromSeconds(5)))
+                    await move.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<OperationCanceledException>();
             var expectedToken = cancelRead ? readCancellation.Token
                 : disposeCall ? lifetimeToken : callerCancellation.Token;
@@ -64,8 +64,8 @@ public class GrpcDuplexCancellationTests
             probe = shield.ExecuteAsync(static _ => default, probeCancellation.Token).AsTask();
             await Assert.That(probe.IsCompleted).IsFalse();
             release.TrySetResult();
-            await holder.WaitAsync(TimeSpan.FromSeconds(5));
-            await probe.WaitAsync(TimeSpan.FromSeconds(5));
+            await holder.WaitForTestAsync(TimeSpan.FromSeconds(5));
+            await probe.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(moves).IsEqualTo(0);
         }
         finally
@@ -73,12 +73,12 @@ public class GrpcDuplexCancellationTests
             readCancellation.Cancel();
             probeCancellation.Cancel();
             release.TrySetResult();
-            await holder.WaitAsync(TimeSpan.FromSeconds(5));
+            await holder.WaitForTestAsync(TimeSpan.FromSeconds(5));
             if (probe is not null)
             {
                 try
                 {
-                    await probe.WaitAsync(TimeSpan.FromSeconds(5));
+                    await probe.WaitForTestAsync(TimeSpan.FromSeconds(5));
                 }
                 catch (OperationCanceledException)
                 {
@@ -121,7 +121,7 @@ public class GrpcDuplexCancellationTests
         var move = call.ResponseStream.MoveNext(readCancellation.Token);
         try
         {
-            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             if (cancelRead)
             {
                 readCancellation.Cancel();
@@ -136,7 +136,7 @@ public class GrpcDuplexCancellationTests
             }
 
             var exception = await Assert.That(async () =>
-                    await move.WaitAsync(TimeSpan.FromSeconds(5)))
+                    await move.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<OperationCanceledException>();
             var expectedToken = cancelRead ? readCancellation.Token
                 : disposeCall ? lifetimeToken : callerCancellation.Token;
@@ -151,7 +151,7 @@ public class GrpcDuplexCancellationTests
             readCancellation.Cancel();
             try
             {
-                await move.WaitAsync(TimeSpan.FromSeconds(5));
+                await move.WaitForTestAsync(TimeSpan.FromSeconds(5));
             }
             catch (OperationCanceledException)
             {

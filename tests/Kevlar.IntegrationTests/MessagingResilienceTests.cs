@@ -211,7 +211,7 @@ public class MessagingResilienceTests
         var publish = publisher.ExecuteAsync(
             ct => broker.PublishAsync(new BrokerMessage("cancelled", "payload"), ct),
             cancellation.Token).AsTask();
-        await retryScheduled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await retryScheduled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await publish)
@@ -258,7 +258,7 @@ public class MessagingResilienceTests
                 await broker.PublishAsync(new BrokerMessage($"m{index}", "payload"), ct);
             }).AsTask();
         }).ToArray();
-        await firstAttemptsReady.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await firstAttemptsReady.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releaseFirstAttempts.TrySetResult();
         await Task.WhenAll(publishes);
 

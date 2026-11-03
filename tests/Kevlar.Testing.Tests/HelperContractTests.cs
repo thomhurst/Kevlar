@@ -47,7 +47,7 @@ public class HelperContractTests
             .ToArray();
 
         await Shield.Empty.ExecuteAsync(probe.Wrap(static _ => ValueTask.CompletedTask));
-        await Task.WhenAll(waiters).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(waiters).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(waiters).All(static waiter => waiter.IsCompletedSuccessfully);
     }

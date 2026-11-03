@@ -299,11 +299,11 @@ public class CircuitBreakerDynamicOptionsTests
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask();
-        await generatorEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
 
         releaseGenerator.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
     }
@@ -424,7 +424,7 @@ public class CircuitBreakerDynamicOptionsTests
         var execution = shield.ExecuteAsync<int>(
             _ => throw new InvalidOperationException("operation"),
             cancellation.Token).AsTask();
-        await generatorEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         releaseGenerator.SetResult();
 
@@ -456,12 +456,12 @@ public class CircuitBreakerDynamicOptionsTests
         var executions = Enumerable.Range(0, 32)
             .Select(_ => shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask())
             .ToArray();
-        await generatorEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Task.Yield();
         await Assert.That(calls).IsEqualTo(1);
 
         releaseGenerator.SetResult();
-        await Task.WhenAll(executions).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(executions).WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 
@@ -496,7 +496,7 @@ public class CircuitBreakerDynamicOptionsTests
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
         var opening = shield.ExecuteOutcomeAsync<int>(
             _ => ValueTask.FromException<int>(new ApplicationException("first"))).AsTask();
-        await generatorEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         timeProvider.Advance(TimeSpan.FromSeconds(9));
         await shield.ExecuteOutcomeAsync<int>(
@@ -546,13 +546,13 @@ public class CircuitBreakerDynamicOptionsTests
         monitor.StateChanged += change => events.Enqueue($"monitor:{change.To}");
 
         var opening = shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask();
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await callbackEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(opening.IsCompleted).IsFalse();
 
         var reset = monitor.ResetAsync().AsTask();
         await Assert.That(reset.IsCompleted).IsFalse();
         releaseCallback.SetResult();
-        await Task.WhenAll(opening, reset).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(opening, reset).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(events.SequenceEqual(
         [
@@ -584,7 +584,7 @@ public class CircuitBreakerDynamicOptionsTests
             };
         });
 
-        await monitor.IsolateAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+        await monitor.IsolateAsync().AsTask().WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(observed.SequenceEqual([CircuitState.Isolated, CircuitState.Closed])).IsTrue();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);

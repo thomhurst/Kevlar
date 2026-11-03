@@ -355,7 +355,7 @@ public class AmbientContextContractTests
         await timeProvider.WaitForTimersAsync(1);
         timeProvider.FireTimer(0);
 
-        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(await execution.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(synchronizationContext.PostCount).IsEqualTo(0);
     }

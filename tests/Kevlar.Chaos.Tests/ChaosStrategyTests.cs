@@ -22,7 +22,7 @@ public class ChaosStrategyTests
 
         await Assert.That(execution.IsCompleted).IsFalse();
         enabled.SetResult(true);
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
     }
@@ -170,7 +170,7 @@ public class ChaosStrategyTests
         await Assert.That(actionCalls).IsEqualTo(0);
 
         timeProvider.Advance(TimeSpan.FromSeconds(2));
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(actionCalls).IsEqualTo(1);
@@ -197,7 +197,7 @@ public class ChaosStrategyTests
         OperationCanceledException? caught = null;
         try
         {
-            await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
         catch (OperationCanceledException exception)
         {
@@ -338,11 +338,11 @@ public class ChaosStrategyTests
             order.Add("action");
             return new ValueTask<int>(42);
         }).AsTask();
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(order).IsEquivalentTo(["behavior-start"]);
         release.SetResult();
 
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(string.Join(",", order)).IsEqualTo("behavior-start,behavior-end,action");

@@ -207,7 +207,7 @@ public class ContextAwarePredicateTests
                 if (handling.AttemptNumber == 1)
                 {
                     releaseSlowOriginal.SetResult();
-                    slowOriginal!.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+                    slowOriginal!.WaitForTestAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
                     observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
                 }
 

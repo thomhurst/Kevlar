@@ -205,7 +205,7 @@ public class AdaptiveConcurrencyLimitTests
         var rejection = shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(43)).AsTask();
         try
         {
-            await called.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await called.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(rejection.IsCompleted).IsFalse();
             await Assert.That(observedLimit).IsEqualTo(1);
         }

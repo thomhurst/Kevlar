@@ -75,7 +75,7 @@ public class ActivityCompatibilityTests
         }).AsTask();
         try
         {
-            await notificationStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await notificationStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(execution.IsCompleted).IsFalse();
             await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();
         }
@@ -120,7 +120,7 @@ public class ActivityCompatibilityTests
             }
         });
 
-        await primaryStopped.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await primaryStopped.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(ReferenceEquals(observed, parent)).IsTrue();
         await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();

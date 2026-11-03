@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestWait.cs" Link="TestWait.cs" />
+    <Using Include="Kevlar.Tests" />
+  </ItemGroup>
+
 </Project>
