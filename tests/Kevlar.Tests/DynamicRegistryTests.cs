@@ -982,11 +982,18 @@ public class DynamicRegistryTests
             using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
             var registry = services.GetRequiredService<IKevlarRegistry>();
             var strategy = new DisposableStrategy();
-            var (retired, released) = ExerciseDerivedShield(
-                registry,
-                strategy,
-                derivations[index],
-                index);
+            var derived = new StrongBox<Shield?>();
+
+            // Each step runs in its own non-inlined helper so that Debug builds, which keep locals and
+            // temporaries alive until the method returns, cannot root the shields being collected.
+            var retired = RetireDerivedShield(registry, strategy, derivations[index], derived);
+            Collect(retired);
+            _ = registry.GetOrAdd($"derived-scavenge-{index}", _ => Shield.Empty);
+
+            await Assert.That(retired.IsAlive).IsFalse();
+            await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+
+            var released = ExecuteAndReleaseDerivedShield(derived);
             Collect(released);
             _ = registry.GetOrAdd($"released-scavenge-{index}", _ => Shield.Empty);
 
@@ -1328,31 +1335,29 @@ public class DynamicRegistryTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static (WeakReference Retired, WeakReference Released) ExerciseDerivedShield(
+    private static WeakReference RetireDerivedShield(
         IKevlarRegistry registry,
         DisposableStrategy strategy,
         Func<Shield, Shield> derive,
-        int index)
+        StrongBox<Shield?> derived)
     {
         var shield = registry.GetOrAdd("derived", _ => Shield.Use(strategy));
-        var retired = new WeakReference(shield);
-        var derived = derive(shield);
+        derived.Value = derive(shield);
         registry.Remove("derived");
+        return new WeakReference(shield);
+    }
 
-        shield = null!;
-        Collect(retired);
-        _ = registry.GetOrAdd($"derived-scavenge-{index}", _ => Shield.Empty);
-        if (retired.IsAlive || strategy.DisposeCount != 0)
-        {
-            throw new InvalidOperationException("The derived shield did not preserve the retired strategy lifetime.");
-        }
-
-        if (derived.Execute(static _ => 42) != 42)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ExecuteAndReleaseDerivedShield(StrongBox<Shield?> derived)
+    {
+        var shield = derived.Value!;
+        derived.Value = null;
+        if (shield.Execute(static _ => 42) != 42)
         {
             throw new InvalidOperationException("The derived shield returned an unexpected result.");
         }
 
-        return (retired, new WeakReference(derived));
+        return new WeakReference(shield);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
