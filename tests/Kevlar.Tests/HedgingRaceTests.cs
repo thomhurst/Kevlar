@@ -212,9 +212,20 @@ public class HedgingRaceTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
             primaryStarted.TrySetResult();
-            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            try
+            {
+                await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // Observe cancellation from the cancelled await, not a token callback: Cancel runs
+                // callbacks in reverse order, so the delay's callback can resume this method inline
+                // and dispose a registration before its callback runs.
+                primaryCancelled.TrySetResult();
+                throw;
+            }
+
             return 1;
         });
 
