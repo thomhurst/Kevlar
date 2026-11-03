@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Time.Testing;
 
@@ -51,6 +52,69 @@ public class CircuitBreakerStateReportingTests
         ]);
         await Assert.That(await first.ExecuteAsync(_ => new ValueTask<int>(1))).IsEqualTo(1);
         await Assert.That(await second.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Monitor_Async_Control_Of_Multiple_Breakers_Waits_For_Every_Observer()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var releaseFirstIsolation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completedCallbacks = new ConcurrentQueue<string>();
+        var first = CreateYieldingBreaker("first", releaseFirstIsolation.Task);
+        var second = CreateYieldingBreaker("second", gate: null);
+
+        // One failure each stays below the threshold; reset must clear it.
+        await first.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("first"));
+        await second.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("second"));
+        await Assert.That(monitor.CaptureStates()).IsEquivalentTo([CircuitState.Closed, CircuitState.Closed]);
+
+        var isolation = monitor.IsolateAsync().AsTask();
+        await Assert.That(isolation.IsCompleted).IsFalse();
+        releaseFirstIsolation.SetResult();
+        await isolation.WaitForTestAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(completedCallbacks).IsEquivalentTo(["first:Isolated", "second:Isolated"]);
+        await Assert.That(monitor.CaptureStates()).IsEquivalentTo([CircuitState.Isolated, CircuitState.Isolated]);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
+        var firstRejection = await Assert.That(
+            async () => await first.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<CircuitOpenException>();
+        var secondRejection = await Assert.That(
+            async () => await second.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<CircuitOpenException>();
+        await Assert.That(firstRejection!.IsIsolated).IsTrue();
+        await Assert.That(secondRejection!.IsIsolated).IsTrue();
+
+        completedCallbacks.Clear();
+        await monitor.ResetAsync().AsTask().WaitForTestAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(completedCallbacks).IsEquivalentTo(["first:Closed", "second:Closed"]);
+        await Assert.That(monitor.CaptureStates()).IsEquivalentTo([CircuitState.Closed, CircuitState.Closed]);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+        await Assert.That(await first.ExecuteAsync(_ => new ValueTask<int>(1))).IsEqualTo(1);
+        await Assert.That(await second.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+
+        // A single failure after reset must not reach the threshold of two.
+        await first.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("first"));
+        await second.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("second"));
+        await Assert.That(monitor.CaptureStates()).IsEquivalentTo([CircuitState.Closed, CircuitState.Closed]);
+
+        Shield CreateYieldingBreaker(string name, Task? gate) => Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 2;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+            options.OnStateChanged = async change =>
+            {
+                await Task.Yield();
+                if (gate is not null && change.To == CircuitState.Isolated)
+                {
+                    await gate;
+                }
+
+                completedCallbacks.Enqueue($"{name}:{change.To}");
+            };
+        });
     }
 
     [Test]
