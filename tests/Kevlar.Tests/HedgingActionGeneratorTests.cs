@@ -155,8 +155,18 @@ public class HedgingActionGeneratorTests
 
         var result = await shield.ExecuteAsync(async token =>
         {
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // Observe cancellation from the cancelled await, not a token callback: Cancel runs
+                // callbacks in reverse order, so the delay's callback can resume this method inline
+                // and dispose a registration before its callback runs.
+                primaryCancelled.TrySetResult();
+                throw;
+            }
             return 1;
         });
 
@@ -288,8 +298,18 @@ public class HedgingActionGeneratorTests
                 return 42;
             }
 
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // Observe cancellation from the cancelled await, not a token callback: Cancel runs
+                // callbacks in reverse order, so the delay's callback can resume this method inline
+                // and dispose a registration before its callback runs.
+                primaryCancelled.TrySetResult();
+                throw;
+            }
             return 1;
         });
 
@@ -460,8 +480,18 @@ public class HedgingActionGeneratorTests
 
         var execution = shield.ExecuteAsync(async token =>
         {
-            using var registration = token.Register(() => primaryCancelled.TrySetResult());
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // Observe cancellation from the cancelled await, not a token callback: Cancel runs
+                // callbacks in reverse order, so the delay's callback can resume this method inline
+                // and dispose a registration before its callback runs.
+                primaryCancelled.TrySetResult();
+                throw;
+            }
             return 1;
         }).AsTask();
 

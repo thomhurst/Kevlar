@@ -22,7 +22,7 @@ public class HedgingEdgeCaseTests
     [Test]
     public async Task The_Losing_Attempt_Is_Cancelled_When_A_Winner_Completes()
     {
-        var loserCancelled = new TaskCompletionSource();
+        var loserCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
         var shield = Shield.Hedge(1, TimeSpan.Zero);
 
@@ -31,15 +31,25 @@ public class HedgingEdgeCaseTests
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)
             {
-                using var registration = token.Register(() => loserCancelled.TrySetResult());
-                await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                try
+                {
+                    await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    // Observe cancellation from the cancelled await, not a token callback: Cancel runs
+                    // callbacks in reverse order, so the delay's callback can resume this method inline
+                    // and dispose a registration before its callback runs.
+                    loserCancelled.TrySetResult();
+                    throw;
+                }
             }
 
             return "winner";
         });
 
         await Assert.That(result).IsEqualTo("winner");
-        await loserCancelled.Task;
+        await loserCancelled.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
     }
 
     [Test]
