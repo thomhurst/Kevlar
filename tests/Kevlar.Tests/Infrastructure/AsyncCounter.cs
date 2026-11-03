@@ -40,7 +40,7 @@ internal sealed class AsyncCounter(string name)
         return count;
     }
 
-    public async Task<int> WaitForAsync(int target)
+    public async Task<int> WaitForAsync(int target, TimeSpan? timeout = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(target);
         Waiter waiter;
@@ -58,7 +58,7 @@ internal sealed class AsyncCounter(string name)
 
         try
         {
-            return await TestHelpers.WaitAsync(waiter.Completion.Task, $"counter '{name}' to reach {target}");
+            return await TestHelpers.WaitAsync(waiter.Completion.Task, $"counter '{name}' to reach {target}", timeout);
         }
         finally
         {

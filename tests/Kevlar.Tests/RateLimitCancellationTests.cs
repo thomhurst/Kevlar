@@ -145,16 +145,21 @@ public class RateLimitCancellationTests
         for (var permit = 1; permit <= queueLimit; permit++)
         {
             var pending = calls.Where(call => !call.IsCompleted).ToArray();
-            // Completing one caller does not guarantee that the next caller has registered its delay.
-            await fakeTime.WaitForTimersAsync(permit);
+            // Only the queue head waits on a timer, and it registers that delay on a thread-pool
+            // continuation after the previous head completes. Wait for it, then fire timers by due
+            // time rather than creation index, so the test does not depend on which thread ran first.
+            await fakeTime.WaitForTimersAsync(permit, QueueStepTimeout);
             fakeTime.Advance(TimeSpan.FromSeconds(1));
             fakeTime.Advance(TimeSpan.FromTicks(1));
-            fakeTime.FireTimer(permit - 1);
+            var fired = fakeTime.FireDueTimers();
             var expectedCompleted = callerCount - queueLimit + permit;
             var next = await WaitWithMessage(
                 Task.WhenAny(pending),
-                $"Permit {permit} stalled with {calls.Count(call => call.IsCompleted)} completed calls.");
+                $"Permit {permit} stalled: {calls.Count(call => call.IsCompleted)} of {callerCount} calls completed, "
+                + $"{fakeTime.TimerCount} timers created, {fired} fired at {fakeTime.GetUtcNow():O}.",
+                QueueStepTimeout);
             await next;
+            await Assert.That(fired).IsEqualTo(1);
 
             await Assert.That(calls.Count(call => call.IsCompleted))
                 .IsEqualTo(expectedCompleted);
@@ -195,11 +200,14 @@ public class RateLimitCancellationTests
         })
         .WithTimeProvider(fakeTime);
 
-    private static async Task<T> WaitWithMessage<T>(Task<T> task, string message)
+    // A deadlock bound for steps that hop to the thread pool; a loaded serial run can exceed the default five seconds.
+    private static readonly TimeSpan QueueStepTimeout = TimeSpan.FromSeconds(30);
+
+    private static async Task<T> WaitWithMessage<T>(Task<T> task, string message, TimeSpan? timeout = null)
     {
         try
         {
-            return await task.WaitForTestAsync(TimeSpan.FromSeconds(5));
+            return await task.WaitForTestAsync(timeout ?? TestHelpers.DefaultTimeout);
         }
         catch (TimeoutException exception)
         {
