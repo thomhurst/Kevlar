@@ -106,12 +106,14 @@ internal sealed class TimeoutStrategy : Strategy
             ? TimeoutSourcePool.RentLinked(priorToken)
             : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
-        ValueTask<Outcome<T>> execution;
+        // Initialized so that mutants that remove an assignment or the rethrow still compile;
+        // otherwise mutation testing drops every mutant in this method (Safe Mode).
+        ValueTask<Outcome<T>> execution = default;
         var trackDeadline = !context.SuppressDeadlineTracking || KevlarTelemetry.HasContextListeners
             || KevlarMetricEnrichment.HasEnrichers;
         // Whether startedAt holds a real timestamp. Pooled .NET 8+ sources always sample the clock when
         // arming, so there the ignored-timeout metric gate is only consulted if a timeout is ignored.
-        bool timingAvailable;
+        var timingAvailable = false;
         var startedAt = 0L;
 
         try
@@ -220,7 +222,8 @@ internal sealed class TimeoutStrategy : Strategy
         long startedAt,
         bool timingAvailable)
     {
-        Outcome<T> outcome;
+        // Initialized so that a mutant that removes the rethrow still compiles (see ExecuteWithTimeout).
+        Outcome<T> outcome = default;
 
         try
         {
