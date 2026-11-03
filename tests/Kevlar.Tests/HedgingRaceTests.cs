@@ -27,9 +27,9 @@ public class HedgingRaceTests
             return 1;
         }, cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(attempts).IsEqualTo(1);
@@ -61,9 +61,9 @@ public class HedgingRaceTests
             return 1;
         }, cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(attempts).IsEqualTo(1);
@@ -97,9 +97,9 @@ public class HedgingRaceTests
         }, cancellation.Token).AsTask();
 
         timeProvider.Advance(TimeSpan.FromSeconds(1));
-        await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await secondStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(attempts).IsEqualTo(2);
@@ -142,11 +142,11 @@ public class HedgingRaceTests
             }
         }).AsTask();
 
-        await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await allStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releases[0].SetResult();
         releases[1].SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
-        await Task.WhenAll(completions.Select(completion => completion.Task)).WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(completions.Select(completion => completion.Task)).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result is 1 or 2).IsTrue();
         await Assert.That(attempts).IsEqualTo(2);
@@ -218,8 +218,8 @@ public class HedgingRaceTests
             return 1;
         });
 
-        await primaryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await primaryStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await primaryCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(attempts).IsEqualTo(2);
     }
@@ -284,7 +284,7 @@ public class HedgingRaceTests
             });
 
             releaseLoser.SetResult();
-            await loserCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await loserCompleted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
             await Assert.That(result).IsEqualTo(iteration);
             await Assert.That(attempts).IsEqualTo(2);
@@ -317,11 +317,11 @@ public class HedgingRaceTests
                 return executionId;
             });
 
-            var wasCancelled = await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var wasCancelled = await primaryCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             return (result, attempts, wasCancelled);
         });
 
-        var results = await Task.WhenAll(executions).WaitAsync(TimeSpan.FromSeconds(10));
+        var results = await Task.WhenAll(executions).WaitForTestAsync(TimeSpan.FromSeconds(10));
 
         await Assert.That(results.Select(result => result.result))
             .IsEquivalentTo(Enumerable.Range(0, 64));
@@ -358,9 +358,9 @@ public class HedgingRaceTests
             return 42;
         }).AsTask();
 
-        await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await allStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releases[unhandledExceptionWins ? 0 : 1].SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         if (unhandledExceptionWins)
         {
@@ -394,7 +394,7 @@ public class HedgingRaceTests
                 _allArrived.TrySetResult();
             }
 
-            await _allArrived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await _allArrived.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             ObservedValues[attempt] = context.Properties.GetOrDefault(key, -1);
             if (Interlocked.Increment(ref _observed) == participantCount)
             {
@@ -405,7 +405,7 @@ public class HedgingRaceTests
         }
 
         public Task WaitForAllObservedAsync() =>
-            _allObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            _allObserved.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     private sealed class ParentPropertyObserver(KevlarKey<int> key) : Strategy

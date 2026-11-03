@@ -120,14 +120,14 @@ public class RateLimitEdgeCaseTests
         await fakeTime.WaitForTimersAsync(1);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         fakeTime.FireTimer(0);
-        await Assert.That(await second.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
+        await Assert.That(await second.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
         await Assert.That(third.IsCompleted).IsFalse();
 
         // The second result can complete before the next reservation registers its timer.
         await fakeTime.WaitForTimersAsync(2);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         fakeTime.FireTimer(1);
-        await Assert.That(await third.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
+        await Assert.That(await third.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
     }
 
     [Test]
@@ -367,7 +367,7 @@ public class RateLimitEdgeCaseTests
 
         public void Advance(TimeSpan elapsed) => Interlocked.Add(ref _timestamp, elapsed.Ticks);
 
-        public Task WaitForBlockedSampleAsync(TimeSpan timeout) => _sampleCaptured.Task.WaitAsync(timeout);
+        public Task WaitForBlockedSampleAsync(TimeSpan timeout) => _sampleCaptured.Task.WaitForTestAsync(timeout);
 
         public void ReleaseBlockedSample() => _releaseSample.Set();
 

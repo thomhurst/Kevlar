@@ -23,7 +23,7 @@ public class PriorityQueueTests
         var tieFirst = queue.Submit(3, priority: 7);
         var tieSecond = queue.Submit(4, priority: 7);
         var highest = queue.Submit(5, priority: int.MaxValue);
-        await Assert.That((await evicted.WaitAsync(TestHelpers.DefaultTimeout)).Exception?.GetType())
+        await Assert.That((await evicted.WaitForTestAsync(TestHelpers.DefaultTimeout)).Exception?.GetType())
             .IsEqualTo(rateLimit ? typeof(RateLimitExceededException) : typeof(ConcurrencyLimitExceededException));
         await Assert.That(queue.Reasons.Single()).IsEqualTo("queue_evicted");
         var snapshot = Priorities(queue.Shield);
@@ -35,7 +35,7 @@ public class PriorityQueueTests
             await queue.AdmitNext(pair.Item1, pair.Item2);
         }
         queue.Release(1);
-        await Task.WhenAll(active, first, tieFirst, tieSecond, highest).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(active, first, tieFirst, tieSecond, highest).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(string.Join(",", queue.Entered)).IsEqualTo("0,5,3,4,1");
         await Assert.That(Queued(queue.Shield)).IsEqualTo(0);
         await Assert.That(snapshot[7]).IsEqualTo(2); // A captured snapshot does not mutate.
@@ -50,8 +50,8 @@ public class PriorityQueueTests
         var active = queue.Submit(0, priority: null);
         var first = queue.Submit(1, priority: null);
         var second = queue.Submit(2, priority: 0);
-        var rejected = await queue.Submit(3, priority: 0).WaitAsync(TestHelpers.DefaultTimeout);
-        var lower = await queue.Submit(4, priority: -1).WaitAsync(TestHelpers.DefaultTimeout);
+        var rejected = await queue.Submit(3, priority: 0).WaitForTestAsync(TestHelpers.DefaultTimeout);
+        var lower = await queue.Submit(4, priority: -1).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(rejected.Exception).IsNotNull();
         await Assert.That(lower.Exception).IsNotNull();
         await Assert.That(queue.Reasons.All(reason => reason is null)).IsTrue();
@@ -59,7 +59,7 @@ public class PriorityQueueTests
         await queue.AdmitNext(0, 1);
         await queue.AdmitNext(1, 2);
         queue.Release(2);
-        await Task.WhenAll(active, first, second).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(active, first, second).WaitForTestAsync(TestHelpers.DefaultTimeout);
     }
 
     [Test]
@@ -73,14 +73,14 @@ public class PriorityQueueTests
         var low = queue.Submit(1, priority: -1);
         var cancelled = queue.Submit(2, priority: 5, caller.Token);
         caller.Cancel();
-        var outcome = await cancelled.WaitAsync(TestHelpers.DefaultTimeout);
+        var outcome = await cancelled.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken).IsEqualTo(caller.Token);
         await Assert.That(Queued(queue.Shield)).IsEqualTo(1);
         await Assert.That(queue.Reasons.Count).IsEqualTo(0);
         await queue.AdmitNext(0, 1);
         queue.Release(1);
-        await Task.WhenAll(active, low).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(active, low).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(queue.Entered.Contains(2)).IsFalse();
     }
 
@@ -93,20 +93,20 @@ public class PriorityQueueTests
         var active = queue.Submit(0, priority: 0);
         var expired = queue.Submit(1, priority: 10);
         queue.Time.Advance(TimeSpan.FromMilliseconds(500));
-        var outcome = await expired.WaitAsync(TestHelpers.DefaultTimeout);
+        var outcome = await expired.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(outcome.Exception?.GetType()).IsEqualTo(rateLimit
             ? typeof(RateLimitExceededException) : typeof(ConcurrencyLimitExceededException));
         await Assert.That(queue.Reasons.Single()).IsEqualTo("queue_timeout");
         await Assert.That(Queued(queue.Shield)).IsEqualTo(0);
         queue.Release(0);
-        await active.WaitAsync(TestHelpers.DefaultTimeout);
+        await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         queue.Time.Advance(TimeSpan.FromMilliseconds(500));
         var admitted = queue.Submit(2, priority: -10);
         await queue.WaitForEntry(2);
         queue.Time.Advance(TimeSpan.FromSeconds(10));
         await Assert.That(admitted.IsCompleted).IsFalse();
         queue.Release(2);
-        await Assert.That((await admitted.WaitAsync(TestHelpers.DefaultTimeout)).Exception).IsNull();
+        await Assert.That((await admitted.WaitForTestAsync(TestHelpers.DefaultTimeout)).Exception).IsNull();
     }
 
     [Test]
@@ -117,12 +117,12 @@ public class PriorityQueueTests
         await using var queue = new QueueHarness(rateLimit, capacity: 1, enabled: false);
         var active = queue.Submit(0, priority: null);
         var first = queue.Submit(1, priority: -100);
-        var rejected = await queue.Submit(2, priority: 100).WaitAsync(TestHelpers.DefaultTimeout);
+        var rejected = await queue.Submit(2, priority: 100).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(rejected.Exception).IsNotNull();
         await Assert.That(Priorities(queue.Shield).Count).IsEqualTo(0);
         await queue.AdmitNext(0, 1);
         queue.Release(1);
-        await Task.WhenAll(active, first).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(active, first).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(queue.Shield.ToString()).DoesNotContain("priority");
     }
 
@@ -144,11 +144,11 @@ public class PriorityQueueTests
         }
         queue.Release(0);
         queue.Time.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await synchronous.WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
+        await Assert.That(await synchronous.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
         queue.Time.Advance(TimeSpan.FromSeconds(1));
         await queue.WaitForEntry(1);
         queue.Release(1);
-        await Task.WhenAll(active, low).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(active, low).WaitForTestAsync(TestHelpers.DefaultTimeout);
     }
 
     [Test]
@@ -194,7 +194,7 @@ public class PriorityQueueTests
         _ = queue.Submit(0, priority: 0);
         var evicted = queue.Submit(1, priority: -10);
         _ = queue.Submit(2, priority: 10);
-        await evicted.WaitAsync(TestHelpers.DefaultTimeout);
+        await evicted.WaitForTestAsync(TestHelpers.DefaultTimeout);
         var tags = measurements.Single();
         await Assert.That(tags.Single(tag => tag.Key == "kevlar.rejection.reason").Value).IsEqualTo("queue_evicted");
         await Assert.That(tags.Any(tag => tag.Key.Contains("priority"))).IsFalse();
@@ -232,7 +232,7 @@ public class PriorityQueueTests
                 catch (ConcurrencyLimitExceededException) { }
             }
         });
-        await Task.WhenAll(workers).WaitAsync(TestHelpers.DefaultTimeout);
+        await Task.WhenAll(workers).WaitForTestAsync(TestHelpers.DefaultTimeout);
         var state = (ConcurrencyLimitStateSnapshot)shield.GetStateSnapshot().Strategies.Single();
         await Assert.That(violations).IsEqualTo(0);
         await Assert.That(state.AvailablePermits).IsEqualTo(limit);
@@ -253,7 +253,7 @@ public class PriorityQueueTests
         }).WithTimeProvider(time);
         await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
         var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2)).AsTask();
-        await Assert.That(await queued.WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
+        await Assert.That(await queued.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
         await Assert.That(Queued(shield)).IsEqualTo(0);
     }
 
@@ -273,7 +273,7 @@ public class PriorityQueueTests
         var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2), caller.Token);
         await Assert.That(queued.IsCompleted).IsFalse();
         time.Advance(TimeSpan.FromMilliseconds(1));
-        await Assert.That(await queued.AsTask().WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
+        await Assert.That(await queued.AsTask().WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(2);
     }
 
     private sealed class AdvancingTimerProvider : TimeProvider
@@ -374,7 +374,7 @@ public class PriorityQueueTests
         }
 
         public Task WaitForEntry(int id) => _entries.GetOrAdd(id,
-            static _ => new(TaskCreationOptions.RunContinuationsAsynchronously)).Task.WaitAsync(TestHelpers.DefaultTimeout);
+            static _ => new(TaskCreationOptions.RunContinuationsAsynchronously)).Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
         public void Release(int id) => _releases[id].TrySetResult(id);
         public async Task AdmitNext(int previous, int next)
         {
@@ -387,7 +387,7 @@ public class PriorityQueueTests
         {
             _cleanup.Cancel();
             foreach (var release in _releases.Values) release.TrySetResult(0);
-            await Task.WhenAll(_tasks).WaitAsync(TestHelpers.DefaultTimeout);
+            await Task.WhenAll(_tasks).WaitForTestAsync(TestHelpers.DefaultTimeout);
             _cleanup.Dispose();
         }
     }

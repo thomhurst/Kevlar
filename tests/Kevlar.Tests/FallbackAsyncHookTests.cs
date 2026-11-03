@@ -60,12 +60,12 @@ public class FallbackAsyncHookTests
             });
 
         var execution = shield.ExecuteAsync(_ => throw new InvalidOperationException()).AsTask();
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(factoryCalls).IsEqualTo(0);
 
         release.SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(factoryCalls).IsEqualTo(1);
@@ -139,10 +139,10 @@ public class FallbackAsyncHookTests
             });
 
         var execution = shield.ExecuteAsync<int>(_ => throw new InvalidOperationException(), cancellation.Token).AsTask();
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         release.SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(hookToken).IsEqualTo(cancellation.Token);
@@ -181,9 +181,9 @@ public class FallbackAsyncHookTests
         var first = shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()).AsTask();
         var second = shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()).AsTask();
 
-        await bothStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await bothStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         release.SetResult();
-        var results = await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        var results = await Task.WhenAll(first, second).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(results).IsEquivalentTo([42, 42]);
         await Assert.That(nestedResult).IsEqualTo(7);

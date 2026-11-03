@@ -143,7 +143,7 @@ public class DocsConsistencyTests
         await timedQueue.ExecuteAsync(_ => ValueTask.CompletedTask);
         var expired = timedQueue.ExecuteOutcomeAsync(_ => new ValueTask<int>(1)).AsTask();
         queueTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That((await expired.WaitAsync(TimeSpan.FromSeconds(5))).Exception)
+        await Assert.That((await expired.WaitForTestAsync(TimeSpan.FromSeconds(5))).Exception)
             .IsTypeOf<RateLimitExceededException>();
 
         var partitions = new PartitionedShield<string>(

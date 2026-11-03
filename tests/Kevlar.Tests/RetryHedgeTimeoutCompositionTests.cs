@@ -117,7 +117,7 @@ public class RetryHedgeTimeoutCompositionTests
             }
         });
 
-        await loserCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await loserCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(invocations).IsEqualTo(2);
         await Assert.That(retryEvents).IsEqualTo(0);
@@ -185,7 +185,7 @@ public class RetryHedgeTimeoutCompositionTests
         await attempts.WaitForAsync(1);
         await timeProvider.WaitForTimersAsync(2);
         timeProvider.FireTimer(0);
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
         await Assert.That(attempts.Count).IsEqualTo(1);
@@ -231,7 +231,7 @@ public class RetryHedgeTimeoutCompositionTests
         await timeoutEvents.WaitForAsync(1);
         secondRelease.TrySetResult();
 
-        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(await execution.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
         await Assert.That(timeoutEvents.Count).IsEqualTo(1);
         await Assert.That(timeProvider.IsTimerDisposed(1)).IsTrue();
     }

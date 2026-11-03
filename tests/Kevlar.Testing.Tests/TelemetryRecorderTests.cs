@@ -47,7 +47,7 @@ public class TelemetryRecorderTests
                 ? ValueTask.FromException<int>(new InvalidOperationException())
                 : new ValueTask<int>(42));
 
-        await recorder.WaitForEventCountAsync(3).WaitAsync(TimeSpan.FromSeconds(5));
+        await recorder.WaitForEventCountAsync(3).WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(recorder.Events.Select(item => item.EventName).SequenceEqual(
             ["execution_attempt", "retry", "execution_attempt"])).IsTrue();
         await Assert.That(recorder.Events.All(item =>
@@ -73,12 +73,12 @@ public class TelemetryRecorderTests
             ? new ValueTask<int>(primaryRelease.Task)
             : WaitForCancellationAsync(token, hedgeStarted)).AsTask();
 
-        await hedgeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await hedgeStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromMilliseconds(250));
         primaryRelease.SetResult(42);
         await Assert.That(await execution).IsEqualTo(42);
-        await recorder.WaitForEventCountAsync(3).WaitAsync(TimeSpan.FromSeconds(5));
-        await recorder.WaitForMetricCountAsync(3).WaitAsync(TimeSpan.FromSeconds(5));
+        await recorder.WaitForEventCountAsync(3).WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await recorder.WaitForMetricCountAsync(3).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var events = recorder.Events
             .Where(item => item.EventName == "hedge_attempt" && item.ShieldName == name)
@@ -133,7 +133,7 @@ public class TelemetryRecorderTests
             .ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(
                 new InvalidOperationException($"attempt-{Interlocked.Increment(ref attempts)}")));
 
-        await recorder.WaitForEventCountAsync(3).WaitAsync(TimeSpan.FromSeconds(5));
+        await recorder.WaitForEventCountAsync(3).WaitForTestAsync(TimeSpan.FromSeconds(5));
         var events = recorder.Events
             .Where(item => item.EventName == "hedge_attempt" && item.ShieldName == name)
             .OrderBy(item => item.AttemptNumber)
@@ -156,7 +156,7 @@ public class TelemetryRecorderTests
         await named.ExecuteAsync(static _ => ValueTask.CompletedTask);
         await Shield.Empty.ExecuteOutcomeAsync<int>(
             static _ => ValueTask.FromException<int>(new InvalidOperationException()));
-        await recorder.WaitForMetricCountAsync(4).WaitAsync(TimeSpan.FromSeconds(5));
+        await recorder.WaitForMetricCountAsync(4).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var executions = recorder.Metrics
             .Where(record => record.InstrumentName == "kevlar.executions")
@@ -188,7 +188,7 @@ public class TelemetryRecorderTests
         try
         {
             await recorder.WaitForMetricCountAsync(baseline + 1)
-                .WaitAsync(TimeSpan.FromSeconds(5));
+                .WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(recorder.Metrics.Any(metric =>
                     metric.InstrumentName == "kevlar.concurrency_limit.inflight"
                     && metric.Value == 1
@@ -276,7 +276,7 @@ public class TelemetryRecorderTests
         var wait = recorder.WaitForCallbackCountAsync(shields.Length);
         await Task.WhenAll(shields.Select(shield => shield.ExecuteOutcomeAsync<int>(
             static _ => throw new InvalidOperationException()).AsTask()));
-        await wait.WaitAsync(TimeSpan.FromSeconds(5));
+        await wait.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(recorder.Callbacks.Count).IsEqualTo(shields.Length);
         await Assert.That(recorder.Callbacks.Select(record => record.ShieldName).Distinct().Count())

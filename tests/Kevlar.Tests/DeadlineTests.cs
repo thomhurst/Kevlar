@@ -24,7 +24,7 @@ public class DeadlineTests
         }).AsTask();
 
         time.Advance(TimeSpan.FromMilliseconds(600));
-        var outcome = await task.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(outcome.Exception).IsSameReferenceAs(failure);
     }
@@ -45,7 +45,7 @@ public class DeadlineTests
         time.Advance(TimeSpan.FromMilliseconds(600));
         await attempts.WaitForAsync(2);
         time.Advance(TimeSpan.FromMilliseconds(400));
-        var outcome = await task.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
         await Assert.That(attempts.Count).IsEqualTo(2);
     }
@@ -129,7 +129,7 @@ public class DeadlineTests
             }).ExecuteAsync(Operation).AsTask();
         clock.Advance(TimeSpan.FromMilliseconds(900));
         completion.SetResult(42);
-        await Assert.That(await task.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(await task.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
         await Assert.That(calls).IsEqualTo(1);
         await Assert.That(callbacks).IsEqualTo(0);
         await Assert.That(time.TimerCount).IsEqualTo(1);
@@ -258,7 +258,7 @@ public class DeadlineTests
             return ValueTask.FromException<int>(new IOException());
         }).AsTask();
         // The capped 600 ms delay fits before the hook, then equals the remaining budget.
-        var outcome = await task.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(outcome.Exception).IsTypeOf<IOException>();
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(time.GetUtcNow()).IsEqualTo(start.AddMilliseconds(400));

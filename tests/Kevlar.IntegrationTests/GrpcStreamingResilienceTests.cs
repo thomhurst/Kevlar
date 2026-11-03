@@ -176,7 +176,7 @@ public class GrpcStreamingResilienceTests
 
         await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
 
-        await loserCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await loserCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(2);
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(disposed).IsEqualTo(1);
@@ -213,7 +213,7 @@ public class GrpcStreamingResilienceTests
         _ = await Assert.That(async () =>
                 await call.ResponseStream.MoveNext(CancellationToken.None))
             .Throws<TimeoutExceededException>();
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -249,7 +249,7 @@ public class GrpcStreamingResilienceTests
                 await call.ResponseStream.MoveNext(CancellationToken.None))
             .Throws<TimeoutExceededException>();
 
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -296,7 +296,7 @@ public class GrpcStreamingResilienceTests
                 await call.ResponseStream.MoveNext(CancellationToken.None))
             .Throws<TimeoutExceededException>();
 
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(attempts).IsEqualTo(2);
     }
 
@@ -351,7 +351,7 @@ public class GrpcStreamingResilienceTests
                 await call.RequestStream.WriteAsync(new StreamRequest()))
             .Throws<TimeoutExceededException>();
 
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(writes).IsEqualTo(1);
     }
 
@@ -415,7 +415,7 @@ public class GrpcStreamingResilienceTests
 
         await call.RequestStream.WriteAsync(new StreamRequest());
         await call.RequestStream.CompleteAsync();
-        var reply = await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        var reply = await call.ResponseAsync.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(reply.Attempt).IsEqualTo(1);
         await Assert.That(writes).IsEqualTo(1);
@@ -473,7 +473,7 @@ public class GrpcStreamingResilienceTests
                 new CallOptions(cancellationToken: cancellation.Token)),
             _ => ClientCall(writer, Task.FromResult(new StreamReply())));
         var write = call.RequestStream.WriteAsync(new StreamRequest());
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await write)
@@ -608,11 +608,11 @@ public class GrpcStreamingResilienceTests
                 }),
                 headers: new Metadata { { "attempt", "1" } }));
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await readStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         try
         {
-            var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(1));
+            var headers = await call.ResponseHeadersAsync.WaitForTestAsync(TimeSpan.FromSeconds(1));
             await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
         }
         finally
@@ -642,15 +642,15 @@ public class GrpcStreamingResilienceTests
                     Reader(async (_, _) =>
                     {
                         readStarted.TrySetResult();
-                        await releaseRead.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                        await releaseRead.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
                         throw failure;
                     }),
                     headers: new Metadata { { "attempt", "1" } });
             });
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await readStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
-        var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        var headers = await call.ResponseHeadersAsync.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releaseRead.TrySetResult();
         var actual = await Assert.That(async () => await move).Throws<RpcException>();
 
@@ -683,7 +683,7 @@ public class GrpcStreamingResilienceTests
                     headers: new Metadata());
             });
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await readStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         _ = await call.ResponseHeadersAsync;
         await Task.Delay(TimeSpan.FromMilliseconds(150));
@@ -711,7 +711,7 @@ public class GrpcStreamingResilienceTests
                 return completion.Task;
             })));
         var move = call.ResponseStream.MoveNext(cancellation.Token);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await move)
@@ -778,7 +778,7 @@ public class GrpcStreamingResilienceTests
                     }
                 })));
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await move)
@@ -811,7 +811,7 @@ public class GrpcStreamingResilienceTests
                     }
                 })));
         var move = call.ResponseStream.MoveNext(cancellation.Token);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await move)
@@ -896,13 +896,13 @@ public class GrpcStreamingResilienceTests
                 }),
                 () => Interlocked.Increment(ref disposed)));
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         call.Dispose();
         call.Dispose();
 
         _ = await Assert.That(async () => await move).Throws<OperationCanceledException>();
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(disposed).IsEqualTo(1);
     }
 
@@ -931,7 +931,7 @@ public class GrpcStreamingResilienceTests
 
         var actual = await Assert.That(async () =>
                 await call.ResponseStream.MoveNext(CancellationToken.None)
-                    .WaitAsync(TimeSpan.FromSeconds(5)))
+                    .WaitForTestAsync(TimeSpan.FromSeconds(5)))
             .Throws<RpcException>();
 
         await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
@@ -965,7 +965,7 @@ public class GrpcStreamingResilienceTests
 
         var exception = await Assert.That(async () =>
                 await call.ResponseStream.MoveNext(CancellationToken.None)
-                    .WaitAsync(TimeSpan.FromSeconds(5)))
+                    .WaitForTestAsync(TimeSpan.FromSeconds(5)))
             .Throws<RpcException>();
 
         await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
@@ -997,7 +997,7 @@ public class GrpcStreamingResilienceTests
                 }
             })));
         var move = call.ResponseStream.MoveNext(CancellationToken.None);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await move)

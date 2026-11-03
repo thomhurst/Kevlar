@@ -8,7 +8,7 @@ internal static class TestHelpers
     {
         try
         {
-            await task.WaitAsync(timeout ?? DefaultTimeout);
+            await task.WaitForTestAsync(timeout ?? DefaultTimeout);
         }
         catch (TimeoutException exception) when (!task.IsCompleted)
         {
@@ -20,7 +20,7 @@ internal static class TestHelpers
     {
         try
         {
-            return await task.WaitAsync(timeout ?? DefaultTimeout);
+            return await task.WaitForTestAsync(timeout ?? DefaultTimeout);
         }
         catch (TimeoutException exception) when (!task.IsCompleted)
         {

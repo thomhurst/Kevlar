@@ -40,4 +40,9 @@
                       Condition="'$(TargetFramework)' != 'net48'" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <Compile Include="..\TestWait.cs" Link="TestWait.cs" />
+    <Using Include="Kevlar.Tests" />
+  </ItemGroup>
+
 </Project>

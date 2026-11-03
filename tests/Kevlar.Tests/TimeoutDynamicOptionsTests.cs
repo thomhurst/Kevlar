@@ -122,9 +122,9 @@ public class TimeoutDynamicOptionsTests
             },
             callerCancellation.Token).AsTask();
 
-        await generatorStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await generatorStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         callerCancellation.Cancel();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(actionStarted).IsFalse();
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();

@@ -42,7 +42,7 @@ public class GrpcSelectedServerReadCancellationTests
         }
         else
         {
-            _ = await call.ResponseHeadersAsync.WaitAsync(TestTimeout);
+            _ = await call.ResponseHeadersAsync.WaitForTestAsync(TestTimeout);
         }
 
         var initialReads = reads;
@@ -59,7 +59,7 @@ public class GrpcSelectedServerReadCancellationTests
                 .Throws<ConcurrencyLimitExceededException>();
 
             Cancel(cancellationKind, caller, read, call);
-            var exception = await Assert.That(async () => await move.WaitAsync(TestTimeout))
+            var exception = await Assert.That(async () => await move.WaitForTestAsync(TestTimeout))
                 .Throws<OperationCanceledException>();
             await AssertVisibleToken(exception!, cancellationKind, caller.Token, read.Token);
             await Assert.That(reads).IsEqualTo(initialReads);
@@ -68,19 +68,19 @@ public class GrpcSelectedServerReadCancellationTests
             replacement = shield.ExecuteAsync(static _ => new ValueTask<int>(42)).AsTask();
             await Assert.That(replacement.IsCompleted).IsFalse();
             releaseHolder.TrySetResult();
-            await holder.WaitAsync(TestTimeout);
-            await Assert.That(await replacement.WaitAsync(TestTimeout)).IsEqualTo(42);
+            await holder.WaitForTestAsync(TestTimeout);
+            await Assert.That(await replacement.WaitForTestAsync(TestTimeout)).IsEqualTo(42);
             await Assert.That(reads).IsEqualTo(initialReads);
         }
         finally
         {
             read.Cancel();
             releaseHolder.TrySetResult();
-            await holder.WaitAsync(TestTimeout);
+            await holder.WaitForTestAsync(TestTimeout);
             await ObserveCancellation(move);
             if (replacement is not null)
             {
-                await replacement.WaitAsync(TestTimeout);
+                await replacement.WaitForTestAsync(TestTimeout);
             }
         }
     }
@@ -126,13 +126,13 @@ public class GrpcSelectedServerReadCancellationTests
                 throw new RpcException(new Status(StatusCode.Cancelled, "cancelled"));
             }
         }));
-        _ = await call.ResponseHeadersAsync.WaitAsync(TestTimeout);
+        _ = await call.ResponseHeadersAsync.WaitForTestAsync(TestTimeout);
         var move = call.ResponseStream.MoveNext(read.Token);
         try
         {
-            await started.Task.WaitAsync(TestTimeout);
+            await started.Task.WaitForTestAsync(TestTimeout);
             Cancel(cancellationKind, caller, read, call);
-            var exception = await Assert.That(async () => await move.WaitAsync(TestTimeout))
+            var exception = await Assert.That(async () => await move.WaitForTestAsync(TestTimeout))
                 .Throws<OperationCanceledException>();
             await AssertVisibleToken(exception!, cancellationKind, caller.Token, read.Token);
             await Assert.That(receivedToken.IsCancellationRequested).IsTrue();
@@ -161,7 +161,7 @@ public class GrpcSelectedServerReadCancellationTests
             receivedToken = token;
             return Task.FromResult(true);
         }));
-        _ = await call.ResponseHeadersAsync.WaitAsync(TestTimeout);
+        _ = await call.ResponseHeadersAsync.WaitForTestAsync(TestTimeout);
 
         var move = call.ResponseStream.MoveNext(read.Token);
         await Assert.That(move.IsCompletedSuccessfully).IsTrue();
@@ -222,7 +222,7 @@ public class GrpcSelectedServerReadCancellationTests
         if (task is null) { return; }
         try
         {
-            await task.WaitAsync(TestTimeout);
+            await task.WaitForTestAsync(TestTimeout);
         }
         catch (OperationCanceledException) { }
     }

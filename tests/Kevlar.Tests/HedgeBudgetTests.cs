@@ -71,7 +71,7 @@ public class HedgeBudgetTests
         }).AsTask();
         try
         {
-            await secondaryFailed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await secondaryFailed.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(execution.IsCompleted).IsFalse();
             await Assert.That(budget.Tokens).IsEqualTo(1);
         }

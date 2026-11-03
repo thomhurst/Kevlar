@@ -158,7 +158,7 @@ public class RetryBudgetTests
         await Assert.That(pending.IsCompleted).IsFalse();
         _ = await other.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
         time.Advance(TimeSpan.FromMilliseconds(100));
-        var result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await pending.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(result).IsSameReferenceAs(value);
         await Assert.That(value.Disposed).IsFalse();
         await Assert.That(attempts).IsEqualTo(1);

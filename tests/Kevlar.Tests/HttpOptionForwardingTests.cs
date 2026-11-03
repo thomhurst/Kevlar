@@ -120,7 +120,7 @@ public class HttpOptionForwardingTests
             });
         using var provider = services.BuildServiceProvider();
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("standard");
-        using var response = await client.GetAsync("https://dependency.test/").WaitAsync(TimeSpan.FromSeconds(5));
+        using var response = await client.GetAsync("https://dependency.test/").WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(inner.Calls).IsEqualTo(1);
         await Assert.That(notifications).IsEqualTo(0);

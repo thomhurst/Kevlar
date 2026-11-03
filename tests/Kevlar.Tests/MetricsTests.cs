@@ -469,7 +469,7 @@ public class MetricsTests
         _ = provider.GetShield("first");
 
         var replacement = await Task.Run(() => provider.GetShield("replacement"))
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(nested).IsNotNull();
         await Assert.That(provider.TryGetShield("nested", out _)).IsFalse();
@@ -799,11 +799,11 @@ public class MetricsTests
             return 42;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromSeconds(2));
         release.SetResult();
 
-        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(await execution.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
         await Assert.That(listener.Total(
             "kevlar.timeouts",
             "metrics-timeouts-ignored",
@@ -981,7 +981,7 @@ public class MetricsTests
 
         var result = await shield.ExecuteAsync(async _ =>
         {
-            await bothAttemptsStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await bothAttemptsStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             return 42;
         });
 
@@ -1299,7 +1299,7 @@ public class MetricsTests
             return 1;
         }, cancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         await Assert.That(async () => await execution).Throws<OperationCanceledException>();
 
@@ -1875,9 +1875,9 @@ public class MetricsTests
 
         var first = shield.ExecuteAsync(Enter).AsTask();
         var second = shield.ExecuteAsync(Enter).AsTask();
-        await bothEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await bothEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         release.TrySetResult();
-        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(first, second).WaitForTestAsync(TimeSpan.FromSeconds(5));
         listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
@@ -2251,7 +2251,7 @@ public class MetricsTests
                 && revival.Wait(TimeSpan.FromMilliseconds(200));
         }
 
-        await revival.WaitAsync(TimeSpan.FromSeconds(5));
+        await revival.WaitForTestAsync(TimeSpan.FromSeconds(5));
         registration.RemoveCollectedObservations();
 
         await Assert.That(oldProvider.IsAlive).IsFalse();

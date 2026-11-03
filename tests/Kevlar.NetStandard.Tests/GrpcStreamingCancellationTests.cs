@@ -24,16 +24,16 @@ public class GrpcStreamingCancellationTests
                 static () => { }));
 
         var write = call.RequestStream.WriteAsync(new Request());
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
-        _ = await Assert.That(async () => await write.WaitAsync(TimeSpan.FromSeconds(5)))
+        _ = await Assert.That(async () => await write.WaitForTestAsync(TimeSpan.FromSeconds(5)))
 #if NETSTANDARD21_ASSET
             .Throws<TimeoutExceededException>();
 #else
             .Throws<OperationCanceledException>();
 #endif
 
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -58,15 +58,15 @@ public class GrpcStreamingCancellationTests
                 static () => { }));
 
         var write = call.RequestStream.WriteAsync(new Request());
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
         var exception = await Assert.That(async () =>
-                await write.WaitAsync(TimeSpan.FromSeconds(5)))
+                await write.WaitForTestAsync(TimeSpan.FromSeconds(5)))
             .Throws<OperationCanceledException>();
 
         await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
-        await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await lifetimeCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
 #if NETSTANDARD21_ASSET
@@ -92,15 +92,15 @@ public class GrpcStreamingCancellationTests
                 static () => { }));
 
         var write = call.RequestStream.WriteAsync(new Request(), cancellation.Token);
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
         var exception = await Assert.That(async () =>
-                await write.WaitAsync(TimeSpan.FromSeconds(5)))
+                await write.WaitForTestAsync(TimeSpan.FromSeconds(5)))
             .Throws<OperationCanceledException>();
 
         await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
-        await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await lifetimeCancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 #endif
 

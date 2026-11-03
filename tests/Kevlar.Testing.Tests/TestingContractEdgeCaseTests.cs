@@ -90,12 +90,12 @@ public class TestingContractEdgeCaseTests
             return 42;
         })(cancellation.Token).AsTask();
 
-        await probe.WaitForAttemptCountAsync(1).WaitAsync(TimeSpan.FromSeconds(5));
+        await probe.WaitForAttemptCountAsync(1).WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
         await Assert.That(async () => await execution)
             .Throws<OperationCanceledException>();
-        await probe.WaitForCancellationCountAsync(1).WaitAsync(TimeSpan.FromSeconds(5));
+        await probe.WaitForCancellationCountAsync(1).WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(probe.GetSnapshot().CancellationCount).IsEqualTo(1);
     }
 
@@ -108,7 +108,7 @@ public class TestingContractEdgeCaseTests
 
         await probe.Wrap(static _ => ValueTask.CompletedTask)(CancellationToken.None);
 
-        await wait.WaitAsync(TimeSpan.FromSeconds(5));
+        await wait.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(wait.IsCompletedSuccessfully).IsTrue();
     }
 
@@ -147,7 +147,7 @@ public class TestingContractEdgeCaseTests
 
         await shield.ExecuteAsync(static _ =>
             ValueTask.FromException(new InvalidOperationException("handled")));
-        await wait.WaitAsync(TimeSpan.FromSeconds(5));
+        await wait.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var callback = recorder.Callbacks.Single();
         await Assert.That(callback.Kind).IsEqualTo(CallbackKind.Fallback);

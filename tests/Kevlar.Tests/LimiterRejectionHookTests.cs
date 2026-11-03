@@ -221,7 +221,7 @@ public class LimiterRejectionHookTests
 
         var replacement = shield.ExecuteAsync(static _ => new ValueTask<int>(2)).AsTask();
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
+        await Assert.That(await replacement.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
         await Assert.That(rejections).IsEqualTo(0);
     }
 

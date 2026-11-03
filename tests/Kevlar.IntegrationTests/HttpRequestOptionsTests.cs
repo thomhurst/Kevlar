@@ -279,10 +279,10 @@ public class HttpRequestOptionsTests
             .CreateClient("async-partitioned");
 
         var send = client.GetAsync("https://example.test/");
-        await factoryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await factoryStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(send.IsCompleted).IsFalse();
         releaseFactory.SetResult();
-        using var response = await send.WaitAsync(TimeSpan.FromSeconds(5));
+        using var response = await send.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -440,16 +440,16 @@ public class HttpRequestOptionsTests
         var send = client.SendAsync(
             request,
             requestScoped ? CancellationToken.None : cancellation.Token);
-        await factoryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await factoryStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
 
-        _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+        _ = await Assert.That(async () => await send.WaitForTestAsync(TimeSpan.FromSeconds(5)))
             .Throws<OperationCanceledException>();
         await Assert.That(releaseFactory.Task.IsCompleted).IsFalse();
 
         releaseFactory.SetResult();
         using var response = await client.GetAsync("https://example.test/")
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(factoryCalls).IsEqualTo(1);

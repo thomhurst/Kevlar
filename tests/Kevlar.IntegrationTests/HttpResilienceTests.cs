@@ -296,8 +296,8 @@ public class HttpResilienceTests
 
         using var response = await client.GetAsync("https://origin.example/path?q=1");
 
-        await transport.LoserCancelled.WaitAsync(TimeSpan.FromSeconds(5));
-        await transport.LoserDisposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await transport.LoserCancelled.WaitForTestAsync(TimeSpan.FromSeconds(5));
+        await transport.LoserDisposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("winner");
         await Assert.That(transport.Authorities).IsEquivalentTo(
             ["https://origin.example", "https://origin.example"]);
@@ -317,7 +317,7 @@ public class HttpResilienceTests
         {
             // A zero-delay hedge may reach the server before the primary. Do not let its
             // response cancel that primary before the asserted server call is observed.
-            await primaryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await primaryStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await FlakyHttpServer.Respond(context, 200, "adaptive hedge");
         });
         var observedAttempt = 0;
@@ -369,7 +369,7 @@ public class HttpResilienceTests
         var send = shield.ExecuteAsync(
             ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)),
             cancellation.Token).AsTask();
-        await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await requestStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         cancellation.Cancel();
         var exception = await Assert.That(async () => await send)

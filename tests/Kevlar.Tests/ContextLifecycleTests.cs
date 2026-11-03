@@ -41,7 +41,7 @@ public class ContextLifecycleTests
 
         try
         {
-            await dirty.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await dirty.AllEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(dirty.DirtyContexts).IsEqualTo(0);
             await Assert.That(dirty.Contexts.Distinct().Count()).IsEqualTo(pressureCount);
         }
@@ -50,7 +50,7 @@ public class ContextLifecycleTests
             dirty.Release.TrySetResult();
         }
 
-        await Task.WhenAll(dirtyExecutions).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(dirtyExecutions).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var clean = new PressureStrategy(
             KevlarContext.PoolCapacity,
@@ -65,7 +65,7 @@ public class ContextLifecycleTests
 
         try
         {
-            await clean.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await clean.AllEntered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
             await Assert.That(clean.DirtyContexts).IsEqualTo(0);
             await Assert.That(clean.Contexts.Distinct().Count()).IsEqualTo(KevlarContext.PoolCapacity);
         }
@@ -74,7 +74,7 @@ public class ContextLifecycleTests
             clean.Release.TrySetResult();
         }
 
-        await Task.WhenAll(cleanExecutions).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(cleanExecutions).WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]

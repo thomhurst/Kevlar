@@ -28,17 +28,17 @@ public class PriorityQueueCompatibilityTests
             static (_, _) => new ValueTask<int>(3), caller.Token).AsTask();
         try
         {
-            await Assert.That(async () => await low.WaitAsync(TimeSpan.FromSeconds(5)))
+            await Assert.That(async () => await low.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<ExecutionRejectedException>();
             caller.Cancel();
-            await Assert.That(async () => await high.WaitAsync(TimeSpan.FromSeconds(5)))
+            await Assert.That(async () => await high.WaitForTestAsync(TimeSpan.FromSeconds(5)))
                 .Throws<OperationCanceledException>();
         }
         finally
         {
             caller.Cancel();
             release.TrySetResult(1);
-            await active.WaitAsync(TimeSpan.FromSeconds(5));
+            await active.WaitForTestAsync(TimeSpan.FromSeconds(5));
         }
     }
 }

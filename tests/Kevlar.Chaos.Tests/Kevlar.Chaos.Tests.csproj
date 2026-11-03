@@ -16,4 +16,9 @@
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestWait.cs" Link="TestWait.cs" />
+    <Using Include="Kevlar.Tests" />
+  </ItemGroup>
+
 </Project>

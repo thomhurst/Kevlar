@@ -128,10 +128,10 @@ public class ResultDisposalTests
         var execution = shield.ExecuteAsync(_ => new ValueTask<BlockingAsyncDisposableResult>(
             Interlocked.Increment(ref attempts) == 1 ? handled : final)).AsTask();
 
-        await handled.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        await handled.DisposalStarted.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(attempts).IsEqualTo(1);
         handled.AllowDisposal();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(ReferenceEquals(result, final)).IsTrue();
         await Assert.That(attempts).IsEqualTo(2);
@@ -233,7 +233,7 @@ public class ResultDisposalTests
             return winner;
         });
 
-        await loser.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await loser.Disposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(ReferenceEquals(result, winner)).IsTrue();
         await Assert.That(loser.DisposeCount).IsEqualTo(1);
         await Assert.That(winner.DisposeCount).IsEqualTo(0);
@@ -267,13 +267,13 @@ public class ResultDisposalTests
             return attempt == 0 ? handled : winner;
         }).AsTask();
 
-        await allStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await allStarted.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         releases[0].SetResult();
         await Task.Yield();
         releases[1].SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
-        await handled.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await handled.Disposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(ReferenceEquals(result, winner)).IsTrue();
         await Assert.That(handled.DisposeCount).IsEqualTo(1);
         await Assert.That(winner.DisposeCount).IsEqualTo(0);
@@ -335,7 +335,7 @@ public class ResultDisposalTests
             throw new InvalidOperationException("Unexpected attempt.");
         });
 
-        await primaryLoser.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await primaryLoser.Disposed.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await Assert.That(ReferenceEquals(result, generatedWinner)).IsTrue();
         await Assert.That(firstOriginal.DisposeCount).IsEqualTo(1);
         await Assert.That(secondOriginal.DisposeCount).IsEqualTo(1);

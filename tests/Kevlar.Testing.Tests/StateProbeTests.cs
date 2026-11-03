@@ -93,7 +93,7 @@ public class StateProbeTests
         await Assert.That(queued.QueuedExecutions).IsEqualTo(1);
 
         timeProvider.Advance(TimeSpan.FromSeconds(1));
-        await queuedExecution.WaitAsync(TimeSpan.FromSeconds(5));
+        await queuedExecution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var completed = shield.GetStateSnapshot().Strategies.OfType<RateLimitStateSnapshot>().Single();
         await Assert.That(completed.QueuedExecutions).IsEqualTo(0);
@@ -113,7 +113,7 @@ public class StateProbeTests
             entered.TrySetResult();
             await release.Task.ConfigureAwait(false);
         }).AsTask();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var queued = secondAlias.ExecuteAsync(static _ => ValueTask.CompletedTask).AsTask();
         var firstSnapshot = firstAlias.GetStateSnapshot().Strategies
@@ -128,7 +128,7 @@ public class StateProbeTests
         await Assert.That(secondSnapshot.QueuedExecutions).IsEqualTo(firstSnapshot.QueuedExecutions);
 
         release.TrySetResult();
-        await Task.WhenAll(running, queued).WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.WhenAll(running, queued).WaitForTestAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -186,10 +186,10 @@ public class StateProbeTests
             await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
         }), cancellation.Token).AsTask();
 
-        await probe.WaitForAttemptCountAsync(1).WaitAsync(TimeSpan.FromSeconds(5));
+        await probe.WaitForAttemptCountAsync(1).WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await execution);
-        await probe.WaitForCancellationCountAsync(1).WaitAsync(TimeSpan.FromSeconds(5));
+        await probe.WaitForCancellationCountAsync(1).WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var snapshot = probe.GetSnapshot();
         await Assert.That(snapshot.AttemptCount).IsEqualTo(1);

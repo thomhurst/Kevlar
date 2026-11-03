@@ -115,11 +115,11 @@ public class LoggingTests
             return 42;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromSeconds(2));
         release.SetResult();
 
-        await Assert.That(await execution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
+        await Assert.That(await execution.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(42);
         var record = logger.Collector.GetSnapshot().Single();
         await Assert.That(record.Id).IsEqualTo(new EventId(1010, "TimeoutIgnored"));
         await Assert.That(record.Level).IsEqualTo(LogLevel.Warning);

@@ -23,12 +23,12 @@ public class GrpcServerInterceptorTests
         await using var server = await Server.StartAsync(services =>
             services.AddShieldServerInterceptor(Shield.ConcurrencyLimit(1, queueLimit: 0)));
         var active = server.CallAsync(shape, "wait");
-        await server.State.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await server.State.Entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var rejection = await Assert.That(async () => await server.CallAsync(shape)).Throws<RpcException>();
         await Assert.That(rejection!.StatusCode).IsEqualTo(StatusCode.ResourceExhausted);
         await Assert.That(server.State.Calls).IsEqualTo(1);
         server.State.Release.TrySetResult();
-        await active.WaitAsync(TimeSpan.FromSeconds(5));
+        await active.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await server.CallAsync(shape);
         await Assert.That(server.State.Calls).IsEqualTo(2);
     }
@@ -161,12 +161,12 @@ public class GrpcServerInterceptorTests
             Shield.ConcurrencyLimit(1, queueLimit: 0)));
         using var cancellation = new CancellationTokenSource();
         var call = server.CallAsync("unary", "cancel", cancellation.Token);
-        await server.State.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await server.State.Entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         _ = await Assert.That(async () => await call).Throws<RpcException>();
-        await server.State.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await server.State.Cancelled.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         // The service's signal precedes shield cleanup; await server request completion as well.
-        await server.State.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await server.State.Completed.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         await server.CallAsync("unary");
     }
 

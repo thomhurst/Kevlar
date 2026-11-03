@@ -131,11 +131,11 @@ public class ExecutionOverloadContractTests
                 using var probe = new ExecutionProbe(ProbeBehavior.WaitForRelease);
                 var execution = executionCase.Invoke(pipelined, probe, probe.Cancellation.Token).AsTask();
 
-                await probe.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                await probe.Entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
                 Require(!execution.IsCompleted, executionCase, pipelined, "execution completed before release");
                 probe.Release.TrySetResult();
 
-                var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+                var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
                 Require(result.Exception is null, executionCase, pipelined, "deferred success returned an exception");
                 Require(result.Value == ExecutionProbe.ExpectedResult, executionCase, pipelined, "deferred result changed");
                 Require(probe.InvocationCount == 1, executionCase, pipelined, "deferred delegate was not invoked exactly once");
@@ -240,11 +240,11 @@ public class ExecutionOverloadContractTests
                 var execution = Task.Run(async () =>
                     await CaptureFailure(executionCase, pipelined, probe));
 
-                await probe.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                await probe.Entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
                 probe.Cancellation.Cancel();
                 probe.Release.TrySetResult();
 
-                var exception = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+                var exception = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
                 var cancellation = exception as OperationCanceledException;
 
                 Require(cancellation is not null, executionCase, pipelined, "mid-flight cancellation returned the wrong exception type");
@@ -1150,7 +1150,7 @@ public class ExecutionOverloadContractTests
         private int WaitForRelease(CancellationToken token)
         {
             Entered.TrySetResult();
-            Release.Task.WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            Release.Task.WaitForTestAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
             token.ThrowIfCancellationRequested();
             return ExpectedResult;
         }

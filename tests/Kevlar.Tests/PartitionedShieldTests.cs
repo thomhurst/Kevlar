@@ -75,7 +75,7 @@ public class PartitionedShieldTests
         _ = provider.GetShield("warm");
 
         var dependent = await Task.Run(() => provider.GetShield("dependent"))
-            .WaitAsync(TimeSpan.FromSeconds(5));
+            .WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(ReferenceEquals(dependent, Shield.Empty)).IsTrue();
         await Assert.That(provider.CreatedCount).IsEqualTo(2);
@@ -411,7 +411,7 @@ public class PartitionedShieldTests
 
         releaseFactory.TrySetResult();
         // This bounds a deadlock regression; it is not a two-second throughput assertion.
-        _ = await publishing.WaitAsync(TimeSpan.FromSeconds(10));
+        _ = await publishing.WaitForTestAsync(TimeSpan.FromSeconds(10));
         await Assert.That(nestedLookupCompleted).IsTrue();
 
         await provider.DisposeAsync();
@@ -453,7 +453,7 @@ public class PartitionedShieldTests
         _ = provider.GetShield("second");
 
         _ = await provider.GetShieldAsync("third").AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(2));
+            .WaitForTestAsync(TimeSpan.FromSeconds(2));
 
         await provider.DisposeAsync();
     }
@@ -705,7 +705,7 @@ public class PartitionedShieldTests
         _ = provider.GetShield("tenant");
 
         _ = await provider.TryRemoveAsync("tenant").AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(2));
+            .WaitForTestAsync(TimeSpan.FromSeconds(2));
 
         await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
         await provider.DisposeAsync();
@@ -734,7 +734,7 @@ public class PartitionedShieldTests
             });
 
         _ = await provider.GetShieldAsync("tenant").AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(2));
+            .WaitForTestAsync(TimeSpan.FromSeconds(2));
 
         await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
         await provider.DisposeAsync();
@@ -760,7 +760,7 @@ public class PartitionedShieldTests
         });
 
         _ = await provider.GetShieldAsync("tenant").AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(2));
+            .WaitForTestAsync(TimeSpan.FromSeconds(2));
 
         await Assert.That(disposalFailure).IsTypeOf<InvalidOperationException>();
         await provider.DisposeAsync();
@@ -825,7 +825,7 @@ public class PartitionedShieldTests
         strategy.Provider = provider;
         _ = provider.GetShield("tenant");
 
-        await provider.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(2));
+        await provider.DisposeAsync().AsTask().WaitForTestAsync(TimeSpan.FromSeconds(2));
 
         await Assert.That(strategy.DisposalFailure).IsTypeOf<InvalidOperationException>();
     }

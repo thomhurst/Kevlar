@@ -25,4 +25,9 @@
                       SetTargetFramework="TargetFramework=netstandard2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestWait.cs" Link="TestWait.cs" />
+    <Using Include="Kevlar.Tests" />
+  </ItemGroup>
+
 </Project>

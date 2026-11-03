@@ -3,6 +3,27 @@ namespace Kevlar.Tests;
 public class TestInfrastructureTests
 {
     [Test]
+    public async Task Test_Wait_Links_The_Current_Test_Cancellation_Token()
+    {
+        await Assert.That(TestWait.TestCancellationToken).IsEqualTo(TestContext.Current!.Execution.CancellationToken);
+        await Assert.That(await Task.FromResult(42).WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
+        await Assert.That(() => new TaskCompletionSource().Task.WaitForTestAsync(TimeSpan.FromMilliseconds(1)))
+            .Throws<TimeoutException>();
+    }
+
+    [Test]
+    public async Task Test_Wait_Uses_No_Token_Outside_A_Test_Context()
+    {
+        Task<CancellationToken> read;
+        using (ExecutionContext.SuppressFlow())
+        {
+            read = Task.Run(() => TestWait.TestCancellationToken);
+        }
+
+        await Assert.That(await read).IsEqualTo(CancellationToken.None);
+    }
+
+    [Test]
     public async Task Gate_Reports_Entry_And_Requires_Explicit_Release()
     {
         var gate = new AsyncGate("helper test");

@@ -126,7 +126,7 @@ public class ReplenishingRetryBudgetTests
             {
                 ready.TrySetResult();
             }
-            await ready.Task.WaitAsync(TestHelpers.DefaultTimeout);
+            await ready.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
         var retry = Shield.Retry(options =>
         {
@@ -148,7 +148,7 @@ public class ReplenishingRetryBudgetTests
                 Interlocked.Increment(ref attempts);
                 return ValueTask.FromException<int>(new IOException());
             }).AsTask()).ToArray();
-        var outcomes = await Task.WhenAll(tasks).WaitAsync(TestHelpers.DefaultTimeout);
+        var outcomes = await Task.WhenAll(tasks).WaitForTestAsync(TestHelpers.DefaultTimeout);
         foreach (var outcome in outcomes)
         {
             await Assert.That(outcome.Exception).IsTypeOf<IOException>();
@@ -251,7 +251,7 @@ public class ReplenishingRetryBudgetTests
         }).WithTimeProvider(time);
         var task = shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()), cancellation.Token).AsTask();
         cancellation.Cancel();
-        var outcome = await task.WaitAsync(TestHelpers.DefaultTimeout);
+        var outcome = await task.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(budget.Tokens).IsEqualTo(2);
     }
@@ -374,7 +374,7 @@ public class ReplenishingRetryBudgetTests
         {
             primary.TrySetResult(42);
         }
-        await Assert.That(await task.WaitAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
+        await Assert.That(await task.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
     }
 
     private static Shield CreateRetry(RetryBudget budget) => Shield.Retry(options =>

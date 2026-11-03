@@ -27,11 +27,11 @@ public class TimeoutArbitrationTests
             throw new OperationCanceledException("wrapped without token");
         }, callerCancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         callerCancellation.Cancel();
         release.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(executionToken).IsNotEqualTo(callerCancellation.Token);
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
@@ -61,11 +61,11 @@ public class TimeoutArbitrationTests
             throw new OperationCanceledException(token);
         }, callerCancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         callerCancellation.Cancel();
         timeProvider.Fire(0);
         release.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken == callerCancellation.Token)
@@ -101,11 +101,11 @@ public class TimeoutArbitrationTests
             throw new OperationCanceledException(token);
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(1);
         timeProvider.Fire(0);
         release.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
         await Assert.That(outerEvents).IsEqualTo(1);
@@ -160,10 +160,10 @@ public class TimeoutArbitrationTests
             throw cancellation;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         release.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var timeout = outcome.Exception as TimeoutExceededException;
         await Assert.That(timeout).IsNotNull();
@@ -207,7 +207,7 @@ public class TimeoutArbitrationTests
         timeProvider.Fire(0);
         await attempts.WaitForAsync(2);
         timeProvider.Fire(1);
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
         await Assert.That(attempts.Count).IsEqualTo(2);
@@ -229,7 +229,7 @@ public class TimeoutArbitrationTests
 
         await attempts.WaitForAsync(1);
         timeProvider.Fire(0);
-        var firstOutcome = await first.WaitAsync(TimeSpan.FromSeconds(5));
+        var firstOutcome = await first.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var rejected = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
 
         await Assert.That(firstOutcome.Exception).IsTypeOf<TimeoutExceededException>();
@@ -255,7 +255,7 @@ public class TimeoutArbitrationTests
         timeProvider.Fire(1);
         await attempts.WaitForAsync(2);
         timeProvider.Fire(0);
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var timeout = outcome.Exception as TimeoutExceededException;
         await Assert.That(timeout).IsNotNull();
@@ -286,10 +286,10 @@ public class TimeoutArbitrationTests
             return 42;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         release.SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(executionToken.IsCancellationRequested).IsTrue();
@@ -327,10 +327,10 @@ public class TimeoutArbitrationTests
             return 42;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Advance(TimeSpan.FromSeconds(2));
         release.SetResult();
-        var result = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var result = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observed.EventName).IsEqualTo("timeout_ignored");
@@ -361,10 +361,10 @@ public class TimeoutArbitrationTests
             throw new OperationCanceledException(token);
         }, callerCancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(1);
         release.SetResult();
-        var timedOutcome = await timedExecution.WaitAsync(TimeSpan.FromSeconds(5));
+        var timedOutcome = await timedExecution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(success).IsEqualTo(42);
         await Assert.That(timedOutcome.Exception).IsTypeOf<TimeoutExceededException>();
@@ -405,10 +405,10 @@ public class TimeoutArbitrationTests
             throw new OperationCanceledException(token);
         }, callerCancellation.Token).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         release.SetResult();
-        var failed = await firstExecution.WaitAsync(TimeSpan.FromSeconds(5));
+        var failed = await firstExecution.WaitForTestAsync(TimeSpan.FromSeconds(5));
         var recovered = await shield.ExecuteAsync(_ => new ValueTask<int>(42), callerCancellation.Token);
 
         await Assert.That(failed.Exception).IsTypeOf<TimeoutExceededException>();
@@ -442,12 +442,12 @@ public class TimeoutArbitrationTests
             return 2;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         await Assert.That(secondToken.IsCancellationRequested).IsFalse();
         release.SetResult();
 
-        await Assert.That(await secondExecution.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
+        await Assert.That(await secondExecution.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(2);
     }
 
     private sealed class TokenObserverStrategy : Strategy
@@ -497,10 +497,10 @@ public class TimeoutArbitrationTests
             throw cancellationException;
         }).AsTask();
 
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         timeProvider.Fire(0);
         release.SetResult();
-        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+        var outcome = await execution.WaitForTestAsync(TimeSpan.FromSeconds(5));
 
         var timeout = outcome.Exception as TimeoutExceededException;
         await Assert.That(timeout).IsNotNull();
