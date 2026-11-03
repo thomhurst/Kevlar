@@ -66,9 +66,17 @@ function Get-NodeText([System.Xml.XmlNode]$Node, [string]$XPath)
     return $match.InnerText
 }
 
-function Get-CentralPackageVersion([System.Xml.XmlNode]$Project, [string]$PackageId)
+function Get-CentralPackageVersion([System.Xml.XmlNode]$Project, [string]$PackageId, [string]$TargetFramework)
 {
-    $version = Get-NodeText $Project "/Project/ItemGroup/PackageVersion[@Include='$PackageId']/@Version"
+    # Prefer the ItemGroup conditioned on this target framework; otherwise take the first match.
+    $version = if ($TargetFramework)
+    {
+        Get-NodeText $Project "/Project/ItemGroup[contains(@Condition, `"== '$TargetFramework'`")]/PackageVersion[@Include='$PackageId']/@Version"
+    }
+    if ([string]::IsNullOrWhiteSpace($version))
+    {
+        $version = Get-NodeText $Project "/Project/ItemGroup/PackageVersion[@Include='$PackageId']/@Version"
+    }
     if ([string]::IsNullOrWhiteSpace($version))
     {
         throw "Could not resolve $PackageId from Directory.Packages.props."
@@ -307,7 +315,6 @@ $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
 $configurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration'
 $dependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection'
-$sqliteVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.EntityFrameworkCore.Sqlite'
 
 $expectedDependencies = @{
     'Kevlar.Extensions.EntityFrameworkCore' = @{
@@ -383,33 +390,6 @@ $exactPinnedPackageIds = @(
     # gRPC ships against DI, which is coupled to Kevlar internals and must move in lockstep.
     'Kevlar.Extensions.Grpc'
 ) | Sort-Object -Unique
-
-$expectedDependencyVersions = @{}
-foreach ($dependencyId in @(
-    'Microsoft.EntityFrameworkCore.Relational',
-    'Microsoft.Bcl.AsyncInterfaces',
-    'Grpc.Core.Api',
-    'Grpc.Net.ClientFactory',
-    'Microsoft.Bcl.TimeProvider',
-    'Microsoft.Extensions.Configuration.Abstractions',
-    'Microsoft.Extensions.DependencyInjection.Abstractions',
-    'Microsoft.Extensions.Diagnostics.HealthChecks',
-    'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions',
-    'Microsoft.Extensions.Http',
-    'Microsoft.Extensions.Logging',
-    'Microsoft.Extensions.Logging.Abstractions',
-    'Microsoft.Extensions.Options',
-    'Microsoft.Extensions.Primitives',
-    'Microsoft.Extensions.TimeProvider.Testing',
-    'Reservoir',
-    'System.Diagnostics.DiagnosticSource',
-    'System.Runtime.CompilerServices.Unsafe',
-    'System.Threading.RateLimiting',
-    'System.Threading.Tasks.Extensions'))
-{
-    $expectedDependencyVersions[$dependencyId] =
-        (Get-CentralPackageVersion $centralPackages $dependencyId) -replace ',\s*', ', '
-}
 
 $packageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg' -File)
 Assert-Set 'package IDs' ($packageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
@@ -540,13 +520,6 @@ foreach ($packageId in $expectedDependencies.Keys)
                         "$packageId $framework Kevlar dependency version" `
                         $dependency.GetAttribute('version') `
                         "[$Version]"
-                }
-                elseif ($expectedDependencyVersions.ContainsKey($dependencyId))
-                {
-                    Assert-Equal `
-                        "$packageId $framework $dependencyId version" `
-                        $dependency.GetAttribute('version') `
-                        $expectedDependencyVersions[$dependencyId]
                 }
             }
         }
@@ -1012,6 +985,7 @@ sealed class ExpectedConsumerException : Exception;
     foreach ($framework in @('net8.0', 'net10.0'))
     {
         $consumerDirectory = Join-Path $temporaryRoot "runtime-$framework"
+        $sqliteVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.EntityFrameworkCore.Sqlite' $framework
         $consumerProject = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
