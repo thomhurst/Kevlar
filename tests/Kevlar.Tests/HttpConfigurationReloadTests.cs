@@ -1250,12 +1250,13 @@ public class HttpConfigurationReloadTests
         var configuration = BuildConfiguration(
             ("Retry:MaxRetries", "1"),
             ("Retry:Backoff", "None"));
+        // A counter per run: a static one is shared with any other run of this test in the process.
+        var attempts = 0;
         var transport = new FuncHandler((_, _) => Task.FromResult(
             new HttpResponseMessage(
-                Interlocked.Increment(ref _typedAttempts) == 1
+                Interlocked.Increment(ref attempts) == 1
                     ? HttpStatusCode.InternalServerError
                     : HttpStatusCode.OK)));
-        _typedAttempts = 0;
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddHttpClient<TypedClient>()
             .ConfigurePrimaryHttpMessageHandler(() => transport)
@@ -1267,8 +1268,6 @@ public class HttpConfigurationReloadTests
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(transport.Calls).IsEqualTo(2);
     }
-
-    private static int _typedAttempts;
 
     private static ServiceProvider CreateStandardServices(
         IConfiguration configuration,
