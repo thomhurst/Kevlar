@@ -28,6 +28,18 @@ internal static class KevlarMetricEnrichment
         return new Subscription(enricher);
     }
 
+    /// <summary>
+    /// Removes every enricher. Only tests call this, so that one which starts from no enrichers still
+    /// does when an earlier test in the same process left one registered.
+    /// </summary>
+    internal static void ResetForTesting()
+    {
+        lock (Sync)
+        {
+            Volatile.Write(ref _enrichers, []);
+        }
+    }
+
 #if NET8_0_OR_GREATER
     public static void Add(
         Counter<long> instrument,
