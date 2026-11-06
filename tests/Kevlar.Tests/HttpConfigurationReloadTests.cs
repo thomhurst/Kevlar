@@ -734,7 +734,7 @@ public class HttpConfigurationReloadTests
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
         while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await HttpHandlerRotation.ExpireOrDelayAsync(factory, "client");
             using var rotated = factory.CreateClient("client");
             using var response = await rotated.GetAsync("https://example.test/");
         }
@@ -798,7 +798,7 @@ public class HttpConfigurationReloadTests
         while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
             rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await HttpHandlerRotation.ExpireOrDelayAsync(factory, "client");
             rotated = factory.CreateClient("client");
         }
 
@@ -857,7 +857,7 @@ public class HttpConfigurationReloadTests
         while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
             rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await HttpHandlerRotation.ExpireOrDelayAsync(factory, "client");
             rotated = factory.CreateClient("client");
         }
 
@@ -916,7 +916,7 @@ public class HttpConfigurationReloadTests
         while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
             rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await HttpHandlerRotation.ExpireOrDelayAsync(factory, "client");
             rotated = factory.CreateClient("client");
         }
 
@@ -976,7 +976,7 @@ public class HttpConfigurationReloadTests
         while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
             rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await HttpHandlerRotation.ExpireOrDelayAsync(factory, "client");
             rotated = factory.CreateClient("client");
         }
 
