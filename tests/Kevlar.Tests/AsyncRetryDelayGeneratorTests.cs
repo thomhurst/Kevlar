@@ -91,6 +91,7 @@ public class AsyncRetryDelayGeneratorTests
         var seenByGenerator = TimeSpan.MinValue;
         var seenByHook = TimeSpan.Zero;
         var attempts = 0;
+        var timeProvider = new ControlledTimeProvider();
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
@@ -106,13 +107,19 @@ public class AsyncRetryDelayGeneratorTests
                 seenByHook = retry.Delay;
                 return default;
             };
-        });
+        }).WithTimeProvider(timeProvider);
 
-        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        var execution = shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
+        }).AsTask();
+
+        // The clamped delay is the one the retry waits: fire it rather than wait 5 real seconds.
+        await timeProvider.WaitForTimersAsync(1);
+        await Assert.That(timeProvider.GetDueTime(0)).IsEqualTo(TimeSpan.FromSeconds(5));
+        timeProvider.FireTimer(0);
+        await Assert.That(async () => await execution).Throws<InvalidOperationException>();
 
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(seenByGenerator).IsEqualTo(TimeSpan.FromSeconds(5));
