@@ -1655,6 +1655,13 @@ public class MetricsTests
             .WithName("metrics-disabled-circuit-alias");
         monitor.Isolate();
 
+        // The unnamed count covers every circuit breaker still registered in the process, and the
+        // registry holds them weakly. Collect the dead ones first: one collected between the two
+        // recordings would lower the second count and fail the test.
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
         using var listener = new KevlarMeterListener();
         listener.RecordObservableInstruments();
         var unnamedMeasurements = listener.Values(
@@ -1674,6 +1681,9 @@ public class MetricsTests
                 "kevlar.circuit_breaker.state",
                 "metrics-disabled-circuit-alias").Last())
             .IsEqualTo(0);
+
+        // This breaker's own series must stay registered until the last recording.
+        GC.KeepAlive(shield);
     }
 
     [Test]
