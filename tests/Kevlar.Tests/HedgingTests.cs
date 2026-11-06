@@ -38,12 +38,19 @@ public class HedgingTests
     {
         var retryAttempts = 0;
         var hedgeAttempts = 0;
+        var timeProvider = new ControlledTimeProvider();
 
-        await Assert.That(async () => await Shield.Retry(2).ExecuteAsync<int>(_ =>
+        // Retry(2) keeps its default backoff; its two delays run on a controlled clock.
+        var retry = Shield.Retry(2).WithTimeProvider(timeProvider).ExecuteAsync<int>(_ =>
         {
             Interlocked.Increment(ref retryAttempts);
             throw new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
+        }).AsTask();
+        await timeProvider.WaitForTimersAsync(1);
+        timeProvider.FireTimer(0);
+        await timeProvider.WaitForTimersAsync(2);
+        timeProvider.FireTimer(1);
+        await Assert.That(async () => await retry).Throws<InvalidOperationException>();
         await Assert.That(async () => await Shield.Hedge(2, Timeout.InfiniteTimeSpan).ExecuteAsync<int>(_ =>
         {
             Interlocked.Increment(ref hedgeAttempts);
