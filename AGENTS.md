@@ -6,7 +6,7 @@ Before local benchmarks, profiling, stress runs, builds, tests, restores, or oth
 
 ## Agent output locations
 
-Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded tools each have one home outside the main checkout; never write loose files beside the repository. The locations are in [issue-pr-loop § Isolation and ownership](.agents/skills/issue-pr-loop/SKILL.md#isolation-and-ownership).
+Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded tools each have one home outside the main checkout; never write loose files beside the repository. The locations are in [issue-pr-loop § Agent output locations](.agents/skills/issue-pr-loop/references/repository.md#agent-output-locations).
 
 ## Validation
 

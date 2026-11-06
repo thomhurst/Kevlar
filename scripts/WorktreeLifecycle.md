@@ -1,6 +1,6 @@
 # Local worktree lifecycle
 
-`AgentLocks.ps1 release` removes its recorded checkout before releasing ownership. Register the path once after checkout with `renew -LockName <name> -Worktree <absolute-path>`. Use the shared checkout's current script, and release in `finally` after stopping owned processes and saving evidence in the evidence directory named in [issue-pr-loop § Isolation and ownership](../.agents/skills/issue-pr-loop/SKILL.md#isolation-and-ownership), which `Remove-MergedWorktrees.ps1` also sweeps.
+`AgentLocks.ps1 release` removes its recorded checkout before releasing ownership. Register the path once after checkout with `renew -LockName <name> -Worktree <absolute-path>`. Use the shared checkout's current script, and release in `finally` after stopping owned processes and saving evidence in the evidence directory named in [issue-pr-loop § Agent output locations](../.agents/skills/issue-pr-loop/references/repository.md#agent-output-locations), which `Remove-MergedWorktrees.ps1` also sweeps.
 
 The lock marker in a worktree's `config.worktree` (`agent.lockName`) counts only while `agent.lockWorktree` records that worktree's own path. `git worktree add` copies the source checkout's `config.worktree`, so a copied marker names another path and is ignored. The main checkout never receives a marker.
 
