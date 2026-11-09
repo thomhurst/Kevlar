@@ -46,9 +46,9 @@ public class HedgingTests
             Interlocked.Increment(ref retryAttempts);
             throw new InvalidOperationException();
         }).AsTask();
-        await timeProvider.WaitForTimersAsync(1);
+        await timeProvider.WaitForTimersAsync(1, retry);
         timeProvider.FireTimer(0);
-        await timeProvider.WaitForTimersAsync(2);
+        await timeProvider.WaitForTimersAsync(2, retry);
         timeProvider.FireTimer(1);
         await Assert.That(async () => await retry).Throws<InvalidOperationException>();
         await Assert.That(async () => await Shield.Hedge(2, Timeout.InfiniteTimeSpan).ExecuteAsync<int>(_ =>
