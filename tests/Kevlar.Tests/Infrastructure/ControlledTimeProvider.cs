@@ -88,8 +88,6 @@ internal sealed class ControlledTimeProvider : TimeProvider
 
     public void FireTimer(int timerIndex) => GetTimer(timerIndex).Fire();
 
-    public TimeSpan GetDueTime(int timerIndex) => GetTimer(timerIndex).DueTime;
-
     public QueuedTimerCallback QueueTimerCallback(int timerIndex)
     {
         var timer = GetTimer(timerIndex);

@@ -117,7 +117,7 @@ public class AsyncRetryDelayGeneratorTests
 
         // The clamped delay is the one the retry waits: fire it rather than wait 5 real seconds.
         await timeProvider.WaitForTimersAsync(1);
-        await Assert.That(timeProvider.GetDueTime(0)).IsEqualTo(TimeSpan.FromSeconds(5));
+        await Assert.That(timeProvider.GetTimerDueTime(0)).IsEqualTo(TimeSpan.FromSeconds(5));
         timeProvider.FireTimer(0);
         await Assert.That(async () => await execution).Throws<InvalidOperationException>();
 
