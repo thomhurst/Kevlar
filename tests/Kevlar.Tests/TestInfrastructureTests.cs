@@ -37,14 +37,19 @@ public class TestInfrastructureTests
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
-                return new HttpClientHandler();
+                return new NoOpHandler();
             });
         using var provider = services.BuildServiceProvider();
         var factory = provider.GetRequiredService<IHttpClientFactory>();
 
-        _ = factory.CreateClient("client");
+        using (factory.CreateClient("client"))
+        {
+        }
+
         HttpHandlerRotation.Expire(factory, "client");
-        _ = factory.CreateClient("client");
+        using (factory.CreateClient("client"))
+        {
+        }
 
         await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
     }
@@ -208,5 +213,13 @@ public class TestInfrastructureTests
 
         await Assert.That(exception!.Message).Contains("Model 'reproducible model' failed with seed 0");
         await Assert.That(exception.Message).Contains("Minimized commands: [step, step]");
+    }
+
+    private sealed class NoOpHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
     }
 }
