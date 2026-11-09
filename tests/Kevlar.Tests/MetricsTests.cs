@@ -16,6 +16,13 @@ public class MetricsTests
 {
     private static readonly KevlarKey<string> MetricRegion = new("metric-region");
 
+    // A gauge sums every live strategy with the same name, and one left by an earlier run of the same test
+    // in this process may not be collected yet. A name of its own keeps a run to its own strategies.
+    private static string UniqueName(string name) => $"{name}-{Guid.NewGuid():N}";
+
+    // Far more than a test allocates between two gauge recordings, and within what the GC can reserve.
+    private const long NoGcRegionBytes = 16 * 1024 * 1024;
+
     private sealed class KevlarMeterListener : IDisposable
     {
         private readonly MeterListener _listener = new();
@@ -1499,7 +1506,7 @@ public class MetricsTests
     public async Task Partitioned_Concurrency_Gauges_Aggregate_Identical_Series()
     {
         using var listener = new KevlarMeterListener();
-        const string name = "metrics-partitioned-concurrency-state";
+        var name = UniqueName("metrics-partitioned-concurrency-state");
         var partitions = new PartitionedShield<int>(capacity =>
             Shield.ConcurrencyLimit(capacity).WithName(name));
 
@@ -1598,28 +1605,29 @@ public class MetricsTests
     public async Task Manual_Circuit_Transitions_Update_State_Gauge()
     {
         using var listener = new KevlarMeterListener();
+        var name = UniqueName("metrics-manual-circuit-state");
         var monitor = new CircuitBreakerMonitor();
         var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
-            .WithName("metrics-manual-circuit-state");
+            .WithName(name);
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
         listener.RecordObservableInstruments();
         var closedMeasurements = listener.Values(
             "kevlar.circuit_breaker.state",
-            "metrics-manual-circuit-state").Count(value => value == 0);
+            name).Count(value => value == 0);
 
         monitor.Isolate();
         listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
-                "metrics-manual-circuit-state"))
+                name))
             .Contains(3);
 
         monitor.Reset();
         listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
-                "metrics-manual-circuit-state").Count(value => value == 0))
+                name).Count(value => value == 0))
             .IsEqualTo(closedMeasurements + 1);
     }
 
@@ -1656,14 +1664,29 @@ public class MetricsTests
         monitor.Isolate();
 
         using var listener = new KevlarMeterListener();
-        listener.RecordObservableInstruments();
-        var unnamedMeasurements = listener.Values(
-            "kevlar.circuit_breaker.state",
-            shieldName: null,
-            requireName: false).Count;
-        _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
-        monitor.Reset();
-        listener.RecordObservableInstruments();
+
+        // The unnamed count covers every circuit breaker still registered in the process, and the
+        // registry holds them weakly. A GC between the two recordings could collect one that became
+        // unreachable in between, such as one held by an earlier test's leftover async work, and
+        // lower the second count. Allow no GC until both recordings are taken.
+        await Assert.That(GC.TryStartNoGCRegion(NoGcRegionBytes)).IsTrue();
+        int unnamedMeasurements;
+        try
+        {
+            listener.RecordObservableInstruments();
+            unnamedMeasurements = listener.Values(
+                "kevlar.circuit_breaker.state",
+                shieldName: null,
+                requireName: false).Count;
+            _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+            monitor.Reset();
+            listener.RecordObservableInstruments();
+        }
+        finally
+        {
+            // Throws when the test allocated past the budget and a GC ran after all.
+            GC.EndNoGCRegion();
+        }
 
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
@@ -1765,7 +1788,7 @@ public class MetricsTests
     public async Task State_Gauges_Disambiguate_Strategies_By_Pipeline_Index()
     {
         using var listener = new KevlarMeterListener();
-        const string name = "metrics-independent-strategies";
+        var name = UniqueName("metrics-independent-strategies");
         var shield = Shield.ConcurrencyLimit(1)
             .Wrap(Shield.ConcurrencyLimit(10))
             .WithName(name);
@@ -2269,10 +2292,11 @@ public class MetricsTests
     public async Task Concurrency_Gauges_Track_Inflight_Queue_And_Cancellation()
     {
         using var listener = new KevlarMeterListener();
+        var name = UniqueName("metrics-concurrency-state");
         using var cancellation = new CancellationTokenSource();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shield = Shield.ConcurrencyLimit(1, 1).WithName("metrics-concurrency-state");
+        var shield = Shield.ConcurrencyLimit(1, 1).WithName(name);
         var occupying = shield.ExecuteAsync(async _ =>
         {
             entered.SetResult();
@@ -2290,13 +2314,13 @@ public class MetricsTests
         _ = await occupying;
         listener.RecordObservableInstruments();
 
-        await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", "metrics-concurrency-state"))
+        await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", name))
             .Contains(1)
             .And.Contains(0);
-        await Assert.That(listener.Values("kevlar.concurrency_limit.queued", "metrics-concurrency-state"))
+        await Assert.That(listener.Values("kevlar.concurrency_limit.queued", name))
             .Contains(1)
             .And.Contains(0);
-        await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", "metrics-concurrency-state")
+        await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", name)
             .All(value => value == 1)).IsTrue();
 
         await Shield.ConcurrencyLimit(1).ExecuteAsync(_ => new ValueTask<int>(3));

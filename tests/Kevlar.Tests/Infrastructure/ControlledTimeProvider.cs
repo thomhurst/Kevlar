@@ -50,6 +50,32 @@ internal sealed class ControlledTimeProvider : TimeProvider
         _createdTimers.WaitForAsync(count, timeout);
 
     /// <summary>
+    /// Waits for <paramref name="count"/> timers, unless <paramref name="execution"/> ends first.
+    /// </summary>
+    /// <remarks>
+    /// When the execution ends before it creates the timers, this rethrows its exception, or reports
+    /// that it completed, instead of timing out on a timer that will never come.
+    /// </remarks>
+    public async Task<int> WaitForTimersAsync(int count, Task execution, TimeSpan? timeout = null)
+    {
+        var timers = WaitForTimersAsync(count, timeout);
+        if (await Task.WhenAny(timers, execution) == timers)
+        {
+            return await timers;
+        }
+
+        // The timer wait still times out later; observe it so its failure isn't reported as unobserved.
+        _ = timers.ContinueWith(
+            static wait => _ = wait.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+        await execution;
+        throw new InvalidOperationException(
+            $"The execution completed before it created {count} controlled timer(s).");
+    }
+
+    /// <summary>
     /// Fires every undisposed timer whose due time has been reached, whatever order the timers were created in.
     /// </summary>
     /// <returns>The number of timer callbacks invoked.</returns>

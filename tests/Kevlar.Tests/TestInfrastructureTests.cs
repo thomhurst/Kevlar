@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Kevlar.Tests;
 
 public class TestInfrastructureTests
@@ -21,6 +23,35 @@ public class TestInfrastructureTests
         }
 
         await Assert.That(await read).IsEqualTo(CancellationToken.None);
+    }
+
+    [Test]
+    public async Task Http_Handler_Rotation_Expires_The_Active_Handler_Without_Waiting()
+    {
+        // Fails, as the rotation tests do, when Microsoft.Extensions.Http's internals change, but
+        // names the helper as the cause.
+        var handlers = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new NoOpHandler();
+            });
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (factory.CreateClient("client"))
+        {
+        }
+
+        HttpHandlerRotation.Expire(factory, "client");
+        using (factory.CreateClient("client"))
+        {
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
     }
 
     [Test]
@@ -182,5 +213,13 @@ public class TestInfrastructureTests
 
         await Assert.That(exception!.Message).Contains("Model 'reproducible model' failed with seed 0");
         await Assert.That(exception.Message).Contains("Minimized commands: [step, step]");
+    }
+
+    private sealed class NoOpHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
     }
 }

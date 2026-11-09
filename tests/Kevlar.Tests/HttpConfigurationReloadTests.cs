@@ -653,7 +653,6 @@ public class HttpConfigurationReloadTests
     [Arguments(SharedRegistrationKind.StandardConfiguration, true)]
     [Arguments(SharedRegistrationKind.HedgeConfiguration, false)]
     [Arguments(SharedRegistrationKind.HedgeConfiguration, true)]
-    [NotInParallel]
     public async Task Handler_Rotation_Reuses_Service_Created_Pipeline(
         SharedRegistrationKind registrationKind, bool useDefaults)
     {
@@ -665,7 +664,7 @@ public class HttpConfigurationReloadTests
         var handlers = 0;
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("client")
-            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
@@ -731,15 +730,13 @@ public class HttpConfigurationReloadTests
         {
         }
 
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        HttpHandlerRotation.Expire(factory, "client");
+        using (var rotated = factory.CreateClient("client"))
+        using (await rotated.GetAsync("https://example.test/"))
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            using var rotated = factory.CreateClient("client");
-            using var response = await rotated.GetAsync("https://example.test/");
         }
 
-        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
         await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(1);
         await Assert.That(Volatile.Read(ref handlerOptionFactories)).IsEqualTo(
             registrationKind is SharedRegistrationKind.ShieldAndOptionsFactories ? 1 : 0);
@@ -757,7 +754,6 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    [NotInParallel]
     public async Task Handler_Rotation_Preserves_An_Open_Circuit_And_Monitor()
     {
         var monitor = new CircuitBreakerMonitor();
@@ -766,7 +762,7 @@ public class HttpConfigurationReloadTests
         var transportCalls = 0;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
-            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
@@ -793,37 +789,28 @@ public class HttpConfigurationReloadTests
         {
         }
 
-        HttpClient? rotated = null;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
-        {
-            rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            rotated = factory.CreateClient("client");
-        }
-
-        using (rotated)
+        HttpHandlerRotation.Expire(factory, "client");
+        using (var rotated = factory.CreateClient("client"))
         {
             await Assert.That(async () =>
-                    await rotated!.GetAsync("https://example.test/"))
+                    await rotated.GetAsync("https://example.test/"))
                 .Throws<CircuitOpenException>();
         }
 
-        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
         await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(1);
         await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 
     [Test]
-    [NotInParallel]
     public async Task Handler_Rotation_Preserves_Standard_Hedge_Authority_State()
     {
         var handlers = 0;
         var transportCalls = 0;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
-            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
@@ -852,35 +839,26 @@ public class HttpConfigurationReloadTests
                 .Throws<CircuitOpenException>();
         }
 
-        HttpClient? rotated = null;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
-        {
-            rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            rotated = factory.CreateClient("client");
-        }
-
-        using (rotated)
+        HttpHandlerRotation.Expire(factory, "client");
+        using (var rotated = factory.CreateClient("client"))
         {
             await Assert.That(async () =>
-                    await rotated!.GetAsync("https://example.test/"))
+                    await rotated.GetAsync("https://example.test/"))
                 .Throws<CircuitOpenException>();
         }
 
-        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
         await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
     }
 
     [Test]
-    [NotInParallel]
     public async Task Handler_Rotation_Preserves_Standard_Options_Routing_State()
     {
         var handlers = 0;
         var transportCalls = 0;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
-            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
@@ -911,28 +889,19 @@ public class HttpConfigurationReloadTests
         {
         }
 
-        HttpClient? rotated = null;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
-        {
-            rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            rotated = factory.CreateClient("client");
-        }
-
-        using (rotated)
+        HttpHandlerRotation.Expire(factory, "client");
+        using (var rotated = factory.CreateClient("client"))
         {
             await Assert.That(async () =>
-                    await rotated!.GetAsync("https://example.test/"))
+                    await rotated.GetAsync("https://example.test/"))
                 .Throws<CircuitOpenException>();
         }
 
-        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
         await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
     }
 
     [Test]
-    [NotInParallel]
     public async Task Handler_Rotation_Preserves_Fixed_Shield_Routing_State()
     {
         var handlers = 0;
@@ -951,7 +920,7 @@ public class HttpConfigurationReloadTests
         services.AddScoped<IShieldDecorator>(serviceProvider =>
             serviceProvider.GetRequiredService<ApplicationProviderDecorator>());
         services.AddHttpClient("client")
-            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
                 Interlocked.Increment(ref handlers);
@@ -971,23 +940,15 @@ public class HttpConfigurationReloadTests
         {
         }
 
-        HttpClient? rotated = null;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
-        {
-            rotated?.Dispose();
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-            rotated = factory.CreateClient("client");
-        }
-
-        using (rotated)
+        HttpHandlerRotation.Expire(factory, "client");
+        using (var rotated = factory.CreateClient("client"))
         {
             await Assert.That(async () =>
-                    await rotated!.GetAsync("https://example.test/"))
+                    await rotated.GetAsync("https://example.test/"))
                 .Throws<CircuitOpenException>();
         }
 
-        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
         await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
         await Assert.That(decorator.Count).IsEqualTo(2);
     }
@@ -1250,12 +1211,13 @@ public class HttpConfigurationReloadTests
         var configuration = BuildConfiguration(
             ("Retry:MaxRetries", "1"),
             ("Retry:Backoff", "None"));
+        // A counter per run: a static one is shared with any other run of this test in the process.
+        var attempts = 0;
         var transport = new FuncHandler((_, _) => Task.FromResult(
             new HttpResponseMessage(
-                Interlocked.Increment(ref _typedAttempts) == 1
+                Interlocked.Increment(ref attempts) == 1
                     ? HttpStatusCode.InternalServerError
                     : HttpStatusCode.OK)));
-        _typedAttempts = 0;
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddHttpClient<TypedClient>()
             .ConfigurePrimaryHttpMessageHandler(() => transport)
@@ -1267,8 +1229,6 @@ public class HttpConfigurationReloadTests
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(transport.Calls).IsEqualTo(2);
     }
-
-    private static int _typedAttempts;
 
     private static ServiceProvider CreateStandardServices(
         IConfiguration configuration,
