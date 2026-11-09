@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Kevlar.Tests;
 
 public class TestInfrastructureTests
@@ -21,6 +23,30 @@ public class TestInfrastructureTests
         }
 
         await Assert.That(await read).IsEqualTo(CancellationToken.None);
+    }
+
+    [Test]
+    public async Task Http_Handler_Rotation_Expires_The_Active_Handler_Without_Waiting()
+    {
+        // The rotation tests fall back to a real wait when TryExpire fails, so they would still pass,
+        // only slower. This fails instead when Microsoft.Extensions.Http's internals change.
+        var handlers = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromHours(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new HttpClientHandler();
+            });
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        _ = factory.CreateClient("client");
+        await Assert.That(HttpHandlerRotation.TryExpire(factory, "client")).IsTrue();
+        _ = factory.CreateClient("client");
+
+        await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
     }
 
     [Test]

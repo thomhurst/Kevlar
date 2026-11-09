@@ -26,7 +26,15 @@ internal static class HttpHandlerRotation
         }
     }
 
-    private static bool TryExpire(IHttpClientFactory factory, string name)
+    /// <summary>
+    /// Runs the factory's own expiry for <paramref name="name"/>'s active handler, so the next
+    /// <see cref="IHttpClientFactory.CreateClient(string)"/> builds a new one.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the active handler was replaced; <see langword="false"/> when the
+    /// factory's internals no longer match, or <paramref name="name"/> has no active handler yet.
+    /// </returns>
+    internal static bool TryExpire(IHttpClientFactory factory, string name)
     {
         if (factory.GetType().GetField("_activeHandlers", Instance)?.GetValue(factory) is not IDictionary active
             || active[name] is not { } entry)
