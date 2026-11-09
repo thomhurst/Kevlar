@@ -33,10 +33,6 @@ public class MetricsTests
 
         public KevlarMeterListener(Action<string, long>? onLongMeasurement = null)
         {
-            // Every test here creates its listener before it adds an enricher, and disposes the
-            // enricher itself. Start from none, so an enricher an earlier test left registered (for
-            // example after a failure in the unsubscribe path) can't add tags these tests count.
-            KevlarMetricEnrichment.ResetForTesting();
             _onLongMeasurement = onLongMeasurement;
             _listener.InstrumentPublished = (instrument, listener) =>
             {
