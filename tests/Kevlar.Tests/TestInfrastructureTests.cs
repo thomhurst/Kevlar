@@ -28,8 +28,8 @@ public class TestInfrastructureTests
     [Test]
     public async Task Http_Handler_Rotation_Expires_The_Active_Handler_Without_Waiting()
     {
-        // The rotation tests fall back to a real wait when TryExpire fails, so they would still pass,
-        // only slower. This fails instead when Microsoft.Extensions.Http's internals change.
+        // Fails, as the rotation tests do, when Microsoft.Extensions.Http's internals change, but
+        // names the helper as the cause.
         var handlers = 0;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
@@ -43,7 +43,7 @@ public class TestInfrastructureTests
         var factory = provider.GetRequiredService<IHttpClientFactory>();
 
         _ = factory.CreateClient("client");
-        await Assert.That(HttpHandlerRotation.TryExpire(factory, "client")).IsTrue();
+        HttpHandlerRotation.Expire(factory, "client");
         _ = factory.CreateClient("client");
 
         await Assert.That(Volatile.Read(ref handlers)).IsEqualTo(2);
