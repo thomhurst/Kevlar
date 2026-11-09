@@ -20,6 +20,9 @@ public class MetricsTests
     // in this process may not be collected yet. A name of its own keeps a run to its own strategies.
     private static string UniqueName(string name) => $"{name}-{Guid.NewGuid():N}";
 
+    // Far more than a test allocates between two gauge recordings, and within what the GC can reserve.
+    private const long NoGcRegionBytes = 16 * 1024 * 1024;
+
     private sealed class KevlarMeterListener : IDisposable
     {
         private readonly MeterListener _listener = new();
@@ -1664,22 +1667,30 @@ public class MetricsTests
             .WithName("metrics-disabled-circuit-alias");
         monitor.Isolate();
 
-        // The unnamed count covers every circuit breaker still registered in the process, and the
-        // registry holds them weakly. Collect the dead ones first: one collected between the two
-        // recordings would lower the second count and fail the test.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
         using var listener = new KevlarMeterListener();
-        listener.RecordObservableInstruments();
-        var unnamedMeasurements = listener.Values(
-            "kevlar.circuit_breaker.state",
-            shieldName: null,
-            requireName: false).Count;
-        _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
-        monitor.Reset();
-        listener.RecordObservableInstruments();
+
+        // The unnamed count covers every circuit breaker still registered in the process, and the
+        // registry holds them weakly. A GC between the two recordings could collect one that became
+        // unreachable in between, such as one held by an earlier test's leftover async work, and
+        // lower the second count. Allow no GC until both recordings are taken.
+        await Assert.That(GC.TryStartNoGCRegion(NoGcRegionBytes)).IsTrue();
+        int unnamedMeasurements;
+        try
+        {
+            listener.RecordObservableInstruments();
+            unnamedMeasurements = listener.Values(
+                "kevlar.circuit_breaker.state",
+                shieldName: null,
+                requireName: false).Count;
+            _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+            monitor.Reset();
+            listener.RecordObservableInstruments();
+        }
+        finally
+        {
+            // Throws when the test allocated past the budget and a GC ran after all.
+            GC.EndNoGCRegion();
+        }
 
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
@@ -1690,9 +1701,6 @@ public class MetricsTests
                 "kevlar.circuit_breaker.state",
                 "metrics-disabled-circuit-alias").Last())
             .IsEqualTo(0);
-
-        // This breaker's own series must stay registered until the last recording.
-        GC.KeepAlive(shield);
     }
 
     [Test]
