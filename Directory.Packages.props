@@ -48,7 +48,7 @@
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
 
     <!-- Benchmarks -->
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.2" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.0" />
     <PackageVersion Include="Polly" Version="8.9.1" />
     <PackageVersion Include="Polly.Extensions" Version="8.9.1" />

@@ -223,7 +223,8 @@ concepts side by side.
 | `Kevlar.Testing` | `netstandard2.0`; `net10.0`; `net11.0` |
 
 The `net11.0` assets are compiled with Runtime Async (`runtime-async=on`), a preview feature in
-.NET 11. Applications on .NET 8 or .NET 9 resolve the `netstandard2.0` asset.
+.NET 11. Applications on .NET 8 or .NET 9 resolve the `netstandard2.0` asset (`netstandard2.1` for
+`Kevlar.Extensions.Grpc`); `Kevlar.Extensions.EntityFrameworkCore` has no asset for them.
 
 The analyzers bundled with `Kevlar` run in Visual Studio 2022 17.8 or later and the .NET 8.0.100
 SDK or later. Older compiler hosts skip the analyzer assets; the runtime library remains

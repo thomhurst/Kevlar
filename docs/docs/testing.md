@@ -22,8 +22,9 @@ uses a `TimeProvider`. Start the execution, wait until it has scheduled work, th
 `FakeTimeProvider`. The test below performs three attempts and advances twenty seconds without
 sleeping.
 
-`FakeTimeProvider`, `WaitForPendingAsync`, and `AdvanceUntilAsync` require a test project targeting
-.NET 10 or later; they are not included in the `netstandard2.0` compatibility asset.
+`FakeTimeProvider` and `AdvanceUntilAsync` require a test project targeting .NET 10 or later; they
+are not included in the `netstandard2.0` compatibility asset. `WaitForPendingAsync` is available on
+every target.
 
 ### Verify timeout placement
 
