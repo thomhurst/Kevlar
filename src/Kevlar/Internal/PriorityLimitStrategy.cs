@@ -184,6 +184,10 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
 
 #if NET8_0_OR_GREATER
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#if NET11_0_OR_GREATER
+    // Runtime Async ignores the pooling builder, so keep the compiler state machine here.
+    [RuntimeAsyncMethodGeneration(false)]
+#endif
 #endif
     private async ValueTask<Outcome<T>> AwaitExecutionAsync<T>(ValueTask<Outcome<T>> execution)
     {
