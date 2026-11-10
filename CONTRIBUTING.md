@@ -15,7 +15,7 @@ Thanks for helping improve Kevlar. By participating, you agree to follow the
 
 ## Local setup
 
-Install the .NET 8 and .NET 10 SDKs. Documentation changes also need Node.js 24 and npm.
+Install the .NET 11 SDK and the .NET 10 runtime. Documentation changes also need Node.js 24 and npm.
 
 ```powershell
 git clone https://github.com/thomhurst/Kevlar.git

@@ -7,7 +7,7 @@ dotnet run -c Release --project benchmarks/Kevlar.OutageTests -- --phase-seconds
 python .github/scripts/outage_docs.py --input artifacts/outage/outage-results.json --output artifacts/outage/outage-results.md
 ```
 
-Requires .NET 10. Use `--phase-seconds 1` for a roughly 16-second smoke run across four compositions. The separate accounting tests verify percentile, recovery-window, scheduled-latency, and cleanup calculations. The workflow runs them before measuring.
+Requires .NET 11. Use `--phase-seconds 1` for a roughly 16-second smoke run across four compositions. The separate accounting tests verify percentile, recovery-window, scheduled-latency, and cleanup calculations. The workflow runs them before measuring.
 
 Every logical request has a fixed scheduled arrival. Slow responses never reduce offered arrivals; scheduler lag and harness-cap rejections remain visible. Each composition starts with fresh strategy state, runs all four phases, and drains cancelled hedge attempts before the next composition. A 30-second drain allowance fails the run if work remains.
 

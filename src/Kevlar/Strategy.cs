@@ -374,6 +374,10 @@ public readonly struct Continuation<T, TState>
 
 #if NET8_0_OR_GREATER
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#if NET11_0_OR_GREATER
+    // Runtime Async ignores the pooling builder, so keep the compiler state machine here.
+    [RuntimeAsyncMethodGeneration(false)]
+#endif
 #endif
     private static async ValueTask<Outcome<T>> AwaitStrategyAsync(
         ValueTask<Outcome<T>> execution,

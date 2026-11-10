@@ -49,15 +49,6 @@ Do not enable unsafe replay blindly. Prefer idempotency keys and server-side ded
 operations that create or mutate data; clones preserve headers, so every attempt sends the same
 key.
 
-## Why are some metrics missing on .NET 8?
-
-Execution counters and duration histograms are available on .NET 8. State gauges for open circuits,
-available permits, and queued work use runtime APIs available in Kevlar's .NET 10 asset. The
-complete target matrix is in [observability](observability.md#metrics).
-
-Also verify that your `MeterListener` or OpenTelemetry provider subscribes to the `Kevlar` meter
-before executions begin.
-
 ## Why does `catch (TimeoutException)` not catch a Kevlar timeout? <!-- doc-lint: allow-TimeoutException -->
 
 Kevlar throws `TimeoutExceededException`; it is deliberately distinct from

@@ -97,7 +97,7 @@ try
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -288,10 +288,10 @@ file sealed class SmokeGrpcClient : ClientBase<SmokeGrpcClient>
 '@
 
     $publishMatrix = @(
-        @{ Name = 'net10-trimmed'; Framework = 'net10.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishTrimmed=true', '-p:TrimMode=full') },
-        @{ Name = 'net10-single-file'; Framework = 'net10.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishSingleFile=true') },
-        @{ Name = 'net10-native-aot'; Framework = 'net10.0'; Platforms = @('linux'); Properties = @('-p:PublishAot=true') },
-        @{ Name = 'net8-compat-trimmed'; Framework = 'net8.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishTrimmed=true', '-p:TrimMode=full') }
+        @{ Name = 'net11-trimmed'; Framework = 'net11.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishTrimmed=true', '-p:TrimMode=full') },
+        @{ Name = 'net11-single-file'; Framework = 'net11.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishSingleFile=true') },
+        @{ Name = 'net11-native-aot'; Framework = 'net11.0'; Platforms = @('linux'); Properties = @('-p:PublishAot=true') },
+        @{ Name = 'net10-compat-trimmed'; Framework = 'net10.0'; Platforms = @('win', 'linux', 'osx'); Properties = @('-p:PublishTrimmed=true', '-p:TrimMode=full') }
     )
 
     foreach ($entry in $publishMatrix)

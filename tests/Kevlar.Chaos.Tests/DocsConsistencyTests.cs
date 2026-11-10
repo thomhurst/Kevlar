@@ -21,17 +21,14 @@ public class DocsConsistencyTests
         observer.RecordObservableInstruments();
 
         var documented = ParseInstrumentTable();
-        var available = documented
-            .Where(static row => IsAvailableOnCurrentTarget(row.Value.MinimumTarget))
-            .ToDictionary(StringComparer.Ordinal);
-        await Assert.That(available.Keys).IsEquivalentTo(observer.Instruments.Keys);
+        await Assert.That(documented.Keys).IsEquivalentTo(observer.Instruments.Keys);
 
         foreach (var (name, instrument) in observer.Instruments)
         {
-            var row = available[name];
+            var row = documented[name];
             await Assert.That(row.Type).IsEqualTo(InstrumentType(instrument));
             await Assert.That(row.Unit).IsEqualTo(instrument.Unit);
-            await Assert.That(row.MinimumTarget).IsEqualTo(MinimumTarget(instrument));
+            await Assert.That(row.MinimumTarget).IsEqualTo("net10.0");
             await Assert.That(row.Tags).IsEquivalentTo(observer.Tags[name].Keys);
         }
     }
@@ -320,16 +317,6 @@ public class DocsConsistencyTests
 #endif
         _ => throw new InvalidOperationException($"Unsupported instrument type {instrument.GetType()}"),
     };
-
-    private static string MinimumTarget(Instrument instrument) =>
-        instrument is Counter<long> or Histogram<double> ? "net8.0" : "net10.0";
-
-    private static bool IsAvailableOnCurrentTarget(string minimumTarget) =>
-#if NET10_0_OR_GREATER
-        minimumTarget is "net8.0" or "net10.0";
-#else
-        minimumTarget == "net8.0";
-#endif
 
     private static string ObservabilityPath() => Path.Combine(
         RepositoryRoot(),

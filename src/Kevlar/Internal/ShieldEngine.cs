@@ -576,6 +576,10 @@ internal static partial class ShieldEngine
 
 #if NET8_0_OR_GREATER
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#if NET11_0_OR_GREATER
+    // Runtime Async ignores the pooling builder, so keep the compiler state machine here.
+    [RuntimeAsyncMethodGeneration(false)]
+#endif
 #endif
     private static async ValueTask<Outcome<T>> InvokeAsync<TState, T>(AsyncCallback<TState, T> callback, KevlarContext context)
     {
@@ -617,6 +621,10 @@ internal static partial class ShieldEngine
 
 #if NET8_0_OR_GREATER
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+#if NET11_0_OR_GREATER
+    // Runtime Async ignores the pooling builder, so keep the compiler state machine here.
+    [RuntimeAsyncMethodGeneration(false)]
+#endif
 #endif
     private static async ValueTask<T> AwaitAsync<T>(ValueTask<Outcome<T>> pipeline, KevlarContext context, long startedAt)
     {

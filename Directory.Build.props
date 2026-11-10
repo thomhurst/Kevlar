@@ -26,6 +26,11 @@
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
   </PropertyGroup>
 
+  <!-- Runtime Async is a preview compilation model in .NET 11; it needs no EnablePreviewFeatures. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Authors>Tom Longhurst</Authors>
     <Copyright>Copyright (c) Tom Longhurst 2026</Copyright>

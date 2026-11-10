@@ -11,7 +11,7 @@ Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded 
 ## Validation
 
 - Build: `dotnet build Kevlar.slnx -c Release`.
-- TUnit tests: `dotnet run --project tests/<project> -c Release --no-build -- --timeout 5m`. For multi-targeted projects such as `Kevlar.Tests`, add `-f net8.0` or `-f net10.0` before `--no-build`.
+- TUnit tests: `dotnet run --project tests/<project> -c Release --no-build -- --timeout 5m`. For multi-targeted projects such as `Kevlar.Tests`, add `-f net10.0` or `-f net11.0` before `--no-build`.
 - Docs: run `npm ci`, then `npm run build` in `docs/`.
 - See `.github/workflows/ci.yml` for the full test matrix, coverage/allocation gates, and documentation checks. Linux and Windows CI must pass before merge.
 

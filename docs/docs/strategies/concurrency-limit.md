@@ -193,7 +193,7 @@ represent them as exceptions for this controller.
 `Kevlar.Testing` exposes the current limit as `ConcurrencyLimitStateSnapshot.CurrentLimit` and
 the immutable settings as `AdaptiveConcurrencyLimitStrategyDescriptor`. Running executions can
 temporarily exceed `CurrentLimit` after a reduction; `AvailablePermits` remains zero until they drain.
-On the `net10.0` asset, `kevlar.concurrency_limit.limit` reports the current limit, while
+On the `net10.0` and `net11.0` assets, `kevlar.concurrency_limit.limit` reports the current limit, while
 `kevlar.concurrency_limit.capacity` reports the configured maximum. Static limiters report the same
 value for both. Snapshots and adaptation work on every supported core target framework.
 

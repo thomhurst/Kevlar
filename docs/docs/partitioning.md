@@ -115,7 +115,7 @@ returned by the partition factory: strategy timeouts, retry delays, and circuit-
 use each shield's own clock, configured with `WithTimeProvider` (system time by default).
 
 For deterministic tests that exercise both idle expiry and strategy timing, configure both clocks
-with the same `FakeTimeProvider` in a test project targeting .NET 8 or later:
+with the same `FakeTimeProvider` in a test project targeting .NET 10 or later:
 
 ```csharp
 using Microsoft.Extensions.Time.Testing;

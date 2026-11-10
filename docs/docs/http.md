@@ -340,7 +340,7 @@ services.AddHttpClient("tenant-api")
         request => request.Headers.GetValues("X-Tenant").Single());
 ```
 
-On .NET 8 and later, `KevlarHttp.RequestOptions` is the public typed
+On .NET 10 and later, `KevlarHttp.RequestOptions` is the public typed
 `HttpRequestOptionsKey<KevlarRequestOptions>` for direct `HttpRequestMessage.Options` access.
 `GetRequestOptions` and the request extensions also work through `HttpRequestMessage.Properties`
 when consuming the `netstandard2.0` asset. Built-in replay clones carry the same request-options

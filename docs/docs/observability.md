@@ -51,7 +51,7 @@ failures; fallback additionally handles fail-fast rejections.
 
 ## Metrics
 
-Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0`. The core and runtime extension packages contain instrumented `net8.0` and `net10.0` assets; only `netstandard2.0` consumers receive inert metric implementations. `Kevlar.Chaos` separately publishes its injection counter from its `net8.0` and `net10.0` assets through a meter named `Kevlar.Chaos`, version `1.0`.
+Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0`. The core and runtime extension packages contain instrumented `net10.0` and `net11.0` assets; only `netstandard2.0` consumers receive inert metric implementations. `Kevlar.Chaos` separately publishes its injection counter from its `net10.0` and `net11.0` assets through a meter named `Kevlar.Chaos`, version `1.0`.
 
 Register the core meter with OpenTelemetry:
 
@@ -76,21 +76,21 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 
 | Instrument | Type | Unit | Minimum target | Measures | Attributes |
 |---|---|---|---|---|---|
-| `kevlar.executions` | Counter | `{execution}` | `net8.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
-| `kevlar.retries` | Counter | `{retry}` | `net8.0` | retry attempts and tagged budget refusals | `kevlar.shield.name`, optional `reason` (`budget`) |
-| `kevlar.retries.skipped` | Counter | `{retry}` | `net8.0` | retries skipped because the remaining deadline is insufficient | `kevlar.shield.name`, `reason` (`deadline`) |
-| `kevlar.timeouts` | Counter | `{timeout}` | `net8.0` | executions cancelled by a timeout strategy, including delegates that complete after ignoring cancellation | `kevlar.shield.name`, optional `outcome` (`ignored`) |
-| `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts and tagged budget refusals | `kevlar.shield.name`, optional `reason` (`budget`) |
-| `kevlar.hedge_attempts` | Counter | `{attempt}` | `net8.0` | completed attempts within hedged executions | `kevlar.shield.name`, `result` (`won`/`lost`/`cancelled`/`failed`) |
-| `kevlar.fallbacks` | Counter | `{fallback}` | `net8.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
-| `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | admission rejections, including queue expiry and priority eviction | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`), optional `kevlar.rejection.reason` (`queue_timeout`/`queue_evicted`) |
-| `kevlar.http.replay_suppressed` | Counter | `{request}` | `net8.0` | HTTP requests whose configured additional attempts were disabled for replay safety | `kevlar.shield.name`, `kevlar.suppression.reason` (`replay_disabled`/`unsafe_method`/`non_replayable_content`) |
-| `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
-| `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
-| `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications, observers, or superseded-result disposal | `kevlar.shield.name`, `kevlar.callback.kind`, `kevlar.callback.source` |
-| `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
-| `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key`, optional `kevlar.suppression.reason`, optional `kevlar.rejection.reason` |
-| `kevlar.attempt.duration` | Histogram | `ms` | `net8.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
+| `kevlar.executions` | Counter | `{execution}` | `net10.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
+| `kevlar.retries` | Counter | `{retry}` | `net10.0` | retry attempts and tagged budget refusals | `kevlar.shield.name`, optional `reason` (`budget`) |
+| `kevlar.retries.skipped` | Counter | `{retry}` | `net10.0` | retries skipped because the remaining deadline is insufficient | `kevlar.shield.name`, `reason` (`deadline`) |
+| `kevlar.timeouts` | Counter | `{timeout}` | `net10.0` | executions cancelled by a timeout strategy, including delegates that complete after ignoring cancellation | `kevlar.shield.name`, optional `outcome` (`ignored`) |
+| `kevlar.hedges` | Counter | `{hedge}` | `net10.0` | extra hedged attempts and tagged budget refusals | `kevlar.shield.name`, optional `reason` (`budget`) |
+| `kevlar.hedge_attempts` | Counter | `{attempt}` | `net10.0` | completed attempts within hedged executions | `kevlar.shield.name`, `result` (`won`/`lost`/`cancelled`/`failed`) |
+| `kevlar.fallbacks` | Counter | `{fallback}` | `net10.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
+| `kevlar.rejections` | Counter | `{rejection}` | `net10.0` | admission rejections, including queue expiry and priority eviction | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`), optional `kevlar.rejection.reason` (`queue_timeout`/`queue_evicted`) |
+| `kevlar.http.replay_suppressed` | Counter | `{request}` | `net10.0` | HTTP requests whose configured additional attempts were disabled for replay safety | `kevlar.shield.name`, `kevlar.suppression.reason` (`replay_disabled`/`unsafe_method`/`non_replayable_content`) |
+| `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net10.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
+| `kevlar.partitions.evictions` | Counter | `{partition}` | `net10.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
+| `kevlar.callback_errors` | Counter | `{error}` | `net10.0` | exceptions thrown by strategy notifications, observers, or superseded-result disposal | `kevlar.shield.name`, `kevlar.callback.kind`, `kevlar.callback.source` |
+| `kevlar.execution.duration` | Histogram | `s` | `net10.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
+| `kevlar.strategy.events` | Counter | `{event}` | `net10.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key`, optional `kevlar.suppression.reason`, optional `kevlar.rejection.reason` |
+| `kevlar.attempt.duration` | Histogram | `ms` | `net10.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
 | `kevlar.circuit_breaker.state` | ObservableGauge | `{state}` | `net10.0` | current circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.circuit_breaker.instances` | ObservableGauge | `{circuit}` | `net10.0` | circuit-breaker instances grouped by current state | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.circuit_breaker.state` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.concurrency_limit.inflight` | ObservableGauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
@@ -99,13 +99,13 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.concurrency_limit.limit` | ObservableGauge | `{execution}` | `net10.0` | current admission limit, including adaptive adjustments | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.rate_limit.available` | ObservableGauge | `{permit}` | `net10.0` | immediately available burst permits at collection time | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.rate_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.chaos.injections` | Counter | `{injection}` | `net8.0` | chaos injections applied | `kevlar.chaos.kind`, `kevlar.shield.name`, `kevlar.chaos.operation`, `kevlar.chaos.environment` |
+| `kevlar.chaos.injections` | Counter | `{injection}` | `net10.0` | chaos injections applied | `kevlar.chaos.kind`, `kevlar.shield.name`, `kevlar.chaos.operation`, `kevlar.chaos.environment` |
 
 </div>
 
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
 
-The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you plan to chart. `WithName("")` emits the attribute with an empty value; an unnamed shield omits it. Optional chaos scope attributes are also omitted when unset. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations. Counters and the duration histogram are active in the native `net8.0` and `net10.0` assets; the shipped state gauges require `net10.0`. On `netstandard2.0` targets the instruments are inert because the metrics API is not available in-box.
+The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you plan to chart. `WithName("")` emits the attribute with an empty value; an unnamed shield omits it. Optional chaos scope attributes are also omitted when unset. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations. Every instrument is active in the native `net10.0` and `net11.0` assets. On `netstandard2.0` targets the instruments are inert because the metrics API is not available in-box.
 
 Strategy event names and strategy names are stable bounded values. Exception telemetry uses only the
 full exception type name; messages are never tags. To correlate a small fixed set of logical
@@ -187,7 +187,7 @@ messages and operation-specific data belong in logs, not metric dimensions.
 
 `Kevlar.Testing.TelemetryRecorder` subscribes to this stream and exposes immutable snapshots through
 its `Events` property and `WaitForEventCountAsync`. Core tracing is opt-in: no activities are
-created unless a listener subscribes to the `Kevlar` activity source on .NET 8 or later.
+created unless a listener subscribes to the `Kevlar` activity source on .NET 10 or later.
 
 ### Built-in tracing
 
@@ -333,7 +333,7 @@ subscription during shutdown; repeated or concurrent disposal is safe, though an
 finish after disposal. Listener failures cannot change execution outcomes. With no registration, the core
 fast path is unchanged. A registration enables telemetry dispatch even with no sampled activity; the
 adapter avoids tag creation and value-result boxing on that path. Recorded events allocate tag storage.
-The package supports .NET Standard 2.0, .NET 8, and .NET 10; only the .NET Standard asset adds a
+The package supports .NET Standard 2.0, .NET 10, and .NET 11; only the .NET Standard asset adds a
 `System.Diagnostics.DiagnosticSource` package dependency.
 
 ### Custom tracing listeners

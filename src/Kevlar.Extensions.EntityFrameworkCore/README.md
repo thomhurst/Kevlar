@@ -1,7 +1,7 @@
 # Kevlar.Extensions.EntityFrameworkCore
 
-Sequential Kevlar execution strategies for Entity Framework Core on .NET 8 and .NET 10.
-Requires EF Core 8.0.33 or later on .NET 8, or EF Core 10.0.14 or later on .NET 10,
+Sequential Kevlar execution strategies for Entity Framework Core on .NET 10 and .NET 11.
+Requires EF Core 10.0.14 or later on .NET 10, or EF Core 11.0.0 or later on .NET 11,
 and a separately installed relational provider.
 
 ```csharp
