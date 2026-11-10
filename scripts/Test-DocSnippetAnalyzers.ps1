@@ -49,7 +49,7 @@ function New-TestPack([string]$RelativeDirectory, [string]$FrameworkName)
     [IO.File]::WriteAllText($manifestPath, @"
 <FileList FrameworkName="$FrameworkName">
   <File Type="Analyzer" Path="analyzers/dotnet/cs/Framework.Generator.dll" Language="cs" />
-  <File Type="Managed" Path="ref/net8.0/Framework.dll" />
+  <File Type="Managed" Path="ref/net10.0/Framework.dll" />
 </FileList>
 "@)
     [pscustomobject]@{
@@ -64,7 +64,7 @@ function Assert-Configuration([string]$Name, [object[]]$Packs, [string[]]$Analyz
     $script:configuration = @{
         Properties = @{
             Configuration = 'Release'
-            TargetFramework = 'net8.0'
+            TargetFramework = 'net10.0'
             MSBuildToolsPath = $sdkDirectory
         }
         Items = @{
@@ -80,7 +80,7 @@ function Assert-Configuration([string]$Name, [object[]]$Packs, [string[]]$Analyz
     $failure = $null
     try
     {
-        Assert-EffectiveAnalyzerConfiguration -Framework net8.0
+        Assert-EffectiveAnalyzerConfiguration -Framework net10.0
     }
     catch
     {
@@ -132,7 +132,7 @@ try
         $injected = Join-Path $pack.TargetingPackPath 'analyzers/dotnet/cs/Injected.dll'
         [IO.File]::WriteAllText($injected, '')
         Assert-Configuration "unlisted analyzer in $($pack.TargetingPackPath)" @($pack) @($injected) 'unexpected analyzer'
-        Assert-Configuration "non-analyzer manifest entry in $($pack.TargetingPackPath)" @($pack) @((Join-Path $pack.TargetingPackPath 'ref/net8.0/Framework.dll')) 'unexpected analyzer'
+        Assert-Configuration "non-analyzer manifest entry in $($pack.TargetingPackPath)" @($pack) @((Join-Path $pack.TargetingPackPath 'ref/net10.0/Framework.dll')) 'unexpected analyzer'
     }
     Assert-Configuration 'sibling directory prefix' @($nuget) @((Join-Path "$($nuget.TargetingPackPath)-injected" $analyzerSuffix)) 'unexpected analyzer'
     Assert-Configuration 'unrelated NuGet package' @($nuget) @((Join-Path $testRoot "nuget/unrelated/8.0.33/$analyzerSuffix")) 'unexpected analyzer'

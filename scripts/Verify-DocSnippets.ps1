@@ -1238,7 +1238,7 @@ foreach ($library in $projectAssets.libraries.GetEnumerator() | Where-Object { $
     }
 }
 
-foreach ($framework in @('net8.0', 'net10.0'))
+foreach ($framework in @('net10.0', 'net11.0'))
 {
     Assert-EffectiveAnalyzerConfiguration -Framework $framework
 

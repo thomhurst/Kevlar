@@ -132,7 +132,7 @@ context or event. Hook exceptions follow the shared
 [callback-failure contract](observability.md#callback-failures): Kevlar reports them without
 replacing the injected outcome.
 
-On .NET 8+, the `Kevlar.Chaos` meter publishes the `kevlar.chaos.injections` counter. Its tags are
+On .NET 10+, the `Kevlar.Chaos` meter publishes the `kevlar.chaos.injections` counter. Its tags are
 `kevlar.chaos.kind` plus the available `kevlar.shield.name`, `kevlar.chaos.operation`, and
 `kevlar.chaos.environment` values. Subscribe with OpenTelemetry using
 `AddMeter(ChaosDiagnostics.MeterName)`.

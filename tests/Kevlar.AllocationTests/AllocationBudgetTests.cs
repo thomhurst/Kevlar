@@ -456,7 +456,14 @@ public class AllocationBudgetTests
             {
             }
         });
-        AssertBudget("hedge launches second attempt", 3_072, this, static test =>
+#if NET11_0_OR_GREATER
+        // Runtime Async allocates a continuation per suspension instead of reusing a pooled
+        // state machine box: about 3.4 KB/op here against 2.4 KB/op with compiler state machines.
+        const long secondAttemptHedgeBudget = 4_096;
+#else
+        const long secondAttemptHedgeBudget = 3_072;
+#endif
+        AssertBudget("hedge launches second attempt", secondAttemptHedgeBudget, this, static test =>
         {
             test._parallelHedge.ExecuteAsync(
                 test._parallelHedgeState,
@@ -464,7 +471,7 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
-        AssertBudget("delay generator launches second attempt", 3_072, this, static test =>
+        AssertBudget("delay generator launches second attempt", secondAttemptHedgeBudget, this, static test =>
         {
             test._delayGeneratedHedge.ExecuteAsync(
                 test._delayGeneratedHedgeState,
@@ -472,13 +479,7 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._delayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
-#if NET8_0
-        // The eight-byte margin above the .NET 8 Linux pool-miss path still catches
-        // the additional 24 bytes caused by boxing the typed Outcome<int>.
-        const long typedHedgeGeneratorBudget = 624;
-#else
         const long typedHedgeGeneratorBudget = 584;
-#endif
         AssertBudget("typed hedge generator", typedHedgeGeneratorBudget, this, static test =>
             test._typedGeneratedHedge.ExecuteAsync(static _ => throw RecoverableFailure)
                 .GetAwaiter()

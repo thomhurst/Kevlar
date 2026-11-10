@@ -6,4 +6,4 @@ Run SQLite in memory with a sequential Kevlar retry policy. The sample simulates
 dotnet run --project samples/EntityFrameworkCore -c Release -f net10.0 -- --smoke
 ```
 
-No database server is required. `--smoke` runs the same deterministic scenario on .NET 8 and .NET 10 in CI. The `IOException` predicate is specific to this simulated failure; real applications must select their provider's transient errors.
+No database server is required. `--smoke` runs the same deterministic scenario on .NET 10 and .NET 11 in CI. The `IOException` predicate is specific to this simulated failure; real applications must select their provider's transient errors.

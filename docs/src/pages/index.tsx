@@ -47,7 +47,7 @@ const features = [
   {
     label: '03 / COMPATIBILITY',
     title: 'Ready for your stack.',
-    description: <>Targets <code>netstandard2.0</code> and <code>net10.0</code>. NativeAOT-ready, with integrations for Microsoft DI and <code>HttpClientFactory</code>.</>,
+    description: <>Targets <code>netstandard2.0</code>, <code>net10.0</code>, and <code>net11.0</code>. NativeAOT-ready, with integrations for Microsoft DI and <code>HttpClientFactory</code>.</>,
     link: '/docs/getting-started',
     linkLabel: 'Find your starting point',
   },

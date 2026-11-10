@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -22,13 +22,10 @@
     <PackageReference Include="Kevlar.Extensions.EntityFrameworkCore" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" VersionOverride="$(TestEntityFrameworkCoreVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" VersionOverride="$(TestEntityFrameworkCoreVersion)" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="$(TestNpgsqlEntityFrameworkCoreVersion)" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="$(TestExtensionsTimeProviderVersion)" />
@@ -42,6 +39,11 @@
   <!-- Microsoft.Data.SqlClient (via EF Core SqlServer 10) floors Pkcs at a version with known advisories. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <!-- Npgsql's EF 11 provider is still rc.3, pinned to that exact EF build (NU1608). No snippet uses Npgsql. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="$(TestNpgsqlEntityFrameworkCoreVersion)" />
   </ItemGroup>
 
   <ItemGroup>

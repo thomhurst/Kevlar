@@ -23,7 +23,7 @@ uses a `TimeProvider`. Start the execution, wait until it has scheduled work, th
 sleeping.
 
 `FakeTimeProvider`, `WaitForPendingAsync`, and `AdvanceUntilAsync` require a test project targeting
-.NET 8 or later; they are not included in the `netstandard2.0` compatibility asset.
+.NET 10 or later; they are not included in the `netstandard2.0` compatibility asset.
 
 ### Verify timeout placement
 
@@ -244,8 +244,8 @@ if (retry.Kind != CallbackKind.Retry || retry.AttemptNumber != 0 || retry.Shield
 Every `TelemetryRecorder.Record` overload returns a completed `ValueTask`, so it binds to a strategy
 hook as a method group (`options.OnRetry = telemetry.Record;`, likewise for `OnTimeout`, `OnHedge`,
 `OnFallback`, and `OnStateChanged`) and keeps the shield usable from synchronous `Execute`.
-Callback recording works from the `netstandard2.0` asset. Metric capture needs the .NET 8 or
-.NET 10 `Kevlar.Testing` asset because `MeterListener` is unavailable in the compatibility asset.
+Callback recording works from the `netstandard2.0` asset. Metric capture needs the .NET 10 or
+.NET 11 `Kevlar.Testing` asset because `MeterListener` is unavailable in the compatibility asset.
 Use `captureMetrics: false` for callback-only tests, and always dispose the recorder to detach its
 listener. Reading `Metrics` collects observable state gauges before returning the immutable
 snapshot. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` avoid polling concurrent tests.
@@ -436,7 +436,7 @@ For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.m
 Package verification publishes and runs clean package-consuming applications through
 trimmed, single-file, and NativeAOT configurations. The matrix covers all Kevlar
 strategies, typed and untyped execution, configuration-bound dependency injection,
-and HTTP and gRPC extension integration on .NET 10. A trimmed .NET 8 application provides the
+and HTTP and gRPC extension integration on .NET 11. A trimmed .NET 10 application provides the
 compatibility baseline. NativeAOT runs on Linux CI; the script reports unsupported
 local platforms explicitly.
 

@@ -1,7 +1,7 @@
 # Kevlar.Extensions.Tracing
 
 Add Kevlar strategy events to existing application traces without creating spans.
-Supports .NET Standard 2.0, .NET 8, and .NET 10.
+Supports .NET Standard 2.0, .NET 10, and .NET 11.
 
 ```csharp
 using Kevlar.Extensions.Tracing;

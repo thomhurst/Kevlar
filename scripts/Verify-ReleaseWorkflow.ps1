@@ -182,7 +182,7 @@ try
         $archive = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
         try
         {
-            $payloadEntry = $archive.CreateEntry('lib/net8.0/example.dll')
+            $payloadEntry = $archive.CreateEntry('lib/net10.0/example.dll')
             $writer = [IO.StreamWriter]::new($payloadEntry.Open())
             try
             {

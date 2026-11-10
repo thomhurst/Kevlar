@@ -17,7 +17,7 @@ $resolvedSamplesPath = (Resolve-Path -LiteralPath $SamplesPath).Path
 $projects = @(Get-ChildItem -LiteralPath $resolvedSamplesPath -Directory |
     ForEach-Object { Get-ChildItem -LiteralPath $_.FullName -Filter '*.csproj' -File } |
     Sort-Object FullName)
-$frameworks = @('net8.0', 'net10.0')
+$frameworks = @('net10.0', 'net11.0')
 $properties = if ($UsePackedPackages)
 {
     @('-p:UsePackedPackages=true', "-p:KevlarSamplePackageVersion=$Version")

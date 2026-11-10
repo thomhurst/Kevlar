@@ -80,7 +80,7 @@ stateful strategies: calls made through the same shield share its circuit breake
 
 ## Runnable samples
 
-Every sample is a small `net8.0;net10.0` application with a `--smoke` mode used by CI:
+Every sample is a small `net10.0;net11.0` application with a `--smoke` mode used by CI:
 
 - [`samples/ConsoleRetry`](https://github.com/thomhurst/Kevlar/tree/main/samples/ConsoleRetry) â€” minimal retry and recovery.
 - [`samples/WebApi`](https://github.com/thomhurst/Kevlar/tree/main/samples/WebApi) â€” ASP.NET Core, named DI shields, `AddStandardShield`, and metrics.
@@ -210,22 +210,25 @@ concepts side by side.
 
 | Package | Target frameworks |
 |---|---|
-| `Kevlar` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Chaos` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.EntityFrameworkCore` | `net8.0`; `net10.0` |
-| `Kevlar.Extensions.Grpc` | `netstandard2.0`; `netstandard2.1`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.Http` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.Diagnostics.HealthChecks` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.Tracing` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.Logging` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Extensions.RateLimiting` | `netstandard2.0`; `net8.0`; `net10.0` |
-| `Kevlar.Testing` | `netstandard2.0`; `net8.0`; `net10.0` |
+| `Kevlar` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Chaos` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.EntityFrameworkCore` | `net10.0`; `net11.0` |
+| `Kevlar.Extensions.Grpc` | `netstandard2.0`; `netstandard2.1`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.Http` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.Diagnostics.HealthChecks` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.Tracing` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.Logging` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Extensions.RateLimiting` | `netstandard2.0`; `net10.0`; `net11.0` |
+| `Kevlar.Testing` | `netstandard2.0`; `net10.0`; `net11.0` |
+
+The `net11.0` assets are compiled with Runtime Async (`runtime-async=on`), a preview feature in
+.NET 11. Applications on .NET 8 or .NET 9 resolve the `netstandard2.0` asset.
 
 The analyzers bundled with `Kevlar` run in Visual Studio 2022 17.8 or later and the .NET 8.0.100
 SDK or later. Older compiler hosts skip the analyzer assets; the runtime library remains
 available. `Kevlar.Testing` supports callback recording on `netstandard2.0`, but deterministic time
-and metric capture require .NET 8 or later.
+and metric capture require .NET 10 or later.
 
 The core package depends on `Reservoir` `[1.9.1, 2.0.0)` on every target. Its `netstandard2.0`
 asset also uses `Microsoft.Bcl.AsyncInterfaces`, `Microsoft.Bcl.TimeProvider`, and

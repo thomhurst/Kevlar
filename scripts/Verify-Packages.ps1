@@ -102,10 +102,10 @@ function Invoke-DotNet([string[]]$Arguments)
 
 function Get-ExpectedSymbolAssets([string]$PackageId)
 {
-    $frameworks = @('net10.0', 'net8.0', 'netstandard2.0')
+    $frameworks = @('net11.0', 'net10.0', 'netstandard2.0')
     if ($PackageId -eq 'Kevlar.Extensions.EntityFrameworkCore')
     {
-        $frameworks = @('net10.0', 'net8.0')
+        $frameworks = @('net11.0', 'net10.0')
     }
     if ($PackageId -eq 'Kevlar.Extensions.Grpc')
     {
@@ -313,52 +313,54 @@ Assert-Equal 'InformationalVersion build property' $buildProperties.Informationa
 
 $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
-$configurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration'
-$dependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection'
+$configurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration' 'net11.0'
+$dependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection' 'net11.0'
 
+# The .NET 11 shared framework carries the Microsoft.Extensions abstractions, so the SDK prunes
+# those references from the net11.0 dependency groups.
 $expectedDependencies = @{
     'Kevlar.Extensions.EntityFrameworkCore' = @{
+        'net11.0' = @('Kevlar', 'Microsoft.EntityFrameworkCore.Relational')
         'net10.0' = @('Kevlar', 'Microsoft.EntityFrameworkCore.Relational')
-        'net8.0' = @('Kevlar', 'Microsoft.EntityFrameworkCore.Relational')
     }
     'Kevlar' = @{
+        'net11.0' = @('Reservoir')
         'net10.0' = @('Reservoir')
-        'net8.0' = @('Reservoir')
         '.NETStandard2.0' = @('Microsoft.Bcl.AsyncInterfaces', 'Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
+        'net11.0' = @('Kevlar')
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
-        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
+        'net11.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Http')
         'net10.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
-        'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Diagnostics.HealthChecks' = @{
+        'net11.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
         'net10.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
-        'net8.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
         '.NETStandard2.0' = @('Kevlar', 'Kevlar.Extensions.DependencyInjection', 'Microsoft.Extensions.Diagnostics.HealthChecks', 'Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions')
     }
     'Kevlar.Extensions.Tracing' = @{
+        'net11.0' = @('Kevlar')
         'net10.0' = @('Kevlar')
-        'net8.0' = @('Kevlar')
         '.NETStandard2.0' = @('Kevlar', 'System.Diagnostics.DiagnosticSource')
     }
     'Kevlar.Extensions.Logging' = @{
+        'net11.0' = @('Kevlar', 'Microsoft.Extensions.Logging')
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
-        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
     }
     'Kevlar.Extensions.RateLimiting' = @{
+        'net11.0' = @('Kevlar', 'System.Threading.RateLimiting')
         'net10.0' = @('Kevlar', 'System.Threading.RateLimiting')
-        'net8.0' = @('Kevlar', 'System.Threading.RateLimiting')
         '.NETStandard2.0' = @('Kevlar', 'System.Threading.RateLimiting')
     }
     'Kevlar.Chaos' = @{
+        'net11.0' = @('Kevlar')
         'net10.0' = @('Kevlar')
-        'net8.0' = @('Kevlar')
         '.NETStandard2.0' = @(
             'Kevlar',
             'Microsoft.Bcl.TimeProvider',
@@ -366,13 +368,13 @@ $expectedDependencies = @{
             'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Testing' = @{
+        'net11.0' = @('Kevlar', 'Microsoft.Extensions.TimeProvider.Testing')
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.TimeProvider.Testing')
-        'net8.0' = @('Kevlar', 'Microsoft.Extensions.TimeProvider.Testing')
         '.NETStandard2.0' = @('Kevlar')
     }
     'Kevlar.Extensions.Grpc' = @{
+        'net11.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         'net10.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
-        'net8.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.1' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
     }
@@ -539,10 +541,10 @@ foreach ($packageId in $expectedDependencies.Keys)
         }
 
         $expectedAssets = @(
+            "lib/net11.0/$packageId.dll",
+            "lib/net11.0/$packageId.xml",
             "lib/net10.0/$packageId.dll",
             "lib/net10.0/$packageId.xml",
-            "lib/net8.0/$packageId.dll",
-            "lib/net8.0/$packageId.xml",
             "lib/netstandard2.0/$packageId.dll",
             "lib/netstandard2.0/$packageId.xml"
         )
@@ -982,10 +984,12 @@ static Shield CreateRateLimitedShield(RateLimiter limiter) =>
 sealed class ExpectedConsumerException : Exception;
 '@
 
-    foreach ($framework in @('net8.0', 'net10.0'))
+    foreach ($framework in @('net10.0', 'net11.0'))
     {
         $consumerDirectory = Join-Path $temporaryRoot "runtime-$framework"
         $sqliteVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.EntityFrameworkCore.Sqlite' $framework
+        $frameworkConfigurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration' $framework
+        $frameworkDependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection' $framework
         $consumerProject = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -1009,8 +1013,8 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.EntityFrameworkCore" Version="$Version" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$sqliteVersion" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$configurationVersion" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$dependencyInjectionVersion" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$frameworkConfigurationVersion" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$frameworkDependencyInjectionVersion" />
   </ItemGroup>
 </Project>
 "@

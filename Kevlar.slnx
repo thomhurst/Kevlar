@@ -29,7 +29,6 @@
     <Project Path="tests/Kevlar.Extensions.Logging.Tests/Kevlar.Extensions.Logging.Tests.csproj" />
     <Project Path="tests/Kevlar.Extensions.Tracing.Tests/Kevlar.Extensions.Tracing.Tests.csproj" />
     <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />
-    <Project Path="tests/Kevlar.Observability.Net8.Tests/Kevlar.Observability.Net8.Tests.csproj" />
     <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />
     <Project Path="tests/Kevlar.Analyzers.Tests/Kevlar.Analyzers.Tests.csproj" />
     <Project Path="tests/Kevlar.Testing.Tests/Kevlar.Testing.Tests.csproj" />

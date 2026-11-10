@@ -24,7 +24,7 @@ body:
     id: target-framework
     attributes:
       label: Target framework
-      options: [netstandard2.0, netstandard2.1, net8.0, net10.0, .NET Framework consumer, Other]
+      options: [netstandard2.0, netstandard2.1, net10.0, net11.0, .NET Framework consumer, Other]
     validations:
       required: true
   - type: input

@@ -98,7 +98,7 @@ jobs:
           python3 .github/scripts/test_measurement_publish.py
 
   allocation-gates:
-    name: Allocation gates (.NET 8/10, Ubuntu)
+    name: Allocation gates (.NET 10/11, Ubuntu)
     # Drafts are reviewed before CI; skip before renting a runner (ready_for_review starts CI).
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -115,12 +115,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Run allocation gates
         run: |
-          dotnet run --project tests/Kevlar.AllocationTests -c Release -f net8.0 -- --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
           dotnet run --project tests/Kevlar.AllocationTests -c Release -f net10.0 -- --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
+          dotnet run --project tests/Kevlar.AllocationTests -c Release -f net11.0 -- --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
 
   docs:
     name: Documentation site
@@ -147,7 +149,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Restore local tools
         run: dotnet tool restore
@@ -222,8 +226,8 @@ jobs:
         with:
           dotnet-version: |
             7.0.x
-            8.0.x
             10.0.x
+            11.0.x
 
       - name: Verify test suite registration
         if: matrix.os == 'ubuntu-latest'
@@ -252,16 +256,16 @@ jobs:
       - name: Unit tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/unit"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/unit"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/unit"
 
       - name: Chaos tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/chaos"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/chaos"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/chaos"
 
       - name: Compatibility asset tests
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory "${{ github.workspace }}/artifacts/test-results/netstandard"
@@ -273,9 +277,6 @@ jobs:
       - name: Modern gRPC compatibility asset tests
         run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename netstandard21.trx --results-directory "${{ github.workspace }}/artifacts/test-results/netstandard21"
 
-      - name: Observability contract (.NET 8)
-        run: dotnet run --project tests/Kevlar.Observability.Net8.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict --report-trx --report-trx-filename observability-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/observability-net8"
-
       - name: Integration tests
         run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory "${{ github.workspace }}/artifacts/test-results/integration"
 
@@ -285,30 +286,30 @@ jobs:
       - name: Testing package tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/testing"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/testing"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/testing"
 
       - name: Rate limiting adapter tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/rate-limiting"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/rate-limiting"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/rate-limiting"
 
       - name: Logging integration tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/logging"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/logging"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/logging"
 
       - name: Tracing integration tests
         shell: pwsh
         run: |
-          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net8.trx --results-directory "${{ github.workspace }}/artifacts/test-results/tracing"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net10.trx --results-directory "${{ github.workspace }}/artifacts/test-results/tracing"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Extensions.Tracing.Tests -c Release -f net11.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename tracing-net11.trx --results-directory "${{ github.workspace }}/artifacts/test-results/tracing"
       - name: Outage measurement accounting tests
         run: dotnet run --project tests/Kevlar.OutageTests.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename outage.trx --results-directory "${{ github.workspace }}/artifacts/test-results/outage"
 
@@ -398,7 +399,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            10.0.x
+            11.0.x
 
       - name: Restore tools
         run: dotnet tool restore
@@ -499,8 +502,8 @@ jobs:
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
           dotnet-version: |
-            8.0.x
             10.0.x
+            11.0.x
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
