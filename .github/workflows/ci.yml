@@ -235,13 +235,13 @@ jobs:
         run: ./.github/scripts/Assert-TestSuiteRegistration.ps1
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@0fdbe2ead9fe738c667f978d1baf448b1b6fb853 # v4.7.1
+        uses: gittools/actions/gitversion/setup@220647997b450f3e9364b6cf6a357197f17d924b # v4.7.2
         with:
           versionSpec: '6.x'
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@0fdbe2ead9fe738c667f978d1baf448b1b6fb853 # v4.7.1
+        uses: gittools/actions/gitversion/execute@220647997b450f3e9364b6cf6a357197f17d924b # v4.7.2
 
       - name: Verify release workflow and versioning
         if: matrix.os == 'ubuntu-latest'
@@ -506,13 +506,13 @@ jobs:
             11.0.x
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@0fdbe2ead9fe738c667f978d1baf448b1b6fb853 # v4.7.1
+        uses: gittools/actions/gitversion/setup@220647997b450f3e9364b6cf6a357197f17d924b # v4.7.2
         with:
           versionSpec: '6.x'
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@0fdbe2ead9fe738c667f978d1baf448b1b6fb853 # v4.7.1
+        uses: gittools/actions/gitversion/execute@220647997b450f3e9364b6cf6a357197f17d924b # v4.7.2
 
       - name: Download packages
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
