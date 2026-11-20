@@ -21,23 +21,44 @@ public sealed class AdaptiveConcurrencyLimitStrategyDescriptor : StrategyDescrip
     public AdaptiveConcurrencyLimitAlgorithm Algorithm => AdaptiveConcurrencyLimitAlgorithm.Aimd;
 
     /// <summary>The minimum admission limit.</summary>
-    public int MinLimit { get; }
+    public int MinLimit
+    {
+        get;
+    }
 
     /// <summary>The maximum admission limit.</summary>
-    public int MaxLimit { get; }
+    public int MaxLimit
+    {
+        get;
+    }
 
     /// <summary>The initial admission limit.</summary>
-    public int InitialLimit { get; }
+    public int InitialLimit
+    {
+        get;
+    }
 
     /// <summary>The minimum interval between adjustments.</summary>
-    public TimeSpan SamplingWindow { get; }
+    public TimeSpan SamplingWindow
+    {
+        get;
+    }
 
     /// <summary>The limit multiplier applied after congestion.</summary>
-    public double DecreaseFactor { get; }
+    public double DecreaseFactor
+    {
+        get;
+    }
 
     /// <summary>The allowed multiplier above the moving latency baseline.</summary>
-    public double LatencyTolerance { get; }
+    public double LatencyTolerance
+    {
+        get;
+    }
 
     /// <summary>Whether rejection notifications are configured.</summary>
-    public bool HasNotification { get; }
+    public bool HasNotification
+    {
+        get;
+    }
 }

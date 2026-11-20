@@ -25,6 +25,7 @@ public class EntityFrameworkCoreTests
         var strategy = context.Database.CreateExecutionStrategy();
         var attempts = 0;
         var state = new object();
+
         int Operation(DbContext database, object callerState)
         {
             if (!ReferenceEquals(database, context) || !ReferenceEquals(callerState, state))
@@ -32,7 +33,11 @@ public class EntityFrameworkCoreTests
                 throw new InvalidOperationException("Lost context or state");
             }
 
-            if (++attempts == 1) { throw new IOException("Transient"); }
+            if (++attempts == 1)
+            {
+                throw new IOException("Transient");
+            }
+
             context.Widgets.Add(new Widget { Id = 1 });
             return context.SaveChanges();
         }
@@ -102,8 +107,16 @@ public class EntityFrameworkCoreTests
         else
         {
             strategy.ExecuteInTransaction(context,
-                database => { operations++; return database.SaveChanges(acceptAllChangesOnSuccess: false); },
-                database => { verifications++; return database.Widgets.AsNoTracking().Any(widget => widget.Id == 10); });
+                database =>
+                {
+                    operations++;
+                    return database.SaveChanges(acceptAllChangesOnSuccess: false);
+                },
+                database =>
+                {
+                    verifications++;
+                    return database.Widgets.AsNoTracking().Any(widget => widget.Id == 10);
+                });
         }
 
         await Assert.That(operations).IsEqualTo(1);
@@ -133,12 +146,21 @@ public class EntityFrameworkCoreTests
         var operations = 0;
         var verifications = 0;
         var scopePreserved = true;
-        int Operation() { operations++; throw new IOException("Ambiguous commit"); }
+
+        int Operation()
+        {
+            operations++;
+            throw new IOException("Ambiguous commit");
+        }
+
         ExecutionResult<int> Verify(DbContext database, object callerState)
         {
             scopePreserved &= ReferenceEquals(database, context) && ReferenceEquals(callerState, state)
                 && ExecutionStrategy.Current is not null;
-            if (++verifications <= verificationFailures) { throw new IOException("Verification temporarily unavailable"); }
+            if (++verifications <= verificationFailures)
+            {
+                throw new IOException("Verification temporarily unavailable");
+            }
             // Nested EF operations must bypass admission and the outer retry allowance.
             return new ExecutionResult<int>(true,
                 database.Database.CreateExecutionStrategy().Execute(() => 42));
@@ -146,8 +168,18 @@ public class EntityFrameworkCoreTests
 
         var result = asynchronous
             ? await strategy.ExecuteAsync(state,
-                async (_, _, token) => { await Task.Yield(); token.ThrowIfCancellationRequested(); return Operation(); },
-                async (database, value, token) => { await Task.Yield(); token.ThrowIfCancellationRequested(); return Verify(database, value); },
+                async (_, _, token) =>
+                {
+                    await Task.Yield();
+                    token.ThrowIfCancellationRequested();
+                    return Operation();
+                },
+                async (database, value, token) =>
+                {
+                    await Task.Yield();
+                    token.ThrowIfCancellationRequested();
+                    return Verify(database, value);
+                },
                 cancellation.Token)
             : strategy.Execute(state, (_, _) => Operation(), Verify);
         await Assert.That(result).IsEqualTo(42);
@@ -175,23 +207,46 @@ public class EntityFrameworkCoreTests
         var operations = 0;
         var verifications = 0;
         var failure = new IOException("Verification unavailable");
-        int Operation() { operations++; throw new IOException("Ambiguous commit"); }
-        ExecutionResult<int> Verify() { verifications++; throw failure; }
+
+        int Operation()
+        {
+            operations++;
+            throw new IOException("Ambiguous commit");
+        }
+
+        ExecutionResult<int> Verify()
+        {
+            verifications++;
+            throw failure;
+        }
+
         Exception? observed = null;
         try
         {
             if (asynchronous)
             {
                 await strategy.ExecuteAsync<object?, int>(null,
-                    (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Operation()); },
-                    (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Verify()); }, cancellation.Token);
+                    (_, _, token) =>
+                    {
+                        token.ThrowIfCancellationRequested();
+                        return Task.FromResult(Operation());
+                    },
+                    (_, _, token) =>
+                    {
+                        token.ThrowIfCancellationRequested();
+                        return Task.FromResult(Verify());
+                    }, cancellation.Token);
             }
             else
             {
                 strategy.Execute<object?, int>(null, (_, _) => Operation(), (_, _) => Verify());
             }
         }
-        catch (Exception exception) { observed = exception; }
+        catch (Exception exception)
+        {
+            observed = exception;
+        }
+
         await Assert.That(observed).IsSameReferenceAs(failure);
         await Assert.That(operations).IsEqualTo(1);
         await Assert.That(verifications).IsEqualTo(2);
@@ -215,11 +270,17 @@ public class EntityFrameworkCoreTests
         var strategy = context.Database.CreateExecutionStrategy();
         var operations = 0;
         var verifications = 0;
+
         int Operation()
         {
-            if (++operations == 1) { throw new IOException("Not committed"); }
+            if (++operations == 1)
+            {
+                throw new IOException("Not committed");
+            }
+
             return 42;
         }
+
         ExecutionResult<int> Verify()
         {
             verifications++;
@@ -228,8 +289,16 @@ public class EntityFrameworkCoreTests
 
         var result = asynchronous
             ? await strategy.ExecuteAsync<object?, int>(null,
-                (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Operation()); },
-                (_, _, token) => { token.ThrowIfCancellationRequested(); return Task.FromResult(Verify()); }, cancellation.Token)
+                (_, _, token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Task.FromResult(Operation());
+                },
+                (_, _, token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Task.FromResult(Verify());
+                }, cancellation.Token)
             : strategy.Execute<object?, int>(null, (_, _) => Operation(), (_, _) => Verify());
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(operations).IsEqualTo(2);
@@ -251,7 +320,12 @@ public class EntityFrameworkCoreTests
         var operations = 0;
         var verifications = 0;
         await Assert.That(() => strategy.ExecuteAsync<object?, int>(null,
-            (_, _, token) => { token.ThrowIfCancellationRequested(); operations++; throw new IOException("Ambiguous commit"); },
+            (_, _, token) =>
+            {
+                token.ThrowIfCancellationRequested();
+                operations++;
+                throw new IOException("Ambiguous commit");
+            },
             async (_, _, token) =>
             {
                 verifications++;
@@ -305,7 +379,11 @@ public class EntityFrameworkCoreTests
             return await inner.ExecuteAsync<object?, int>(null, (_, _, innerToken) =>
             {
                 innerToken.ThrowIfCancellationRequested();
-                if (++innerCalls == 1) { throw new IOException("Transient"); }
+                if (++innerCalls == 1)
+                {
+                    throw new IOException("Transient");
+                }
+
                 return Task.FromResult(42);
             }, verifySucceeded: null, token);
         }, verifySucceeded: null);
@@ -395,8 +473,15 @@ public class EntityFrameworkCoreTests
     public async Task Unconfigured_Provider_Defaults_Unwrap_Transient_Database_Errors(bool postgres)
     {
         var options = new DbContextOptionsBuilder<TestContext>();
-        if (postgres) { options.UseNpgsql("Host=localhost;Database=unused"); }
-        else { options.UseSqlServer("Server=localhost;Database=unused;Integrated Security=true"); }
+        if (postgres)
+        {
+            options.UseNpgsql("Host=localhost;Database=unused");
+        }
+        else
+        {
+            options.UseSqlServer("Server=localhost;Database=unused;Integrated Security=true");
+        }
+
         options.UseKevlarExecutionStrategy();
         await using var context = new TestContext(options.Options);
         var strategy = context.Database.CreateExecutionStrategy();
@@ -408,7 +493,11 @@ public class EntityFrameworkCoreTests
         {
             token.ThrowIfCancellationRequested();
             await Task.Yield();
-            if (++attempts == 1) { throw new DbUpdateException("Wrapped failure", transient); }
+            if (++attempts == 1)
+            {
+                throw new DbUpdateException("Wrapped failure", transient);
+            }
+
             return 42;
         }, verifySucceeded: null);
         await Assert.That(result).IsEqualTo(42);
@@ -430,7 +519,11 @@ public class EntityFrameworkCoreTests
             var attempts = 0;
             var result = strategy.Execute<object?, int>(null, (_, _) =>
             {
-                if (++attempts <= 2) { throw new IOException("Transient"); }
+                if (++attempts <= 2)
+                {
+                    throw new IOException("Transient");
+                }
+
                 return 42;
             }, verifySucceeded: null);
             await Assert.That(result).IsEqualTo(42);
@@ -452,7 +545,11 @@ public class EntityFrameworkCoreTests
         {
             attempts++;
             throw new IOException("Not eligible for verification");
-        }, (_, _) => { verified = true; return new ExecutionResult<int>(true, 1); })).Throws<IOException>();
+        }, (_, _) =>
+        {
+            verified = true;
+            return new ExecutionResult<int>(true, 1);
+        })).Throws<IOException>();
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(verified).IsFalse();
     }
@@ -465,7 +562,11 @@ public class EntityFrameworkCoreTests
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
-            options.OnRetry = _ => { cancellation.Cancel(); return default; };
+            options.OnRetry = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         });
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await using var context = CreateContext(connection, shield);
@@ -494,7 +595,11 @@ public class EntityFrameworkCoreTests
 
     private static Shield VerificationShield(bool asynchronous, int queueLimit, bool retryOutermost = true)
     {
-        if (queueLimit < 0) { return RetryShield; }
+        if (queueLimit < 0)
+        {
+            return RetryShield;
+        }
+
         var admission = Shield.ConcurrencyLimit(options =>
         {
             options.MaxConcurrency = 1;
@@ -517,16 +622,25 @@ public class EntityFrameworkCoreTests
 
     private sealed class Widget
     {
-        public int Id { get; set; }
+        public int Id
+        {
+            get; set;
+        }
     }
 
     private sealed class AmbiguousCommitInterceptor : DbTransactionInterceptor
     {
-        public bool Enabled { get; set; }
+        public bool Enabled
+        {
+            get; set;
+        }
 
         public override void TransactionCommitted(DbTransaction transaction, TransactionEndEventData eventData)
         {
-            if (Enabled) { throw new IOException("Commit succeeded but acknowledgement was lost"); }
+            if (Enabled)
+            {
+                throw new IOException("Commit succeeded but acknowledgement was lost");
+            }
         }
 
         public override Task TransactionCommittedAsync(DbTransaction transaction, TransactionEndEventData eventData,

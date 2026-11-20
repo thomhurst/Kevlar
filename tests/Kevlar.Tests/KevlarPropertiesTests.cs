@@ -130,7 +130,10 @@ public class KevlarPropertiesTests
 
     private sealed class RemovePropertyStrategy(KevlarKey<int> key) : Strategy
     {
-        public bool Removed { get; private set; }
+        public bool Removed
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -143,7 +146,10 @@ public class KevlarPropertiesTests
 
     private sealed class ObservePropertyStrategy(KevlarKey<int> key) : Strategy
     {
-        public bool Contains { get; private set; }
+        public bool Contains
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

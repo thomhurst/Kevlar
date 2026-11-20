@@ -11,7 +11,10 @@ public class LoggingBenchmarks
     private Shield<int> _shield = null!;
 
     [Params(false, true)]
-    public bool SeverityProviderEnabled { get; set; }
+    public bool SeverityProviderEnabled
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()

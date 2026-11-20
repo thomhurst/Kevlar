@@ -20,8 +20,14 @@ public sealed class CustomStrategyDescriptor : StrategyDescriptor
     }
 
     /// <summary>The caller-defined strategy type.</summary>
-    public Type StrategyType { get; }
+    public Type StrategyType
+    {
+        get;
+    }
 
     /// <summary>The strategy's declared handling clause, or <see langword="null"/> when proactive.</summary>
-    public HandlingClause? Handling { get; }
+    public HandlingClause? Handling
+    {
+        get;
+    }
 }

@@ -13,6 +13,7 @@ public static class ChaosShield
         {
             throw new ArgumentNullException(nameof(configure));
         }
+
         var options = new ChaosLatencyOptions();
         configure(options);
         return Shield.Use(new LatencyChaosStrategy(options));
@@ -26,6 +27,7 @@ public static class ChaosShield
         {
             throw new ArgumentNullException(nameof(configure));
         }
+
         var options = new ChaosFaultOptions();
         configure(options);
         return Shield.Use(new FaultChaosStrategy(options));
@@ -40,6 +42,7 @@ public static class ChaosShield
         {
             throw new ArgumentNullException(nameof(configure));
         }
+
         var options = new ChaosOutcomeOptions<TResult>();
         configure(options);
         return Shield<TResult>.Empty.Use(new OutcomeChaosStrategy<TResult>(options));
@@ -53,6 +56,7 @@ public static class ChaosShield
         {
             throw new ArgumentNullException(nameof(configure));
         }
+
         var options = new ChaosBehaviorOptions();
         configure(options);
         return Shield.Use(new BehaviorChaosStrategy(options));

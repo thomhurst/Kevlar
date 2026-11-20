@@ -142,7 +142,10 @@ public class TypedBuilderForwardingTests
 
     private sealed class PassThroughStrategy : Strategy
     {
-        public static PassThroughStrategy Instance { get; } = new();
+        public static PassThroughStrategy Instance
+        {
+            get;
+        } = new();
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

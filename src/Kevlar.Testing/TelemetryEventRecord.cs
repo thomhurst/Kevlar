@@ -21,41 +21,80 @@ public sealed class TelemetryEventRecord
     }
 
     /// <summary>The recorder-wide sequence number.</summary>
-    public long Sequence { get; }
+    public long Sequence
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.EventName"/>
-    public string EventName { get; }
+    public string EventName
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.Severity"/>
-    public KevlarTelemetrySeverity Severity { get; }
+    public KevlarTelemetrySeverity Severity
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.ShieldName"/>
-    public string? ShieldName { get; }
+    public string? ShieldName
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.StrategyName"/>
-    public string StrategyName { get; }
+    public string StrategyName
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.StrategyIndex"/>
-    public int StrategyIndex { get; }
+    public int StrategyIndex
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.AttemptNumber"/>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.IsSuccess"/>
-    public bool IsSuccess { get; }
+    public bool IsSuccess
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.IsWinner"/>
-    public bool IsWinner { get; }
+    public bool IsWinner
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.IsCancelled"/>
-    public bool IsCancelled { get; }
+    public bool IsCancelled
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.Exception"/>
-    public Exception? Exception { get; }
+    public Exception? Exception
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.Duration"/>
-    public TimeSpan Duration { get; }
+    public TimeSpan Duration
+    {
+        get;
+    }
 
     /// <inheritdoc cref="KevlarTelemetryEvent.OperationKey"/>
-    public string? OperationKey { get; }
+    public string? OperationKey
+    {
+        get;
+    }
 }

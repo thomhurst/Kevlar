@@ -18,13 +18,22 @@ public readonly struct RateLimiterAdapterRejectedEvent
     }
 
     /// <summary>The lease-provided delay before another acquisition should be attempted.</summary>
-    public TimeSpan? RetryAfter { get; }
+    public TimeSpan? RetryAfter
+    {
+        get;
+    }
 
     /// <summary>An immutable snapshot of all metadata supplied by the rejected lease.</summary>
-    public IReadOnlyDictionary<string, object?> Metadata { get; }
+    public IReadOnlyDictionary<string, object?> Metadata
+    {
+        get;
+    }
 
     /// <summary>The number of permits requested for the execution.</summary>
-    public int PermitCount { get; }
+    public int PermitCount
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and

@@ -370,10 +370,16 @@ public class DocsConsistencyTests
             _listener.Start();
         }
 
-        public ConcurrentDictionary<string, Instrument> Instruments { get; } =
+        public ConcurrentDictionary<string, Instrument> Instruments
+        {
+            get;
+        } =
             new(StringComparer.Ordinal);
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> Tags { get; } =
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> Tags
+        {
+            get;
+        } =
             new(StringComparer.Ordinal);
 
         public void RecordObservableInstruments() => _listener.RecordObservableInstruments();

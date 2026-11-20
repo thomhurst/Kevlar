@@ -22,10 +22,16 @@ public sealed class RetryOptions
     public RetryOptions Clone() => (RetryOptions)MemberwiseClone();
 
     /// <summary>An optional shared retry/hedge budget. The initial attempt is always allowed.</summary>
-    public RetryBudget? Budget { get; set; }
+    public RetryBudget? Budget
+    {
+        get; set;
+    }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this makes this retry ignore the ambient <c>When…</c> handling clause and handle
@@ -37,10 +43,16 @@ public sealed class RetryOptions
     /// property replaces that clause for this strategy alone; it does not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionContext is not null;
@@ -50,30 +62,45 @@ public sealed class RetryOptions
     /// <c>MaxRetries = 3</c> (the default) makes up to 4 total attempts: the initial call plus
     /// 3 retries. Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
-    public int MaxRetries { get; set; } = 3;
+    public int MaxRetries
+    {
+        get; set;
+    } = 3;
 
     /// <summary>
     /// Skips an additional attempt when its delay cannot fit before the active timeout deadline.
     /// Defaults to false. The last handled outcome is returned without waiting for the deadline.
     /// </summary>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <summary>The delay computation between attempts. Defaults to <see cref="Backoff.Default"/>.</summary>
-    public Backoff Backoff { get; set; } = Backoff.Default;
+    public Backoff Backoff
+    {
+        get; set;
+    } = Backoff.Default;
 
     /// <summary>
     /// An absolute upper bound applied to every delay, including delays produced by
     /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
     /// When unset, <see cref="Backoff.MaxDelay"/> is used when the backoff provides one.
     /// </summary>
-    public TimeSpan? MaxDelay { get; set; }
+    public TimeSpan? MaxDelay
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited before each retry sleeps. Return <see langword="default"/> from a
     /// synchronous callback. Do not retain the pooled <see cref="RetryEvent.Context"/> after the
     /// returned task completes.
     /// </summary>
-    public Func<RetryEvent, ValueTask>? OnRetry { get; set; }
+    public Func<RetryEvent, ValueTask>? OnRetry
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Overrides the computed delay for a specific retry. Receives the event with the
@@ -83,7 +110,10 @@ public sealed class RetryOptions
     /// The generator is awaited before <see cref="OnRetry"/> runs. Do not retain the pooled
     /// <see cref="RetryEvent.Context"/> after the returned task completes.
     /// </summary>
-    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
+    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGenerator
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -112,33 +142,51 @@ public sealed class RetryOptions<TResult>
     public RetryOptions<TResult> Clone() => (RetryOptions<TResult>)MemberwiseClone();
 
     /// <inheritdoc cref="RetryOptions.Budget"/>
-    public RetryBudget? Budget { get; set; }
+    public RetryBudget? Budget
+    {
+        get; set;
+    }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>
     /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
     /// <c>MaxRetries = 3</c> (the default) makes up to 4 total attempts: the initial call plus
     /// 3 retries. Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
-    public int MaxRetries { get; set; } = 3;
+    public int MaxRetries
+    {
+        get; set;
+    } = 3;
 
     /// <summary>
     /// Skips an additional attempt when its delay cannot fit before the active timeout deadline.
     /// Defaults to false. The last handled outcome is returned without waiting for the deadline.
     /// </summary>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <summary>The delay computation between attempts. Defaults to <see cref="Backoff.Default"/>.</summary>
-    public Backoff Backoff { get; set; } = Backoff.Default;
+    public Backoff Backoff
+    {
+        get; set;
+    } = Backoff.Default;
 
     /// <summary>
     /// An absolute upper bound applied to every delay, including delays produced by
     /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
     /// When unset, <see cref="Backoff.MaxDelay"/> is used when the backoff provides one.
     /// </summary>
-    public TimeSpan? MaxDelay { get; set; }
+    public TimeSpan? MaxDelay
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or <see cref="HandlesResult"/> — makes this retry ignore the ambient
@@ -150,10 +198,16 @@ public sealed class RetryOptions<TResult>
     /// properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this retry ignore the ambient
@@ -165,10 +219,16 @@ public sealed class RetryOptions<TResult>
     /// after it. These properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<TResult, bool>? HandlesResult { get; set; }
+    public Func<TResult, bool>? HandlesResult
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles results using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null
@@ -180,7 +240,10 @@ public sealed class RetryOptions<TResult>
     /// Invoked and awaited before each retry sleeps, with the typed handled outcome. Return
     /// <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<RetryEvent<TResult>, ValueTask>? OnRetry { get; set; }
+    public Func<RetryEvent<TResult>, ValueTask>? OnRetry
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Overrides the computed delay for a specific retry, with the typed handled outcome.
@@ -189,7 +252,10 @@ public sealed class RetryOptions<TResult>
     /// <see cref="Backoff.MaxDelay"/> caps the value when available. The generator is awaited
     /// before <see cref="OnRetry"/> runs.
     /// </summary>
-    public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
+    public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGenerator
+    {
+        get; set;
+    }
 }
 
 /// <summary>Describes a retry that is about to happen.</summary>
@@ -207,13 +273,22 @@ public readonly struct RetryEvent
     }
 
     /// <summary>The zero-based retry attempt number (0 = first retry after the initial execution).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>The delay that will be waited before the retry.</summary>
-    public TimeSpan Delay { get; }
+    public TimeSpan Delay
+    {
+        get;
+    }
 
     /// <summary>The exception from the failed attempt, or <see langword="null"/> when a result was handled.</summary>
-    public Exception? Exception { get; }
+    public Exception? Exception
+    {
+        get;
+    }
 
     /// <summary>
     /// The handled result from the failed attempt, or <see langword="null"/> when an exception
@@ -227,7 +302,10 @@ public readonly struct RetryEvent
     /// <see cref="RetryEvent{TResult}.Outcome"/> is a typed <see cref="Outcome{TResult}"/>, with
     /// no boxing and no cast.
     /// </remarks>
-    public object? Result { get; }
+    public object? Result
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it or its property bag after
@@ -267,13 +345,22 @@ public readonly struct RetryEvent<TResult>
     }
 
     /// <summary>The zero-based retry attempt number (0 = first retry after the initial execution).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>The delay that will be waited before the retry.</summary>
-    public TimeSpan Delay { get; }
+    public TimeSpan Delay
+    {
+        get;
+    }
 
     /// <summary>The handled outcome — the exception or result value that triggered this retry.</summary>
-    public Outcome<TResult> Outcome { get; }
+    public Outcome<TResult> Outcome
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it or its property bag after

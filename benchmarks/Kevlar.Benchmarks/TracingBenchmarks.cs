@@ -12,7 +12,10 @@ public class TracingBenchmarks
     private IDisposable? _subscription;
 
     [Params(false, true)]
-    public bool Registered { get; set; }
+    public bool Registered
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -47,4 +50,3 @@ public class TracingBenchmarks
         return Pipeline.Execute(static _ => 42);
     }
 }
-

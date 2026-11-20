@@ -10,8 +10,14 @@ public abstract class StrategyStateSnapshot
     }
 
     /// <summary>Gets the strategy kind.</summary>
-    public StrategyKind Kind { get; }
+    public StrategyKind Kind
+    {
+        get;
+    }
 
     /// <summary>Gets the zero-based position of the strategy in the shield.</summary>
-    public int StrategyIndex { get; }
+    public int StrategyIndex
+    {
+        get;
+    }
 }

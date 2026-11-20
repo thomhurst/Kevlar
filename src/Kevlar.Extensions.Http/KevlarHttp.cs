@@ -6,7 +6,10 @@ public static class KevlarHttp
     private const string RequestOptionsName = "Kevlar.RequestOptions";
 #if !NETSTANDARD2_0
     /// <summary>The typed key used to attach Kevlar options to modern HTTP requests.</summary>
-    public static HttpRequestOptionsKey<KevlarRequestOptions> RequestOptions { get; } =
+    public static HttpRequestOptionsKey<KevlarRequestOptions> RequestOptions
+    {
+        get;
+    } =
         new(RequestOptionsName);
 #endif
 

@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Configuration;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -28,7 +28,10 @@ public class HealthCheckTests
 
         services.AddHealthChecks().AddKevlar(configure: options =>
         {
-            if (explicitMonitor) { options.Monitors.Add("dependency", monitor); }
+            if (explicitMonitor)
+            {
+                options.Monitors.Add("dependency", monitor);
+            }
         });
         await using var provider = services.BuildServiceProvider();
         await Assert.That((await Read(provider)).Status).IsEqualTo(HealthStatus.Healthy);
@@ -285,7 +288,10 @@ public class HealthCheckTests
 
     private static void Trip(Shield shield)
     {
-        try { shield.Execute(static _ => throw new InvalidOperationException("Dependency failed")); }
+        try
+        {
+            shield.Execute(static _ => throw new InvalidOperationException("Dependency failed"));
+        }
         catch (InvalidOperationException) { }
     }
 

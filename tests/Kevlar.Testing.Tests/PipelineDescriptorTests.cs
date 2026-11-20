@@ -1,8 +1,8 @@
-using Kevlar.Testing;
-using Kevlar.Extensions.DependencyInjection;
-using Microsoft.Extensions.Time.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Testing.Tests;
 

@@ -13,7 +13,10 @@ public readonly struct HedgeDelayEvent
     }
 
     /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after the generator completes.
@@ -21,5 +24,8 @@ public readonly struct HedgeDelayEvent
     public KevlarContext Context => Internal.EventContext.Required(_context);
 
     /// <summary>The elapsed time since the primary attempt started.</summary>
-    public TimeSpan Elapsed { get; }
+    public TimeSpan Elapsed
+    {
+        get;
+    }
 }

@@ -85,7 +85,13 @@ public class GrpcServerInterceptorTests
         await using var partitions = new PartitionedShield<string>(_ => RateLimit());
         var peers = new List<string>();
         await using var server = await Server.StartAsync(services => services.AddShieldServerInterceptor(
-            partitions, byPeer ? context => { peers.Add(context.Peer); return context.Peer; } : null));
+            partitions, byPeer
+                ? context =>
+                {
+                    peers.Add(context.Peer);
+                    return context.Peer;
+                }
+            : null));
         await server.CallAsync("unary");
         if (byPeer)
         {
@@ -206,10 +212,22 @@ public class GrpcServerInterceptorTests
     {
         public int Calls;
         public bool HasHttpContext;
-        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public TaskCompletionSource Cancelled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Entered
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Cancelled
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Completed
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     private sealed class Service(State state) : Resilience.ResilienceBase
@@ -223,19 +241,28 @@ public class GrpcServerInterceptorTests
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "original"),
                     new Metadata { { "original", "preserved" } });
             }
+
             await context.WriteResponseHeadersAsync(new Metadata { { "header", "preserved" } });
             context.ResponseTrailers.Add("trailer", "preserved");
             state.Entered.TrySetResult();
             try
             {
-                if (request.Scenario == "wait") { await state.Release.Task.WaitAsync(context.CancellationToken); }
-                if (request.Scenario == "cancel") { await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken); }
+                if (request.Scenario == "wait")
+                {
+                    await state.Release.Task.WaitAsync(context.CancellationToken);
+                }
+
+                if (request.Scenario == "cancel")
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                }
             }
             catch (OperationCanceledException)
             {
                 state.Cancelled.TrySetResult();
                 throw;
             }
+
             return new TestReply { Attempt = state.Calls };
         }
 
@@ -261,7 +288,10 @@ public class GrpcServerInterceptorTests
     private sealed class Server(WebApplication application, GrpcChannel channel, State state) : IAsyncDisposable
     {
         public State State => state;
-        public Resilience.ResilienceClient Client { get; } = new(channel);
+        public Resilience.ResilienceClient Client
+        {
+            get;
+        } = new(channel);
 
         public static async Task<Server> StartAsync(Action<IServiceCollection> configure)
         {
@@ -274,8 +304,14 @@ public class GrpcServerInterceptorTests
             var application = builder.Build();
             application.Use(async (context, next) =>
             {
-                try { await next(context); }
-                finally { state.Completed.TrySetResult(); }
+                try
+                {
+                    await next(context);
+                }
+                finally
+                {
+                    state.Completed.TrySetResult();
+                }
             });
             application.MapGrpcService<Service>();
             await application.StartAsync();
@@ -291,11 +327,19 @@ public class GrpcServerInterceptorTests
             {
                 case "unary":
                     using (var call = Client.UnaryAsync(request, cancellationToken: cancellationToken))
-                    { await call.ResponseAsync; }
+                    {
+                        await call.ResponseAsync;
+                    }
+
                     break;
                 case "server":
                     using (var call = Client.ServerStream(request, cancellationToken: cancellationToken))
-                    { while (await call.ResponseStream.MoveNext(cancellationToken)) { } }
+                    {
+                        while (await call.ResponseStream.MoveNext(cancellationToken))
+                        {
+                        }
+                    }
+
                     break;
                 case "client":
                     using (var call = Client.ClientStream(cancellationToken: cancellationToken))
@@ -304,16 +348,21 @@ public class GrpcServerInterceptorTests
                         await call.RequestStream.CompleteAsync();
                         await call.ResponseAsync;
                     }
+
                     break;
                 case "duplex":
                     using (var call = Client.DuplexStream(cancellationToken: cancellationToken))
                     {
                         await call.RequestStream.WriteAsync(request);
                         await call.RequestStream.CompleteAsync();
-                        while (await call.ResponseStream.MoveNext(cancellationToken)) { }
+                        while (await call.ResponseStream.MoveNext(cancellationToken))
+                        {
+                        }
                     }
+
                     break;
-                default: throw new ArgumentOutOfRangeException(nameof(shape));
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(shape));
             }
         }
 

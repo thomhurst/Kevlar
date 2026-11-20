@@ -16,11 +16,17 @@ public class GrpcSelectedServerReadBenchmarks
 
     /// <summary>Whether selected reads pass through an operation concurrency shield.</summary>
     [Params(false, true)]
-    public bool UseOperationShield { get; set; }
+    public bool UseOperationShield
+    {
+        get; set;
+    }
 
     /// <summary>Whether reads supply a separate live cancellation token.</summary>
     [Params(false, true)]
-    public bool UseReadToken { get; set; }
+    public bool UseReadToken
+    {
+        get; set;
+    }
 
     /// <summary>Establishes and selects the call outside the measured read operation.</summary>
     [GlobalSetup]
@@ -47,7 +53,9 @@ public class GrpcSelectedServerReadBenchmarks
                 Task.FromResult(new Metadata()),
                 static () => Status.DefaultSuccess,
                 static () => new Metadata(),
-                static () => { }));
+                static () =>
+                {
+                }));
         _ = await _call.ResponseHeadersAsync;
     }
 
@@ -68,7 +76,10 @@ public class GrpcSelectedServerReadBenchmarks
 
     private sealed class CompletedReader : IAsyncStreamReader<Message>
     {
-        public Message Current { get; } = new();
+        public Message Current
+        {
+            get;
+        } = new();
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => Task.FromResult(true);
     }

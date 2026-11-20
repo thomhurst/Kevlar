@@ -532,7 +532,10 @@ public class OutcomeAndContextTests
 
     private sealed class ProxyObserverStrategy : Strategy
     {
-        public bool SawProxy { get; private set; }
+        public bool SawProxy
+        {
+            get; private set;
+        }
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

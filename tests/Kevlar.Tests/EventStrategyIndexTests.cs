@@ -165,7 +165,10 @@ public class EventStrategyIndexTests
 
     private sealed class ParallelContinuationStrategy(OutOfOrderCompletionStrategy inner) : Strategy
     {
-        public int StrategyIndexAfterContinuations { get; private set; } = -1;
+        public int StrategyIndexAfterContinuations
+        {
+            get; private set;
+        } = -1;
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -189,18 +192,33 @@ public class EventStrategyIndexTests
     {
         private int _invocations;
 
-        public TaskCompletionSource BothEntered { get; } = new(
+        public TaskCompletionSource BothEntered
+        {
+            get;
+        } = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource ReleaseFirst { get; } = new(
+        public TaskCompletionSource ReleaseFirst
+        {
+            get;
+        } = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource ReleaseSecond { get; } = new(
+        public TaskCompletionSource ReleaseSecond
+        {
+            get;
+        } = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public int FirstStrategyIndexAfterRelease { get; private set; } = -1;
+        public int FirstStrategyIndexAfterRelease
+        {
+            get; private set;
+        } = -1;
 
-        public int SecondStrategyIndexAfterRelease { get; private set; } = -1;
+        public int SecondStrategyIndexAfterRelease
+        {
+            get; private set;
+        } = -1;
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

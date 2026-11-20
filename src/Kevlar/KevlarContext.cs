@@ -51,7 +51,10 @@ public sealed class KevlarContext
     private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
     internal ExecutionDeadline DeadlineState;
-    internal bool SuppressDeadlineTracking { get; set; }
+    internal bool SuppressDeadlineTracking
+    {
+        get; set;
+    }
 
 #if DEBUG
     private bool _returnedToPool;
@@ -73,7 +76,6 @@ public sealed class KevlarContext
             ThrowIfReturnedToPool();
             return _cancellationToken;
         }
-
         internal set => _cancellationToken = value;
     }
 
@@ -87,7 +89,10 @@ public sealed class KevlarContext
         }
     }
 
-    internal SynchronousExecutionKind SynchronousExecutionKind { get; set; }
+    internal SynchronousExecutionKind SynchronousExecutionKind
+    {
+        get; set;
+    }
 
     /// <summary>The name of the executing shield, if one was assigned via <c>WithName</c>.</summary>
     public string? ShieldName
@@ -97,7 +102,6 @@ public sealed class KevlarContext
             ThrowIfReturnedToPool();
             return _shieldName;
         }
-
         internal set => _shieldName = value;
     }
 
@@ -112,7 +116,6 @@ public sealed class KevlarContext
             ThrowIfReturnedToPool();
             return _strategyIndex;
         }
-
         internal set => _strategyIndex = value;
     }
 
@@ -124,7 +127,6 @@ public sealed class KevlarContext
             ThrowIfReturnedToPool();
             return _timeProvider;
         }
-
         internal set => _timeProvider = value;
     }
 
@@ -155,6 +157,7 @@ public sealed class KevlarContext
         {
             return;
         }
+
         DeadlineState = ExecutionDeadline.Create(TimeProvider, startedAt, timeout, DeadlineState);
     }
 
@@ -180,7 +183,10 @@ public sealed class KevlarContext
         set => _attemptNumber = value;
     }
 
-    internal IKevlarTelemetryListener? TelemetryListener { get; set; }
+    internal IKevlarTelemetryListener? TelemetryListener
+    {
+        get; set;
+    }
 
     internal void CaptureCompletionProperties(
         KevlarProperties properties,

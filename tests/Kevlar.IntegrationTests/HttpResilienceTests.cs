@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Net;
-using Kevlar.Extensions.Http;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
 using Kevlar.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -423,7 +423,10 @@ public class HttpResilienceTests
 
     private sealed class WrappedCancellationHandler : HttpMessageHandler
     {
-        public int Attempts { get; private set; }
+        public int Attempts
+        {
+            get; private set;
+        }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -455,7 +458,10 @@ public class HttpResilienceTests
         private readonly TrackingContent _loserContent = new();
         private int _attempts;
 
-        public List<string> Authorities { get; } = [];
+        public List<string> Authorities
+        {
+            get;
+        } = [];
 
         public Task LoserCancelled => _loserCancelled.Task;
 

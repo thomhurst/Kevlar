@@ -56,69 +56,135 @@ public readonly struct KevlarTelemetryEvent
     }
 
     /// <summary>The stable event name, such as <c>execution_attempt</c> or <c>retry</c>.</summary>
-    public string EventName { get; }
+    public string EventName
+    {
+        get;
+    }
 
     /// <summary>The event severity.</summary>
-    public KevlarTelemetrySeverity Severity { get; }
+    public KevlarTelemetrySeverity Severity
+    {
+        get;
+    }
 
     /// <summary>The executing shield name, if configured.</summary>
-    public string? ShieldName { get; }
+    public string? ShieldName
+    {
+        get;
+    }
 
     /// <summary>The stable strategy name.</summary>
-    public string StrategyName { get; }
+    public string StrategyName
+    {
+        get;
+    }
 
     /// <summary>The zero-based strategy position, or <c>-1</c> for a caller-recorded event.</summary>
-    public int StrategyIndex { get; }
+    public int StrategyIndex
+    {
+        get;
+    }
 
     /// <summary>The zero-based execution-attempt number.</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>Whether the event's outcome succeeded.</summary>
-    public bool IsSuccess { get; }
+    public bool IsSuccess
+    {
+        get;
+    }
 
     /// <summary>Whether this hedge-attempt event describes the outcome selected by the pipeline.</summary>
-    public bool IsWinner { get; }
+    public bool IsWinner
+    {
+        get;
+    }
 
     /// <summary>Whether this hedge-attempt event completed through cancellation.</summary>
-    public bool IsCancelled { get; }
+    public bool IsCancelled
+    {
+        get;
+    }
 
     /// <summary>The associated exception, if any.</summary>
-    public Exception? Exception { get; }
+    public Exception? Exception
+    {
+        get;
+    }
 
     /// <summary>The measured attempt duration, or <see cref="TimeSpan.Zero"/> when not applicable.</summary>
-    public TimeSpan Duration { get; }
+    public TimeSpan Duration
+    {
+        get;
+    }
 
     /// <summary>The bounded logical operation key supplied through <see cref="KevlarKeys.OperationKey"/>.</summary>
-    public string? OperationKey { get; }
+    public string? OperationKey
+    {
+        get;
+    }
 
     /// <summary>The handled result for result-aware events, when available.</summary>
-    public object? Result { get; }
+    public object? Result
+    {
+        get;
+    }
 
     /// <summary>The computed retry, hedge, or break delay, when applicable.</summary>
-    public TimeSpan Delay { get; }
+    public TimeSpan Delay
+    {
+        get;
+    }
 
     /// <summary>The circuit state left by a transition, when applicable.</summary>
-    public CircuitState? FromState { get; }
+    public CircuitState? FromState
+    {
+        get;
+    }
 
     /// <summary>The circuit state entered by a transition, when applicable.</summary>
-    public CircuitState? ToState { get; }
+    public CircuitState? ToState
+    {
+        get;
+    }
 
     /// <summary>The estimated time until a rejected execution may be retried.</summary>
-    public TimeSpan? RetryAfter { get; }
+    public TimeSpan? RetryAfter
+    {
+        get;
+    }
 
-    internal string? RejectionKind { get; }
+    internal string? RejectionKind
+    {
+        get;
+    }
 
     /// <summary>The bounded rejection reason, such as <c>queue_timeout</c>, when applicable.</summary>
-    public string? RejectionReason { get; }
+    public string? RejectionReason
+    {
+        get;
+    }
 
     /// <summary>The bounded reason additional attempts were suppressed, when applicable.</summary>
-    public string? SuppressionReason { get; }
+    public string? SuppressionReason
+    {
+        get;
+    }
 
     /// <summary>The callback family that failed, when this is a callback-error event.</summary>
-    public CallbackErrorKind? CallbackKind { get; }
+    public CallbackErrorKind? CallbackKind
+    {
+        get;
+    }
 
     /// <summary>The stable callback or integration identifier, when this is a callback-error event.</summary>
-    public string? CallbackSource { get; }
+    public string? CallbackSource
+    {
+        get;
+    }
 
     /// <summary>The active execution context. It is valid only during the listener callback.</summary>
     public KevlarContext Context => _context

@@ -17,7 +17,10 @@ Logs, reports, PR drafts and other evidence, throwaway checkouts and downloaded 
 
 ## Project conventions
 
-- Match nearby C# style and document public APIs with XML comments.
+- For C# changes, read the shared EditorConfig and C# style guide. Preserve Kevlar's local `.editorconfig` overrides and supported language versions. If the shared references are unavailable, report that and follow the local guidance. [Shared EditorConfig](https://github.com/thomhurst/editorconfig/blob/main/.editorconfig) and [C# style guide](https://github.com/thomhurst/editorconfig/blob/main/csharp.md).
+- Always use braces for control-flow bodies, including single statements. Separate logical groups with one blank line and keep related statements together.
+- Run `curb format <changed-path>` and `curb check <changed-path>` for C# changes. Keep Roslyn build analysis enabled for rules that require compilation. Keep formatting scoped to the changes. [Curb documentation](https://github.com/nullean/curb).
+- Document public APIs with XML comments.
 - Manage NuGet versions in `Directory.Packages.props`.
 - Add regression tests for bug fixes and edge cases in the matching `tests/` project.
 - Keep hot paths zero-allocation where practical. Benchmark hot-path changes with `benchmarks/Kevlar.Benchmarks` and include before/after results in the PR.

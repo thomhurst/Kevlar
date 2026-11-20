@@ -1,12 +1,12 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+using System.Reflection;
+using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Kevlar.Extensions.RateLimiting;
-using Kevlar.Chaos;
 using Kevlar.Testing;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace Kevlar.Tests;
 

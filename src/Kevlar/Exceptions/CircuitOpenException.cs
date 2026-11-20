@@ -33,5 +33,8 @@ public sealed class CircuitOpenException : ExecutionRejectedException
     }
 
     /// <summary><see langword="true"/> when the circuit was manually isolated rather than tripped by failures.</summary>
-    public bool IsIsolated { get; }
+    public bool IsIsolated
+    {
+        get;
+    }
 }

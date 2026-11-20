@@ -204,21 +204,29 @@ public class GrpcDuplexCancellationTests
                     Task.FromResult(new Metadata()),
                     static () => Status.DefaultSuccess,
                     static () => new Metadata(),
-                    static () => { });
+                    static () =>
+                    {
+                    });
             });
     }
 
     private sealed class DelegateReader(Func<CancellationToken, Task<bool>> move) :
         IAsyncStreamReader<Reply>
     {
-        public Reply Current { get; } = new();
+        public Reply Current
+        {
+            get;
+        } = new();
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => move(cancellationToken);
     }
 
     private sealed class CompletedWriter : IClientStreamWriter<Request>
     {
-        public WriteOptions? WriteOptions { get; set; }
+        public WriteOptions? WriteOptions
+        {
+            get; set;
+        }
 
         public Task CompleteAsync() => Task.CompletedTask;
 

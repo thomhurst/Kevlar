@@ -1267,11 +1267,20 @@ internal sealed class CircuitBreakerCore
             TimestampScale = Stopwatch.Frequency / (double)timeProvider.TimestampFrequency;
         }
 
-        public long ProviderTimestamp { get; }
+        public long ProviderTimestamp
+        {
+            get;
+        }
 
-        public double TimelineTimestamp { get; }
+        public double TimelineTimestamp
+        {
+            get;
+        }
 
-        public double TimestampScale { get; }
+        public double TimestampScale
+        {
+            get;
+        }
     }
 
     /// <summary>
@@ -1280,13 +1289,22 @@ internal sealed class CircuitBreakerCore
     /// </summary>
     private sealed class RejectionSnapshot(double openUntilTimestamp, bool isIsolated, Exception? lastException)
     {
-        public double OpenUntilTimestamp { get; } = openUntilTimestamp;
+        public double OpenUntilTimestamp
+        {
+            get;
+        } = openUntilTimestamp;
 
         public bool HasDeadline => !double.IsNaN(OpenUntilTimestamp);
 
-        public bool IsIsolated { get; } = isIsolated;
+        public bool IsIsolated
+        {
+            get;
+        } = isIsolated;
 
-        public Exception? LastException { get; } = lastException;
+        public Exception? LastException
+        {
+            get;
+        } = lastException;
     }
 
     private sealed class RatioBucket
@@ -1296,7 +1314,10 @@ internal sealed class CircuitBreakerCore
             EndTimestamp = endTimestamp;
         }
 
-        public double EndTimestamp { get; }
+        public double EndTimestamp
+        {
+            get;
+        }
 
         public long Failures;
 
@@ -1342,6 +1363,7 @@ internal sealed class CircuitBreakerCore
             _lastException = null;
             _openTimeProvider = null;
         }
+
         var publication = new TransitionPublication(transition);
         _pendingTransitions.Enqueue(publication);
         if (!_isPublishing)
@@ -1841,20 +1863,41 @@ internal sealed class CircuitBreakerCore
 
     private sealed class TransitionPublication(CircuitBreakerStateChangedEvent stateChange)
     {
-        public CircuitBreakerStateChangedEvent StateChange { get; private set; } = stateChange;
+        public CircuitBreakerStateChangedEvent StateChange
+        {
+            get; private set;
+        } = stateChange;
 
-        public TaskCompletionSource<bool> Completion { get; } =
+        public TaskCompletionSource<bool> Completion
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public bool StartsDrain { get; set; }
+        public bool StartsDrain
+        {
+            get; set;
+        }
 
-        public TransitionPublication? Parent { get; set; }
+        public TransitionPublication? Parent
+        {
+            get; set;
+        }
 
-        public int PendingChildren { get; set; }
+        public int PendingChildren
+        {
+            get; set;
+        }
 
-        public bool ObserversCompleted { get; set; }
+        public bool ObserversCompleted
+        {
+            get; set;
+        }
 
-        public Exception? Failure { get; set; }
+        public Exception? Failure
+        {
+            get; set;
+        }
 
         public void DetachContext() => StateChange = StateChange.WithDetachedContext();
 

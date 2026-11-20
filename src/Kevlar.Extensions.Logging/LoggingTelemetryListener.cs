@@ -282,15 +282,16 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         telemetryEvent.StrategyIndex, telemetryEvent.FromState, telemetryEvent.ToState,
                         outcome, telemetryEvent.Exception);
                 }
+
                 break;
             case KevlarLogEventKind.CircuitRejected:
-            {
-                LoggerMessages.CircuitRejected(logger, telemetryEvent.ShieldName,
-                    telemetryEvent.StrategyIndex, telemetryEvent.AttemptNumber,
-                    CircuitStateFromRejection(in telemetryEvent), telemetryEvent.RetryAfter,
-                    outcome, telemetryEvent.Exception);
-                break;
-            }
+                {
+                    LoggerMessages.CircuitRejected(logger, telemetryEvent.ShieldName,
+                        telemetryEvent.StrategyIndex, telemetryEvent.AttemptNumber,
+                        CircuitStateFromRejection(in telemetryEvent), telemetryEvent.RetryAfter,
+                        outcome, telemetryEvent.Exception);
+                    break;
+                }
             case KevlarLogEventKind.Hedge:
                 LoggerMessages.Hedge(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome, telemetryEvent.Exception);
@@ -322,6 +323,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         outcome,
                         telemetryEvent.Exception);
                 }
+
                 break;
             case KevlarLogEventKind.Fallback:
                 LoggerMessages.Fallback(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
@@ -367,6 +369,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         suppressedRequestMethod,
                         suppressedRequestUri);
                 }
+
                 break;
         }
     }
@@ -421,6 +424,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                         telemetryEvent.FromState, telemetryEvent.ToState, outcome);
                 }
+
                 break;
             case KevlarLogEventKind.CircuitRejected:
                 logger.Log(level, eventId, telemetryEvent.Exception,
@@ -487,6 +491,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
                         suppressedRequestMethod, suppressedRequestUri);
                 }
+
                 break;
         }
     }

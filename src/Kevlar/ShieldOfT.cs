@@ -81,7 +81,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
     internal Shield<TResult> CurrentSnapshot => _currentSnapshot?.Invoke() ?? this;
 
     /// <summary>A shield with no strategies: executions pass straight through.</summary>
-    public static Shield<TResult> Empty { get; } = new([], null, null, null);
+    public static Shield<TResult> Empty
+    {
+        get;
+    } = new([], null, null, null);
 
     /// <summary>
     /// Gets whether every strategy guarantees invoking the execution continuation at most once.
@@ -825,7 +828,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         return ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }
@@ -1008,7 +1013,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         return ExecuteWithContext(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }

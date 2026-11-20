@@ -31,7 +31,10 @@ public class RetryBenchmarks
         .AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 3, Delay = TimeSpan.Zero })
         .Build();
 
-    private sealed class Counter { public int Value; }
+    private sealed class Counter
+    {
+        public int Value;
+    }
 
     private readonly Counter _kevlarCounter = new();
     private readonly Counter _pollyCounter = new();

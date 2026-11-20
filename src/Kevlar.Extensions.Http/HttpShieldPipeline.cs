@@ -20,9 +20,15 @@ internal sealed class HttpShieldPipeline
         ValidateOptions(Options);
     }
 
-    public Shield<HttpResponseMessage> Policy { get; }
+    public Shield<HttpResponseMessage> Policy
+    {
+        get;
+    }
 
-    public HttpShieldPipelineOptions Options { get; }
+    public HttpShieldPipelineOptions Options
+    {
+        get;
+    }
 
     public Shield<HttpResponseMessage>? GetEndpointShield(
         Uri endpoint,

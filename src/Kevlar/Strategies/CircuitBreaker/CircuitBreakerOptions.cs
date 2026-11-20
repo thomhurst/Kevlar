@@ -16,7 +16,10 @@ public sealed class CircuitBreakerOptions
     public CircuitBreakerOptions Clone() => (CircuitBreakerOptions)MemberwiseClone();
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or, on <see cref="CircuitBreakerOptions{TResult}"/>, its <c>HandlesResult</c>
@@ -29,23 +32,35 @@ public sealed class CircuitBreakerOptions
     /// properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using execution context and strategy metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionContext is not null;
 
     /// <summary>Trips the circuit after this many consecutive handled failures.</summary>
-    public int? ConsecutiveFailures { get; set; }
+    public int? ConsecutiveFailures
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Trips the circuit when the ratio of handled failures within <see cref="SamplingWindow"/>
     /// reaches this value (0 to 1), provided at least <see cref="MinimumThroughput"/> executions
     /// were observed in the window.
     /// </summary>
-    public double? FailureRatio { get; set; }
+    public double? FailureRatio
+    {
+        get; set;
+    }
 
     /// <summary>Number of completed probes used to evaluate one half-open cohort. Default 1.</summary>
     /// <remarks>
@@ -53,11 +68,17 @@ public sealed class CircuitBreakerOptions
     /// ratio mode compares failed probes against this cohort size. The circuit closes after the
     /// whole cohort completes below the configured thresholds. Unhandled or cancelled probes release their slot.
     /// </remarks>
-    public int HalfOpenProbes { get; set; } = 1;
+    public int HalfOpenProbes
+    {
+        get; set;
+    } = 1;
 
     /// <summary>Successful or handled calls taking longer than this duration count toward <see cref="SlowCallRatio"/>.</summary>
     /// <remarks>Requires ratio mode and <see cref="SlowCallRatio"/>. Detection does not cancel work or change its result.</remarks>
-    public TimeSpan? SlowCallThreshold { get; set; }
+    public TimeSpan? SlowCallThreshold
+    {
+        get; set;
+    }
 
     /// <summary>Opens the circuit when this fraction of sampled calls is slow, independently of the handled failure ratio.</summary>
     /// <remarks>
@@ -65,16 +86,28 @@ public sealed class CircuitBreakerOptions
     /// window and minimum throughput. In half-open state, the denominator is <see cref="HalfOpenProbes"/>.
     /// Valid values are greater than zero and at most one.
     /// </remarks>
-    public double? SlowCallRatio { get; set; }
+    public double? SlowCallRatio
+    {
+        get; set;
+    }
 
     /// <summary>Minimum executions in the sampling window before <see cref="FailureRatio"/> can trip the circuit. Default 10.</summary>
-    public int MinimumThroughput { get; set; } = 10;
+    public int MinimumThroughput
+    {
+        get; set;
+    } = 10;
 
     /// <summary>The rolling window over which the failure ratio is measured. Default 30 seconds.</summary>
-    public TimeSpan SamplingWindow { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan SamplingWindow
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(30);
 
     /// <summary>How long the circuit stays open before allowing a probe. Default 15 seconds.</summary>
-    public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
+    public TimeSpan BreakDuration
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// Produces the break duration when a handled or slow outcome trips or re-opens the circuit, and is
@@ -83,14 +116,20 @@ public sealed class CircuitBreakerOptions
     /// the returned task completes. When configured, this value overrides
     /// <see cref="BreakDuration"/>.
     /// </summary>
-    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator
+    {
+        get; set;
+    }
 
     /// <summary>
     /// An optional monitor giving external code visibility of the circuit state plus manual
     /// <see cref="CircuitBreakerMonitor.Isolate"/> / <see cref="CircuitBreakerMonitor.Reset"/> control.
     /// A monitor can be bound to only one circuit breaker.
     /// </summary>
-    public CircuitBreakerMonitor? Monitor { get; set; }
+    public CircuitBreakerMonitor? Monitor
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited on every state transition, before
@@ -102,5 +141,8 @@ public sealed class CircuitBreakerOptions
     /// they return. A publisher reentered from <c>OnStateChanged</c> or <c>StateChanged</c> is queued
     /// and returns before the queued transition's observers run.
     /// </summary>
-    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged
+    {
+        get; set;
+    }
 }

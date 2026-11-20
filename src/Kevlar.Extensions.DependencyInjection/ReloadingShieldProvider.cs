@@ -1,14 +1,20 @@
-using Microsoft.Extensions.Primitives;
-using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
 internal interface IReloadingProvider : IDisposable
 {
-    IReadOnlyList<Strategy> Strategies { get; }
+    IReadOnlyList<Strategy> Strategies
+    {
+        get;
+    }
 
-    IReadOnlyList<Strategy> CurrentStrategies { get; }
+    IReadOnlyList<Strategy> CurrentStrategies
+    {
+        get;
+    }
 
     (IReadOnlyList<ShieldRetirement> Retirements, Exception? CleanupFailure) Retire();
 
@@ -20,12 +26,18 @@ internal interface IReloadingProvider : IDisposable
 
 internal interface ILiveShieldProvider : IShieldProvider
 {
-    Shield Live { get; }
+    Shield Live
+    {
+        get;
+    }
 }
 
 internal interface ILiveShieldProvider<TResult> : IShieldProvider<TResult>
 {
-    Shield<TResult> Live { get; }
+    Shield<TResult> Live
+    {
+        get;
+    }
 }
 
 internal sealed class ReloadingShieldProvider(
@@ -132,7 +144,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private Action<Action>? _publicationGuard;
     private Action<object>? _validatePublication;
     private TShield _current = null!;
-    private bool _initialized;
+    private readonly bool _initialized;
     private bool _reloadPending;
     private bool _disposed;
 
@@ -362,6 +374,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                     _retiredSnapshots.Add(new ShieldRetirement(replacement, replacement));
                     throw;
                 }
+
                 _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
                 Volatile.Write(ref _current, replacement);
             }
@@ -491,7 +504,10 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
 
 internal sealed class NullDisposable : IDisposable
 {
-    public static NullDisposable Instance { get; } = new();
+    public static NullDisposable Instance
+    {
+        get;
+    } = new();
 
     public void Dispose()
     {

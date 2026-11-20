@@ -4,7 +4,10 @@ namespace Kevlar.Strategies;
 
 internal sealed class PriorityConcurrencyLimitStrategy : PriorityLimitStrategy, IConcurrencyLimitState
 {
-    internal ConcurrencyLimitStrategy Configuration { get; }
+    internal ConcurrencyLimitStrategy Configuration
+    {
+        get;
+    }
     private int _running;
     private readonly KevlarMetrics.StateMetricRegistration<IConcurrencyLimitState> _metrics;
 
@@ -26,6 +29,7 @@ internal sealed class PriorityConcurrencyLimitStrategy : PriorityLimitStrategy, 
         {
             return false;
         }
+
         _running++;
         return true;
     }

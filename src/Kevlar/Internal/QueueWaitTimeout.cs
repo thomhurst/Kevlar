@@ -48,6 +48,7 @@ internal sealed class QueueWaitTimeout : IDisposable
         {
             _source.Cancel();
         }
+
         Token.ThrowIfCancellationRequested();
     }
 

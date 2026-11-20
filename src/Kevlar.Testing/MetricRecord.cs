@@ -16,16 +16,28 @@ public sealed class MetricRecord
     }
 
     /// <summary>The recorder-wide sequence number.</summary>
-    public long Sequence { get; }
+    public long Sequence
+    {
+        get;
+    }
 
     /// <summary>The documented Kevlar instrument name.</summary>
-    public string InstrumentName { get; }
+    public string InstrumentName
+    {
+        get;
+    }
 
     /// <summary>The numeric measurement converted to <see cref="double"/>.</summary>
-    public double Value { get; }
+    public double Value
+    {
+        get;
+    }
 
     /// <summary>A copied snapshot of the measurement's low-cardinality tags.</summary>
-    public IReadOnlyDictionary<string, object?> Tags { get; }
+    public IReadOnlyDictionary<string, object?> Tags
+    {
+        get;
+    }
 
     internal MetricRecord WithSequence(long sequence) =>
         new(sequence, InstrumentName, Value, Tags);

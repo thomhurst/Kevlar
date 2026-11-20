@@ -205,7 +205,10 @@ internal static class NetFrameworkCompatibilityTests
 
     private sealed class PropertyRecordingHandler(object marker) : HttpMessageHandler
     {
-        public int Attempts { get; private set; }
+        public int Attempts
+        {
+            get; private set;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,

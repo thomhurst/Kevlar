@@ -17,7 +17,10 @@ public class GrpcDuplexStreamingBenchmarks
 
     /// <summary>Whether each read supplies a cancellable token distinct from the call token.</summary>
     [Params(false, true)]
-    public bool CancellableRead { get; set; }
+    public bool CancellableRead
+    {
+        get; set;
+    }
 
     /// <summary>Creates one reusable call and its cancellation sources outside measurement.</summary>
     [GlobalSetup]
@@ -39,7 +42,9 @@ public class GrpcDuplexStreamingBenchmarks
                 new CompletedWriter(), _reader, Task.FromResult(new Metadata()),
                 static () => Status.DefaultSuccess,
                 static () => new Metadata(),
-                static () => { }));
+                static () =>
+                {
+                }));
     }
 
     /// <summary>Releases the reusable call and its cancellation sources.</summary>
@@ -61,14 +66,20 @@ public class GrpcDuplexStreamingBenchmarks
 
     private sealed class CompletedReader : IAsyncStreamReader<Reply>
     {
-        public Reply Current { get; } = new();
+        public Reply Current
+        {
+            get;
+        } = new();
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => Task.FromResult(true);
     }
 
     private sealed class CompletedWriter : IClientStreamWriter<Request>
     {
-        public WriteOptions? WriteOptions { get; set; }
+        public WriteOptions? WriteOptions
+        {
+            get; set;
+        }
 
         public Task CompleteAsync() => Task.CompletedTask;
 

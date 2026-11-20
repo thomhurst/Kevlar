@@ -229,6 +229,7 @@ internal static class KevlarTelemetry
             KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration);
             KevlarActivities.RecordEvent(in telemetryEvent);
         }
+
         foreach (var listener in listeners)
         {
             try
@@ -268,6 +269,7 @@ internal static class KevlarTelemetry
                     break;
                 }
             }
+
             if (index < 0)
             {
                 return;

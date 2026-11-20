@@ -20,11 +20,20 @@ public sealed class ShieldExplanation
     }
 
     /// <summary>Whether the theoretical attempt bound is finite, unbounded, indeterminate, or overflows.</summary>
-    public AttemptBoundKind AttemptBoundKind { get; }
+    public AttemptBoundKind AttemptBoundKind
+    {
+        get;
+    }
     /// <summary>A conservative upper bound, available only when <see cref="AttemptBoundKind"/> is finite.</summary>
-    public long? MaxAttempts { get; }
+    public long? MaxAttempts
+    {
+        get;
+    }
     /// <summary>Effective behavior in execution order, outermost first.</summary>
-    public IReadOnlyList<StrategyExplanation> Strategies { get; }
+    public IReadOnlyList<StrategyExplanation> Strategies
+    {
+        get;
+    }
 
     internal static ShieldExplanation Create(ShieldDescriptor descriptor)
     {
@@ -50,12 +59,20 @@ public sealed class ShieldExplanation
                 case RetryStrategyDescriptor retry:
                     unbounded |= retry.MaxRetries == int.MaxValue;
                     factor = (long)retry.MaxRetries + 1;
-                    if (retry.MaxRetries > 0) { enclosingAttempts.Add(index); }
+                    if (retry.MaxRetries > 0)
+                    {
+                        enclosingAttempts.Add(index);
+                    }
+
                     break;
                 case HedgeStrategyDescriptor hedge:
                     factor = (long)hedge.MaxHedgedAttempts + 1;
                     indeterminate |= hedge.HasActionGenerator && hedge.MaxHedgedAttempts > 0;
-                    if (hedge.MaxHedgedAttempts > 0) { enclosingAttempts.Add(index); }
+                    if (hedge.MaxHedgedAttempts > 0)
+                    {
+                        enclosingAttempts.Add(index);
+                    }
+
                     break;
                 case CustomStrategyDescriptor { Kind: StrategyKind.Custom }:
                     indeterminate = true;
@@ -65,8 +82,14 @@ public sealed class ShieldExplanation
 
             if (!overflow)
             {
-                if (maximumAttempts > long.MaxValue / factor) { overflow = true; }
-                else { maximumAttempts *= factor; }
+                if (maximumAttempts > long.MaxValue / factor)
+                {
+                    overflow = true;
+                }
+                else
+                {
+                    maximumAttempts *= factor;
+                }
             }
         }
 
@@ -77,22 +100,46 @@ public sealed class ShieldExplanation
 
     private static TimeoutScope GetTimeoutScope(StrategyDescriptor strategy, bool customScope, int enclosingCount)
     {
-        if (strategy is not TimeoutStrategyDescriptor) { return TimeoutScope.None; }
-        if (customScope) { return TimeoutScope.Indeterminate; }
+        if (strategy is not TimeoutStrategyDescriptor)
+        {
+            return TimeoutScope.None;
+        }
+
+        if (customScope)
+        {
+            return TimeoutScope.Indeterminate;
+        }
+
         return enclosingCount == 0 ? TimeoutScope.Execution : TimeoutScope.Attempt;
     }
 
     private static AttemptBoundKind GetBoundKind(bool indeterminate, bool unbounded, bool overflow)
     {
-        if (indeterminate) { return AttemptBoundKind.Indeterminate; }
-        if (unbounded) { return AttemptBoundKind.Unbounded; }
+        if (indeterminate)
+        {
+            return AttemptBoundKind.Indeterminate;
+        }
+
+        if (unbounded)
+        {
+            return AttemptBoundKind.Unbounded;
+        }
+
         return overflow ? AttemptBoundKind.Overflow : AttemptBoundKind.Finite;
     }
 
     private static HandlingSource GetHandlingSource(StrategyDescriptor strategy)
     {
-        if (strategy.HandlingClause is null) { return HandlingSource.None; }
-        if (strategy is CustomStrategyDescriptor) { return HandlingSource.Custom; }
+        if (strategy.HandlingClause is null)
+        {
+            return HandlingSource.None;
+        }
+
+        if (strategy is CustomStrategyDescriptor)
+        {
+            return HandlingSource.Custom;
+        }
+
         var hasOverride = strategy switch
         {
             RetryStrategyDescriptor retry => retry.HasHandlingOverride,
@@ -101,7 +148,11 @@ public sealed class ShieldExplanation
             FallbackStrategyDescriptor fallback => fallback.HasHandlingOverride,
             _ => false,
         };
-        if (hasOverride) { return HandlingSource.LocalOverride; }
+        if (hasOverride)
+        {
+            return HandlingSource.LocalOverride;
+        }
+
         return strategy.HandlingClause.Description is null ? HandlingSource.Default : HandlingSource.Ambient;
     }
 
@@ -135,6 +186,7 @@ public sealed class ShieldExplanation
             {
                 text.Append("  Handling (").Append(step.HandlingSource).Append("): ").AppendLine(handling);
             }
+
             if (step.Strategy is TimeoutStrategyDescriptor timeout)
             {
                 text.Append("  Timeout scope: ").Append(step.TimeoutScope)
@@ -143,10 +195,16 @@ public sealed class ShieldExplanation
                 {
                     text.Append("; repeated by indexes ").Append(string.Join(", ", step.EnclosingAttemptStrategies));
                 }
-                if (timeout.HasTimeoutGenerator) { text.Append("; duration is dynamic and is not evaluated"); }
+
+                if (timeout.HasTimeoutGenerator)
+                {
+                    text.Append("; duration is dynamic and is not evaluated");
+                }
+
                 text.AppendLine(". Cooperative cancellation, not a guaranteed wall-clock completion limit.");
             }
         }
+
         return text.ToString().TrimEnd();
     }
 }

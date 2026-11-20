@@ -334,7 +334,9 @@ public static class ShieldHttpClientBuilderExtensions
     /// attempt timeout instead of <see cref="HttpClient.Timeout"/>.
     /// </summary>
     public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder)
-        => AddStandardShield(builder, static _ => { });
+        => AddStandardShield(builder, static _ =>
+        {
+        });
 
     /// <summary>
     /// Configures and adds one shared standard shield for this client registration. The standard
@@ -429,7 +431,9 @@ public static class ShieldHttpClientBuilderExtensions
         AddStandardShield(
             builder,
             configuration,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             onReloadFailure);
 
     /// <summary>
@@ -505,7 +509,9 @@ public static class ShieldHttpClientBuilderExtensions
     /// hedging, optional per-authority concurrency limit, circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder) =>
-        AddStandardHedgeShield(builder, static _ => { });
+        AddStandardHedgeShield(builder, static _ =>
+        {
+        });
 
     /// <summary>
     /// Adds one shared standard pipeline with optional endpoint routing: total timeout, hedging,
@@ -557,7 +563,9 @@ public static class ShieldHttpClientBuilderExtensions
         AddStandardHedgeShield(
             builder,
             configuration,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             onReloadFailure);
 
     /// <summary>
@@ -846,7 +854,10 @@ public static class ShieldHttpClientBuilderExtensions
             _handlerFactory = handlerFactory;
         }
 
-        public string? Name { get; }
+        public string? Name
+        {
+            get;
+        }
 
         public void Configure(HttpClientFactoryOptions options)
         {

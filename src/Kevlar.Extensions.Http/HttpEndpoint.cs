@@ -26,8 +26,14 @@ public sealed class HttpEndpoint
     }
 
     /// <summary>The authority used for routed attempts. The original path and query are preserved.</summary>
-    public Uri Uri { get; }
+    public Uri Uri
+    {
+        get;
+    }
 
     /// <summary>The endpoint's relative weight.</summary>
-    public int Weight { get; }
+    public int Weight
+    {
+        get;
+    }
 }

@@ -63,7 +63,11 @@ public class OptionsCloneTests
         var calls = 0;
         var source = new StandardHttpShieldOptions();
         source.Retry.Budget = new RetryBudget(maxTokens: 7);
-        source.Retry.OnRetry = _ => { calls++; return default; };
+        source.Retry.OnRetry = _ =>
+        {
+            calls++;
+            return default;
+        };
         source.CircuitBreaker.Monitor = new CircuitBreakerMonitor();
 
         var clone = source.Clone();
@@ -85,6 +89,7 @@ public class OptionsCloneTests
             {
                 throw new InvalidOperationException($"The guard needs a non-default value for {type.Name}.{property.Name}.");
             }
+
             property.SetValue(options, value);
         }
 
@@ -110,6 +115,7 @@ public class OptionsCloneTests
                 {
                     throw new InvalidOperationException($"Clone omitted {source.GetType().Name}.{property.Name}.");
                 }
+
                 await VerifyCopy(expected, actual);
             }
             else if (!Equals(expected, actual)
@@ -162,23 +168,68 @@ public class OptionsCloneTests
     private static object CreateValue(Type type, object? current, bool alternate)
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
-        if (IsConfiguration(type)) return CreateConfiguredOptions(type);
-        if (type == typeof(string)) return alternate ? "derived" : "base";
-        if (type == typeof(int)) return alternate ? 91 : 37;
-        if (type == typeof(long)) return alternate ? 91L : 37L;
-        if (type == typeof(double)) return alternate ? 0.91 : 0.73;
-        if (type == typeof(bool)) return !(bool)current!;
-        if (type == typeof(TimeSpan)) return TimeSpan.FromSeconds(alternate ? 91 : 73);
-        if (type == typeof(Backoff)) return alternate ? Backoff.Default : Backoff.None;
-        if (type == typeof(RetryBudget)) return new RetryBudget(maxTokens: 7);
-        if (type == typeof(CircuitBreakerMonitor)) return new CircuitBreakerMonitor();
-        if (type.IsEnum) return Enum.GetValues(type).Cast<object>().First(value => !Equals(value, current));
+        if (IsConfiguration(type))
+        {
+            return CreateConfiguredOptions(type);
+        }
+
+        if (type == typeof(string))
+        {
+            return alternate ? "derived" : "base";
+        }
+
+        if (type == typeof(int))
+        {
+            return alternate ? 91 : 37;
+        }
+
+        if (type == typeof(long))
+        {
+            return alternate ? 91L : 37L;
+        }
+
+        if (type == typeof(double))
+        {
+            return alternate ? 0.91 : 0.73;
+        }
+
+        if (type == typeof(bool))
+        {
+            return !(bool)current!;
+        }
+
+        if (type == typeof(TimeSpan))
+        {
+            return TimeSpan.FromSeconds(alternate ? 91 : 73);
+        }
+
+        if (type == typeof(Backoff))
+        {
+            return alternate ? Backoff.Default : Backoff.None;
+        }
+
+        if (type == typeof(RetryBudget))
+        {
+            return new RetryBudget(maxTokens: 7);
+        }
+
+        if (type == typeof(CircuitBreakerMonitor))
+        {
+            return new CircuitBreakerMonitor();
+        }
+
+        if (type.IsEnum)
+        {
+            return Enum.GetValues(type).Cast<object>().First(value => !Equals(value, current));
+        }
+
         if (typeof(Delegate).IsAssignableFrom(type))
         {
             var invoke = type.GetMethod("Invoke")!;
             return Expression.Lambda(type, Expression.Default(invoke.ReturnType),
                 invoke.GetParameters().Select(static parameter => Expression.Parameter(parameter.ParameterType))).Compile();
         }
+
         throw new InvalidOperationException($"Add a non-default clone-test value for {type}.");
     }
 }

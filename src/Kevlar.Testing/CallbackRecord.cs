@@ -38,49 +38,94 @@ public sealed class CallbackRecord
     }
 
     /// <summary>The recorder-wide sequence number.</summary>
-    public long Sequence { get; }
+    public long Sequence
+    {
+        get;
+    }
 
     /// <summary>The callback family.</summary>
-    public CallbackKind Kind { get; }
+    public CallbackKind Kind
+    {
+        get;
+    }
 
     /// <summary>The shield name copied from the callback context, when available.</summary>
-    public string? ShieldName { get; }
+    public string? ShieldName
+    {
+        get;
+    }
 
     /// <summary>The zero-based strategy position copied from the callback context.</summary>
-    public int? StrategyIndex { get; }
+    public int? StrategyIndex
+    {
+        get;
+    }
 
     /// <summary>The zero-based attempt number, when this is a retry or hedge callback.</summary>
-    public int? AttemptNumber { get; }
+    public int? AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>The retry delay, when applicable.</summary>
-    public TimeSpan? Delay { get; }
+    public TimeSpan? Delay
+    {
+        get;
+    }
 
     /// <summary>The exceeded timeout, when applicable.</summary>
-    public TimeSpan? Timeout { get; }
+    public TimeSpan? Timeout
+    {
+        get;
+    }
 
     /// <summary>The captured exception, when applicable.</summary>
-    public Exception? Exception { get; }
+    public Exception? Exception
+    {
+        get;
+    }
 
     /// <summary>The captured result, when applicable.</summary>
-    public object? Result { get; }
+    public object? Result
+    {
+        get;
+    }
 
     /// <summary>The circuit state left, when applicable.</summary>
-    public CircuitState? From { get; }
+    public CircuitState? From
+    {
+        get;
+    }
 
     /// <summary>The circuit state entered, when applicable.</summary>
-    public CircuitState? To { get; }
+    public CircuitState? To
+    {
+        get;
+    }
 
     /// <summary>The circuit failure ratio, when this is a break-duration callback.</summary>
-    public double? FailureRate { get; }
+    public double? FailureRate
+    {
+        get;
+    }
 
     /// <summary>The circuit failure count, when this is a break-duration callback.</summary>
-    public long? FailureCount { get; }
+    public long? FailureCount
+    {
+        get;
+    }
 
     /// <summary>The consecutive circuit failure count, when this is a break-duration callback.</summary>
-    public int? ConsecutiveFailures { get; }
+    public int? ConsecutiveFailures
+    {
+        get;
+    }
 
     /// <summary>The failed callback family, when this is a callback-error record.</summary>
-    public CallbackErrorKind? ErrorKind { get; }
+    public CallbackErrorKind? ErrorKind
+    {
+        get;
+    }
 
     internal CallbackRecord WithSequence(long sequence) => new(
         sequence,

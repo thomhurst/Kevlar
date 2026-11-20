@@ -23,6 +23,7 @@ public class AdaptiveConcurrencyLimitTests
         {
             _ = shield.Execute(static _ => 42);
         }
+
         await Assert.That(Snapshot(shield).CurrentLimit).IsEqualTo(5);
     }
 
@@ -45,6 +46,7 @@ public class AdaptiveConcurrencyLimitTests
             var outcome = await shield.ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(expected));
             await Assert.That(ReferenceEquals(outcome.Exception, expected)).IsTrue();
         }
+
         await Assert.That(Snapshot(shield).CurrentLimit).IsEqualTo(4);
         time.Advance(TimeSpan.FromSeconds(1));
         _ = await shield.ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(expected));
@@ -119,8 +121,10 @@ public class AdaptiveConcurrencyLimitTests
             {
                 gate.TrySetResult(42);
             }
+
             _ = await Task.WhenAll(executions);
         }
+
         await Assert.That(Snapshot(shield).RunningExecutions).IsEqualTo(0);
     }
 
@@ -149,6 +153,7 @@ public class AdaptiveConcurrencyLimitTests
             {
                 await Task.Delay(1, timeout.Token);
             }
+
             await Assert.That(admitted).IsEqualTo(3);
             await Assert.That(Snapshot(shield).RunningExecutions).IsEqualTo(3);
             await Assert.That(Snapshot(shield).QueuedExecutions).IsEqualTo(0);
@@ -157,6 +162,7 @@ public class AdaptiveConcurrencyLimitTests
         {
             gate.TrySetResult(42);
         }
+
         var outcomes = await Task.WhenAll(executions);
         await Assert.That(outcomes.Count(outcome => outcome.IsSuccess)).IsEqualTo(3);
         await Assert.That(outcomes.Count(outcome => outcome.Exception is ConcurrencyLimitExceededException)).IsEqualTo(47);
@@ -214,6 +220,7 @@ public class AdaptiveConcurrencyLimitTests
             releaseCallback.TrySetResult();
             gate.TrySetResult(42);
         }
+
         await Assert.That((await rejection).Exception).IsTypeOf<ConcurrencyLimitExceededException>();
         await Assert.That(await running).IsEqualTo(42);
     }
@@ -259,6 +266,7 @@ public class AdaptiveConcurrencyLimitTests
             await Assert.That(adaptive.Algorithm).IsEqualTo(AdaptiveConcurrencyLimitAlgorithm.Aimd);
             await Assert.That(adaptive.Kind).IsEqualTo(StrategyKind.ConcurrencyLimit);
         }
+
         await Assert.That(untyped[0].ToString()).IsEqualTo("AdaptiveConcurrencyLimit(AIMD, initial 2, min 1, max 100, window 1s)");
         await Assert.That(typed[0].Execute(static _ => 42)).IsEqualTo(42);
         await Assert.That(Snapshot(Shield.ConcurrencyLimit(7)).CurrentLimit).IsEqualTo(7);
@@ -300,6 +308,7 @@ public class AdaptiveConcurrencyLimitTests
                 gate.TrySetResult(42);
             }
         }
+
         _ = await Task.WhenAll(executions);
         time.Advance(TimeSpan.FromSeconds(1));
         _ = ExecuteTimed(shield, time, milliseconds: 1);

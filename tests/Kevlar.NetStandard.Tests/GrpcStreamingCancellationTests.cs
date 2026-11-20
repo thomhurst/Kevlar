@@ -21,7 +21,9 @@ public class GrpcStreamingCancellationTests
                 Task.FromResult(new Metadata()),
                 static () => Status.DefaultSuccess,
                 static () => new Metadata(),
-                static () => { }));
+                static () =>
+                {
+                }));
 
         var write = call.RequestStream.WriteAsync(new Request());
         await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
@@ -55,7 +57,9 @@ public class GrpcStreamingCancellationTests
                 Task.FromResult(new Metadata()),
                 static () => Status.DefaultSuccess,
                 static () => new Metadata(),
-                static () => { }));
+                static () =>
+                {
+                }));
 
         var write = call.RequestStream.WriteAsync(new Request());
         await started.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
@@ -124,7 +128,10 @@ public class GrpcStreamingCancellationTests
         TaskCompletionSource started,
         TaskCompletionSource cancelled) : IClientStreamWriter<Request>
     {
-        public WriteOptions? WriteOptions { get; set; }
+        public WriteOptions? WriteOptions
+        {
+            get; set;
+        }
 
         public Task CompleteAsync() => Task.CompletedTask;
 

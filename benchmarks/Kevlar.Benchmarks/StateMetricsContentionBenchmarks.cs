@@ -21,7 +21,10 @@ public class StateMetricsContentionBenchmarks
     private MeterListener? _listener;
 
     [Params(1, 16)]
-    public int WorkerCount { get; set; }
+    public int WorkerCount
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -36,13 +39,23 @@ public class StateMetricsContentionBenchmarks
                 }
             },
         };
-        _listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
-        _listener.SetMeasurementEventCallback<double>(static (_, _, _, _) => { });
+        _listener.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+        {
+        });
+        _listener.SetMeasurementEventCallback<double>(static (_, _, _, _) =>
+        {
+        });
         _listener.Start();
 
-        CircuitBreaker.Execute(static _ => { });
-        ConcurrencyLimit.Execute(static _ => { });
-        RateLimit.Execute(static _ => { });
+        CircuitBreaker.Execute(static _ =>
+        {
+        });
+        ConcurrencyLimit.Execute(static _ =>
+        {
+        });
+        RateLimit.Execute(static _ =>
+        {
+        });
     }
 
     [GlobalCleanup]
@@ -50,13 +63,19 @@ public class StateMetricsContentionBenchmarks
 
     [Benchmark(Baseline = true)]
     public void CircuitBreakerExecution() =>
-        Parallel.For(0, WorkerCount, static _ => CircuitBreaker.Execute(static _ => { }));
+        Parallel.For(0, WorkerCount, static _ => CircuitBreaker.Execute(static _ =>
+        {
+        }));
 
     [Benchmark]
     public void ConcurrencyLimitExecution() =>
-        Parallel.For(0, WorkerCount, static _ => ConcurrencyLimit.Execute(static _ => { }));
+        Parallel.For(0, WorkerCount, static _ => ConcurrencyLimit.Execute(static _ =>
+        {
+        }));
 
     [Benchmark]
     public void RateLimitExecution() =>
-        Parallel.For(0, WorkerCount, static _ => RateLimit.Execute(static _ => { }));
+        Parallel.For(0, WorkerCount, static _ => RateLimit.Execute(static _ =>
+        {
+        }));
 }

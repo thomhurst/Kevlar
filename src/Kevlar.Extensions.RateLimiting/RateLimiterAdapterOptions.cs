@@ -9,14 +9,23 @@ namespace Kevlar.Extensions.RateLimiting;
 public sealed class RateLimiterAdapterOptions
 {
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>The number of permits acquired for each execution. Default 1.</summary>
-    public int PermitCount { get; set; } = 1;
+    public int PermitCount
+    {
+        get; set;
+    } = 1;
 
     /// <summary>
     /// Invoked and awaited when a lease rejects an execution. Return <see langword="default"/>
     /// from a synchronous callback.
     /// </summary>
-    public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejected { get; set; }
+    public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejected
+    {
+        get; set;
+    }
 }

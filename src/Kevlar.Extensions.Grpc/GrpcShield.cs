@@ -161,7 +161,10 @@ public static class GrpcShield
 
     private sealed class ExceptionReferenceComparer : IEqualityComparer<Exception>
     {
-        public static ExceptionReferenceComparer Instance { get; } = new();
+        public static ExceptionReferenceComparer Instance
+        {
+            get;
+        } = new();
 
         public bool Equals(Exception? x, Exception? y) => ReferenceEquals(x, y);
 

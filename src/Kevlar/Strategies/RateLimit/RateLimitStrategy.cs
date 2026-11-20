@@ -214,6 +214,7 @@ internal sealed class RateLimitStrategy : Strategy, IRateLimitState
             {
                 return await RejectAsync<T>(context, retryAfter: null, reason: "queue_timeout").ConfigureAwait(false);
             }
+
             return Outcome<T>.FromException(context.CancellationToken.IsCancellationRequested
                 ? new OperationCanceledException(cancelled.Message, cancelled, context.CancellationToken)
                 : cancelled);
@@ -520,26 +521,50 @@ internal sealed class RateLimitStrategy : Strategy, IRateLimitState
             TimestampScale = Stopwatch.Frequency / (double)timeProvider.TimestampFrequency;
         }
 
-        public long SystemTimestamp { get; }
+        public long SystemTimestamp
+        {
+            get;
+        }
 
-        public long ProviderTimestamp { get; }
+        public long ProviderTimestamp
+        {
+            get;
+        }
 
-        public double TimestampScale { get; }
+        public double TimestampScale
+        {
+            get;
+        }
     }
 
     private sealed class Reservation
     {
         public Reservation(double dueTimestamp) => DueTimestamp = dueTimestamp;
 
-        public double DueTimestamp { get; set; }
+        public double DueTimestamp
+        {
+            get; set;
+        }
 
-        public Reservation? Previous { get; set; }
+        public Reservation? Previous
+        {
+            get; set;
+        }
 
-        public Reservation? Next { get; set; }
+        public Reservation? Next
+        {
+            get; set;
+        }
 
-        public bool IsQueued { get; set; } = true;
+        public bool IsQueued
+        {
+            get; set;
+        } = true;
 
-        public TaskCompletionSource<bool> Turn { get; } =
+        public TaskCompletionSource<bool> Turn
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public async Task WaitForTurnAsync(CancellationToken cancellationToken)

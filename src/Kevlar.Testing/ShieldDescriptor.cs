@@ -16,16 +16,28 @@ public sealed class ShieldDescriptor
     }
 
     /// <summary>The shield name, or <see langword="null"/> for an unnamed shield.</summary>
-    public string? Name { get; }
+    public string? Name
+    {
+        get;
+    }
 
     /// <summary>The result type for a typed shield, or <see langword="null"/> for an untyped shield.</summary>
-    public Type? ResultType { get; }
+    public Type? ResultType
+    {
+        get;
+    }
 
     /// <summary>Whether the shield has an explicitly configured <see cref="TimeProvider"/>.</summary>
-    public bool UsesCustomTimeProvider { get; }
+    public bool UsesCustomTimeProvider
+    {
+        get;
+    }
 
     /// <summary>Strategies in execution order, outermost first.</summary>
-    public IReadOnlyList<StrategyDescriptor> Strategies { get; }
+    public IReadOnlyList<StrategyDescriptor> Strategies
+    {
+        get;
+    }
 
     /// <summary>Explains theoretical attempt bounds, timeout scopes, and effective handling without executing the pipeline.</summary>
     public ShieldExplanation Explain() => ShieldExplanation.Create(this);

@@ -20,7 +20,10 @@ public class TelemetryBenchmarks
     private MeterListener? _listener;
 
     [Params(false, true)]
-    public bool ListenerEnabled { get; set; }
+    public bool ListenerEnabled
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -40,8 +43,12 @@ public class TelemetryBenchmarks
                 }
             },
         };
-        _listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
-        _listener.SetMeasurementEventCallback<double>(static (_, _, _, _) => { });
+        _listener.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+        {
+        });
+        _listener.SetMeasurementEventCallback<double>(static (_, _, _, _) =>
+        {
+        });
         _listener.Start();
     }
 

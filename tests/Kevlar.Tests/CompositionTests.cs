@@ -26,7 +26,10 @@ public class CompositionTests
 
     private sealed class CountingDecorator : IShieldDecorator
     {
-        public int Count { get; private set; }
+        public int Count
+        {
+            get; private set;
+        }
 
         public Shield Decorate(Shield shield, string? name)
         {

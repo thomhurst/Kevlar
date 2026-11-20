@@ -22,20 +22,38 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
     }
 
     /// <summary>Maximum retries after the initial attempt.</summary>
-    public int MaxRetries { get; }
+    public int MaxRetries
+    {
+        get;
+    }
 
     /// <summary>An inert snapshot of the backoff configuration.</summary>
-    public BackoffDescriptor Backoff { get; }
+    public BackoffDescriptor Backoff
+    {
+        get;
+    }
 
     /// <summary>The absolute delay cap, when configured.</summary>
-    public TimeSpan? MaxDelay { get; }
+    public TimeSpan? MaxDelay
+    {
+        get;
+    }
 
     /// <summary>Whether a synchronous or asynchronous delay generator is configured.</summary>
-    public bool HasDelayGenerator { get; }
+    public bool HasDelayGenerator
+    {
+        get;
+    }
 
     /// <summary>Whether a synchronous or asynchronous retry notification is configured.</summary>
-    public bool HasNotification { get; }
+    public bool HasNotification
+    {
+        get;
+    }
 
     /// <summary>Whether local predicates replace the ambient handling clause.</summary>
-    public bool HasHandlingOverride { get; }
+    public bool HasHandlingOverride
+    {
+        get;
+    }
 }

@@ -29,7 +29,10 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool HasHandlingOverride { get; }
+    internal override bool HasHandlingOverride
+    {
+        get;
+    }
 
     internal override bool IsFallback => true;
 
@@ -177,7 +180,10 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool HasHandlingOverride { get; }
+    internal override bool HasHandlingOverride
+    {
+        get;
+    }
 
     internal override bool IsFallback => true;
 

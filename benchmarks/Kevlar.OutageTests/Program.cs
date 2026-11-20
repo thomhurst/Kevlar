@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Kevlar.OutageTests;
 
@@ -12,6 +12,7 @@ foreach (var scenario in OutageRunner.Scenarios)
     results.Add(result);
     Console.WriteLine($"{scenario}: {result.Phases.Sum(phase => phase.Offered)} offered, {result.Phases.Sum(phase => phase.Succeeded)} succeeded, {result.CancelledAttempts} cancelled attempts, {result.ActiveAfterDrain} active after drain.");
 }
+
 var buildVersion = typeof(OutageRunner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 var commit = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? buildVersion?.Split('+').ElementAtOrDefault(1) ?? "local-unrecorded";
 var report = new OutageResult(1, timestamp, commit,

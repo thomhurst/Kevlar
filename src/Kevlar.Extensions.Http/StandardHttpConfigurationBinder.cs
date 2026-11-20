@@ -126,6 +126,7 @@ internal static class StandardHttpConfigurationBinder
         {
             options.FailureRatio = null;
         }
+
         SetInt(section, nameof(options.MinimumThroughput), value => options.MinimumThroughput = value);
         SetTimeSpan(section, nameof(options.SamplingWindow), value => options.SamplingWindow = value);
         SetTimeSpan(section, nameof(options.BreakDuration), value => options.BreakDuration = value);

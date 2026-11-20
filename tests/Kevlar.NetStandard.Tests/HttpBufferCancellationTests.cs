@@ -1,5 +1,5 @@
-using Kevlar.Extensions.Http;
 using System.Net;
+using Kevlar.Extensions.Http;
 
 namespace Kevlar.NetStandard.Tests;
 

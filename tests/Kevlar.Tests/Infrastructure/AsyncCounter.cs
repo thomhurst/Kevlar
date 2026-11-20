@@ -71,7 +71,10 @@ internal sealed class AsyncCounter(string name)
 
     private sealed record Waiter(int Target)
     {
-        public TaskCompletionSource<int> Completion { get; } =
+        public TaskCompletionSource<int> Completion
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }

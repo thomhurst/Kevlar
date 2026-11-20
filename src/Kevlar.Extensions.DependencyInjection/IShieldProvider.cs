@@ -9,7 +9,10 @@ namespace Kevlar.Extensions.DependencyInjection;
 public interface IShieldProvider
 {
     /// <summary>Gets the current last known-good shield snapshot.</summary>
-    Shield Current { get; }
+    Shield Current
+    {
+        get;
+    }
 }
 
 /// <summary>Provides the current immutable snapshot of a named result-aware shield.</summary>
@@ -22,5 +25,8 @@ public interface IShieldProvider
 public interface IShieldProvider<TResult>
 {
     /// <summary>Gets the current last known-good shield snapshot.</summary>
-    Shield<TResult> Current { get; }
+    Shield<TResult> Current
+    {
+        get;
+    }
 }

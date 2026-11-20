@@ -14,8 +14,15 @@ public static class ShieldLoggingExtensions
         ILogger logger,
         Action<KevlarLoggingOptions>? configure = null)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
 
         return WithLogging(shield, logger, CreateOptions(configure));
     }
@@ -25,9 +32,21 @@ public static class ShieldLoggingExtensions
         ILogger logger,
         LoggingOptionsSnapshot options)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
-        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
         shield = shield.CurrentSnapshot;
 
         return new Shield(
@@ -44,8 +63,15 @@ public static class ShieldLoggingExtensions
         ILogger logger,
         Action<KevlarLoggingOptions>? configure = null)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
 
         return WithLogging(shield, logger, CreateOptions(configure));
     }
@@ -55,9 +81,21 @@ public static class ShieldLoggingExtensions
         ILogger logger,
         LoggingOptionsSnapshot options)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
-        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
         shield = shield.CurrentSnapshot;
 
         return new Shield<TResult>(

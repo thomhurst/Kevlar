@@ -682,9 +682,15 @@ public class SynchronousHookGuardTests
 
     private sealed class Occupier : IAsyncDisposable
     {
-        public TaskCompletionSource Gate { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Gate
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task<int> Execution { get; set; } = Task.FromResult(0);
+        public Task<int> Execution
+        {
+            get; set;
+        } = Task.FromResult(0);
 
         public async ValueTask DisposeAsync()
         {

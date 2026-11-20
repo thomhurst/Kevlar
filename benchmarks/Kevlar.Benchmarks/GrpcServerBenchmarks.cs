@@ -55,11 +55,23 @@ public class GrpcServerBenchmarks
         protected override string HostCore => "localhost";
         protected override string PeerCore => "ipv4:127.0.0.1:5000";
         protected override DateTime DeadlineCore => DateTime.MaxValue;
-        protected override Metadata RequestHeadersCore { get; } = new();
+        protected override Metadata RequestHeadersCore
+        {
+            get;
+        } = new();
         protected override CancellationToken CancellationTokenCore => default;
-        protected override Metadata ResponseTrailersCore { get; } = new();
-        protected override Status StatusCore { get; set; }
-        protected override WriteOptions? WriteOptionsCore { get; set; }
+        protected override Metadata ResponseTrailersCore
+        {
+            get;
+        } = new();
+        protected override Status StatusCore
+        {
+            get; set;
+        }
+        protected override WriteOptions? WriteOptionsCore
+        {
+            get; set;
+        }
         protected override AuthContext AuthContextCore => null!;
         protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
         protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options) =>

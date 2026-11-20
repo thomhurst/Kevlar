@@ -65,7 +65,14 @@ public class DescribeTests
     {
         await Assert.That(Shield.RateLimit(100, TimeSpan.FromSeconds(1)).ToString())
             .IsEqualTo("RateLimit(100/1s)");
-        await Assert.That(Shield.RateLimit(o => { o.Permits = 100; o.Window = TimeSpan.FromSeconds(1); o.QueueLimit = 20; }).ToString())
+        await Assert.That(
+                Shield.RateLimit(o =>
+                {
+                    o.Permits = 100;
+                    o.Window = TimeSpan.FromSeconds(1);
+                    o.QueueLimit = 20;
+                }).ToString()
+            )
             .IsEqualTo("RateLimit(100/1s, queue 20)");
         await Assert.That(Shield.ConcurrencyLimit(10, 20).ToString())
             .IsEqualTo("ConcurrencyLimit(10, queue 20)");

@@ -381,7 +381,10 @@ public class ResultDisposalTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         private int _disposeCount;
 
-        public bool IsHandled { get; } = isHandled;
+        public bool IsHandled
+        {
+            get;
+        } = isHandled;
 
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
@@ -402,7 +405,10 @@ public class ResultDisposalTests
         private int _asyncDisposeCount;
         private int _disposeCount;
 
-        public bool IsHandled { get; } = isHandled;
+        public bool IsHandled
+        {
+            get;
+        } = isHandled;
 
         public int AsyncDisposeCount => Volatile.Read(ref _asyncDisposeCount);
 
@@ -427,7 +433,10 @@ public class ResultDisposalTests
         private int _asyncDisposeCount;
         private int _disposeCount;
 
-        public bool IsHandled { get; } = isHandled;
+        public bool IsHandled
+        {
+            get;
+        } = isHandled;
 
         public int AsyncDisposeCount => Volatile.Read(ref _asyncDisposeCount);
 

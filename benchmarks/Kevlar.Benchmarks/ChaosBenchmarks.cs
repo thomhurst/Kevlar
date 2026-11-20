@@ -11,7 +11,9 @@ namespace Kevlar.Benchmarks;
 public class ChaosBenchmarks
 {
     private static readonly Shield _empty = Shield.Empty;
-    private static readonly Shield _disabled = ChaosShield.Fault(static _ => { });
+    private static readonly Shield _disabled = ChaosShield.Fault(static _ =>
+    {
+    });
     private static readonly Shield _excluded = ChaosShield.Fault(static options =>
     {
         options.Enabled = true;

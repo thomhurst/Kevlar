@@ -409,6 +409,7 @@ public class HttpConfigurationReloadTests
         using (await client.GetAsync("https://example.test/"))
         {
         }
+
         await Assert.That(transport.Calls).IsEqualTo(1);
 
         configuration["Retry:MaxRetries"] = "2";
@@ -671,6 +672,7 @@ public class HttpConfigurationReloadTests
                 return new FuncHandler((_, _) =>
                     Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
             });
+
         void Register(IHttpClientBuilder target)
         {
             switch (registrationKind)
@@ -1161,6 +1163,7 @@ public class HttpConfigurationReloadTests
         using (await client.GetAsync("https://example.test/"))
         {
         }
+
         await Assert.That(async () => await client.GetAsync("https://example.test/"))
             .Throws<CircuitOpenException>();
         configuration.Reload();

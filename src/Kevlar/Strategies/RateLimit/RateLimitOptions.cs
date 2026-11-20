@@ -12,40 +12,64 @@ namespace Kevlar;
 public sealed class RateLimitOptions
 {
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>Sustained number of executions allowed per <see cref="Window"/>. Default 100.</summary>
-    public int Permits { get; set; } = 100;
+    public int Permits
+    {
+        get; set;
+    } = 100;
 
     /// <summary>The time window over which <see cref="Permits"/> are replenished. Default 1 second.</summary>
-    public TimeSpan Window { get; set; } = TimeSpan.FromSeconds(1);
+    public TimeSpan Window
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(1);
 
     /// <summary>Maximum permits that can accumulate for bursting. Defaults to <see cref="Permits"/>.</summary>
-    public int? Burst { get; set; }
+    public int? Burst
+    {
+        get; set;
+    }
 
     /// <summary>
     /// How many executions may wait for a permit instead of being rejected immediately.
     /// Waiting executions are delayed until their reserved permit is replenished. Default 0.
     /// </summary>
-    public int QueueLimit { get; set; }
+    public int QueueLimit
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Maximum time spent waiting in the queue. Null (the default) leaves the wait unbounded.
     /// Must be positive and at most 4,294,967,294 milliseconds when configured.
     /// This limit ends when execution is admitted and does not bound execution time.
     /// </summary>
-    public TimeSpan? QueueTimeout { get; set; }
+    public TimeSpan? QueueTimeout
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Enables highest-priority-first queue admission using KevlarKeys.Priority, with FIFO ties.
     /// Unset priorities are zero. A higher-priority arrival evicts the newest lowest-priority
     /// waiter when the queue is full. Default false preserves the ordinary queue behavior.
     /// </summary>
-    public bool UsePriorityQueue { get; set; }
+    public bool UsePriorityQueue
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited when an execution is rejected. Return <see langword="default"/> from a
     /// synchronous callback.
     /// </summary>
-    public Func<RateLimitRejectedEvent, ValueTask>? OnRejected { get; set; }
+    public Func<RateLimitRejectedEvent, ValueTask>? OnRejected
+    {
+        get; set;
+    }
 }

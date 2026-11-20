@@ -38,7 +38,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     {
         _establishmentShield = establishmentShield
             ?? throw new ArgumentNullException(nameof(establishmentShield));
-        if (operationShield is null) { throw new ArgumentNullException(nameof(operationShield)); }
+        if (operationShield is null)
+        {
+            throw new ArgumentNullException(nameof(operationShield));
+        }
+
         if (!operationShield.InvokesContinuationAtMostOnce)
         {
             throw new ArgumentException(
@@ -56,8 +60,15 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
     {
-        if (request is null) { throw new ArgumentNullException(nameof(request)); }
-        if (continuation is null) { throw new ArgumentNullException(nameof(continuation)); }
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        if (continuation is null)
+        {
+            throw new ArgumentNullException(nameof(continuation));
+        }
 
         return new ServerStreamingState<TRequest, TResponse>(
             _establishmentShield,
@@ -72,7 +83,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
     {
-        if (continuation is null) { throw new ArgumentNullException(nameof(continuation)); }
+        if (continuation is null)
+        {
+            throw new ArgumentNullException(nameof(continuation));
+        }
+
         EnsureAtMostOnce("client-streaming");
 
         return new ClientStreamingState<TRequest, TResponse>(
@@ -86,7 +101,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
     {
-        if (continuation is null) { throw new ArgumentNullException(nameof(continuation)); }
+        if (continuation is null)
+        {
+            throw new ArgumentNullException(nameof(continuation));
+        }
+
         EnsureAtMostOnce("duplex-streaming");
 
         return new DuplexStreamingState<TRequest, TResponse>(
@@ -611,7 +630,9 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 responseHeaders,
                 () => status,
                 () => trailers,
-                static () => { });
+                static () =>
+                {
+                });
         }
 
         private static Status GetStatusOrUnknown(
@@ -732,6 +753,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 DisposeAttempt(selectedAttemptCall!, selectedCancellation!);
             }
+
             DisposeAttempts(discarded);
         }
 
@@ -849,11 +871,20 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             AsyncServerStreamingCall<TResponse> attemptCall,
             AsyncServerStreamingCall<TResponse> call)
         {
-            public AsyncServerStreamingCall<TResponse> AttemptCall { get; } = attemptCall;
+            public AsyncServerStreamingCall<TResponse> AttemptCall
+            {
+                get;
+            } = attemptCall;
 
-            public AsyncServerStreamingCall<TResponse> Call { get; } = call;
+            public AsyncServerStreamingCall<TResponse> Call
+            {
+                get;
+            } = call;
 
-            public bool Disposed { get; private set; }
+            public bool Disposed
+            {
+                get; private set;
+            }
 
             public void MarkDisposed() => Disposed = true;
         }
@@ -864,13 +895,19 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private sealed class SelectedAttemptFailureException(Exception original)
             : Exception(original.Message, original)
         {
-            public Exception OriginalException { get; } = original;
+            public Exception OriginalException
+            {
+                get;
+            } = original;
         }
 
         private sealed class ExpiredDeadlineRpcException(RpcException original)
             : Exception(original.Message, original)
         {
-            public RpcException Original { get; } = original;
+            public RpcException Original
+            {
+                get;
+            } = original;
         }
     }
 
@@ -1045,8 +1082,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 #endif
                     operation.Token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException exception) when (
-                operation.IsCancellationRequested)
+            catch (OperationCanceledException exception) when (operation.IsCancellationRequested)
             {
                 var visibleToken = cancellationToken.IsCancellationRequested
                     ? cancellationToken
@@ -1179,8 +1215,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         {
             return await task.ConfigureAwait(false);
         }
-        catch (RpcException exception) when (
-            exception.StatusCode == StatusCode.Cancelled
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Cancelled
             && lifetime.IsCancellationRequested)
         {
             var cancellationToken = callerToken.IsCancellationRequested
@@ -1202,8 +1237,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         {
             return await task.ConfigureAwait(false);
         }
-        catch (RpcException exception) when (
-            exception.StatusCode == StatusCode.Cancelled
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Cancelled
             && cancellationToken.IsCancellationRequested)
         {
             var normalizedToken = visibleCancellationToken.IsCancellationRequested
@@ -1224,8 +1258,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         {
             await task.ConfigureAwait(false);
         }
-        catch (RpcException exception) when (
-            exception.StatusCode == StatusCode.Cancelled
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Cancelled
             && cancellationToken.IsCancellationRequested)
         {
             throw new OperationCanceledException(

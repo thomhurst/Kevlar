@@ -25,11 +25,13 @@ foreach (var item in log.Events)
         {
             frames.Add(stack.CodeAddress.FullMethodName);
         }
+
         var text = frames.Count == 0 ? "[unresolved]" : string.Join("\n", frames);
         if (waiting.ContainsKey(thread))
         {
             overwrittenStarts++;
         }
+
         waiting[thread] = text;
         var value = counts.GetValueOrDefault(text);
         counts[text] = (value.Count + 1, value.Milliseconds);
@@ -42,6 +44,7 @@ foreach (var item in log.Events)
             unmatchedStops++;
             continue;
         }
+
         var value = counts[stack];
         counts[stack] = (value.Count, value.Milliseconds + stop.DurationNs / 1_000_000);
     }

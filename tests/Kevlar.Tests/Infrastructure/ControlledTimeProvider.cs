@@ -184,9 +184,15 @@ internal sealed class ControlledTimeProvider : TimeProvider
 
         public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
-        public TimeSpan DueTime { get; private set; }
+        public TimeSpan DueTime
+        {
+            get; private set;
+        }
 
-        public TimeSpan Period { get; private set; }
+        public TimeSpan Period
+        {
+            get; private set;
+        }
 
         public bool Change(TimeSpan dueTime, TimeSpan period)
         {

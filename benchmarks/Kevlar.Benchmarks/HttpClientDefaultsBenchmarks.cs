@@ -13,7 +13,10 @@ public class HttpClientDefaultsBenchmarks
     private readonly Uri _uri = new("https://dependency.invalid/");
 
     [Params(false, true)]
-    public bool UseDefaults { get; set; }
+    public bool UseDefaults
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()

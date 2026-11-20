@@ -9,28 +9,40 @@ public class ChainValidationTests
     [Test]
     public async Task Fallback_Inside_A_Retry_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().When<InvalidOperationException>().Retry(2, Backoff.None).FallbackTo(-1); })
+        await Assert.That(() =>
+            {
+                _ = Shield.For<int>().When<InvalidOperationException>().Retry(2, Backoff.None).FallbackTo(-1);
+            })
             .Throws<InvalidOperationException>();
     }
 
     [Test]
     public async Task Fallback_Inside_A_Default_Clause_Retry_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().Retry(2, Backoff.None).FallbackTo(-1); })
+        await Assert.That(() =>
+            {
+                _ = Shield.For<int>().Retry(2, Backoff.None).FallbackTo(-1);
+            })
             .Throws<InvalidOperationException>();
     }
 
     [Test]
     public async Task Fallback_Inside_A_Breaker_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().CircuitBreaker(5, TimeSpan.FromSeconds(30)).FallbackTo(-1); })
+        await Assert.That(() =>
+            {
+                _ = Shield.For<int>().CircuitBreaker(5, TimeSpan.FromSeconds(30)).FallbackTo(-1);
+            })
             .Throws<InvalidOperationException>();
     }
 
     [Test]
     public async Task Void_Fallback_Inside_A_Retry_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.When<InvalidOperationException>().Retry(2, Backoff.None).Fallback((_, _) => default); })
+        await Assert.That(() =>
+            {
+                _ = Shield.When<InvalidOperationException>().Retry(2, Backoff.None).Fallback((_, _) => default);
+            })
             .Throws<InvalidOperationException>();
     }
 
@@ -97,6 +109,9 @@ public class ChainValidationTests
         var retryPart = withClause.Retry(1, Backoff.None);
         var fallbackPart = withClause.FallbackTo(-1);
 
-        await Assert.That(() => { _ = retryPart.Wrap(fallbackPart); }).Throws<InvalidOperationException>();
+        await Assert.That(() =>
+        {
+            _ = retryPart.Wrap(fallbackPart);
+        }).Throws<InvalidOperationException>();
     }
 }

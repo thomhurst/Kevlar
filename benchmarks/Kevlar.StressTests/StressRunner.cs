@@ -342,6 +342,7 @@ internal static class StressRunner
                         {
                             throw fault;
                         }
+
                         return 42;
                     }
                     finally
@@ -372,6 +373,7 @@ internal static class StressRunner
         {
             throw new InvalidOperationException("Adaptive concurrency stress violated permit or outcome accounting.");
         }
+
         Console.WriteLine($"Adaptive concurrency stress: {completed} admitted, {rejected} rejected, " +
             $"{failed} injected failures, peak {peak}, final limit {snapshot.CurrentLimit}.");
     }
@@ -409,8 +411,10 @@ internal static class StressRunner
             {
                 gate.TrySetResult(42);
             }
+
             _ = await Task.WhenAll(executions);
         }
+
         Console.WriteLine("Adaptive feedback verified: synchronized rejection, failure backoff, and permit drain.");
     }
 

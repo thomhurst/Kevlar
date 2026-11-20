@@ -19,13 +19,22 @@ public sealed class CircuitBreakerOptions<TResult>
     public CircuitBreakerOptions<TResult> Clone() => (CircuitBreakerOptions<TResult>)MemberwiseClone();
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.HandlesException"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this circuit
@@ -38,10 +47,16 @@ public sealed class CircuitBreakerOptions<TResult>
     /// after it. These properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<TResult, bool>? HandlesResult { get; set; }
+    public Func<TResult, bool>? HandlesResult
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles results using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null
@@ -50,37 +65,70 @@ public sealed class CircuitBreakerOptions<TResult>
         || HandlesResultContext is not null;
 
     /// <inheritdoc cref="CircuitBreakerOptions.ConsecutiveFailures"/>
-    public int? ConsecutiveFailures { get; set; }
+    public int? ConsecutiveFailures
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.FailureRatio"/>
-    public double? FailureRatio { get; set; }
+    public double? FailureRatio
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.HalfOpenProbes"/>
-    public int HalfOpenProbes { get; set; } = 1;
+    public int HalfOpenProbes
+    {
+        get; set;
+    } = 1;
 
     /// <inheritdoc cref="CircuitBreakerOptions.SlowCallThreshold"/>
-    public TimeSpan? SlowCallThreshold { get; set; }
+    public TimeSpan? SlowCallThreshold
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.SlowCallRatio"/>
-    public double? SlowCallRatio { get; set; }
+    public double? SlowCallRatio
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.MinimumThroughput"/>
-    public int MinimumThroughput { get; set; } = 10;
+    public int MinimumThroughput
+    {
+        get; set;
+    } = 10;
 
     /// <inheritdoc cref="CircuitBreakerOptions.SamplingWindow"/>
-    public TimeSpan SamplingWindow { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan SamplingWindow
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(30);
 
     /// <inheritdoc cref="CircuitBreakerOptions.BreakDuration"/>
-    public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
+    public TimeSpan BreakDuration
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(15);
 
     /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGenerator"/>
-    public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+    public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.Monitor"/>
-    public CircuitBreakerMonitor? Monitor { get; set; }
+    public CircuitBreakerMonitor? Monitor
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="CircuitBreakerOptions.OnStateChanged"/>
-    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged
+    {
+        get; set;
+    }
 
     internal CircuitBreakerOptions ToUntyped() => new()
     {

@@ -22,8 +22,16 @@ public static class KevlarHealthChecksBuilderExtensions
         IEnumerable<string>? tags = null,
         TimeSpan? timeout = null)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
         var options = new KevlarHealthCheckOptions();
         configure?.Invoke(options);
         if (!Enum.IsDefined(typeof(HealthStatus), failureStatus))

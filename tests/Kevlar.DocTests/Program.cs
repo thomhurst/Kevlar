@@ -88,12 +88,18 @@ internal sealed class User;
 
 internal sealed class Config
 {
-    public static Config Default { get; } = new();
+    public static Config Default
+    {
+        get;
+    } = new();
 }
 
 internal sealed class Quote
 {
-    public static Quote Unavailable { get; } = new();
+    public static Quote Unavailable
+    {
+        get;
+    } = new();
 }
 
 internal sealed class Profile;
@@ -126,9 +132,13 @@ internal sealed class StubBus
 
 internal sealed class StubMetrics
 {
-    public void Record(CircuitState _) { }
+    public void Record(CircuitState _)
+    {
+    }
 
-    public void Increment(string _) { }
+    public void Increment(string _)
+    {
+    }
 }
 
 internal sealed class StubAudit
@@ -154,7 +164,10 @@ internal sealed class StubClient
 
 internal sealed class StubBuilder
 {
-    public IConfiguration Configuration { get; } = new ConfigurationBuilder().Build();
+    public IConfiguration Configuration
+    {
+        get;
+    } = new ConfigurationBuilder().Build();
 }
 
 internal sealed class StubHttpHandler : HttpMessageHandler
@@ -167,12 +180,16 @@ internal sealed class StubHttpHandler : HttpMessageHandler
 
 internal sealed class ReportsClient
 {
-    public ReportsClient(HttpClient _, Shield? __ = null) { }
+    public ReportsClient(HttpClient _, Shield? __ = null)
+    {
+    }
 }
 
 internal sealed class ProfileClient
 {
-    public ProfileClient(Shield<Profile?>? _ = null) { }
+    public ProfileClient(Shield<Profile?>? _ = null)
+    {
+    }
 }
 
 internal class RetryOnceStrategy(HandlingClause handling) : Strategy
