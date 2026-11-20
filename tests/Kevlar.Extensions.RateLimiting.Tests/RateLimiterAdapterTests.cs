@@ -1,8 +1,8 @@
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
-using Kevlar.Extensions.RateLimiting;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -1046,13 +1046,25 @@ public class RateLimiterAdapterTests
 
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
-        public Exception? IsAcquiredFailure { get; init; }
+        public Exception? IsAcquiredFailure
+        {
+            get; init;
+        }
 
-        public Exception? MetadataFailure { get; init; }
+        public Exception? MetadataFailure
+        {
+            get; init;
+        }
 
-        public Exception? DisposalFailure { get; init; }
+        public Exception? DisposalFailure
+        {
+            get; init;
+        }
 
-        public bool MetadataReadAfterDispose { get; private set; }
+        public bool MetadataReadAfterDispose
+        {
+            get; private set;
+        }
 
         public override bool TryGetMetadata(string metadataName, out object? metadata)
         {

@@ -116,7 +116,9 @@ public class CallerContextTests
 
         _ = await shield.ExecuteWithContextAsync(
             42,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             (state, context) =>
             {
                 observed = context.CancellationToken;
@@ -277,7 +279,10 @@ public class CallerContextTests
 
     private sealed class PropertyObserverStrategy(KevlarKey<string> key) : Strategy
     {
-        public string? ObservedValue { get; private set; }
+        public string? ObservedValue
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

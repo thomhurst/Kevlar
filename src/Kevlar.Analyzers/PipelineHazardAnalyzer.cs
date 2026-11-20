@@ -341,8 +341,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 yield return conditional.WhenTrue;
                 yield return conditional.WhenFalse;
                 break;
-            case BinaryExpressionSyntax binary
-                when binary.IsKind(SyntaxKind.CoalesceExpression)
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.CoalesceExpression)
                     || semanticModel.GetTypeInfo(binary, cancellationToken).Type?.TypeKind
                         == TypeKind.Delegate:
                 yield return binary.Left;
@@ -358,12 +357,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             case CastExpressionSyntax cast:
                 yield return cast.Expression;
                 break;
-            case PostfixUnaryExpressionSyntax postfix
-                when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
+            case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
                 yield return postfix.Operand;
                 break;
-            case BaseObjectCreationExpressionSyntax creation
-                when semanticModel.GetTypeInfo(creation, cancellationToken).Type?.TypeKind
+            case BaseObjectCreationExpressionSyntax creation when semanticModel.GetTypeInfo(creation, cancellationToken).Type?.TypeKind
                     == TypeKind.Delegate
                 && creation.ArgumentList is { } arguments:
                 foreach (var argument in arguments.Arguments)
@@ -494,9 +491,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && context.SemanticModel.GetSymbolInfo(
                         invocation,
                         context.CancellationToken).Symbol is IMethodSymbol
-                        {
-                            ReducedFrom: not null,
-                        }
+                    {
+                        ReducedFrom: not null,
+                    }
                     && TryFindEventContextExpression(
                         memberAccess.Expression,
                         context,
@@ -552,8 +549,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             context.CancellationToken),
                         declarator.Identifier.ValueText,
                         declarator.Initializer?.Value),
-                AssignmentExpressionSyntax assignment
-                    when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
+                AssignmentExpressionSyntax assignment when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
                     (GetAssignedTargetSymbol(
                             assignment.Left,
                             context.SemanticModel,
@@ -576,9 +572,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
             }
             else if (alias is not AssignmentExpressionSyntax
-                     {
-                         Left: ElementAccessExpressionSyntax,
-                     }
+            {
+                Left: ElementAccessExpressionSyntax,
+            }
                      && IsUnconditionalAliasWrite(alias, anonymous.Body))
             {
                 retainedNames.Remove(name);
@@ -627,8 +623,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         expression switch
         {
             DefaultExpressionSyntax => true,
-            LiteralExpressionSyntax literal
-                when literal.IsKind(SyntaxKind.DefaultLiteralExpression) => true,
+            LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.DefaultLiteralExpression) => true,
             ParenthesizedExpressionSyntax parenthesized =>
                 IsKnownFreshEventContextExpression(parenthesized.Expression),
             CastExpressionSyntax cast => IsKnownFreshEventContextExpression(cast.Expression),
@@ -638,20 +633,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsCallbackRetainedExpression(
         ExpressionSyntax expression,
         HashSet<string> retainedNames) => expression switch
-    {
-        IdentifierNameSyntax identifier => retainedNames.Contains(
-            identifier.Identifier.ValueText),
-        MemberAccessExpressionSyntax memberAccess
-            when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
-            IsCallbackRetainedExpression(memberAccess.Expression, retainedNames),
-        ParenthesizedExpressionSyntax parenthesized =>
-            IsCallbackRetainedExpression(parenthesized.Expression, retainedNames),
-        CastExpressionSyntax cast => IsCallbackRetainedExpression(cast.Expression, retainedNames),
-        PostfixUnaryExpressionSyntax postfix
-            when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
-            IsCallbackRetainedExpression(postfix.Operand, retainedNames),
-        _ => false,
-    };
+        {
+            IdentifierNameSyntax identifier => retainedNames.Contains(
+                identifier.Identifier.ValueText),
+            MemberAccessExpressionSyntax memberAccess when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
+                IsCallbackRetainedExpression(memberAccess.Expression, retainedNames),
+            ParenthesizedExpressionSyntax parenthesized =>
+                IsCallbackRetainedExpression(parenthesized.Expression, retainedNames),
+            CastExpressionSyntax cast => IsCallbackRetainedExpression(cast.Expression, retainedNames),
+            PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
+                IsCallbackRetainedExpression(postfix.Operand, retainedNames),
+            _ => false,
+        };
 
     private static bool TryFindPostAwaitMemberContext(
         InvocationExpressionSyntax invocation,
@@ -913,10 +906,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var retainedSymbolSeedsForAwait = new HashSet<ISymbol>(
             retainedSymbols,
             SymbolEqualityComparer.Default);
-        var retainedStates = new List<(
-            AwaitExpressionSyntax AwaitExpression,
-            HashSet<string> Names,
-            HashSet<ISymbol> Symbols)>();
+        var retainedStates = new List<(AwaitExpressionSyntax AwaitExpression, HashSet<string> Names, HashSet<ISymbol> Symbols)>();
         foreach (var awaitExpression in awaits.OrderBy(static candidate => candidate.SpanStart))
         {
             var namesAtAwait = new HashSet<string>(retainedNameSeeds, StringComparer.Ordinal);
@@ -1051,8 +1041,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     ContainingType: { } containingType,
                 },
             } => IsKnownCompletedAwaitableType(containingType),
-            IInvocationOperation invocation
-                when IsKnownCompletedAwaitableFactory(invocation) => true,
+            IInvocationOperation invocation when IsKnownCompletedAwaitableFactory(invocation) => true,
             IInvocationOperation invocation => IsKnownZeroDurationTaskDelay(invocation),
             IObjectCreationOperation { Constructor: { } constructor } =>
                 IsKnownCompletedValueTaskConstructor(constructor),
@@ -1167,8 +1156,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     (semanticModel?.GetDeclaredSymbol(declarator, cancellationToken),
                         declarator.Identifier.ValueText,
                         declarator.Initializer?.Value),
-                AssignmentExpressionSyntax assignment
-                    when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
+                AssignmentExpressionSyntax assignment when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
                     (GetAssignedTargetSymbol(
                             assignment.Left,
                             semanticModel,
@@ -1203,9 +1191,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
             }
             else if (alias is not AssignmentExpressionSyntax
-                     {
-                         Left: ElementAccessExpressionSyntax,
-                     })
+            {
+                Left: ElementAccessExpressionSyntax,
+            })
             {
                 if (target is not null)
                 {
@@ -1280,16 +1268,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsClearedOnEveryPath(
         StatementSyntax statement,
         List<SyntaxNode> kills) => statement switch
-    {
-        ExpressionStatementSyntax expressionStatement =>
-            kills.Any(kill => expressionStatement.Span.Contains(kill.Span)),
-        BlockSyntax block => block.Statements.Any(child =>
-            IsClearedOnEveryPath(child, kills)),
-        IfStatementSyntax { Else: { } elseClause } conditional =>
-            IsClearedOnEveryPath(conditional.Statement, kills)
-            && IsClearedOnEveryPath(elseClause.Statement, kills),
-        _ => false,
-    };
+        {
+            ExpressionStatementSyntax expressionStatement =>
+                kills.Any(kill => expressionStatement.Span.Contains(kill.Span)),
+            BlockSyntax block => block.Statements.Any(child =>
+                IsClearedOnEveryPath(child, kills)),
+            IfStatementSyntax { Else: { } elseClause } conditional =>
+                IsClearedOnEveryPath(conditional.Statement, kills)
+                && IsClearedOnEveryPath(elseClause.Statement, kills),
+            _ => false,
+        };
 
     private static bool HasReachableRetainedAlias(
         ExpressionSyntax expression,
@@ -1404,8 +1392,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 semanticModel,
                 controlFlowGraph,
                 cancellationToken),
-            PostfixUnaryExpressionSyntax postfix
-                when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
+            PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
                 HasReachableRetainedAlias(
                     postfix.Operand,
                     destination,
@@ -1932,13 +1919,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static IEnumerable<ParameterSyntax> GetAnonymousFunctionParameters(
         AnonymousFunctionExpressionSyntax anonymous) => anonymous switch
-    {
-        SimpleLambdaExpressionSyntax simple => [simple.Parameter],
-        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
-        AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } =>
-            parameterList.Parameters,
-        _ => [],
-    };
+        {
+            SimpleLambdaExpressionSyntax simple => [simple.Parameter],
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
+            AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } =>
+                parameterList.Parameters,
+            _ => [],
+        };
 
     private static bool IsRuntimeValueReference(IdentifierNameSyntax identifier) =>
         !identifier.Ancestors().OfType<InvocationExpressionSyntax>().Any(invocation =>
@@ -2524,9 +2511,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 if (semanticModel.GetSymbolInfo(
                         invocation,
                         cancellationToken).Symbol is not IMethodSymbol
-                    {
-                        MethodKind: MethodKind.LocalFunction,
-                    } localFunction
+                        {
+                            MethodKind: MethodKind.LocalFunction,
+                        } localFunction
                     || !localFunction.ReturnsVoid
                         && (followTaskReturningLocalFunction is null
                             || !StartsAsynchronousWork(localFunction)
@@ -2660,10 +2647,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return semanticModel.GetSymbolInfo(
                         memberAccess,
                         cancellationToken).Symbol is IPropertySymbol
-                    {
-                        Name: "Result",
-                        ContainingType: { } resultContainingType,
-                    }
+                {
+                    Name: "Result",
+                    ContainingType: { } resultContainingType,
+                }
                     && IsTaskLike(resultContainingType);
             }
 
@@ -3508,21 +3495,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             .Where(candidate => (candidate is InvocationExpressionSyntax
                     or AssignmentExpressionSyntax))
             .ToArray();
-        var origins = new List<(
-            SyntaxNode Node,
-            SyntaxNode Context,
-            string? Slot,
-            string? Value,
-            string? Receiver,
-            bool MayRetainMultiple,
-            bool AllowsDuplicateValues)>();
-        var kills = new List<(
-            SyntaxNode Node,
-            string? Slot,
-            bool ClearsAll,
-            string? Value,
-            bool RemovesOne,
-            string? Receiver)>();
+        var origins = new List<(SyntaxNode Node, SyntaxNode Context, string? Slot, string? Value, string? Receiver, bool MayRetainMultiple, bool AllowsDuplicateValues)>();
+        var kills = new List<(SyntaxNode Node, string? Slot, bool ClearsAll, string? Value, bool RemovesOne, string? Receiver)>();
         var slotInvalidations = new List<(SyntaxNode Node, string Receiver)>();
         var retainingMutationCount = 0;
         var hasIndeterminateRetainingMutation = false;
@@ -3603,8 +3577,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             visitedLocals: null),
                         Receiver: "root",
                         MayRetainMultiple: element is SpreadElementSyntax,
-                        AllowsDuplicateValues:
-                            !IsSetType(unwrappedInitializer.Type)));
+                        AllowsDuplicateValues: !IsSetType(unwrappedInitializer.Type)));
                     addedInitializerOrigins = true;
                 }
 
@@ -3613,9 +3586,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
         else if (unwrappedInitializer is IObjectCreationOperation
-            {
-                Initializer: { } objectInitializer,
-            } objectCreation)
+        {
+            Initializer: { } objectInitializer,
+        } objectCreation)
         {
             foreach (var argument in objectCreation.Arguments)
             {
@@ -3649,14 +3622,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         context,
                         visitedLocals: null),
                     Receiver: "root",
-                    MayRetainMultiple:
-                        MayRetainMultipleValues(argument.Value),
+                    MayRetainMultiple: MayRetainMultipleValues(argument.Value),
                     AllowsDuplicateValues: !IsSetType(objectCreation.Type)));
                 addedInitializerOrigins = true;
             }
 
-            foreach (var initializerAssignment in
-                EnumerateInitializerAssignments(objectCreation, "root"))
+            foreach (var initializerAssignment in EnumerateInitializerAssignments(objectCreation, "root"))
             {
                 if (TryFindDeferredStateContext(
                     initializerAssignment.Assignment.Value,
@@ -3740,8 +3711,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                 visitedLocals: null),
                             GetInitializerReceiverKey(GetReceiver(invocation)),
                             MayRetainMultiple: false,
-                            AllowsDuplicateValues:
-                                !IsSetType(GetReceiver(invocation)?.Type)));
+                            AllowsDuplicateValues: !IsSetType(GetReceiver(invocation)?.Type)));
                         addedInitializerOrigins = true;
                     }
                 }
@@ -3905,7 +3875,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (invocation.TargetMethod.Name == "RemoveAt"
                 && invocation.Arguments.Length == 1
                 && invocation.Arguments[0].Value.ConstantValue is
-                    { HasValue: true, Value: int index }
+                { HasValue: true, Value: int index }
                 && GetReceiver(invocation) is { } indexedReceiver)
             {
                 var removedReceiverKey = GetDeferredReceiverKey(
@@ -4018,11 +3988,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                 retainingMutationCount),
                         { Name: "Insert" } when invocation.Arguments.Length == 2
                             && invocation.Arguments[0].Value.ConstantValue is
-                                { HasValue: true, Value: int insertIndex } =>
-                            GetIndexedCollectionSlot(
-                                receiver?.Type,
-                                receiverKey,
-                                insertIndex),
+                            { HasValue: true, Value: int insertIndex } =>
+                        GetIndexedCollectionSlot(
+                            receiver?.Type,
+                            receiverKey,
+                            insertIndex),
                         _ => null,
                     }
                     : null;
@@ -4036,8 +4006,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && invocation.Arguments.FirstOrDefault(static argument =>
                     argument.Parameter?.Ordinal == 0) is { } keyArgument)
             {
-                foreach (var retainedValue in
-                    EnumerateRetainedDictionaryValues(invocation))
+                foreach (var retainedValue in EnumerateRetainedDictionaryValues(invocation))
                 {
                     if (!TryFindDeferredStateContext(
                         retainedValue,
@@ -4091,8 +4060,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         isBulkMutation
                             && !IsSetType(receiver?.Type)
                             && MayRetainMultipleValues(argument.Value),
-                        AllowsDuplicateValues:
-                            !IsSetType(receiver?.Type)));
+                        AllowsDuplicateValues: !IsSetType(receiver?.Type)));
                 }
             }
         }
@@ -4275,13 +4243,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static IEnumerable<(
-        SyntaxNode Context,
-        string? Slot,
-        string? Value,
-        string Receiver,
-        bool MayRetainMultiple,
-        bool AllowsDuplicateValues)> EnumerateLocalFunctionRetainingOrigins(
+    private static IEnumerable<(SyntaxNode Context, string? Slot, string? Value, string Receiver, bool MayRetainMultiple, bool AllowsDuplicateValues)> EnumerateLocalFunctionRetainingOrigins(
         IInvocationOperation localFunctionInvocation,
         ILocalSymbol local,
         OperationAnalysisContext context,
@@ -4305,8 +4267,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             yield break;
         }
 
-        foreach (var syntaxReference in
-            localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
+        foreach (var syntaxReference in localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
         {
             var declaration = syntaxReference.GetSyntax(context.CancellationToken);
             if (GetFunctionBody(declaration) is not { } body)
@@ -4536,12 +4497,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static IEnumerable<(
-        string? Slot,
-        bool ClearsAll,
-        string? Value,
-        bool RemovesOne,
-        string Receiver)> EnumerateLocalFunctionMutationKills(
+    private static IEnumerable<(string? Slot, bool ClearsAll, string? Value, bool RemovesOne, string Receiver)> EnumerateLocalFunctionMutationKills(
         IInvocationOperation localFunctionInvocation,
         ILocalSymbol local,
         IOperation initializer,
@@ -4564,8 +4520,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             yield break;
         }
 
-        foreach (var syntaxReference in
-            localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
+        foreach (var syntaxReference in localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
         {
             var declaration = syntaxReference.GetSyntax(context.CancellationToken);
             if (GetFunctionBody(declaration) is not { } body)
@@ -4647,7 +4602,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 if (invocation.TargetMethod.Name == "RemoveAt"
                     && invocation.Arguments.Length == 1
                     && invocation.Arguments[0].Value.ConstantValue is
-                        { HasValue: true, Value: int index }
+                    { HasValue: true, Value: int index }
                     && GetIndexedCollectionSlot(receiver?.Type, receiverKey, index)
                         is { } removedSlot)
                 {
@@ -5089,7 +5044,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var destinationIndex = GetArgumentValue(invocation, "destinationIndex");
         return destinationIndex is null
             || destinationIndex.ConstantValue is
-                { HasValue: true, Value: 0 };
+            { HasValue: true, Value: 0 };
     }
 
     private static IOperation? GetArgumentValue(
@@ -5121,7 +5076,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             if (arrayCreation.DimensionSizes.Length == 1
                 && arrayCreation.DimensionSizes[0].ConstantValue is
-                    { HasValue: true, Value: int dimension })
+                { HasValue: true, Value: int dimension })
             {
                 length = dimension;
                 return true;
@@ -5262,9 +5217,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 },
             } => true,
             _ => initializer.Syntax is CollectionExpressionSyntax
-                {
-                    Elements.Count: 0,
-                },
+            {
+                Elements.Count: 0,
+            },
         };
     }
 
@@ -5381,10 +5336,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static IEnumerable<(
-        ISimpleAssignmentOperation Assignment,
-        string Slot,
-        string Receiver)> EnumerateInitializerAssignments(
+    private static IEnumerable<(ISimpleAssignmentOperation Assignment, string Slot, string Receiver)> EnumerateInitializerAssignments(
         IObjectCreationOperation creation,
         string prefix)
     {
@@ -6007,8 +5959,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
 
                 break;
-            case ILocalReferenceOperation localReference
-                when localReference.Local.Type.TypeKind == TypeKind.Delegate:
+            case ILocalReferenceOperation localReference when localReference.Local.Type.TypeKind == TypeKind.Delegate:
                 visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
                 if (visitedLocals.Add(localReference.Local)
                     && TryGetStableInitializer(localReference, context, out var initializer)
@@ -6320,9 +6271,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 writes.Add((assignment, assignment.Right));
             }
             else if (candidate is VariableDeclaratorSyntax
-                     {
-                         Initializer.Value: { } value,
-                     } declarator
+            {
+                Initializer.Value: { } value,
+            } declarator
                 && SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetDeclaredSymbol(
                         declarator,
@@ -6884,14 +6835,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     continue;
 
                 // An instance call: `clause.Retry(3)`.
-                case IInvocationOperation consumer
-                    when ReferenceEquals(GetReceiver(consumer), current):
+                case IInvocationOperation consumer when ReferenceEquals(GetReceiver(consumer), current):
                     return consumer;
 
                 // A reduced extension call: `shield.When<T>()` parents the receiver under the
                 // argument that carries it, not under the invocation itself.
-                case IArgumentOperation { Parent: IInvocationOperation extensionConsumer }
-                    when ReferenceEquals(GetReceiver(extensionConsumer), current):
+                case IArgumentOperation { Parent: IInvocationOperation extensionConsumer } when ReferenceEquals(GetReceiver(extensionConsumer), current):
                     return extensionConsumer;
 
                 default:
@@ -8032,8 +7981,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             switch (ancestor)
             {
-                case ArgumentSyntax argument
-                    when IsKnownStaticArrayMutationArgument(
+                case ArgumentSyntax argument when IsKnownStaticArrayMutationArgument(
                         argument,
                         semanticModel,
                         cancellationToken):
@@ -8059,9 +8007,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken)
     {
         if (argument.Parent is not ArgumentListSyntax
-        {
-            Parent: InvocationExpressionSyntax invocationSyntax,
-        }
+            {
+                Parent: InvocationExpressionSyntax invocationSyntax,
+            }
             || semanticModel.GetOperation(invocationSyntax, cancellationToken)
                 is not IInvocationOperation invocation
             || !IsKnownStaticArrayMutation(invocation.TargetMethod))
@@ -8089,12 +8037,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 case AssignmentExpressionSyntax assignment when assignment.Left.Span.Contains(identifier.Span):
                     return true;
-                case PrefixUnaryExpressionSyntax prefix
-                    when prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                case PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression)
                         || prefix.IsKind(SyntaxKind.PreDecrementExpression):
                     return true;
-                case PostfixUnaryExpressionSyntax postfix
-                    when postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression)
                         || postfix.IsKind(SyntaxKind.PostDecrementExpression):
                     return true;
                 case ArgumentSyntax argument when !argument.RefKindKeyword.IsKind(SyntaxKind.None):
@@ -8734,19 +8680,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             switch (ancestor)
             {
-                case MemberAccessExpressionSyntax memberAccess
-                    when memberAccess.Expression.Span.Contains(identifier.Span):
-                case ElementAccessExpressionSyntax elementAccess
-                    when elementAccess.Expression.Span.Contains(identifier.Span):
+                case MemberAccessExpressionSyntax memberAccess when memberAccess.Expression.Span.Contains(identifier.Span):
+                case ElementAccessExpressionSyntax elementAccess when elementAccess.Expression.Span.Contains(identifier.Span):
                     return false;
                 case AssignmentExpressionSyntax assignment when assignment.Left.Span.Contains(identifier.Span):
                     return true;
-                case PrefixUnaryExpressionSyntax prefix
-                    when prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                case PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression)
                         || prefix.IsKind(SyntaxKind.PreDecrementExpression):
                     return true;
-                case PostfixUnaryExpressionSyntax postfix
-                    when postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                case PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression)
                         || postfix.IsKind(SyntaxKind.PostDecrementExpression):
                     return true;
                 case ArgumentSyntax argument when !argument.RefKindKeyword.IsKind(SyntaxKind.None):
@@ -9361,7 +9303,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     || assemblyName.EndsWith(".Tests", StringComparison.OrdinalIgnoreCase));
         }
 
-        internal bool IsTestAssembly { get; }
+        internal bool IsTestAssembly
+        {
+            get;
+        }
 
         /// <summary>
         /// Whether <paramref name="property"/> is a Kevlar strategy hook: a delegate-typed member
@@ -9443,16 +9388,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             var isAction = callbackType is
-                {
-                    Name: "Action",
-                    Arity: 1,
-                    ContainingNamespace.Name: "System",
-                };
+            {
+                Name: "Action",
+                Arity: 1,
+                ContainingNamespace.Name: "System",
+            };
             var isFunc = callbackType is
-                {
-                    Name: "Func",
-                    ContainingNamespace.Name: "System",
-                };
+            {
+                Name: "Func",
+                ContainingNamespace.Name: "System",
+            };
             if (isAction || isFunc)
             {
                 eventType = callbackEventType;

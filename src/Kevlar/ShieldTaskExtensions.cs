@@ -117,7 +117,9 @@ public static class ShieldTaskExtensions
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => new ValueTask<T>(a(context)),
             cancellationToken);
     }
@@ -221,7 +223,9 @@ public static class ShieldTaskExtensions
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => new ValueTask(a(context)),
             cancellationToken);
     }
@@ -372,7 +376,9 @@ public static class ShieldTaskExtensions
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => new ValueTask<TResult>(a(context)),
             cancellationToken);
     }

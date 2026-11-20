@@ -1070,7 +1070,10 @@ public class LoggingTests
 
     private sealed class ThrowingLogger : ILogger
     {
-        public Exception Failure { get; } = new TestException("logger");
+        public Exception Failure
+        {
+            get;
+        } = new TestException("logger");
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -1102,7 +1105,10 @@ public class LoggingTests
 
     private sealed class TrackingScope(Exception? failure = null) : IDisposable
     {
-        public bool IsDisposed { get; private set; }
+        public bool IsDisposed
+        {
+            get; private set;
+        }
 
         public void Dispose()
         {

@@ -22,19 +22,34 @@ public readonly struct CircuitBreakerBreakDurationEvent
     }
 
     /// <summary>The handled exception, or <see langword="null"/> when a result was handled.</summary>
-    public Exception? Exception { get; }
+    public Exception? Exception
+    {
+        get;
+    }
 
     /// <summary>The handled result (boxed), or <see langword="null"/> when an exception occurred.</summary>
-    public object? Result { get; }
+    public object? Result
+    {
+        get;
+    }
 
     /// <summary>The handled-failure ratio when the circuit opened.</summary>
-    public double FailureRate { get; }
+    public double FailureRate
+    {
+        get;
+    }
 
     /// <summary>The handled-failure count when the circuit opened.</summary>
-    public long FailureCount { get; }
+    public long FailureCount
+    {
+        get;
+    }
 
     /// <summary>The consecutive handled-failure count when the circuit opened.</summary>
-    public int ConsecutiveFailures { get; }
+    public int ConsecutiveFailures
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it or its property bag after
@@ -66,16 +81,28 @@ public readonly struct CircuitBreakerBreakDurationEvent<TResult>
     }
 
     /// <summary>The handled outcome that opened the circuit.</summary>
-    public Outcome<TResult> Outcome { get; }
+    public Outcome<TResult> Outcome
+    {
+        get;
+    }
 
     /// <summary>The handled-failure ratio when the circuit opened.</summary>
-    public double FailureRate { get; }
+    public double FailureRate
+    {
+        get;
+    }
 
     /// <summary>The handled-failure count when the circuit opened.</summary>
-    public long FailureCount { get; }
+    public long FailureCount
+    {
+        get;
+    }
 
     /// <summary>The consecutive handled-failure count when the circuit opened.</summary>
-    public int ConsecutiveFailures { get; }
+    public int ConsecutiveFailures
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it or its property bag after

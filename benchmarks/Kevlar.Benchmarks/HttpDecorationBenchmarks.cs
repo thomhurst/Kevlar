@@ -16,7 +16,10 @@ public class HttpDecorationBenchmarks
     private readonly Uri _uri = new("https://benchmark.invalid/");
 
     [Params(false, true)]
-    public bool LoggingEnabled { get; set; }
+    public bool LoggingEnabled
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public async Task Setup()
@@ -26,6 +29,7 @@ public class HttpDecorationBenchmarks
         {
             services.AddKevlarLogging();
         }
+
         var shared = HttpShield.WhenTransient()
             .CircuitBreaker(consecutiveFailures: 100, breakDuration: TimeSpan.FromMinutes(1));
         _partitions = new PartitionedShield<string, HttpResponseMessage>(static _ =>

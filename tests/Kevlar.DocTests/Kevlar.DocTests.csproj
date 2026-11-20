@@ -51,4 +51,11 @@
     <Protobuf Include="Protos\orders.proto" GrpcServices="Client" />
   </ItemGroup>
 
+  <!-- Compile documentation against the SDK and package analyzer defaults that consumers receive. -->
+  <Target Name="ExcludeRepositoryStyleFromDocumentationSnippets" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <EditorConfigFiles Remove="$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', '..', '.editorconfig'))" />
+    </ItemGroup>
+  </Target>
+
 </Project>

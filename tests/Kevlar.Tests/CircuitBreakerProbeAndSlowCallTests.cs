@@ -23,6 +23,7 @@ public class CircuitBreakerProbeAndSlowCallTests
             {
                 options.OnStateChanged = static _ => default;
             }
+
             if (mode == "generator")
             {
                 options.BreakDurationGenerator = static _ => new(TimeSpan.FromSeconds(1));
@@ -53,6 +54,7 @@ public class CircuitBreakerProbeAndSlowCallTests
             {
                 release.TrySetResult(42);
             }
+
             _ = await Task.WhenAll(probes);
         }
     }
@@ -85,11 +87,13 @@ public class CircuitBreakerProbeAndSlowCallTests
                 releases[index].SetException(new IOException());
                 _ = await probes[index];
             }
+
             await Assert.That(monitor.State).IsEqualTo(ratioMode && failures == 1 ? CircuitState.HalfOpen : CircuitState.Open);
             foreach (var release in releases)
             {
                 release.TrySetResult(42);
             }
+
             _ = await Task.WhenAll(probes);
             await Assert.That(monitor.State).IsEqualTo(ratioMode && failures == 1 ? CircuitState.Closed : CircuitState.Open);
         }
@@ -99,6 +103,7 @@ public class CircuitBreakerProbeAndSlowCallTests
             {
                 release.TrySetResult(42);
             }
+
             _ = await Task.WhenAll(probes);
         }
     }
@@ -221,6 +226,7 @@ public class CircuitBreakerProbeAndSlowCallTests
             {
                 await Task.Delay(1, timeout.Token);
             }
+
             await Assert.That(admitted).IsEqualTo(3);
             await Assert.That(Snapshot(shield).ProbesInFlight).IsEqualTo(3);
             release.SetResult(42);
@@ -426,6 +432,7 @@ public class CircuitBreakerProbeAndSlowCallTests
                 {
                     return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
                 }
+
                 generationStarted.TrySetResult();
                 return new ValueTask<TimeSpan>(duration.Task);
             };

@@ -31,5 +31,8 @@ public abstract class ExecutionRejectedException : KevlarException
     }
 
     /// <summary>Estimated time until execution may be attempted again, when known.</summary>
-    public TimeSpan? RetryAfter { get; }
+    public TimeSpan? RetryAfter
+    {
+        get;
+    }
 }

@@ -222,6 +222,7 @@ public class QueueTimeoutTests
             // Wake the permit delay without dispatching the queue-timeout callback.
             time.FireTimer(1);
         }
+
         var outcome = await queued.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await active.WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(outcome.Exception is ExecutionRejectedException).IsTrue();
@@ -306,6 +307,7 @@ public class QueueTimeoutTests
             await Assert.That(concurrency.Description).Contains("queue 2/250ms");
             await Assert.That(rate.Description).Contains("queue 3/500ms");
         }
+
         await Assert.That(Shield.ConcurrencyLimit(1, queueLimit: 2).ToString()).IsEqualTo("ConcurrencyLimit(1, queue 2)");
     }
 
@@ -319,7 +321,11 @@ public class QueueTimeoutTests
                 options.QueueLimit = 2;
                 options.QueueTimeout = timeout;
                 options.UsePriorityQueue = usePriorityQueue;
-                options.OnRejected = rejection => { onRejected?.Invoke(rejection.Reason); return default; };
+                options.OnRejected = rejection =>
+                {
+                    onRejected?.Invoke(rejection.Reason);
+                    return default;
+                };
             })
             : Shield.ConcurrencyLimit(options =>
             {
@@ -327,7 +333,11 @@ public class QueueTimeoutTests
                 options.QueueLimit = 2;
                 options.QueueTimeout = timeout;
                 options.UsePriorityQueue = usePriorityQueue;
-                options.OnRejected = rejection => { onRejected?.Invoke(rejection.Reason); return default; };
+                options.OnRejected = rejection =>
+                {
+                    onRejected?.Invoke(rejection.Reason);
+                    return default;
+                };
             });
         return shield.WithTimeProvider(time);
     }
@@ -341,7 +351,10 @@ public class QueueTimeoutTests
 
     private sealed class Listener : IKevlarTelemetryListener
     {
-        public ConcurrentQueue<string?> Reasons { get; } = new();
+        public ConcurrentQueue<string?> Reasons
+        {
+            get;
+        } = new();
         public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
         {
             if (telemetryEvent.ShieldName == "queue-timeout-telemetry" && telemetryEvent.EventName == "rejection")

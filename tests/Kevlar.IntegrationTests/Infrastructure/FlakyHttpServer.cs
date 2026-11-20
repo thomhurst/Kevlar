@@ -24,7 +24,10 @@ internal sealed class FlakyHttpServer : IAsyncDisposable
         _acceptLoop = Task.Run(AcceptLoopAsync);
     }
 
-    public string Url { get; }
+    public string Url
+    {
+        get;
+    }
 
     /// <summary>Total requests received so far.</summary>
     public int CallCount => Volatile.Read(ref _calls);

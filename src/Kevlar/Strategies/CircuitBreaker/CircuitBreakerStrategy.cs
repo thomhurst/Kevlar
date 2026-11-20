@@ -62,7 +62,10 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool HasHandlingOverride { get; }
+    internal override bool HasHandlingOverride
+    {
+        get;
+    }
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 

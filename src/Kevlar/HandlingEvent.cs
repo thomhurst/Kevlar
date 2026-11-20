@@ -12,14 +12,26 @@ public readonly struct HandlingEvent
     }
 
     /// <summary>The exception being classified.</summary>
-    public Exception Exception { get; }
+    public Exception Exception
+    {
+        get;
+    }
 
     /// <summary>The active execution context. Do not retain this pooled object.</summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context
+    {
+        get;
+    }
 
     /// <summary>The zero-based attempt number for retry and hedging; zero for other strategies.</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>The zero-based index of the strategy evaluating the outcome.</summary>
-    public int StrategyIndex { get; }
+    public int StrategyIndex
+    {
+        get;
+    }
 }

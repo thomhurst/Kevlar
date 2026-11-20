@@ -4,7 +4,10 @@ namespace Kevlar.Strategies;
 
 internal sealed class PriorityRateLimitStrategy : PriorityLimitStrategy, IRateLimitState
 {
-    internal RateLimitStrategy Configuration { get; }
+    internal RateLimitStrategy Configuration
+    {
+        get;
+    }
     private readonly KevlarMetrics.StateMetricRegistration<IRateLimitState> _metrics;
 
     public PriorityRateLimitStrategy(RateLimitOptions options) : base(options.QueueLimit, options.QueueTimeout)
@@ -17,7 +20,9 @@ internal sealed class PriorityRateLimitStrategy : PriorityLimitStrategy, IRateLi
     public override string Describe() => Configuration.Describe().TrimEnd(')') + ", priority queue)";
     protected override bool TryAcquire(TimeProvider timeProvider, out TimeSpan? retryAfter) =>
         Configuration.TryAcquireWithoutQueue(timeProvider, out retryAfter, out _);
-    protected override void Release() { }
+    protected override void Release()
+    {
+    }
     protected override ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason) =>
         Configuration.RejectAsync<T>(context, retryAfter, reason);
 

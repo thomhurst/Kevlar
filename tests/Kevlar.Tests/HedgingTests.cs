@@ -20,7 +20,11 @@ public class HedgingTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-            options.OnHedge = _ => { hedges++; return default; };
+            options.OnHedge = _ =>
+            {
+                hedges++;
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -68,7 +72,11 @@ public class HedgingTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 0;
-            options.OnHedge = _ => { hedges++; return default; };
+            options.OnHedge = _ =>
+            {
+                hedges++;
+                return default;
+            };
         });
 
         var result = shield.Execute(static _ => 42);
@@ -86,7 +94,11 @@ public class HedgingTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = _ => { notifications++; return default; };
+            options.OnHedge = _ =>
+            {
+                notifications++;
+                return default;
+            };
         });
 
         var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
@@ -449,7 +461,11 @@ public class HedgingTests
             {
                 options.MaxHedgedAttempts = 1;
                 options.Delay = TimeSpan.FromSeconds(1);
-                options.OnHedge = hedge => { hedges.Add(hedge.AttemptNumber); return default; };
+                options.OnHedge = hedge =>
+                {
+                    hedges.Add(hedge.AttemptNumber);
+                    return default;
+                };
             })
             .WithTimeProvider(fakeTime);
 

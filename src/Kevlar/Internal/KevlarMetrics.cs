@@ -427,6 +427,7 @@ internal static class KevlarMetrics
             {
                 tags.Add("kevlar.rejection.reason", reason);
             }
+
             KevlarMetricEnrichment.Add(Rejections, 1, in tags, context);
         }
 #endif
@@ -1095,7 +1096,10 @@ internal static class KevlarMetrics
     internal sealed class StateMetricRegistration<TStrategy>
         where TStrategy : class
     {
-        public static StateMetricRegistration<TStrategy> Disabled { get; } = new();
+        public static StateMetricRegistration<TStrategy> Disabled
+        {
+            get;
+        } = new();
 
         public bool HasObservations => false;
 

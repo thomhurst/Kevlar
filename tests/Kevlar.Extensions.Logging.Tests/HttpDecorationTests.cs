@@ -31,12 +31,14 @@ public class HttpDecorationTests
         {
             builder.AddShield((_, _) => shared);
         }
+
         using var provider = services.BuildServiceProvider();
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("api");
         using (var response = await client.GetAsync("https://dependency.test/"))
         {
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
+
         var initialRegistrations = TelemetryRegistrationCount(shared);
         await Assert.That(initialRegistrations).IsGreaterThan(0);
 
@@ -62,7 +64,10 @@ public class HttpDecorationTests
 
     private sealed class RetainingDecorator : IShieldDecorator
     {
-        public ConcurrentBag<object> Shields { get; } = new();
+        public ConcurrentBag<object> Shields
+        {
+            get;
+        } = new();
 
         public Shield Decorate(Shield shield, string? name) => throw new NotSupportedException();
 

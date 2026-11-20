@@ -42,6 +42,7 @@ public class AdaptiveConcurrencyCompatibilityTests
             gate.TrySetResult(42);
             _ = await running;
         }
+
         await Assert.That(shield.Execute(static _ => 44)).IsEqualTo(44);
     }
 

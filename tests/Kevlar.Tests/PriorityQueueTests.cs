@@ -34,6 +34,7 @@ public class PriorityQueueTests
         {
             await queue.AdmitNext(pair.Item1, pair.Item2);
         }
+
         queue.Release(1);
         await Task.WhenAll(active, first, tieFirst, tieSecond, highest).WaitForTestAsync(TestHelpers.DefaultTimeout);
         await Assert.That(string.Join(",", queue.Entered)).IsEqualTo("0,5,3,4,1");
@@ -142,6 +143,7 @@ public class PriorityQueueTests
         {
             await Task.Delay(1, timeout.Token);
         }
+
         queue.Release(0);
         queue.Time.Advance(TimeSpan.FromSeconds(1));
         await Assert.That(await synchronous.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
@@ -184,7 +186,9 @@ public class PriorityQueueTests
         meter.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == KevlarDiagnostics.MeterName && instrument.Name == "kevlar.rejections")
+            {
                 listener.EnableMeasurementEvents(instrument);
+            }
         };
         meter.SetMeasurementEventCallback<long>((_, _, tags, _) => measurements.Enqueue(tags.ToArray()));
         meter.Start();
@@ -222,12 +226,30 @@ public class PriorityQueueTests
                     static (priority, properties) => properties.Set(KevlarKeys.Priority, priority),
                     async (_, _) =>
                     {
-                        if (Interlocked.Increment(ref running) > limit) Interlocked.Increment(ref violations);
-                        try { await Task.Yield(); return 1; }
-                        finally { Interlocked.Decrement(ref running); }
+                        if (Interlocked.Increment(ref running) > limit)
+                        {
+                            Interlocked.Increment(ref violations);
+                        }
+
+                        try
+                        {
+                            await Task.Yield();
+                            return 1;
+                        }
+                        finally
+                        {
+                            Interlocked.Decrement(ref running);
+                        }
                     }, caller.Token).AsTask();
-                if (attempt % 3 == 0) caller.Cancel();
-                try { await execution; }
+                if (attempt % 3 == 0)
+                {
+                    caller.Cancel();
+                }
+
+                try
+                {
+                    await execution;
+                }
                 catch (OperationCanceledException) { }
                 catch (ConcurrencyLimitExceededException) { }
             }
@@ -285,17 +307,27 @@ public class PriorityQueueTests
         public override DateTimeOffset GetUtcNow() => _time.GetUtcNow();
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
-            if (Interlocked.Increment(ref _created) == 1) _time.Advance(dueTime);
+            if (Interlocked.Increment(ref _created) == 1)
+            {
+                _time.Advance(dueTime);
+            }
+
             return _time.CreateTimer(callback, state, dueTime, period);
         }
     }
 
     private sealed class RejectionListener : IKevlarTelemetryListener
     {
-        public ConcurrentQueue<string?> Reasons { get; } = new();
+        public ConcurrentQueue<string?> Reasons
+        {
+            get;
+        } = new();
         public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
         {
-            if (telemetryEvent.RejectionReason is { } reason) Reasons.Enqueue(reason);
+            if (telemetryEvent.RejectionReason is { } reason)
+            {
+                Reasons.Enqueue(reason);
+            }
         }
     }
 
@@ -319,10 +351,22 @@ public class PriorityQueueTests
         private readonly ConcurrentDictionary<int, TaskCompletionSource<int>> _releases = new();
         private readonly ConcurrentDictionary<int, TaskCompletionSource<int>> _entries = new();
         private readonly List<Task<Outcome<int>>> _tasks = new();
-        public FakeTimeProvider Time { get; } = new();
-        public Shield Shield { get; }
-        public ConcurrentQueue<int> Entered { get; } = new();
-        public ConcurrentQueue<string?> Reasons { get; } = new();
+        public FakeTimeProvider Time
+        {
+            get;
+        } = new();
+        public Shield Shield
+        {
+            get;
+        }
+        public ConcurrentQueue<int> Entered
+        {
+            get;
+        } = new();
+        public ConcurrentQueue<string?> Reasons
+        {
+            get;
+        } = new();
 
         public QueueHarness(bool rateLimit, int capacity, bool enabled = true, TimeSpan? timeout = null)
         {
@@ -333,14 +377,22 @@ public class PriorityQueueTests
                 options.QueueLimit = capacity;
                 options.QueueTimeout = timeout;
                 options.UsePriorityQueue = enabled;
-                options.OnRejected = rejection => { Reasons.Enqueue(rejection.Reason); return default; };
+                options.OnRejected = rejection =>
+                {
+                    Reasons.Enqueue(rejection.Reason);
+                    return default;
+                };
             }) : Kevlar.Shield.ConcurrencyLimit(options =>
             {
                 options.MaxConcurrency = 1;
                 options.QueueLimit = capacity;
                 options.QueueTimeout = timeout;
                 options.UsePriorityQueue = enabled;
-                options.OnRejected = rejection => { Reasons.Enqueue(rejection.Reason); return default; };
+                options.OnRejected = rejection =>
+                {
+                    Reasons.Enqueue(rejection.Reason);
+                    return default;
+                };
             })).WithTimeProvider(Time);
         }
 
@@ -358,7 +410,13 @@ public class PriorityQueueTests
             try
             {
                 var result = await Shield.ExecuteWithContextAsync(priority,
-                    static (value, properties) => { if (value is { } p) properties.Set(KevlarKeys.Priority, p); },
+                    static (value, properties) =>
+                    {
+                        if (value is { } p)
+                        {
+                            properties.Set(KevlarKeys.Priority, p);
+                        }
+                    },
                     (_, _) =>
                     {
                         Entered.Enqueue(id);
@@ -386,7 +444,11 @@ public class PriorityQueueTests
         public async ValueTask DisposeAsync()
         {
             _cleanup.Cancel();
-            foreach (var release in _releases.Values) release.TrySetResult(0);
+            foreach (var release in _releases.Values)
+            {
+                release.TrySetResult(0);
+            }
+
             await Task.WhenAll(_tasks).WaitForTestAsync(TestHelpers.DefaultTimeout);
             _cleanup.Dispose();
         }

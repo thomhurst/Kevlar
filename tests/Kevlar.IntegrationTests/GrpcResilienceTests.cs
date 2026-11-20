@@ -1183,9 +1183,15 @@ public class GrpcResilienceTests
             Channel = channel;
         }
 
-        public GrpcServiceState State { get; }
+        public GrpcServiceState State
+        {
+            get;
+        }
 
-        private GrpcChannel Channel { get; }
+        private GrpcChannel Channel
+        {
+            get;
+        }
 
         public static async Task<GrpcTestServer> StartAsync()
         {

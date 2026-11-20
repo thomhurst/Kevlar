@@ -19,13 +19,19 @@ public readonly struct HedgeEvent<TResult>
     }
 
     /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>
     /// The latest handled outcome available before this attempt was launched, or
     /// <see langword="null"/> when pending attempts have not produced an outcome yet.
     /// </summary>
-    public Outcome<TResult>? Outcome { get; }
+    public Outcome<TResult>? Outcome
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after the hedge callback's

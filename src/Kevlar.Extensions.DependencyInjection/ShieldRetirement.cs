@@ -12,7 +12,10 @@ internal sealed class ShieldRetirement
         Strategies = Track(shield);
     }
 
-    public Strategy[] Strategies { get; }
+    public Strategy[] Strategies
+    {
+        get;
+    }
 
     public bool CanReclaim()
     {
@@ -100,7 +103,10 @@ internal sealed class ShieldRetirement
 
     private sealed class ReferenceComparer : IEqualityComparer<Strategy>
     {
-        public static ReferenceComparer Instance { get; } = new();
+        public static ReferenceComparer Instance
+        {
+            get;
+        } = new();
 
         public bool Equals(Strategy? x, Strategy? y) => ReferenceEquals(x, y);
 

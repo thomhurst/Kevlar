@@ -383,7 +383,10 @@ public sealed class KevlarProperties
 
     private abstract class PropertySlot
     {
-        public abstract bool HasValue { get; }
+        public abstract bool HasValue
+        {
+            get;
+        }
 
         public abstract void Clear();
 

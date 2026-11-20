@@ -10,16 +10,28 @@ public sealed class KevlarLoggingOptions
     /// Overrides the level for an event. Return <see cref="KevlarLogEvent.DefaultLevel"/> to retain
     /// Kevlar's default level, or <see cref="LogLevel.None"/> to suppress the event.
     /// </summary>
-    public Func<KevlarLogEvent, LogLevel>? SeverityProvider { get; set; }
+    public Func<KevlarLogEvent, LogLevel>? SeverityProvider
+    {
+        get; set;
+    }
 
     /// <summary>Formats a handled result for the structured <c>Outcome</c> field.</summary>
-    public Func<object?, string?>? ResultFormatter { get; set; }
+    public Func<object?, string?>? ResultFormatter
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets whether executions create a structured shield-name scope.</summary>
-    public bool IncludeScopes { get; set; }
+    public bool IncludeScopes
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets an optional per-configuration log limit per one-second window.</summary>
-    public int? MaxLogsPerSecond { get; set; }
+    public int? MaxLogsPerSecond
+    {
+        get; set;
+    }
 
     internal LoggingOptionsSnapshot Snapshot()
     {
@@ -49,16 +61,31 @@ internal sealed class LoggingOptionsSnapshot(
     private long _windowStarted;
     private int _windowCount;
 
-    public Func<KevlarLogEvent, LogLevel>? SeverityProvider { get; } = severityProvider;
+    public Func<KevlarLogEvent, LogLevel>? SeverityProvider
+    {
+        get;
+    } = severityProvider;
 
-    public bool CanEvaluateSeverityWithoutResult { get; } =
+    public bool CanEvaluateSeverityWithoutResult
+    {
+        get;
+    } =
         CanEvaluateWithoutEvent(severityProvider);
 
-    public Func<object?, string?>? ResultFormatter { get; } = resultFormatter;
+    public Func<object?, string?>? ResultFormatter
+    {
+        get;
+    } = resultFormatter;
 
-    public bool IncludeScopes { get; } = includeScopes;
+    public bool IncludeScopes
+    {
+        get;
+    } = includeScopes;
 
-    public int? MaxLogsPerSecond { get; } = maxLogsPerSecond;
+    public int? MaxLogsPerSecond
+    {
+        get;
+    } = maxLogsPerSecond;
 
     public bool TryReserve(out long windowStarted)
     {

@@ -24,22 +24,40 @@ public readonly struct RateLimitRejectedEvent
     }
 
     /// <summary>The estimated delay before another execution can be admitted, when available.</summary>
-    public TimeSpan? RetryAfter { get; }
+    public TimeSpan? RetryAfter
+    {
+        get;
+    }
 
     /// <summary>The configured permits replenished per <see cref="Window"/>.</summary>
-    public int Permits { get; }
+    public int Permits
+    {
+        get;
+    }
 
     /// <summary>The configured replenishment window.</summary>
-    public TimeSpan Window { get; }
+    public TimeSpan Window
+    {
+        get;
+    }
 
     /// <summary>The configured maximum burst capacity.</summary>
-    public int Burst { get; }
+    public int Burst
+    {
+        get;
+    }
 
     /// <summary>The configured maximum wait queue size.</summary>
-    public int QueueLimit { get; }
+    public int QueueLimit
+    {
+        get;
+    }
 
     /// <summary>The rejection reason, such as <c>queue_timeout</c> or <c>queue_evicted</c>, or null for capacity rejection.</summary>
-    public string? Reason { get; }
+    public string? Reason
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and

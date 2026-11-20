@@ -57,11 +57,13 @@ public class HttpOptionForwardingTests
         var budget = RetryBudget.CreateReplenishing(1, replenishmentPeriod: TimeSpan.FromHours(1));
         var inner = new ResponseHandler();
         var services = new ServiceCollection();
+
         void Configure(StandardHttpShieldOptions options)
         {
             ConfigureStandard(options);
             options.Retry.Budget = budget;
         }
+
         void Register(IHttpClientBuilder builder)
         {
             builder.ConfigurePrimaryHttpMessageHandler(() => inner);
@@ -74,6 +76,7 @@ public class HttpOptionForwardingTests
                 builder.AddStandardShield(Configure);
             }
         }
+
         if (defaults)
         {
             services.ConfigureHttpClientDefaults(Register);
@@ -82,6 +85,7 @@ public class HttpOptionForwardingTests
         {
             Register(services.AddHttpClient("standard"));
         }
+
         using var provider = services.BuildServiceProvider();
         var factory = provider.GetRequiredService<IHttpClientFactory>();
         using var client = factory.CreateClient("standard");
@@ -116,7 +120,11 @@ public class HttpOptionForwardingTests
                     await Task.Yield();
                     return TimeSpan.FromSeconds(10);
                 };
-                options.Retry.OnRetry = _ => { notifications++; return default; };
+                options.Retry.OnRetry = _ =>
+                {
+                    notifications++;
+                    return default;
+                };
             });
         using var provider = services.BuildServiceProvider();
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("standard");
@@ -139,11 +147,13 @@ public class HttpOptionForwardingTests
             .AddStandardShield(options =>
             {
                 ConfigureStandard(options);
+
                 bool Handles(HandlingEvent<HttpResponseMessage> handling)
                 {
                     seenAttempts.Add(handling.AttemptNumber);
                     return handling.AttemptNumber == 0;
                 }
+
                 if (exception)
                 {
                     options.Retry.HandlesExceptionContext = Handles;
@@ -164,6 +174,7 @@ public class HttpOptionForwardingTests
             using var response = await client.GetAsync("https://dependency.test/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         }
+
         await Assert.That(inner.Calls).IsEqualTo(2);
         await Assert.That(seenAttempts).IsEquivalentTo(new[] { 0, 1 });
     }
@@ -184,11 +195,13 @@ public class HttpOptionForwardingTests
                 options.Retry.MaxRetries = 0;
                 options.CircuitBreaker.FailureRatio = null;
                 options.CircuitBreaker.ConsecutiveFailures = 1;
+
                 bool Handles(HandlingEvent<HttpResponseMessage> _)
                 {
                     predicateCalls++;
                     return false;
                 }
+
                 if (exception)
                 {
                     // IOException is not handled by the ambient HTTP clause. Override it locally.
@@ -219,8 +232,10 @@ public class HttpOptionForwardingTests
                 using var response = await client.GetAsync("https://dependency.test/");
                 await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
             }
+
             await Assert.That(inner.Calls).IsEqualTo(2);
         }
+
         await Assert.That(predicateCalls).IsEqualTo(exception ? 1 : 2);
     }
 
@@ -248,6 +263,7 @@ public class HttpOptionForwardingTests
             using var response = await client.GetAsync("https://dependency.test/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         }
+
         await Assert.That(inner.Calls).IsEqualTo(3);
         await Assert.That(budget.Tokens).IsEqualTo(0);
     }
@@ -265,20 +281,53 @@ public class HttpOptionForwardingTests
     private static object CreateNonDefaultValue(Type type)
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
-        if (type == typeof(string)) return "copied-strategy";
-        if (type == typeof(int)) return 37;
-        if (type == typeof(double)) return 0.73;
-        if (type == typeof(bool)) return true;
-        if (type == typeof(TimeSpan)) return TimeSpan.FromSeconds(73);
-        if (type == typeof(Backoff)) return Backoff.None;
-        if (type == typeof(RetryBudget)) return new RetryBudget(maxTokens: 7);
-        if (type == typeof(CircuitBreakerMonitor)) return new CircuitBreakerMonitor();
+        if (type == typeof(string))
+        {
+            return "copied-strategy";
+        }
+
+        if (type == typeof(int))
+        {
+            return 37;
+        }
+
+        if (type == typeof(double))
+        {
+            return 0.73;
+        }
+
+        if (type == typeof(bool))
+        {
+            return true;
+        }
+
+        if (type == typeof(TimeSpan))
+        {
+            return TimeSpan.FromSeconds(73);
+        }
+
+        if (type == typeof(Backoff))
+        {
+            return Backoff.None;
+        }
+
+        if (type == typeof(RetryBudget))
+        {
+            return new RetryBudget(maxTokens: 7);
+        }
+
+        if (type == typeof(CircuitBreakerMonitor))
+        {
+            return new CircuitBreakerMonitor();
+        }
+
         if (typeof(Delegate).IsAssignableFrom(type))
         {
             var invoke = type.GetMethod("Invoke")!;
             return Expression.Lambda(type, Expression.Default(invoke.ReturnType),
                 invoke.GetParameters().Select(static parameter => Expression.Parameter(parameter.ParameterType))).Compile();
         }
+
         throw new InvalidOperationException($"Add a non-default copy-test value for {type}.");
     }
 
@@ -290,9 +339,17 @@ public class HttpOptionForwardingTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref _calls);
-            if (throwException) return Task.FromException<HttpResponseMessage>(new IOException("non-transient failure"));
+            if (throwException)
+            {
+                return Task.FromException<HttpResponseMessage>(new IOException("non-transient failure"));
+            }
+
             var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            if (retryAfter is { } delay) response.Headers.RetryAfter = new RetryConditionHeaderValue(delay);
+            if (retryAfter is { } delay)
+            {
+                response.Headers.RetryAfter = new RetryConditionHeaderValue(delay);
+            }
+
             return Task.FromResult(response);
         }
     }

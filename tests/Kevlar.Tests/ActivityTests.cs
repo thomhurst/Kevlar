@@ -54,9 +54,17 @@ public class ActivityTests
         using var capture = new Capture();
         using var parent = new Activity("application").SetIdFormat(ActivityIdFormat.W3C).Start();
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var first = Shield.Empty.ExecuteAsync(async _ => { await release.Task; return Activity.Current!.SpanId; });
+        var first = Shield.Empty.ExecuteAsync(async _ =>
+        {
+            await release.Task;
+            return Activity.Current!.SpanId;
+        });
         await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();
-        var second = Shield.Empty.ExecuteAsync(async _ => { await release.Task; return Activity.Current!.SpanId; });
+        var second = Shield.Empty.ExecuteAsync(async _ =>
+        {
+            await release.Task;
+            return Activity.Current!.SpanId;
+        });
         await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();
         release.SetResult();
         var firstId = await first;
@@ -82,6 +90,7 @@ public class ActivityTests
         {
             _ = await outer.ExecuteWithContextAsync(context => inner.ExecuteWithContextAsync(context, static _ => new ValueTask<int>(42)));
         }
+
         var outerSpan = capture.Stopped.Single(span => Equals(span.GetTagItem("kevlar.shield.name"), "outer"));
         var innerSpan = capture.Stopped.Single(span => Equals(span.GetTagItem("kevlar.shield.name"), "inner"));
         await Assert.That(innerSpan.ParentSpanId).IsEqualTo(outerSpan.SpanId);
@@ -99,6 +108,7 @@ public class ActivityTests
             {
                 throw new InvalidOperationException("private-message");
             }
+
             return 42;
         });
         await Assert.That(result).IsEqualTo(42);
@@ -129,6 +139,7 @@ public class ActivityTests
             {
                 await Task.Delay(Timeout.InfiniteTimeSpan, token);
             }
+
             return 42;
         });
         await WaitUntilAsync(() => capture.Stopped.Count == 3);
@@ -178,6 +189,7 @@ public class ActivityTests
         {
             cancellation.Cancel();
         }
+
         var failure = new InvalidOperationException("private-message");
         var outcome = await Shield.Empty.ExecuteOutcomeAsync<int>(
             _ => ValueTask.FromException<int>(failure), cancellation.Token);
@@ -250,8 +262,20 @@ public class ActivityTests
             ShouldListenTo = source => source.Name == "Kevlar",
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => phase == "sample"
                 ? throw new InvalidOperationException("sample failure") : ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStarted = _ => { if (phase == "start") throw new InvalidOperationException("start failure"); },
-            ActivityStopped = _ => { if (phase == "stop") throw new InvalidOperationException("stop failure"); },
+            ActivityStarted = _ =>
+            {
+                if (phase == "start")
+                {
+                    throw new InvalidOperationException("start failure");
+                }
+            },
+            ActivityStopped = _ =>
+            {
+                if (phase == "stop")
+                {
+                    throw new InvalidOperationException("stop failure");
+                }
+            },
         };
         ActivitySource.AddActivityListener(listener);
         using var parent = new Activity("application").SetIdFormat(ActivityIdFormat.W3C).Start();
@@ -307,6 +331,7 @@ public class ActivityTests
         catch (InvalidOperationException exception) when (ReferenceEquals(exception, failure))
         {
         }
+
         var execution = capture.Stopped.Single();
         await Assert.That(execution.Status).IsEqualTo(ActivityStatusCode.Error);
         await Assert.That(execution.GetTagItem("kevlar.execution.outcome")).IsEqualTo("failure");
@@ -336,6 +361,7 @@ public class ActivityTests
         catch (InvalidOperationException exception) when (ReferenceEquals(exception, failure))
         {
         }
+
         await Assert.That(capture.Stopped.Count).IsEqualTo(3);
         await Assert.That(capture.Stopped.All(span => span.Status == ActivityStatusCode.Error)).IsTrue();
         await Assert.That(ReferenceEquals(Activity.Current, parent)).IsTrue();
@@ -349,6 +375,7 @@ public class ActivityTests
             _ = Shield.Empty.Execute(static _ => 42);
             await Assert.That(capture.Stopped.Count).IsEqualTo(1);
         }
+
         using var parent = new Activity("application").Start();
         var observed = Shield.Empty.Execute(static _ => Activity.Current);
         await Assert.That(ReferenceEquals(observed, parent)).IsTrue();
@@ -369,7 +396,10 @@ public class ActivityTests
 
     private sealed class AttemptListener : IKevlarTelemetryListener
     {
-        public int Count { get; private set; }
+        public int Count
+        {
+            get; private set;
+        }
 
         public void OnEvent(in KevlarTelemetryEvent item)
         {
@@ -392,7 +422,10 @@ public class ActivityTests
     private sealed class Capture : IDisposable
     {
         private readonly ActivityListener _listener;
-        public ConcurrentQueue<Activity> Stopped { get; } = new();
+        public ConcurrentQueue<Activity> Stopped
+        {
+            get;
+        } = new();
 
         public Capture(ActivitySamplingResult sampling = ActivitySamplingResult.AllDataAndRecorded)
         {

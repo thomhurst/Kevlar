@@ -13,8 +13,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         Shield shield)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
 
         return builder.AddInterceptor(() => new ShieldUnaryClientInterceptor(shield));
     }
@@ -24,8 +31,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         Func<IServiceProvider, Shield> shieldFactory)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shieldFactory is null) { throw new ArgumentNullException(nameof(shieldFactory)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldFactory is null)
+        {
+            throw new ArgumentNullException(nameof(shieldFactory));
+        }
 
         return builder.AddInterceptor(services =>
             new ShieldUnaryClientInterceptor(shieldFactory(services)));
@@ -39,8 +53,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         string shieldName)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shieldName is null) { throw new ArgumentNullException(nameof(shieldName)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldName is null)
+        {
+            throw new ArgumentNullException(nameof(shieldName));
+        }
 
         return builder.AddInterceptor(services =>
             new ShieldUnaryClientInterceptor(
@@ -52,8 +73,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         Shield shield)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
 
         return builder.AddInterceptor(() => new ShieldStreamingClientInterceptor(shield));
     }
@@ -63,8 +91,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         Func<IServiceProvider, Shield> shieldFactory)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shieldFactory is null) { throw new ArgumentNullException(nameof(shieldFactory)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldFactory is null)
+        {
+            throw new ArgumentNullException(nameof(shieldFactory));
+        }
 
         return builder.AddInterceptor(services =>
             new ShieldStreamingClientInterceptor(shieldFactory(services)));
@@ -78,8 +113,15 @@ public static class ShieldGrpcClientBuilderExtensions
         this IHttpClientBuilder builder,
         string shieldName)
     {
-        if (builder is null) { throw new ArgumentNullException(nameof(builder)); }
-        if (shieldName is null) { throw new ArgumentNullException(nameof(shieldName)); }
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldName is null)
+        {
+            throw new ArgumentNullException(nameof(shieldName));
+        }
 
         return builder.AddInterceptor(services =>
             new ShieldStreamingClientInterceptor(

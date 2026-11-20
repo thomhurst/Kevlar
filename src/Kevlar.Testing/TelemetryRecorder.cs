@@ -374,7 +374,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             failureRate: failureRate,
             failureCount: failureCount,
             consecutiveFailures: consecutiveFailures));
-            return new ValueTask<TimeSpan>(breakDuration);
+        return new ValueTask<TimeSpan>(breakDuration);
     }
 
     private async Task WaitForCountAsync(
@@ -383,13 +383,13 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             bool collectObservableMetrics,
             CancellationToken cancellationToken)
     {
-            if (count < 0)
-            {
+        if (count < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(count));
-            }
+        }
 
-            while (true)
-            {
+        while (true)
+        {
             if (collectObservableMetrics)
             {
 #if NET8_0_OR_GREATER
@@ -423,27 +423,27 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             {
                 await WaitWithCancellationAsync(signal, cancellationToken).ConfigureAwait(false);
             }
-            }
+        }
     }
 
     private static async Task WaitWithCancellationAsync(Task task, CancellationToken cancellationToken)
     {
-            if (!cancellationToken.CanBeCanceled)
-            {
+        if (!cancellationToken.CanBeCanceled)
+        {
             await task.ConfigureAwait(false);
             return;
-            }
+        }
 
-            var cancellation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            using var registration = cancellationToken.Register(
-            static state => ((TaskCompletionSource<bool>)state!).TrySetCanceled(), cancellation);
-            var completed = await Task.WhenAny(task, cancellation.Task).ConfigureAwait(false);
-            if (ReferenceEquals(completed, cancellation.Task))
-            {
+        var cancellation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(
+        static state => ((TaskCompletionSource<bool>)state!).TrySetCanceled(), cancellation);
+        var completed = await Task.WhenAny(task, cancellation.Task).ConfigureAwait(false);
+        if (ReferenceEquals(completed, cancellation.Task))
+        {
             cancellationToken.ThrowIfCancellationRequested();
-            }
+        }
 
-            await task.ConfigureAwait(false);
+        await task.ConfigureAwait(false);
     }
 
     private static TaskCompletionSource<bool> CreateSignal() =>

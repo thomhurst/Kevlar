@@ -296,7 +296,9 @@ public class ParentContextExecutionTests
             () => Shield.Empty.ExecuteWithContextAsync(null!, static _ => Task.CompletedTask),
             () => Shield<int>.Empty.ExecuteWithContextAsync(null!, static _ => Task.FromResult(42)),
             () => Shield.Empty.ExecuteWithContext(null!, static _ => 42),
-            () => Shield.Empty.ExecuteWithContext(null!, static _ => { }),
+            () => Shield.Empty.ExecuteWithContext(null!, static _ =>
+            {
+            }),
             () => Shield<int>.Empty.ExecuteWithContext(null!, static _ => 42),
         };
 
@@ -327,7 +329,12 @@ public class ParentContextExecutionTests
         var syncResult = Shield.Empty.ExecuteWithContext(
             static context => context.CancellationToken.CanBeCanceled ? 0 : 1,
             default);
-        Shield.Empty.ExecuteWithContext(static _ => { }, default);
+        Shield.Empty.ExecuteWithContext(
+            static _ =>
+            {
+            },
+            default
+        );
         var typedSyncResult = Shield<int>.Empty.ExecuteWithContext(
             static context => context.CancellationToken.CanBeCanceled ? 0 : 1,
             default);

@@ -27,14 +27,20 @@ public sealed class StandardHttpShieldOptions
     /// Configures the outer total timeout. Defaults to 30 seconds. Set
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.
     /// </summary>
-    public TimeoutOptions TotalTimeout { get; set; } = new();
+    public TimeoutOptions TotalTimeout
+    {
+        get; set;
+    } = new();
 
     /// <summary>
     /// Configures transient retries. Defaults to three jittered exponential retries that honour
     /// <c>Retry-After</c> headers. Notifications observe the live handled response, which is
     /// disposed before the next attempt starts.
     /// </summary>
-    public RetryOptions<HttpResponseMessage> Retry { get; set; } = new()
+    public RetryOptions<HttpResponseMessage> Retry
+    {
+        get; set;
+    } = new()
     {
         MaxDelay = DefaultRetryMaxDelay,
     };
@@ -45,13 +51,19 @@ public sealed class StandardHttpShieldOptions
     /// <see cref="RetryOptions{HttpResponseMessage}.DelayGenerator"/>
     /// by using the longer delay.
     /// </summary>
-    public bool UseRetryAfterHeader { get; set; } = true;
+    public bool UseRetryAfterHeader
+    {
+        get; set;
+    } = true;
 
     /// <summary>
     /// Configures the circuit breaker. Defaults to a 50% failure ratio over 30 seconds, with a
     /// minimum throughput of 10 and a 15-second break.
     /// </summary>
-    public CircuitBreakerOptions<HttpResponseMessage> CircuitBreaker { get; set; } = new()
+    public CircuitBreakerOptions<HttpResponseMessage> CircuitBreaker
+    {
+        get; set;
+    } = new()
     {
         FailureRatio = 0.5,
     };
@@ -60,17 +72,26 @@ public sealed class StandardHttpShieldOptions
     /// Optionally configures a concurrency limiter between the circuit breaker and attempt
     /// timeout. The limiter is disabled when this property is <see langword="null"/>.
     /// </summary>
-    public ConcurrencyLimitOptions? ConcurrencyLimit { get; set; }
+    public ConcurrencyLimitOptions? ConcurrencyLimit
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Configures the per-attempt timeout. Defaults to 10 seconds. Set
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.
     /// </summary>
-    public TimeoutOptions AttemptTimeout { get; set; } = new()
+    public TimeoutOptions AttemptTimeout
+    {
+        get; set;
+    } = new()
     {
         Timeout = TimeSpan.FromSeconds(10),
     };
 
     /// <summary>Configures request replay and optional endpoint routing.</summary>
-    public ShieldHttpHandlerOptions Handler { get; set; } = new();
+    public ShieldHttpHandlerOptions Handler
+    {
+        get; set;
+    } = new();
 }

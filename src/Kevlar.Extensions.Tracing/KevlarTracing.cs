@@ -79,27 +79,33 @@ public static class KevlarTracing
             {
                 Add(tags, "kevlar.callback.kind", callbackKind.ToString());
             }
+
             if (telemetryEvent.FromState is { } fromState)
             {
                 Add(tags, "kevlar.circuit.from", fromState.ToString());
             }
+
             if (telemetryEvent.ToState is { } toState)
             {
                 Add(tags, "kevlar.circuit.to", toState.ToString());
             }
+
             if (telemetryEvent.RetryAfter is { } retryAfter)
             {
                 tags.Add("kevlar.retry_after.seconds", retryAfter.TotalSeconds);
             }
+
             if (telemetryEvent.EventName == "hedge_attempt")
             {
                 tags.Add("kevlar.hedge.winner", telemetryEvent.IsWinner);
                 tags.Add("kevlar.hedge.cancelled", telemetryEvent.IsCancelled);
             }
+
             if (includeOperationKey)
             {
                 Add(tags, "kevlar.operation.key", telemetryEvent.OperationKey);
             }
+
             if (telemetryEvent.Exception is { } exception)
             {
                 Add(tags, "exception.type", exception.GetType().FullName);
@@ -134,6 +140,7 @@ public static class KevlarTracing
             {
                 length--;
             }
+
             return value.Substring(0, length);
         }
     }

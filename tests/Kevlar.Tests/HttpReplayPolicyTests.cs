@@ -121,11 +121,21 @@ public class HttpReplayPolicyTests
         using var direct = registration == "direct" ? CreateClient(transport, options) : null;
         switch (registration)
         {
-            case "fixed": builder.AddShield(shield, options); break;
-            case "factory": builder.AddShield(_ => shield, _ => options); break;
-            case "standard": builder.AddStandardShield(standard => standard.Handler = options); break;
-            case "hedge": builder.AddStandardHedgeShield(hedge => hedge.Handler = options); break;
-            case "selector": builder.AddShield((_, _) => shield, options); break;
+            case "fixed":
+                builder.AddShield(shield, options);
+                break;
+            case "factory":
+                builder.AddShield(_ => shield, _ => options);
+                break;
+            case "standard":
+                builder.AddStandardShield(standard => standard.Handler = options);
+                break;
+            case "hedge":
+                builder.AddStandardHedgeShield(hedge => hedge.Handler = options);
+                break;
+            case "selector":
+                builder.AddShield((_, _) => shield, options);
+                break;
             case "partition":
                 builder.AddShield(partitions, static _ => "tenant", options);
                 break;
@@ -200,7 +210,10 @@ public class HttpReplayPolicyTests
         {
             Content = new StreamContent(new MemoryStream([1, 2, 3, 4])),
         };
-        await Assert.That(async () => { using var response = await client.SendAsync(oversized); })
+        await Assert.That(async () =>
+            {
+                using var response = await client.SendAsync(oversized);
+            })
             .Throws<HttpRequestReplayException>();
         await Assert.That(transport.Attempts).IsEqualTo(32);
     }

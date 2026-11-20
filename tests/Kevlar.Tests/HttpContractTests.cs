@@ -1563,11 +1563,15 @@ public class HttpContractTests
                 (Action<IServiceProvider, StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(
-                nullBuilder!, _ => { }))
+                nullBuilder!, _ =>
+                {
+                }))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddStandardHedgeShield(null!))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => builder.AddStandardHedgeShield(_ => { }))
+        await Assert.That(() => builder.AddStandardHedgeShield(_ =>
+            {
+            }))
             .ThrowsNothing();
     }
 
@@ -1726,7 +1730,10 @@ public class HttpContractTests
     private sealed class DelegateHandler(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
-        public bool IsDisposed { get; private set; }
+        public bool IsDisposed
+        {
+            get; private set;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -1757,7 +1764,10 @@ public class HttpContractTests
         {
         }
 
-        public bool IsDisposed { get; private set; }
+        public bool IsDisposed
+        {
+            get; private set;
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -1781,7 +1791,10 @@ public class HttpContractTests
 
     private sealed class DescriptorCapturingDecorator : IShieldDecorator
     {
-        public List<ShieldDescriptor> Descriptors { get; } = new();
+        public List<ShieldDescriptor> Descriptors
+        {
+            get;
+        } = new();
 
         public Shield Decorate(Shield shield, string? name) => shield;
 

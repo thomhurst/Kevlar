@@ -36,6 +36,7 @@ public class HttpClientDefaultsTests
             using var response = await failing.GetAsync("https://dependency.test/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         }
+
         await Assert.That(async () => await failing.GetAsync("https://dependency.test/"))
             .Throws<CircuitOpenException>();
 
@@ -148,6 +149,7 @@ public class HttpClientDefaultsTests
     public async Task Defaults_Keep_Multiple_Shield_Registrations_Independent()
     {
         var calls = 0;
+
         Shield<HttpResponseMessage> Create(IServiceProvider _)
         {
             Interlocked.Increment(ref calls);
@@ -194,6 +196,7 @@ public class HttpClientDefaultsTests
             using var response = await client.GetAsync("https://dependency.test/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
+
         await Assert.That(calls).IsEqualTo(1);
     }
 
@@ -273,12 +276,18 @@ public class HttpClientDefaultsTests
 
     public sealed class TypedClient(HttpClient client)
     {
-        public HttpClient Client { get; } = client;
+        public HttpClient Client
+        {
+            get;
+        } = client;
     }
 
     private sealed class RecordingDecorator : IShieldDecorator
     {
-        public ConcurrentBag<string?> Names { get; } = [];
+        public ConcurrentBag<string?> Names
+        {
+            get;
+        } = [];
 
         public Shield Decorate(Shield shield, string? name) => shield;
 

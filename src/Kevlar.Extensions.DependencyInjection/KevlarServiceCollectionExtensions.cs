@@ -18,14 +18,27 @@ public static class KevlarServiceCollectionExtensions
     /// <summary>Registers one shared, named retry/hedge budget.</summary>
     public static IServiceCollection AddRetryBudget(this IServiceCollection services, string name, RetryBudget budget)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (budget is null) { throw new ArgumentNullException(nameof(budget)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (budget is null)
+        {
+            throw new ArgumentNullException(nameof(budget));
+        }
+
         if (services.Any(descriptor => descriptor.ServiceType == typeof(RetryBudget)
             && descriptor.IsKeyedService && Equals(descriptor.ServiceKey, name)))
         {
             throw new InvalidOperationException($"Retry budget '{name}' is already registered.");
         }
+
         services.AddKeyedSingleton(name, budget);
         return services;
     }
@@ -41,7 +54,11 @@ public static class KevlarServiceCollectionExtensions
     /// <summary>Registers the <see cref="IKevlarRegistry"/>. Called automatically by the <c>AddShield</c> overloads.</summary>
     public static IServiceCollection AddKevlar(this IServiceCollection services)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
         services.TryAddSingleton<KevlarRegistry>(sp =>
             new KevlarRegistry(sp, sp.GetServices<ShieldRegistration>()));
         services.TryAddSingleton<IKevlarRegistry>(sp => sp.GetRequiredService<KevlarRegistry>());
@@ -58,7 +75,11 @@ public static class KevlarServiceCollectionExtensions
     /// </remarks>
     public static IServiceCollection AddKevlarValidationOnStart(this IServiceCollection services)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
         services.AddKevlar();
         services.AddOptionsWithValidateOnStart<ShieldStartupOptions, ShieldStartupValidator>();
         return services;
@@ -75,7 +96,11 @@ public static class KevlarServiceCollectionExtensions
         Shield shield,
         bool replace)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
         return services.AddShield(name, _ => shield, replace);
     }
 
@@ -90,9 +115,20 @@ public static class KevlarServiceCollectionExtensions
         Func<IServiceProvider, Shield> factory,
         bool replace)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
 
         PrepareRegistration(services, name, replace);
         services.AddKevlar();
@@ -123,7 +159,10 @@ public static class KevlarServiceCollectionExtensions
         IConfiguration configuration,
         bool replace)
     {
-        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
 
         return services.AddShield(name, serviceProvider =>
             BuildConfiguredShield(configuration, serviceProvider).WithName(name), replace);
@@ -191,10 +230,25 @@ public static class KevlarServiceCollectionExtensions
         Action<Exception>? onReloadFailure,
         bool replace)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
-        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
 
         var (debounceDelay, timeProvider) = ValidateReloadingOptions(options);
 
@@ -231,7 +285,11 @@ public static class KevlarServiceCollectionExtensions
         Shield<TResult> shield,
         bool replace)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
         return services.AddShield(name, _ => shield, replace);
     }
 
@@ -246,9 +304,20 @@ public static class KevlarServiceCollectionExtensions
         Func<IServiceProvider, Shield<TResult>> factory,
         bool replace)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
 
         PrepareRegistration(services, name, replace);
         services.AddKevlar();
@@ -281,7 +350,10 @@ public static class KevlarServiceCollectionExtensions
         IConfiguration configuration,
         bool replace)
     {
-        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
 
         return services.AddShield<TResult>(name, serviceProvider =>
             BuildConfiguredShield<TResult>(configuration, serviceProvider).WithName(name), replace);
@@ -347,10 +419,25 @@ public static class KevlarServiceCollectionExtensions
         Action<Exception>? onReloadFailure,
         bool replace)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
-        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
 
         var (debounceDelay, timeProvider) = ValidateReloadingOptions(options);
 
@@ -388,9 +475,20 @@ public static class KevlarServiceCollectionExtensions
         Action<Exception>? onReloadFailure = null)
         where TOptions : class
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (build is null)
+        {
+            throw new ArgumentNullException(nameof(build));
+        }
 
         PrepareRegistration(services, name, replace: false);
         services.AddKevlar();
@@ -424,9 +522,20 @@ public static class KevlarServiceCollectionExtensions
         Action<Exception>? onReloadFailure = null)
         where TOptions : class
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (build is null)
+        {
+            throw new ArgumentNullException(nameof(build));
+        }
 
         PrepareRegistration(services, name, replace: false);
         services.AddKevlar();
@@ -458,9 +567,20 @@ public static class KevlarServiceCollectionExtensions
         IEqualityComparer<TKey>? comparer = null)
         where TKey : notnull
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
 
         var options = new PartitionedShieldOptions<TKey>();
         configure?.Invoke(options);
@@ -490,9 +610,20 @@ public static class KevlarServiceCollectionExtensions
         IEqualityComparer<TKey>? comparer = null)
         where TKey : notnull
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (name is null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
 
         var options = new PartitionedShieldOptions<TKey, TResult>();
         configure?.Invoke(options);
@@ -615,14 +746,17 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.MaxRetries = maxRetries;
             }
+
             if (ReadBackoffKind(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
             {
                 retryDefinition.Backoff = backoff;
             }
+
             if (ReadDouble(retry, nameof(RetryDefinition.Factor)) is { } factor)
             {
                 retryDefinition.Factor = factor;
             }
+
             if (ReadJitter(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
             {
                 retryDefinition.Jitter = jitter;
@@ -636,6 +770,7 @@ public static class KevlarServiceCollectionExtensions
         {
             throw InvalidValue(configuration, nameof(ShieldDefinition.Hedge), hedgeValue, "a configuration section");
         }
+
         if (configuration.GetChildren().Any(section =>
             string.Equals(section.Key, nameof(ShieldDefinition.Hedge), StringComparison.OrdinalIgnoreCase)))
         {
@@ -645,6 +780,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 hedgeDefinition.MaxHedgedAttempts = maxHedgedAttempts;
             }
+
             if (ReadTimeSpan(hedge, nameof(HedgeDefinition.Delay)) is { } delay)
             {
                 hedgeDefinition.Delay = delay;
@@ -672,10 +808,12 @@ public static class KevlarServiceCollectionExtensions
             {
                 breakerDefinition.MinimumThroughput = minimumThroughput;
             }
+
             if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.SamplingWindow)) is { } samplingWindow)
             {
                 breakerDefinition.SamplingWindow = samplingWindow;
             }
+
             if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.BreakDuration)) is { } breakDuration)
             {
                 breakerDefinition.BreakDuration = breakDuration;
@@ -697,10 +835,12 @@ public static class KevlarServiceCollectionExtensions
             {
                 rateLimitDefinition.Permits = permits;
             }
+
             if (ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.Window)) is { } window)
             {
                 rateLimitDefinition.Window = window;
             }
+
             if (ReadInt(rateLimit, nameof(RateLimitDefinition.QueueLimit)) is { } queueLimit)
             {
                 rateLimitDefinition.QueueLimit = queueLimit;
@@ -722,6 +862,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 concurrencyDefinition.MaxConcurrency = maxConcurrency;
             }
+
             if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.QueueLimit)) is { } queueLimit)
             {
                 concurrencyDefinition.QueueLimit = queueLimit;

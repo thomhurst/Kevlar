@@ -68,6 +68,7 @@ public class MigrationParityTests
                 {
                     options.Retry.ShouldHandle = static _ => new ValueTask<bool>(false);
                 }
+
                 options.Retry.Delay = TimeSpan.Zero;
                 options.Retry.UseJitter = false;
                 options.CircuitBreaker.FailureRatio = 1;

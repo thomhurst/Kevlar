@@ -18,7 +18,10 @@ internal sealed class MessageProcessingException : Exception
         : base($"Failed to process message '{failedMessage.Id}'.")
         => FailedMessage = failedMessage;
 
-    public BrokerMessage FailedMessage { get; }
+    public BrokerMessage FailedMessage
+    {
+        get;
+    }
 }
 
 /// <summary>

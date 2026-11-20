@@ -18,7 +18,10 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
     }
 
     /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>The isolated context that belongs to this attempt.</summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
@@ -29,11 +32,17 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
     /// action completes; invoking a retained delegate afterward throws
     /// <see cref="InvalidOperationException"/>.
     /// </summary>
-    public Func<CancellationToken, ValueTask<TResult>> OriginalAction { get; }
+    public Func<CancellationToken, ValueTask<TResult>> OriginalAction
+    {
+        get;
+    }
 
     /// <summary>
     /// The latest handled outcome available before this attempt was launched, or
     /// <see langword="null"/> when pending attempts have not produced an outcome yet.
     /// </summary>
-    public Outcome<TResult>? Outcome { get; }
+    public Outcome<TResult>? Outcome
+    {
+        get;
+    }
 }

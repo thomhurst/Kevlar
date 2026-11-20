@@ -12,13 +12,19 @@ public abstract class Backoff
     }
 
     /// <summary>No delay between attempts.</summary>
-    public static Backoff None { get; } = new ConstantBackoff(TimeSpan.Zero, global::Kevlar.Jitter.None);
+    public static Backoff None
+    {
+        get;
+    } = new ConstantBackoff(TimeSpan.Zero, global::Kevlar.Jitter.None);
 
     /// <summary>
     /// Kevlar's default: exponential backoff starting at 250ms with a factor of 2, equal jitter,
     /// capped at 30 seconds.
     /// </summary>
-    public static Backoff Default { get; } = Exponential(TimeSpan.FromMilliseconds(250), maxDelay: TimeSpan.FromSeconds(30));
+    public static Backoff Default
+    {
+        get;
+    } = Exponential(TimeSpan.FromMilliseconds(250), maxDelay: TimeSpan.FromSeconds(30));
 
     /// <summary>The same base delay before every attempt, with optional jitter.</summary>
     public static Backoff Constant(TimeSpan delay, Jitter jitter = global::Kevlar.Jitter.None)
@@ -81,7 +87,10 @@ public abstract class Backoff
     public abstract TimeSpan GetDelay(int attempt);
 
     /// <summary>The stable category of this backoff.</summary>
-    public abstract BackoffKind Kind { get; }
+    public abstract BackoffKind Kind
+    {
+        get;
+    }
 
     /// <summary>The constant delay, linear step, or exponential base delay, when applicable.</summary>
     public virtual TimeSpan? BaseDelay => null;

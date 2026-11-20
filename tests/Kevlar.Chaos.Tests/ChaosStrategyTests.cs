@@ -112,10 +112,26 @@ public class ChaosStrategyTests
     [Test]
     public async Task Chaos_Strategies_Report_At_Most_One_Continuation_Invocation()
     {
-        await Assert.That(ChaosShield.Fault(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
-        await Assert.That(ChaosShield.Latency(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
-        await Assert.That(ChaosShield.Behavior(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
-        await Assert.That(ChaosShield.Outcome<int>(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(
+            ChaosShield.Fault(_ =>
+            {
+            }).InvokesContinuationAtMostOnce
+        ).IsTrue();
+        await Assert.That(
+            ChaosShield.Latency(_ =>
+            {
+            }).InvokesContinuationAtMostOnce
+        ).IsTrue();
+        await Assert.That(
+            ChaosShield.Behavior(_ =>
+            {
+            }).InvokesContinuationAtMostOnce
+        ).IsTrue();
+        await Assert.That(
+            ChaosShield.Outcome<int>(_ =>
+            {
+            }).InvokesContinuationAtMostOnce
+        ).IsTrue();
     }
 
     [Test]
@@ -123,7 +139,9 @@ public class ChaosStrategyTests
     {
         var behaviorCalls = 0;
         var actionCalls = 0;
-        var fault = ChaosShield.Fault(_ => { });
+        var fault = ChaosShield.Fault(_ =>
+        {
+        });
         var latency = ChaosShield.Latency(options => options.Delay = TimeSpan.FromDays(1));
         var outcome = ChaosShield.Outcome<int>(options => options.Result = -1);
         var behavior = ChaosShield.Behavior(options => options.Behavior = _ =>

@@ -8,15 +8,21 @@ public class RetryBudgetTests
     public async Task Fractional_Refunds_Reach_The_Exact_Threshold_Without_Drift()
     {
         var budget = new RetryBudget(maxTokens: 2, tokenRatio: 0.1);
-        var shield = Shield.Retry(options => { options.Budget = budget; options.MaxRetries = 0; });
+        var shield = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.MaxRetries = 0;
+        });
         for (var index = 0; index < 2; index++)
         {
             _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
         }
+
         for (var index = 0; index < 10; index++)
         {
             _ = shield.Execute(static _ => 42);
         }
+
         await Assert.That(budget.Tokens).IsEqualTo(1);
         await Assert.That(budget.AllowsAdditionalAttempt).IsFalse();
     }
@@ -56,7 +62,11 @@ public class RetryBudgetTests
             options.Backoff = Backoff.None;
             options.HandlesResult = static result => result == 503;
         });
-        await Assert.That(shield.Execute(_ => { attempts++; return 503; })).IsEqualTo(503);
+        await Assert.That(shield.Execute(_ =>
+        {
+            attempts++;
+            return 503;
+        })).IsEqualTo(503);
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(budget.Tokens).IsEqualTo(2);
         _ = await shield.ExecuteOutcomeAsync(static _ => ValueTask.FromException<int>(new IOException()));
@@ -67,7 +77,11 @@ public class RetryBudgetTests
     public async Task Concurrent_Observations_Stay_Bounded_And_Include_Terminal_Attempts()
     {
         var budget = new RetryBudget(maxTokens: 100, tokenRatio: 0.5);
-        var shield = Shield.Retry(options => { options.Budget = budget; options.MaxRetries = 0; });
+        var shield = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.MaxRetries = 0;
+        });
         await Parallel.ForEachAsync(Enumerable.Range(0, 200), async (index, cancellationToken) =>
         {
             _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
@@ -94,6 +108,7 @@ public class RetryBudgetTests
                 return ValueTask.FromException<int>(new IOException());
             });
         }
+
         await Assert.That(attempts).IsEqualTo(3);
         await Assert.That(budget.Tokens).IsEqualTo(1);
     }
@@ -116,7 +131,11 @@ public class RetryBudgetTests
     public async Task Budget_Is_Rechecked_After_Callback_Without_Disposing_Returned_Result()
     {
         var budget = new RetryBudget(maxTokens: 4, tokenRatio: 1);
-        var other = Shield.Retry(options => { options.Budget = budget; options.MaxRetries = 0; });
+        var other = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.MaxRetries = 0;
+        });
         var value = new DisposableResult();
         var attempts = 0;
         var result = await Shield.For<DisposableResult>().Retry(options =>
@@ -129,7 +148,11 @@ public class RetryBudgetTests
                 await Task.Yield();
                 _ = await other.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
             };
-        }).ExecuteAsync(_ => { attempts++; return new ValueTask<DisposableResult>(value); });
+        }).ExecuteAsync(_ =>
+        {
+            attempts++;
+            return new ValueTask<DisposableResult>(value);
+        });
         await Assert.That(result).IsSameReferenceAs(value);
         await Assert.That(value.Disposed).IsFalse();
         await Assert.That(attempts).IsEqualTo(1);
@@ -141,7 +164,11 @@ public class RetryBudgetTests
     {
         var time = new FakeTimeProvider();
         var budget = new RetryBudget(maxTokens: 4, tokenRatio: 1);
-        var other = Shield.Retry(options => { options.Budget = budget; options.MaxRetries = 0; });
+        var other = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.MaxRetries = 0;
+        });
         var value = new DisposableResult();
         var attempts = 0;
         var pending = Shield.For<DisposableResult>().Retry(options =>
@@ -177,7 +204,10 @@ public class RetryBudgetTests
 
     private sealed class DisposableResult : IDisposable
     {
-        public bool Disposed { get; private set; }
+        public bool Disposed
+        {
+            get; private set;
+        }
 
         public void Dispose() => Disposed = true;
     }

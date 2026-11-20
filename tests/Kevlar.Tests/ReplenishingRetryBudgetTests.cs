@@ -23,7 +23,9 @@ public class ReplenishingRetryBudgetTests
                 }
             },
         };
-        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
+        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+        {
+        });
         listener.Start();
         var budget = RetryBudget.CreateReplenishing(1, replenishmentPeriod: TimeSpan.FromHours(1));
         var attempts = 0;
@@ -31,7 +33,11 @@ public class ReplenishingRetryBudgetTests
         {
             options.Budget = budget;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = _ => { clock.CancelOnNextTimestamp = true; return default; };
+            options.OnHedge = _ =>
+            {
+                clock.CancelOnNextTimestamp = true;
+                return default;
+            };
         }).WithTimeProvider(clock).ExecuteOutcomeAsync<int>(_ =>
         {
             attempts++;
@@ -53,6 +59,7 @@ public class ReplenishingRetryBudgetTests
             await Assert.That(() => RetryBudget.CreateReplenishing(1, replenishmentPeriod: period))
                 .Throws<ArgumentOutOfRangeException>();
         }
+
         await Assert.That(new RetryBudget().ReplenishmentPeriod).IsNull();
     }
 
@@ -74,6 +81,7 @@ public class ReplenishingRetryBudgetTests
                 return ValueTask.FromException<int>(new IOException());
             });
         }
+
         await Assert.That(attempts).IsEqualTo(3);
         var separate = RetryBudget.CreateReplenishing(1, replenishmentPeriod: TimeSpan.FromSeconds(1), timeProvider: time);
         await Assert.That(separate.Tokens).IsEqualTo(1);
@@ -120,14 +128,17 @@ public class ReplenishingRetryBudgetTests
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var arrivals = 0;
         var attempts = 0;
+
         async ValueTask WaitForAll()
         {
             if (Interlocked.Increment(ref arrivals) == callers)
             {
                 ready.TrySetResult();
             }
+
             await ready.Task.WaitForTestAsync(TestHelpers.DefaultTimeout);
         }
+
         var retry = Shield.Retry(options =>
         {
             options.Budget = budget;
@@ -153,6 +164,7 @@ public class ReplenishingRetryBudgetTests
         {
             await Assert.That(outcome.Exception).IsTypeOf<IOException>();
         }
+
         await Assert.That(attempts).IsEqualTo(callers + capacity);
         await Assert.That(budget.Tokens).IsEqualTo(0);
     }
@@ -176,17 +188,30 @@ public class ReplenishingRetryBudgetTests
         if (typed)
         {
             var shield = hedge
-                ? Shield.For<int>().Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
-                : Shield.For<int>().Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; });
+                ? Shield.For<int>().Hedge(options =>
+                {
+                    options.Budget = budget;
+                    options.Delay = TimeSpan.Zero;
+                })
+                : Shield.For<int>().Retry(options =>
+                {
+                    options.Budget = budget;
+                    options.Backoff = Backoff.None;
+                });
             outcome = await shield.ExecuteOutcomeAsync(action);
         }
         else
         {
             var shield = hedge
-                ? Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+                ? Shield.Hedge(options =>
+                {
+                    options.Budget = budget;
+                    options.Delay = TimeSpan.Zero;
+                })
                 : CreateRetry(budget);
             outcome = await shield.ExecuteOutcomeAsync(action);
         }
+
         await Assert.That(outcome.Exception).IsTypeOf<IOException>();
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(budget.Tokens).IsEqualTo(0);
@@ -201,11 +226,26 @@ public class ReplenishingRetryBudgetTests
         const int capacity = 5;
         var budget = RetryBudget.CreateReplenishing(capacity, replenishmentPeriod: TimeSpan.FromHours(1));
         var outer = outerHedge
-            ? Shield.Hedge(options => { options.Budget = budget; options.MaxHedgedAttempts = 10; options.Delay = TimeSpan.Zero; })
+            ? Shield.Hedge(options =>
+            {
+                options.Budget = budget;
+                options.MaxHedgedAttempts = 10;
+                options.Delay = TimeSpan.Zero;
+            })
             : CreateRetry(budget);
         var shield = innerHedge
-            ? outer.Hedge(options => { options.Budget = budget; options.MaxHedgedAttempts = 10; options.Delay = TimeSpan.Zero; })
-            : outer.Retry(options => { options.Budget = budget; options.MaxRetries = 10; options.Backoff = Backoff.None; });
+            ? outer.Hedge(options =>
+            {
+                options.Budget = budget;
+                options.MaxHedgedAttempts = 10;
+                options.Delay = TimeSpan.Zero;
+            })
+            : outer.Retry(options =>
+            {
+                options.Budget = budget;
+                options.MaxRetries = 10;
+                options.Backoff = Backoff.None;
+            });
         var attempts = 0;
         _ = await shield.ExecuteOutcomeAsync<int>(_ =>
         {
@@ -227,12 +267,20 @@ public class ReplenishingRetryBudgetTests
         {
             options.Budget = budget;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = _ => { cancellation.Cancel(); return default; };
+            options.OnHedge = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         }) : Shield.Retry(options =>
         {
             options.Budget = budget;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => { cancellation.Cancel(); return default; };
+            options.OnRetry = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         });
         _ = await shield.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()), cancellation.Token);
         await Assert.That(budget.Tokens).IsEqualTo(2);
@@ -269,6 +317,7 @@ public class ReplenishingRetryBudgetTests
                 cancellation.Cancel();
                 return ValueTask.FromCanceled<int>(token);
             }
+
             return ValueTask.FromException<int>(new IOException());
         }, cancellation.Token);
         await Assert.That(attempts).IsEqualTo(2);
@@ -285,7 +334,11 @@ public class ReplenishingRetryBudgetTests
             options.Budget = budget;
             options.Backoff = Backoff.None;
             options.HandlesResult = static _ => true;
-            options.OnRetry = retry => { retry.SuppressAdditionalAttempts(); return default; };
+            options.OnRetry = retry =>
+            {
+                retry.SuppressAdditionalAttempts();
+                return default;
+            };
         }).ExecuteAsync(_ => new ValueTask<DisposableResult>(value));
         await Assert.That(result).IsSameReferenceAs(value);
         await Assert.That(value.Disposed).IsFalse();
@@ -327,6 +380,7 @@ public class ReplenishingRetryBudgetTests
                 {
                     throw new IOException("generator");
                 }
+
                 return _ => new ValueTask<int>(++generatedCalls);
             };
         }).ExecuteOutcomeAsync(static _ => ValueTask.FromException<int>(new IOException("primary")));
@@ -374,6 +428,7 @@ public class ReplenishingRetryBudgetTests
         {
             primary.TrySetResult(42);
         }
+
         await Assert.That(await task.WaitForTestAsync(TestHelpers.DefaultTimeout)).IsEqualTo(42);
     }
 
@@ -386,13 +441,19 @@ public class ReplenishingRetryBudgetTests
 
     private sealed class DisposableResult : IDisposable
     {
-        internal bool Disposed { get; private set; }
+        internal bool Disposed
+        {
+            get; private set;
+        }
         public void Dispose() => Disposed = true;
     }
 
     private sealed class AdjustableUtcProvider(FakeTimeProvider clock) : TimeProvider
     {
-        internal DateTimeOffset UtcNow { get; set; }
+        internal DateTimeOffset UtcNow
+        {
+            get; set;
+        }
         public override DateTimeOffset GetUtcNow() => UtcNow;
         public override long GetTimestamp() => clock.GetTimestamp();
         public override long TimestampFrequency => clock.TimestampFrequency;
@@ -400,7 +461,10 @@ public class ReplenishingRetryBudgetTests
 
     private sealed class CancellingTimestampProvider(CancellationTokenSource cancellation) : TimeProvider
     {
-        internal bool CancelOnNextTimestamp { get; set; }
+        internal bool CancelOnNextTimestamp
+        {
+            get; set;
+        }
         public override long GetTimestamp()
         {
             if (CancelOnNextTimestamp)
@@ -408,6 +472,7 @@ public class ReplenishingRetryBudgetTests
                 CancelOnNextTimestamp = false;
                 cancellation.Cancel();
             }
+
             return TimeProvider.System.GetTimestamp();
         }
     }

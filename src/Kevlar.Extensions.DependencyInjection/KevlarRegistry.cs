@@ -15,12 +15,21 @@ internal sealed class ShieldRegistration
         Factory = factory;
     }
 
-    public string Name { get; }
+    public string Name
+    {
+        get;
+    }
 
     /// <summary><see langword="null"/> for non-generic shields; otherwise the result type.</summary>
-    public Type? ResultType { get; }
+    public Type? ResultType
+    {
+        get;
+    }
 
-    public Func<IServiceProvider, object> Factory { get; }
+    public Func<IServiceProvider, object> Factory
+    {
+        get;
+    }
 }
 
 internal sealed class RegistryEntry
@@ -1140,7 +1149,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private sealed class ReferenceComparer<T> : IEqualityComparer<T>
         where T : class
     {
-        public static ReferenceComparer<T> Instance { get; } = new();
+        public static ReferenceComparer<T> Instance
+        {
+            get;
+        } = new();
 
         public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
 
@@ -1151,9 +1163,15 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         private int _active = 1;
 
-        public KevlarRegistry Registry { get; } = registry;
+        public KevlarRegistry Registry
+        {
+            get;
+        } = registry;
 
-        public LifecycleScope? Parent { get; } = parent;
+        public LifecycleScope? Parent
+        {
+            get;
+        } = parent;
 
         public bool IsActive => Volatile.Read(ref _active) != 0;
 

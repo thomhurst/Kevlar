@@ -809,7 +809,9 @@ public class HedgingActionGeneratorTests
 
         var result = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);
@@ -973,7 +975,9 @@ public class HedgingActionGeneratorTests
 
                     return 42;
                 },
-                static (_, _) => { }))
+                static (_, _) =>
+                {
+                }))
             .Throws<InvalidOperationException>();
         await Assert.That(exception!.Message).IsEqualTo("Property equality failed.");
 
@@ -1117,7 +1121,10 @@ public class HedgingActionGeneratorTests
 
     private sealed class PropertyObserver(KevlarKey<int> key) : Strategy
     {
-        public List<int> Values { get; } = [];
+        public List<int> Values
+        {
+            get;
+        } = [];
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -1134,7 +1141,10 @@ public class HedgingActionGeneratorTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         private int _invocations;
 
-        public ConcurrentQueue<KevlarContext> Contexts { get; } = new();
+        public ConcurrentQueue<KevlarContext> Contexts
+        {
+            get;
+        } = new();
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

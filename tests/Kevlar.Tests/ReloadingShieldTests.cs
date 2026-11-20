@@ -216,14 +216,28 @@ public class ReloadingShieldTests
             .IsTrue();
         await Assert.That(shield.ExecuteOutcome<int>(static _ => 4).Result).IsEqualTo(4);
         await Assert.That(shield.ExecuteOutcome(5, static (state, _) => state).Result).IsEqualTo(5);
-        await Assert.That(shield.ExecuteOutcome(static _ => { }).IsSuccess).IsTrue();
-        await Assert.That(shield.ExecuteOutcome(0, static (_, _) => { }).IsSuccess).IsTrue();
+        await Assert.That(
+            shield.ExecuteOutcome(static _ =>
+            {
+            }).IsSuccess
+        ).IsTrue();
+        await Assert.That(
+            shield.ExecuteOutcome(0, static (_, _) =>
+            {
+            }).IsSuccess
+        ).IsTrue();
         await Assert.That(shield.Execute<int>(static _ => 6)).IsEqualTo(6);
         await Assert.That(shield.Execute(7, static (state, _) => state)).IsEqualTo(7);
         await Assert.That(shield.ExecuteWithContext<int>(static _ => 8)).IsEqualTo(8);
-        shield.Execute(static _ => { });
-        shield.Execute(0, static (_, _) => { });
-        shield.ExecuteWithContext(static _ => { });
+        shield.Execute(static _ =>
+        {
+        });
+        shield.Execute(0, static (_, _) =>
+        {
+        });
+        shield.ExecuteWithContext(static _ =>
+        {
+        });
 
         await Assert.That(await typed.ExecuteAsync(9, static (state, _) => new(state))).IsEqualTo(9);
         await Assert.That(await typed.ExecuteWithContextAsync(static _ => new ValueTask<int>(10))).IsEqualTo(10);
@@ -670,6 +684,7 @@ public class ReloadingShieldTests
         {
             _ = shieldProvider.Current;
         }
+
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         await Assert.That(allocated).IsEqualTo(0);

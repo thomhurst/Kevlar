@@ -20,16 +20,28 @@ public sealed class HedgeOptions<TResult>
     public HedgeOptions<TResult> Clone() => (HedgeOptions<TResult>)MemberwiseClone();
 
     /// <inheritdoc cref="HedgeOptions.Budget"/>
-    public RetryBudget? Budget { get; set; }
+    public RetryBudget? Budget
+    {
+        get; set;
+    }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="HedgeOptions.HandlesException"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this hedging strategy
@@ -42,10 +54,16 @@ public sealed class HedgeOptions<TResult>
     /// after it. These properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<TResult, bool>? HandlesResult { get; set; }
+    public Func<TResult, bool>? HandlesResult
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles results using the typed outcome and execution context.</summary>
-    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext { get; set; }
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null
@@ -54,30 +72,48 @@ public sealed class HedgeOptions<TResult>
         || HandlesResultContext is not null;
 
     /// <inheritdoc cref="HedgeOptions.RespectDeadline"/>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="HedgeOptions.MaxHedgedAttempts"/>
-    public int MaxHedgedAttempts { get; set; } = 1;
+    public int MaxHedgedAttempts
+    {
+        get; set;
+    } = 1;
 
     /// <inheritdoc cref="HedgeOptions.Delay"/>
-    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
+    public TimeSpan Delay
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc cref="HedgeOptions.DelayGenerator"/>
-    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited before an additional hedged attempt starts, with the latest handled
     /// outcome when one triggered the hedge. Return <see langword="default"/> from a synchronous
     /// callback.
     /// </summary>
-    public Func<HedgeEvent<TResult>, ValueTask>? OnHedge { get; set; }
+    public Func<HedgeEvent<TResult>, ValueTask>? OnHedge
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
     /// result runs the original operation.
     /// </summary>
     public Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>?
-        ActionGenerator { get; set; }
+        ActionGenerator
+    {
+        get; set;
+    }
 
     internal HedgeOptions ToUntyped() => new()
     {

@@ -10,7 +10,11 @@ public class HedgingEdgeCaseTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-            options.OnHedge = hedge => { hedges.Add(hedge.AttemptNumber); return default; };
+            options.OnHedge = hedge =>
+            {
+                hedges.Add(hedge.AttemptNumber);
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -150,7 +154,11 @@ public class HedgingEdgeCaseTests
             {
                 options.MaxHedgedAttempts = 1;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-                options.OnHedge = hedge => { seenOnHedge = hedge.Context.Properties.GetOrDefault(key, "missing"); return default; };
+                options.OnHedge = hedge =>
+                {
+                    seenOnHedge = hedge.Context.Properties.GetOrDefault(key, "missing");
+                    return default;
+                };
             });
 
         var attempts = 0;

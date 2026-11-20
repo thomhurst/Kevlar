@@ -26,7 +26,10 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null || model is null) { return; }
+        if (root is null || model is null)
+        {
+            return;
+        }
 
         var lambda = root.FindNode(context.Span, getInnermostNodeForTie: true)
             .FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>();
@@ -65,6 +68,7 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
             {
                 argument = argument.WithLeadingTrivia(SyntaxFactory.Space);
             }
+
             var candidate = invocation.WithArgumentList(invocation.ArgumentList.AddArguments(argument));
             var binding = model.GetSpeculativeSymbolInfo(invocation.SpanStart, candidate, SpeculativeBindingOption.BindAsExpression);
             if (binding.Symbol is not IMethodSymbol selected
@@ -84,11 +88,19 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
                 continue;
             }
 
-            if (replacement is not null) { return; }
+            if (replacement is not null)
+            {
+                return;
+            }
+
             replacement = candidate;
         }
 
-        if (replacement is null) { return; }
+        if (replacement is null)
+        {
+            return;
+        }
+
         var changedDocument = context.Document.WithSyntaxRoot(root.ReplaceNode(invocation, replacement));
         var changedModel = await changedDocument.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (changedModel is null || changedModel.GetDiagnostics(cancellationToken: context.CancellationToken)
@@ -96,6 +108,7 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
         {
             return;
         }
+
         context.RegisterCodeFix(CodeAction.Create("Forward execution CancellationToken",
             _ => Task.FromResult(changedDocument), EquivalenceKey), context.Diagnostics);
     }
@@ -111,7 +124,12 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
                 _ => body,
             };
         }
-        if (body is AwaitExpressionSyntax awaited) { body = awaited.Expression; }
+
+        if (body is AwaitExpressionSyntax awaited)
+        {
+            body = awaited.Expression;
+        }
+
         return body as InvocationExpressionSyntax;
     }
 
@@ -132,13 +150,20 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
 
         var tokenParameters = selected.Parameters.Where(parameter =>
             SymbolEqualityComparer.Default.Equals(parameter.Type, tokenType)).ToArray();
-        if (tokenParameters.Length != 1 || tokenParameters[0].RefKind != RefKind.None) { return false; }
+        if (tokenParameters.Length != 1 || tokenParameters[0].RefKind != RefKind.None)
+        {
+            return false;
+        }
 
         var oldParameters = original.Parameters.Where(parameter =>
             !SymbolEqualityComparer.Default.Equals(parameter.Type, tokenType)).ToArray();
         var newParameters = selected.Parameters.Where(parameter =>
             !SymbolEqualityComparer.Default.Equals(parameter.Type, tokenType)).ToArray();
-        if (oldParameters.Length != newParameters.Length) { return false; }
+        if (oldParameters.Length != newParameters.Length)
+        {
+            return false;
+        }
+
         for (var index = 0; index < oldParameters.Length; index++)
         {
             var before = oldParameters[index];
@@ -154,6 +179,7 @@ public sealed class IgnoredCancellationTokenCodeFixProvider : CodeFixProvider
                 return false;
             }
         }
+
         return true;
     }
 }

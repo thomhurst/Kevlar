@@ -20,17 +20,32 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
     }
 
     /// <summary>The maximum concurrent executions.</summary>
-    public int MaxConcurrency { get; }
+    public int MaxConcurrency
+    {
+        get;
+    }
 
     /// <summary>The maximum wait queue size.</summary>
-    public int QueueLimit { get; }
+    public int QueueLimit
+    {
+        get;
+    }
 
     /// <summary>The maximum queue residence time, or null for an unbounded wait.</summary>
-    public TimeSpan? QueueTimeout { get; }
+    public TimeSpan? QueueTimeout
+    {
+        get;
+    }
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
-    public bool HasNotification { get; }
+    public bool HasNotification
+    {
+        get;
+    }
 
     /// <summary>Whether admission uses highest priority first, FIFO ties, and lower-priority eviction.</summary>
-    public bool UsePriorityQueue { get; }
+    public bool UsePriorityQueue
+    {
+        get;
+    }
 }

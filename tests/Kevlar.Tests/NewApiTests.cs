@@ -12,7 +12,7 @@ public class NewApiTests
     [Test]
     public async Task For_Returns_Typed_Shield_And_Builders_Expose_Only_Or_Continuations()
     {
-        Shield<int> typed = Shield.For<int>();
+        var typed = Shield.For<int>();
         await Assert.That(typed.GetType()).IsEqualTo(typeof(Shield<int>));
 
         var untypedBuilderWhenMethods = typeof(ShieldBuilder)
@@ -576,7 +576,10 @@ public class NewApiTests
         });
 
         string? fromSyncVoid = null;
-        shield.ExecuteWithContext(context => { fromSyncVoid = context.ShieldName; });
+        shield.ExecuteWithContext(context =>
+        {
+            fromSyncVoid = context.ShieldName;
+        });
 
         await Assert.That(fromValueTaskVoid).IsEqualTo("context-only");
         await Assert.That(fromTaskVoid).IsEqualTo("context-only");

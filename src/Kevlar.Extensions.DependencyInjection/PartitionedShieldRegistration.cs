@@ -5,9 +5,15 @@ internal sealed class PartitionedShieldRegistration(
     Type serviceType,
     Func<IServiceProvider, IReadOnlyList<Strategy>[]> capture)
 {
-    internal string Name { get; } = name;
+    internal string Name
+    {
+        get;
+    } = name;
 
-    internal Type ServiceType { get; } = serviceType;
+    internal Type ServiceType
+    {
+        get;
+    } = serviceType;
 
     internal IReadOnlyList<Strategy>[] Capture(IServiceProvider serviceProvider) => capture(serviceProvider);
 }

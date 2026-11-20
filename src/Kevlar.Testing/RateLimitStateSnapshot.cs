@@ -13,13 +13,22 @@ public sealed class RateLimitStateSnapshot : StrategyStateSnapshot
     }
 
     /// <summary>Gets the estimated number of immediately available permits.</summary>
-    public long AvailablePermits { get; }
+    public long AvailablePermits
+    {
+        get;
+    }
 
     /// <summary>Gets the number of executions currently waiting for a permit.</summary>
-    public int QueuedExecutions { get; }
+    public int QueuedExecutions
+    {
+        get;
+    }
 
     /// <summary>Gets immutable queued counts by priority; empty when priority queues are disabled.</summary>
-    public IReadOnlyDictionary<int, int> QueuedByPriority { get; }
+    public IReadOnlyDictionary<int, int> QueuedByPriority
+    {
+        get;
+    }
 
     private static readonly IReadOnlyDictionary<int, int> EmptyPriorities =
         new System.Collections.ObjectModel.ReadOnlyDictionary<int, int>(new Dictionary<int, int>());

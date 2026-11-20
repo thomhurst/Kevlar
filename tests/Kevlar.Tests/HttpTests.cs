@@ -13,7 +13,10 @@ public class HttpTests
 
         public ScriptedHandler(params Func<HttpResponseMessage>[] responses) => _responses = new Queue<Func<HttpResponseMessage>>(responses);
 
-        public int Calls { get; private set; }
+        public int Calls
+        {
+            get; private set;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

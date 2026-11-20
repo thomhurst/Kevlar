@@ -11,8 +11,14 @@ public readonly struct PartitionCreatedEvent<TKey, TResult>
     }
 
     /// <summary>Gets the partition key.</summary>
-    public TKey Key { get; }
+    public TKey Key
+    {
+        get;
+    }
 
     /// <summary>Gets the created result-aware shield.</summary>
-    public Shield<TResult> Shield { get; }
+    public Shield<TResult> Shield
+    {
+        get;
+    }
 }

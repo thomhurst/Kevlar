@@ -36,15 +36,27 @@ public readonly struct CircuitBreakerStateChangedEvent
     }
 
     /// <summary>The state the circuit left.</summary>
-    public CircuitState From { get; }
+    public CircuitState From
+    {
+        get;
+    }
 
     /// <summary>The state the circuit entered.</summary>
-    public CircuitState To { get; }
+    public CircuitState To
+    {
+        get;
+    }
 
     /// <summary>The exception from the failure that caused the transition, when applicable.</summary>
-    public Exception? LastException { get; }
+    public Exception? LastException
+    {
+        get;
+    }
 
-    internal TimeSpan BreakDuration { get; }
+    internal TimeSpan BreakDuration
+    {
+        get;
+    }
 
     /// <summary>
     /// The triggering execution context. Manual monitor transitions receive a detached context

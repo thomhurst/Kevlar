@@ -28,6 +28,7 @@ if (reply.Message != "pong" || transport.Attempts != 3)
 Console.WriteLine("gRPC client sample passed after two transient Unavailable responses.");
 
 internal sealed class PingRequest;
+
 internal sealed record PingReply(string Message);
 
 internal sealed class FlakyCallInvoker : CallInvoker
@@ -51,7 +52,9 @@ internal sealed class FlakyCallInvoker : CallInvoker
             Task.FromResult(new Metadata()),
             static () => Status.DefaultSuccess,
             static () => new Metadata(),
-            static () => { });
+            static () =>
+            {
+            });
     }
 
     public override TResponse BlockingUnaryCall<TRequest, TResponse>(

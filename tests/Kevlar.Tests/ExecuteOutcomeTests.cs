@@ -143,7 +143,9 @@ public class ExecuteOutcomeTests
     [Test]
     public async Task Sync_ExecuteOutcome_Twins_Return_Void_And_Typed_Outcomes()
     {
-        var voidSuccess = Shield.Empty.ExecuteOutcome(static _ => { });
+        var voidSuccess = Shield.Empty.ExecuteOutcome(static _ =>
+        {
+        });
         var voidFailure = Shield.Empty.ExecuteOutcome(
             "sync",
             static (state, _) => throw new InvalidOperationException(state));
@@ -178,7 +180,9 @@ public class ExecuteOutcomeTests
 
         var result = await shield.ExecuteWithContextAsync(
             42,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (state, _) => new ValueTask<int>(state),
             (_, properties) =>
             {
@@ -200,14 +204,18 @@ public class ExecuteOutcomeTests
 
         var thrown = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
                 0,
-                static (_, _) => { },
+                static (_, _) =>
+                {
+                },
                 (_, _) => throw original,
                 (_, properties) => observed = properties.GetOrDefault(AttemptCount, -1)))
             .Throws<InvalidOperationException>();
 
         var result = await shield.ExecuteWithContextAsync(
             42,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (state, _) => new ValueTask<int>(state),
             static (_, _) => throw new Exception("observer"));
 
@@ -261,7 +269,9 @@ public class ExecuteOutcomeTests
             (_, properties) => first = properties.GetOrDefault(AttemptCount, -1));
         await Shield.Empty.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (_, _) => ValueTask.CompletedTask,
             (_, properties) => second = properties.GetOrDefault(AttemptCount, -1));
 
@@ -278,7 +288,9 @@ public class ExecuteOutcomeTests
 
         var result = await Shield.Hedge(1, TimeSpan.Zero).ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             async (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);
@@ -319,7 +331,9 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             async (_, context) =>
             {
                 if (Interlocked.Increment(ref attempts) == 1)
@@ -374,7 +388,9 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             async (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);
@@ -445,7 +461,9 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);
@@ -480,7 +498,9 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             (_, _) => Interlocked.Increment(ref attempts) == 1
                 ? ValueTask.FromException<int>(new InvalidOperationException())
                 : new ValueTask<int>(42),
@@ -503,7 +523,9 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             async (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);

@@ -1,9 +1,9 @@
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kevlar.Extensions.Grpc;
-using System.Runtime.CompilerServices;
 
 namespace Kevlar.Benchmarks;
 
@@ -66,7 +66,9 @@ public class GrpcStreamingBenchmarks
         Task.FromResult(new Metadata()),
         static () => Status.DefaultSuccess,
         static () => new Metadata(),
-        static () => { });
+        static () =>
+        {
+        });
 
     private static AsyncClientStreamingCall<BenchmarkRequest, BenchmarkResponse> ClientCall() => new(
         Writer,
@@ -74,18 +76,26 @@ public class GrpcStreamingBenchmarks
         Task.FromResult(new Metadata()),
         static () => Status.DefaultSuccess,
         static () => new Metadata(),
-        static () => { });
+        static () =>
+        {
+        });
 
     private sealed class CompletedReader : IAsyncStreamReader<BenchmarkResponse>
     {
-        public BenchmarkResponse Current { get; } = new();
+        public BenchmarkResponse Current
+        {
+            get;
+        } = new();
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => Task.FromResult(true);
     }
 
     private sealed class CompletedWriter : IClientStreamWriter<BenchmarkRequest>
     {
-        public WriteOptions? WriteOptions { get; set; }
+        public WriteOptions? WriteOptions
+        {
+            get; set;
+        }
 
         public Task CompleteAsync() => Task.CompletedTask;
 

@@ -1056,7 +1056,10 @@ public class PartitionedShieldTests
 
     private sealed class DisposablePartitionStrategy : Strategy, IDisposable
     {
-        public int DisposeCount { get; private set; }
+        public int DisposeCount
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -1068,7 +1071,10 @@ public class PartitionedShieldTests
 
     private sealed class AsyncDisposablePartitionStrategy : Strategy, IAsyncDisposable
     {
-        public int DisposeCount { get; private set; }
+        public int DisposeCount
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -1084,10 +1090,16 @@ public class PartitionedShieldTests
 
     private sealed class PausingPartitionStrategy : Strategy
     {
-        public TaskCompletionSource Entered { get; } =
+        public TaskCompletionSource Entered
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource Release { get; } =
+        public TaskCompletionSource Release
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         protected internal override bool InvokesContinuationAtMostOnce => true;
@@ -1104,13 +1116,22 @@ public class PartitionedShieldTests
 
     private sealed class CoordinatedAsyncDisposableStrategy : Strategy, IAsyncDisposable
     {
-        public TaskCompletionSource DisposeEntered { get; } =
+        public TaskCompletionSource DisposeEntered
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource ReleaseDispose { get; } =
+        public TaskCompletionSource ReleaseDispose
+        {
+            get;
+        } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public int DisposeCount { get; private set; }
+        public int DisposeCount
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -1128,9 +1149,15 @@ public class PartitionedShieldTests
 
     private sealed class DualDisposablePartitionStrategy : Strategy, IDisposable, IAsyncDisposable
     {
-        public int SyncDisposeCount { get; private set; }
+        public int SyncDisposeCount
+        {
+            get; private set;
+        }
 
-        public int AsyncDisposeCount { get; private set; }
+        public int AsyncDisposeCount
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -1148,9 +1175,15 @@ public class PartitionedShieldTests
 
     private sealed class ReentrantDisposalStrategy : Strategy, IAsyncDisposable
     {
-        public PartitionedShield<string>? Provider { get; set; }
+        public PartitionedShield<string>? Provider
+        {
+            get; set;
+        }
 
-        public Exception? DisposalFailure { get; private set; }
+        public Exception? DisposalFailure
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

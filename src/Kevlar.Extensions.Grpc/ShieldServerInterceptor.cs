@@ -31,7 +31,11 @@ public sealed class ShieldServerInterceptor : Interceptor
         PartitionedShield<string> shields,
         Func<ServerCallContext, string>? partitionKey = null)
     {
-        if (shields is null) { throw new ArgumentNullException(nameof(shields)); }
+        if (shields is null)
+        {
+            throw new ArgumentNullException(nameof(shields));
+        }
+
         partitionKey ??= static context => context.Method;
         _provider = context => shields.GetShieldAsync(partitionKey(context));
     }
@@ -72,7 +76,11 @@ public sealed class ShieldServerInterceptor : Interceptor
     private async Task<TResult> ExecuteAsync<TState, TResult>(
         ServerCallContext context, TState state, Func<TState, ServerCallContext, ValueTask<TResult>> action)
     {
-        if (context is null) { throw new ArgumentNullException(nameof(context)); }
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
         try
         {
             context.CancellationToken.ThrowIfCancellationRequested();
@@ -82,6 +90,7 @@ public sealed class ShieldServerInterceptor : Interceptor
                 shield = await _provider!(context).ConfigureAwait(false);
                 ValidateShield(shield);
             }
+
             return await shield.ExecuteAsync((context, state, action), static (execution, token) =>
             {
                 // ASP.NET Core activates the service using the original transport context's identity.
@@ -92,6 +101,7 @@ public sealed class ShieldServerInterceptor : Interceptor
                         "Server admission shields must preserve the transport cancellation token. " +
                         "Use a gRPC deadline instead of a shield timeout or another token-replacing strategy.");
                 }
+
                 return execution.action(execution.state, execution.context);
             }, context.CancellationToken).ConfigureAwait(false);
         }
@@ -111,13 +121,18 @@ public sealed class ShieldServerInterceptor : Interceptor
                 var milliseconds = (int)Math.Min(int.MaxValue, Math.Max(0, Math.Ceiling(retryAfter.TotalMilliseconds)));
                 trailers.Add("grpc-retry-pushback-ms", milliseconds.ToString(CultureInfo.InvariantCulture));
             }
+
             throw new RpcException(new Status(StatusCode.Unavailable, "Server circuit is open."), trailers);
         }
     }
 
     private static void ValidateShield(Shield shield)
     {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
         if (!shield.InvokesContinuationAtMostOnce)
         {
             throw new ArgumentException(
@@ -125,5 +140,4 @@ public sealed class ShieldServerInterceptor : Interceptor
                 "and custom strategies without a single-invocation guarantee are not supported.", nameof(shield));
         }
     }
-
 }

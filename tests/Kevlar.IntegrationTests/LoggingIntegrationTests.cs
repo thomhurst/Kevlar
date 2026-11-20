@@ -34,7 +34,10 @@ public class LoggingIntegrationTests
 
     private sealed class CollectingExporter : BaseExporter<LogRecord>
     {
-        public ConcurrentQueue<string?> ShieldNames { get; } = new();
+        public ConcurrentQueue<string?> ShieldNames
+        {
+            get;
+        } = new();
 
         public override ExportResult Export(in Batch<LogRecord> batch)
         {

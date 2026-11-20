@@ -34,7 +34,10 @@ public sealed class TimeoutExceededException : KevlarException
         => Timeout = timeout;
 
     /// <summary>The timeout that was exceeded.</summary>
-    public TimeSpan Timeout { get; }
+    public TimeSpan Timeout
+    {
+        get;
+    }
 
     private static string FormatMessage(TimeSpan timeout) =>
         $"The execution did not complete within the timeout of {timeout.TotalSeconds:0.###}s.";

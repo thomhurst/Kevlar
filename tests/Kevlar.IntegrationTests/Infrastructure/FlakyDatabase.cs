@@ -30,9 +30,15 @@ internal sealed class FlakyDatabase
     private readonly TaskCompletionSource _queryStarted = new(
         TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public int MaxConnections { get; init; } = 5;
+    public int MaxConnections
+    {
+        get; init;
+    } = 5;
 
-    public TimeSpan Latency { get; init; } = TimeSpan.FromMilliseconds(25);
+    public TimeSpan Latency
+    {
+        get; init;
+    } = TimeSpan.FromMilliseconds(25);
 
     public int QueryCount => Volatile.Read(ref _queries);
 

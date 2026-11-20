@@ -67,6 +67,7 @@ public class StartupValidationTests
             {
                 services.AddShield("broken", (IServiceProvider _) => throw failure);
             }
+
             services.AddKevlarValidationOnStart();
         });
 
@@ -95,14 +96,27 @@ public class StartupValidationTests
             var section = configuration.GetSection("Resilience");
             if (reloading)
             {
-                if (typed) { services.AddReloadingShield<int>("configured", section); }
-                else { services.AddReloadingShield("configured", section); }
+                if (typed)
+                {
+                    services.AddReloadingShield<int>("configured", section);
+                }
+                else
+                {
+                    services.AddReloadingShield("configured", section);
+                }
             }
             else
             {
-                if (typed) { services.AddShield<int>("configured", section); }
-                else { services.AddShield("configured", section); }
+                if (typed)
+                {
+                    services.AddShield<int>("configured", section);
+                }
+                else
+                {
+                    services.AddShield("configured", section);
+                }
             }
+
             services.AddKevlarValidationOnStart();
         });
 
@@ -173,8 +187,12 @@ public class StartupValidationTests
         var calls = 0;
         using var host = CreateHost(services =>
         {
-            services.Configure<OtherOptions>("untyped", _ => { });
-            services.Configure<OtherOptions>("typed", _ => { });
+            services.Configure<OtherOptions>("untyped", _ =>
+            {
+            });
+            services.Configure<OtherOptions>("typed", _ =>
+            {
+            });
             services.AddReloadingShield<OtherOptions>("untyped", (_, _) =>
             {
                 calls++;
@@ -205,14 +223,26 @@ public class StartupValidationTests
         var dynamicCalls = 0;
         using var host = CreateHost(services =>
         {
-            services.AddShield("replace", _ => { replacedCalls++; return Shield.Empty; });
+            services.AddShield("replace", _ =>
+            {
+                replacedCalls++;
+                return Shield.Empty;
+            });
             services.AddShield("replace", Shield.Retry(2, Backoff.None), replace: true);
             services.AddShield("removed", (IServiceProvider _) => throw new InvalidOperationException("removed"));
-            services.AddPartitionedShield<string>("tenants", (_, _) => { partitionCalls++; return Shield.Empty; });
+            services.AddPartitionedShield<string>("tenants", (_, _) =>
+            {
+                partitionCalls++;
+                return Shield.Empty;
+            });
             services.AddKevlarValidationOnStart();
         });
         var registry = host.Services.GetRequiredService<IKevlarRegistry>();
-        registry.TryAdd("runtime", _ => { dynamicCalls++; return Shield.Empty; });
+        registry.TryAdd("runtime", _ =>
+        {
+            dynamicCalls++;
+            return Shield.Empty;
+        });
         registry.Remove("removed");
 
         await host.StartAsync();
@@ -271,15 +301,28 @@ public class StartupValidationTests
 
     private sealed class ObservingWorker : IHostedService
     {
-        public bool Started { get; private set; }
-        public Task StartAsync(CancellationToken cancellationToken) { Started = true; return Task.CompletedTask; }
+        public bool Started
+        {
+            get; private set;
+        }
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            Started = true;
+            return Task.CompletedTask;
+        }
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class CountingStrategy : Strategy, IDisposable
     {
-        public int Executions { get; private set; }
-        public int Disposals { get; private set; }
+        public int Executions
+        {
+            get; private set;
+        }
+        public int Disposals
+        {
+            get; private set;
+        }
         public void Dispose() => Disposals++;
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
         {
@@ -290,7 +333,15 @@ public class StartupValidationTests
 
     private sealed class CountingDecorator(Action onDecorate) : IShieldDecorator
     {
-        public Shield Decorate(Shield shield, string? name) { onDecorate(); return shield; }
-        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name) { onDecorate(); return shield; }
+        public Shield Decorate(Shield shield, string? name)
+        {
+            onDecorate();
+            return shield;
+        }
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            onDecorate();
+            return shield;
+        }
     }
 }
