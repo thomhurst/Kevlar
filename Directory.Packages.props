@@ -12,7 +12,7 @@
     <TestEntityFrameworkCoreVersion>10.0.14</TestEntityFrameworkCoreVersion>
     <TestNpgsqlEntityFrameworkCoreVersion>10.0.3</TestNpgsqlEntityFrameworkCoreVersion>
     <TestEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestEntityFrameworkCoreVersion>
-    <TestNpgsqlEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0-rc.3</TestNpgsqlEntityFrameworkCoreVersion>
+    <TestNpgsqlEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestNpgsqlEntityFrameworkCoreVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -104,7 +104,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="11.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="11.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0" />
