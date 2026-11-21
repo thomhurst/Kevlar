@@ -90,10 +90,11 @@ BenchmarkDotNet remains the trend and comparison tool. Pull requests also run a 
 
 Documented synchronous-completion hot paths have a strict `0 B/op` budget. Paths that inherently create failures or parallel hedge attempts have explicit bounded budgets; those gates catch meaningful recurring regressions without pretending the failure path can be allocation-free. The allocation project is intentionally separate from coverage collection, which instruments assemblies and would contaminate the counts.
 
-Run the same gates locally with:
+Run the same gates locally, once per target framework:
 
 ```bash
-dotnet run -c Release --project tests/Kevlar.AllocationTests -- --timeout 5m
+dotnet run -c Release --project tests/Kevlar.AllocationTests -f net10.0 -- --timeout 5m
+dotnet run -c Release --project tests/Kevlar.AllocationTests -f net11.0 -- --timeout 5m
 ```
 
 ## Outage and recovery measurements
