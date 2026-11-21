@@ -186,7 +186,9 @@ public class GrpcSelectedServerReadCancellationTests
             Task.FromResult(new Metadata()),
             static () => Status.DefaultSuccess,
             static () => new Metadata(),
-            static () => { }));
+            static () =>
+            {
+            }));
 
     private static void Cancel(
         int cancellationKind,
@@ -196,10 +198,17 @@ public class GrpcSelectedServerReadCancellationTests
     {
         switch (cancellationKind)
         {
-            case 0: caller.Cancel(); break;
-            case 1: read.Cancel(); break;
-            case 2: call.Dispose(); break;
-            default: throw new ArgumentOutOfRangeException(nameof(cancellationKind));
+            case 0:
+                caller.Cancel();
+                break;
+            case 1:
+                read.Cancel();
+                break;
+            case 2:
+                call.Dispose();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(cancellationKind));
         }
     }
 
@@ -214,12 +223,17 @@ public class GrpcSelectedServerReadCancellationTests
             await Assert.That(exception.CancellationToken)
                 .IsEqualTo(cancellationKind == 0 ? callerToken : readToken);
         }
+
         await Assert.That(exception.CancellationToken.IsCancellationRequested).IsTrue();
     }
 
     private static async Task ObserveCancellation(Task? task)
     {
-        if (task is null) { return; }
+        if (task is null)
+        {
+            return;
+        }
+
         try
         {
             await task.WaitForTestAsync(TestTimeout);
@@ -234,7 +248,10 @@ public class GrpcSelectedServerReadCancellationTests
 
     private sealed class DelegateReader(Func<CancellationToken, Task<bool>> move) : IAsyncStreamReader<Message>
     {
-        public Message Current { get; } = new();
+        public Message Current
+        {
+            get;
+        } = new();
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => move(cancellationToken);
     }

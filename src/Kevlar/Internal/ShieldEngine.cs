@@ -782,9 +782,15 @@ internal static partial class ShieldEngine
             Action = action;
         }
 
-        public TState State { get; }
+        public TState State
+        {
+            get;
+        }
 
-        public Func<TState, CancellationToken, ValueTask<T>> Action { get; }
+        public Func<TState, CancellationToken, ValueTask<T>> Action
+        {
+            get;
+        }
     }
 
     private readonly struct SyncCallback<TState, T>
@@ -795,9 +801,15 @@ internal static partial class ShieldEngine
             Action = action;
         }
 
-        public TState State { get; }
+        public TState State
+        {
+            get;
+        }
 
-        public Func<TState, CancellationToken, T> Action { get; }
+        public Func<TState, CancellationToken, T> Action
+        {
+            get;
+        }
     }
 
     private readonly struct ContextAsyncCallback<TState, T>
@@ -808,9 +820,15 @@ internal static partial class ShieldEngine
             Action = action;
         }
 
-        public TState State { get; }
+        public TState State
+        {
+            get;
+        }
 
-        public Func<TState, KevlarContext, ValueTask<T>> Action { get; }
+        public Func<TState, KevlarContext, ValueTask<T>> Action
+        {
+            get;
+        }
     }
 
     private readonly struct ContextSyncCallback<TState, T>
@@ -821,8 +839,14 @@ internal static partial class ShieldEngine
             Action = action;
         }
 
-        public TState State { get; }
+        public TState State
+        {
+            get;
+        }
 
-        public Func<TState, KevlarContext, T> Action { get; }
+        public Func<TState, KevlarContext, T> Action
+        {
+            get;
+        }
     }
 }

@@ -25,7 +25,11 @@ internal sealed record OutageOptions(
         var options = new OutageOptions();
         for (var index = 0; index < args.Length; index += 2)
         {
-            if (index + 1 >= args.Length) { throw new ArgumentException($"Missing value for {args[index]}."); }
+            if (index + 1 >= args.Length)
+            {
+                throw new ArgumentException($"Missing value for {args[index]}.");
+            }
+
             var value = args[index + 1];
             options = args[index] switch
             {
@@ -36,11 +40,13 @@ internal sealed record OutageOptions(
                 _ => throw new ArgumentException($"Unknown argument {args[index]}.")
             };
         }
+
         if (options.PhaseSeconds is < 1 or > 300 || options.RequestsPerSecond is < 1 or > 10000
             || options.MaximumInFlight is < 1 or > 10000 || options.TotalArrivals > 1_000_000)
         {
             throw new ArgumentException("Use 1–300 phase seconds, 1–10000 requests/s and in-flight limit, and at most 1000000 arrivals per scenario.");
         }
+
         return options;
     }
 }

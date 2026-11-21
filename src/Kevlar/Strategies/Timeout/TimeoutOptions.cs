@@ -22,10 +22,16 @@ public sealed class TimeoutOptions
     public TimeoutOptions Clone() => (TimeoutOptions)MemberwiseClone();
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>The maximum time an execution may take. The default is 30 seconds.</summary>
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan Timeout
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// Produces the timeout for each execution and is awaited before the timer is armed. The event
@@ -33,14 +39,20 @@ public sealed class TimeoutOptions
     /// be positive and no greater than the runtime timer limit. Return <c>new(timeout)</c> from a
     /// synchronous generator. The event context is valid only until the returned task completes.
     /// </summary>
-    public Func<TimeoutEvent, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+    public Func<TimeoutEvent, ValueTask<TimeSpan>>? TimeoutGenerator
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited when an execution is cancelled because it exceeded the timeout. Return
     /// <see langword="default"/> from a synchronous callback. The event context is valid only
     /// until the returned task completes.
     /// </summary>
-    public Func<TimeoutEvent, ValueTask>? OnTimeout { get; set; }
+    public Func<TimeoutEvent, ValueTask>? OnTimeout
+    {
+        get; set;
+    }
 }
 
 /// <summary>Provides execution context and duration for timeout callbacks.</summary>
@@ -58,7 +70,10 @@ public readonly struct TimeoutEvent
     /// The configured timeout before generation, or the timeout that was exceeded for a timeout
     /// notification.
     /// </summary>
-    public TimeSpan Timeout { get; }
+    public TimeSpan Timeout
+    {
+        get;
+    }
 
     /// <summary>The ambient execution context.</summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);

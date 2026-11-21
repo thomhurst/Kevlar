@@ -33,6 +33,7 @@ public class PipelineExplanationTests
             await Assert.That(explanation.MaxAttempts).IsEqualTo(12L);
             await Assert.That(explanation.Strategies[1].EnclosingAttemptStrategies).IsEquivalentTo(new[] { 0 });
         }
+
         await Assert.That(explanations[0].Strategies[0].Strategy.Kind).IsEqualTo(StrategyKind.Retry);
         await Assert.That(explanations[1].Strategies[0].Strategy.Kind).IsEqualTo(StrategyKind.Hedge);
     }

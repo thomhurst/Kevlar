@@ -15,17 +15,35 @@ internal sealed class HttpShieldPipelineOptions
         Routing = source.Routing is null ? null : new RoutingSnapshot(source.Routing);
     }
 
-    public HttpContentReplayPolicy ContentReplayPolicy { get; }
+    public HttpContentReplayPolicy ContentReplayPolicy
+    {
+        get;
+    }
 
-    public long MaxBufferSize { get; }
+    public long MaxBufferSize
+    {
+        get;
+    }
 
-    public bool AllowUnsafeMethodReplay { get; }
+    public bool AllowUnsafeMethodReplay
+    {
+        get;
+    }
 
-    public Func<HttpMethod, bool>? IsReplaySafeMethod { get; }
+    public Func<HttpMethod, bool>? IsReplaySafeMethod
+    {
+        get;
+    }
 
-    public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory { get; }
+    public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory
+    {
+        get;
+    }
 
-    public RoutingSnapshot? Routing { get; }
+    public RoutingSnapshot? Routing
+    {
+        get;
+    }
 
     internal sealed class RoutingSnapshot
     {
@@ -38,14 +56,29 @@ internal sealed class HttpShieldPipelineOptions
             ShieldFactory = source.ShieldFactory;
         }
 
-        public HttpEndpoint[] Endpoints { get; }
+        public HttpEndpoint[] Endpoints
+        {
+            get;
+        }
 
-        public Func<HttpRequestMessage, CancellationToken, ValueTask<IReadOnlyList<HttpEndpoint>>>? EndpointProvider { get; }
+        public Func<HttpRequestMessage, CancellationToken, ValueTask<IReadOnlyList<HttpEndpoint>>>? EndpointProvider
+        {
+            get;
+        }
 
-        public HttpEndpointSelectionMode SelectionMode { get; }
+        public HttpEndpointSelectionMode SelectionMode
+        {
+            get;
+        }
 
-        public int Seed { get; }
+        public int Seed
+        {
+            get;
+        }
 
-        public Func<Uri, Shield<HttpResponseMessage>>? ShieldFactory { get; }
+        public Func<Uri, Shield<HttpResponseMessage>>? ShieldFactory
+        {
+            get;
+        }
     }
 }

@@ -2,8 +2,14 @@ namespace Kevlar.OutageTests;
 
 internal sealed class RequestMeasurement(int id, double scheduledSeconds)
 {
-    internal int Id { get; } = id;
-    internal double ScheduledSeconds { get; } = scheduledSeconds;
+    internal int Id
+    {
+        get;
+    } = id;
+    internal double ScheduledSeconds
+    {
+        get;
+    } = scheduledSeconds;
     internal double StartedSeconds;
     internal double CompletedSeconds;
     internal string Outcome = "pending";
@@ -12,11 +18,20 @@ internal sealed class RequestMeasurement(int id, double scheduledSeconds)
 
 internal sealed class AttemptMeasurement(RequestMeasurement request, double startedSeconds)
 {
-    internal RequestMeasurement Request { get; } = request;
-    internal double StartedSeconds { get; } = startedSeconds;
+    internal RequestMeasurement Request
+    {
+        get;
+    } = request;
+    internal double StartedSeconds
+    {
+        get;
+    } = startedSeconds;
     internal double CompletedSeconds;
     internal bool Cancelled;
-    internal TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal TaskCompletionSource Completion
+    {
+        get;
+    } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 }
 
 internal static class Measurements
@@ -27,7 +42,11 @@ internal static class Measurements
 
     internal static double? Percentile(IEnumerable<double> values, double percentile)
     {
-        if (percentile is <= 0 or > 1) { throw new ArgumentOutOfRangeException(nameof(percentile)); }
+        if (percentile is <= 0 or > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(percentile));
+        }
+
         var sorted = values.Order().ToArray();
         return sorted.Length == 0 ? null : sorted[(int)Math.Ceiling(sorted.Length * percentile) - 1];
     }
@@ -39,7 +58,11 @@ internal static class Measurements
     {
         var recovered = requests.Where(request => request.ScheduledSeconds >= recoveryStart)
             .OrderBy(request => request.ScheduledSeconds).ToArray();
-        if (recovered.Length == 0) { return null; }
+        if (recovered.Length == 0)
+        {
+            return null;
+        }
+
         for (var start = recoveryStart; start + windowSeconds <= recoveryEnd; start += windowSeconds)
         {
             var window = recovered.Where(request => request.ScheduledSeconds >= start
@@ -49,6 +72,7 @@ internal static class Measurements
                 return Math.Max(start + windowSeconds, window.Max(request => request.CompletedSeconds)) - recoveryStart;
             }
         }
+
         return null;
     }
 
@@ -58,7 +82,11 @@ internal static class Measurements
         while (current > observed)
         {
             var previous = Interlocked.CompareExchange(ref peak, current, observed);
-            if (previous == observed) { return; }
+            if (previous == observed)
+            {
+                return;
+            }
+
             observed = previous;
         }
     }

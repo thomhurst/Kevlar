@@ -570,7 +570,10 @@ public class IntegrationTests
 
     private sealed class CountingDecorator : IShieldDecorator
     {
-        public int Count { get; private set; }
+        public int Count
+        {
+            get; private set;
+        }
 
         public Shield Decorate(Shield shield, string? name)
         {
@@ -600,7 +603,10 @@ public class IntegrationTests
 
     private sealed class NoopDisposable : IDisposable
     {
-        public static NoopDisposable Instance { get; } = new();
+        public static NoopDisposable Instance
+        {
+            get;
+        } = new();
 
         public void Dispose()
         {

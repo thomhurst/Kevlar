@@ -83,7 +83,10 @@ public sealed class Shield : IShieldLifecycle
     internal Shield CurrentSnapshot => _currentSnapshot?.Invoke() ?? this;
 
     /// <summary>A shield with no strategies: executions pass straight through.</summary>
-    public static Shield Empty { get; } = new([], null, null, null);
+    public static Shield Empty
+    {
+        get;
+    } = new([], null, null, null);
 
     internal OutcomeJudge JudgeOrDefault => CurrentSnapshot.Ambient ?? OutcomeJudge.Default;
 
@@ -463,7 +466,9 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         return ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }
@@ -651,7 +656,9 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         return ExecuteWithContextAsync(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }
@@ -933,7 +940,9 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         return ExecuteWithContext(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }
@@ -1074,7 +1083,9 @@ public sealed class Shield : IShieldLifecycle
         Throw.IfNull(action, nameof(action));
         ExecuteWithContext(
             action,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (a, context) => a(context),
             cancellationToken);
     }

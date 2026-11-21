@@ -27,6 +27,7 @@ public class TracingTests
             {
                 throw new InvalidOperationException("secret");
             }
+
             return 42;
         });
 
@@ -62,6 +63,7 @@ public class TracingTests
                 {
                     await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
                 }
+
                 return index;
             });
             // Hedge loser cleanup may complete after the winner is returned. Wait for its telemetry callback.
@@ -144,6 +146,7 @@ public class TracingTests
         {
             pending = Task.Run(async () => await EmitAsync());
         }
+
         await pending;
         await Assert.That(activity.Events.Any()).IsFalse();
     }
@@ -366,4 +369,3 @@ public class TracingTests
         public override string Message => throw new InvalidOperationException("formatter failed");
     }
 }
-

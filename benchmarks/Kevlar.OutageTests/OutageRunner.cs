@@ -20,6 +20,7 @@ internal static class OutageRunner
             shield = shield.CircuitBreaker(consecutiveFailures: 5,
                 breakDuration: TimeSpan.FromMilliseconds(OutageOptions.BreakMilliseconds));
         }
+
         return shield;
     }
 
@@ -47,6 +48,7 @@ internal static class OutageRunner
                 await Task.Delay(TimeSpan.FromMilliseconds(Math.Max(1, remaining * 1000)), deadline.Token);
                 remaining = scheduled - clock.Elapsed.TotalSeconds;
             }
+
             deadline.Token.ThrowIfCancellationRequested();
             var request = new RequestMeasurement(id, scheduled) { StartedSeconds = clock.Elapsed.TotalSeconds };
             requests.Add(request);
@@ -56,6 +58,7 @@ internal static class OutageRunner
                 request.CompletedSeconds = clock.Elapsed.TotalSeconds;
                 continue;
             }
+
             Measurements.UpdatePeak(ref peakLogical, Interlocked.Increment(ref logicalActive));
             // Do not await logical completion: the next arrival keeps its original scheduled time.
             completions.Add(ExecuteAsync(request));
@@ -69,7 +72,11 @@ internal static class OutageRunner
             await Task.WhenAll(attempts.Select(attempt => attempt.Completion.Task)).WaitAsync(deadline.Token);
         } while (Volatile.Read(ref downstreamActive) != 0);
         clock.Stop();
-        if (requests.Any(request => request.Outcome == "pending")) { throw new InvalidOperationException("Incomplete request accounting."); }
+        if (requests.Any(request => request.Outcome == "pending"))
+        {
+            throw new InvalidOperationException("Incomplete request accounting.");
+        }
+
         return Summarize(scenario, shield.ToString(), options, requests, attempts.ToArray(),
             clock.Elapsed.TotalSeconds, peakLogical, peakDownstream, downstreamActive);
 
@@ -80,9 +87,18 @@ internal static class OutageRunner
                 _ = await shield.ExecuteAsync(token => DependencyAsync(request, token), deadline.Token);
                 request.Outcome = "success";
             }
-            catch (IOException) { request.Outcome = "dependency_failed"; }
-            catch (ConcurrencyLimitExceededException) { request.Outcome = "concurrency_rejected"; }
-            catch (CircuitOpenException) { request.Outcome = "circuit_rejected"; }
+            catch (IOException)
+            {
+                request.Outcome = "dependency_failed";
+            }
+            catch (ConcurrencyLimitExceededException)
+            {
+                request.Outcome = "concurrency_rejected";
+            }
+            catch (CircuitOpenException)
+            {
+                request.Outcome = "circuit_rejected";
+            }
             finally
             {
                 request.CompletedSeconds = clock.Elapsed.TotalSeconds;
@@ -106,7 +122,11 @@ internal static class OutageRunner
                     _ => OutageOptions.HealthyMilliseconds
                 };
                 await Task.Delay(milliseconds, token);
-                if (phase == 2) { throw new IOException("Controlled dependency outage"); }
+                if (phase == 2)
+                {
+                    throw new IOException("Controlled dependency outage");
+                }
+
                 return 1;
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)

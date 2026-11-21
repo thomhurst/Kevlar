@@ -592,9 +592,15 @@ public class StrategyModelTests
         private readonly CancellationTokenSource _cancellation = new();
         private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Entered
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task<Outcome<int>>? Execution { get; set; }
+        public Task<Outcome<int>>? Execution
+        {
+            get; set;
+        }
 
         public bool Released => _release.Task.IsCompleted;
 

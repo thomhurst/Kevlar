@@ -10,8 +10,14 @@ public sealed class ExecutionProbeSnapshot
     }
 
     /// <summary>Gets the number of delegate invocations.</summary>
-    public int AttemptCount { get; }
+    public int AttemptCount
+    {
+        get;
+    }
 
     /// <summary>Gets the number of active attempt tokens that requested cancellation.</summary>
-    public int CancellationCount { get; }
+    public int CancellationCount
+    {
+        get;
+    }
 }

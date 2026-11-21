@@ -12,15 +12,27 @@ public static class ShieldGrpcServerServiceCollectionExtensions
     /// <summary>Registers an interceptor that shares the supplied single-invocation shield.</summary>
     public static IServiceCollection AddShieldServerInterceptor(this IServiceCollection services, Shield shield)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
         return services.AddSingleton(new ShieldServerInterceptor(shield));
     }
 
     /// <summary>Registers an interceptor that resolves a named single-invocation shield from the registry.</summary>
     public static IServiceCollection AddShieldServerInterceptor(this IServiceCollection services, string shieldName)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (shieldName is null) { throw new ArgumentNullException(nameof(shieldName)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (shieldName is null)
+        {
+            throw new ArgumentNullException(nameof(shieldName));
+        }
+
         return services.AddSingleton(provider => new ShieldServerInterceptor(
             provider.GetRequiredService<IKevlarRegistry>().GetShield(shieldName)));
     }
@@ -31,7 +43,11 @@ public static class ShieldGrpcServerServiceCollectionExtensions
         PartitionedShield<string> shields,
         Func<ServerCallContext, string>? partitionKey = null)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
         return services.AddSingleton(new ShieldServerInterceptor(shields, partitionKey));
     }
 }

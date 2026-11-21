@@ -16,5 +16,8 @@ public abstract class KevlarProxyException : Exception
     }
 
     /// <summary>The original exception exposed by handling clauses and public outcome APIs.</summary>
-    public Exception OriginalException { get; }
+    public Exception OriginalException
+    {
+        get;
+    }
 }

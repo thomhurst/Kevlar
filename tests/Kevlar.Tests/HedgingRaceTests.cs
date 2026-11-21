@@ -16,7 +16,11 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
-            options.OnHedge = _ => { hedgeEvents++; return default; };
+            options.OnHedge = _ =>
+            {
+                hedgeEvents++;
+                return default;
+            };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -50,7 +54,11 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-            options.OnHedge = _ => { hedgeEvents++; return default; };
+            options.OnHedge = _ =>
+            {
+                hedgeEvents++;
+                return default;
+            };
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -82,7 +90,11 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
-            options.OnHedge = _ => { hedgeEvents++; return default; };
+            options.OnHedge = _ =>
+            {
+                hedgeEvents++;
+                return default;
+            };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -424,7 +436,10 @@ public class HedgingRaceTests
         private int _arrived;
         private int _observed;
 
-        public System.Collections.Concurrent.ConcurrentDictionary<int, int> ObservedValues { get; } = new();
+        public System.Collections.Concurrent.ConcurrentDictionary<int, int> ObservedValues
+        {
+            get;
+        } = new();
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -453,9 +468,15 @@ public class HedgingRaceTests
 
     private sealed class ParentPropertyObserver(KevlarKey<int> key) : Strategy
     {
-        public int Before { get; private set; }
+        public int Before
+        {
+            get; private set;
+        }
 
-        public int After { get; private set; }
+        public int After
+        {
+            get; private set;
+        }
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

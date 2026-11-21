@@ -59,7 +59,11 @@ public class TimeoutTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(2);
-                options.OnTimeout = timeout => { observed = timeout.Timeout; return default; };
+                options.OnTimeout = timeout =>
+                {
+                    observed = timeout.Timeout;
+                    return default;
+                };
             })
             .WithTimeProvider(fakeTime);
 

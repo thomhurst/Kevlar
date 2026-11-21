@@ -104,7 +104,10 @@ internal sealed class HedgingStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool HasHandlingOverride { get; }
+    internal override bool HasHandlingOverride
+    {
+        get;
+    }
 
     internal int MaxHedgedAttempts => _maxHedgedAttempts;
 
@@ -248,7 +251,7 @@ internal sealed class HedgingStrategy : Strategy
 
             // for (;;) rather than while (true): Stryker mutates the literal, which leaves a path
             // without a return and makes Safe Mode drop every mutant in this method.
-            for (;;)
+            for (; ; )
             {
                 // Preserve fixed zero-delay parallel mode by launching the first hedge before
                 // selecting even an already-completed primary. Shared suppression can stop later
@@ -265,10 +268,12 @@ internal sealed class HedgingStrategy : Strategy
                     {
                         delay = System.Threading.Timeout.InfiniteTimeSpan;
                     }
+
                     if (_budget is { AllowsAdditionalAttempt: false })
                     {
                         delay = System.Threading.Timeout.InfiniteTimeSpan;
                     }
+
                     if (delay == TimeSpan.Zero)
                     {
                         if (!HasDelayGenerator && hedgesLaunched == 0
@@ -516,6 +521,7 @@ internal sealed class HedgingStrategy : Strategy
         {
             return new ValueTask<HedgeAttempt<T>?>((HedgeAttempt<T>?)null);
         }
+
         var notification = _onHedge is null
             ? default
             : InvokeOnHedgeAsync(_onHedge, attemptNumber, outcome, context);
@@ -1300,6 +1306,7 @@ internal sealed class HedgingStrategy : Strategy
             {
                 _ = release.AsTask();
             }
+
             return;
         }
 
@@ -1321,6 +1328,7 @@ internal sealed class HedgingStrategy : Strategy
                 var handled = _judge.ShouldHandle(in outcome, judgingContext, attempt.Attempt, judgingContext.StrategyIndex);
                 _budget.Observe(in outcome, handled, judgingContext);
             }
+
             recorded = true;
             RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
             if (terminalOutcome is not { } terminal
@@ -1341,6 +1349,7 @@ internal sealed class HedgingStrategy : Strategy
                     var handled = _judge.ShouldHandle(in outcome, attempt.Context, attempt.Attempt, attempt.Context.StrategyIndex);
                     _budget.Observe(in outcome, handled, attempt.Context);
                 }
+
                 RecordAttempt(in attempt, in outcome, isWinner: false, strategyName);
             }
 
@@ -1428,6 +1437,7 @@ internal sealed class HedgingStrategy : Strategy
         {
             return false;
         }
+
         KevlarMetrics.HedgeBudgetExhausted(context);
         if (KevlarTelemetry.IsEventEnabled(context))
         {
@@ -1435,6 +1445,7 @@ internal sealed class HedgingStrategy : Strategy
                 KevlarTelemetrySeverity.Information, context.StrategyIndex, attempt,
                 isSuccess: false, outcome?.Exception, suppressionReason: "budget");
         }
+
         return true;
     }
 
@@ -1472,17 +1483,35 @@ internal sealed class HedgingStrategy : Strategy
             ContextCapture = contextCapture;
         }
 
-        public Task<Outcome<T>> Task { get; }
+        public Task<Outcome<T>> Task
+        {
+            get;
+        }
 
-        public CancellationTokenSource Cancellation { get; }
+        public CancellationTokenSource Cancellation
+        {
+            get;
+        }
 
-        public KevlarContext Context { get; }
+        public KevlarContext Context
+        {
+            get;
+        }
 
-        public int Attempt { get; }
+        public int Attempt
+        {
+            get;
+        }
 
-        public long StartedAt { get; }
+        public long StartedAt
+        {
+            get;
+        }
 
-        private OriginalActionContextCapture<T>? ContextCapture { get; }
+        private OriginalActionContextCapture<T>? ContextCapture
+        {
+            get;
+        }
 
         public ValueTask<KevlarContext> FreezeContextAsync(in Outcome<T> outcome) =>
             ContextCapture?.FreezeAsync(in outcome) ?? new ValueTask<KevlarContext>(Context);
@@ -1539,15 +1568,30 @@ internal sealed class HedgingStrategy : Strategy
             ContextCapture = contextCapture;
         }
 
-        public ValueTask<Outcome<T>> Execution { get; }
+        public ValueTask<Outcome<T>> Execution
+        {
+            get;
+        }
 
-        private CancellationTokenSource Cancellation { get; }
+        private CancellationTokenSource Cancellation
+        {
+            get;
+        }
 
-        public KevlarContext Context { get; }
+        public KevlarContext Context
+        {
+            get;
+        }
 
-        public int Attempt { get; }
+        public int Attempt
+        {
+            get;
+        }
 
-        private OriginalActionContextCapture<T>? ContextCapture { get; }
+        private OriginalActionContextCapture<T>? ContextCapture
+        {
+            get;
+        }
 
         public HedgeAttempt<T> AsPending(long startedAt) =>
             new(Execution.AsTask(), Cancellation, Context, Attempt, startedAt, ContextCapture);

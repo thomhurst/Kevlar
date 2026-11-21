@@ -9,5 +9,8 @@ public sealed class ShieldStateSnapshot
     }
 
     /// <summary>Gets state snapshots in pipeline order. Stateless strategies are omitted.</summary>
-    public IReadOnlyList<StrategyStateSnapshot> Strategies { get; }
+    public IReadOnlyList<StrategyStateSnapshot> Strategies
+    {
+        get;
+    }
 }

@@ -10,8 +10,14 @@ public sealed class HandlingClauseDescriptor
     }
 
     /// <summary>The clause text used in pipeline descriptions, when explicitly configured.</summary>
-    public string? Description { get; }
+    public string? Description
+    {
+        get;
+    }
 
     /// <summary>Whether the clause consults execution or strategy context.</summary>
-    public bool IsContextAware { get; }
+    public bool IsContextAware
+    {
+        get;
+    }
 }

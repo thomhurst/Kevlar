@@ -24,23 +24,44 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
     }
 
     /// <summary>Permits replenished per window.</summary>
-    public int Permits { get; }
+    public int Permits
+    {
+        get;
+    }
 
     /// <summary>The replenishment window.</summary>
-    public TimeSpan Window { get; }
+    public TimeSpan Window
+    {
+        get;
+    }
 
     /// <summary>The maximum burst capacity.</summary>
-    public int Burst { get; }
+    public int Burst
+    {
+        get;
+    }
 
     /// <summary>The maximum wait queue size.</summary>
-    public int QueueLimit { get; }
+    public int QueueLimit
+    {
+        get;
+    }
 
     /// <summary>The maximum queue residence time, or null for an unbounded wait.</summary>
-    public TimeSpan? QueueTimeout { get; }
+    public TimeSpan? QueueTimeout
+    {
+        get;
+    }
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
-    public bool HasNotification { get; }
+    public bool HasNotification
+    {
+        get;
+    }
 
     /// <summary>Whether admission uses highest priority first, FIFO ties, and lower-priority eviction.</summary>
-    public bool UsePriorityQueue { get; }
+    public bool UsePriorityQueue
+    {
+        get;
+    }
 }

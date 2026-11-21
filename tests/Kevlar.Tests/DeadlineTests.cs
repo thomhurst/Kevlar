@@ -61,7 +61,11 @@ public class DeadlineTests
                 options.HandlesResult = static _ => true;
                 options.RespectDeadline = true;
                 options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(1), jitter: Jitter.None);
-                options.OnRetry = _ => { notifications++; return default; };
+                options.OnRetry = _ =>
+                {
+                    notifications++;
+                    return default;
+                };
             }).WithTimeProvider(new FakeTimeProvider())
             .ExecuteAsync(_ => new ValueTask<DisposableResult>(value));
         await Assert.That(result).IsSameReferenceAs(value);
@@ -108,24 +112,34 @@ public class DeadlineTests
         var calls = 0;
         var callbacks = 0;
         var completion = new TaskCompletionSource<int>();
+
         ValueTask<int> Operation(CancellationToken _)
         {
             calls++;
             return new ValueTask<int>(completion.Task);
         }
+
         var shield = Shield.Timeout(TimeSpan.FromSeconds(1)).WithTimeProvider(time);
         var task = typed
             ? shield.For<int>().Hedge(options =>
             {
                 options.RespectDeadline = true;
                 options.Delay = TimeSpan.FromSeconds(2);
-                options.OnHedge = _ => { callbacks++; return default; };
+                options.OnHedge = _ =>
+                {
+                    callbacks++;
+                    return default;
+                };
             }).ExecuteAsync(Operation).AsTask()
             : shield.Hedge(options =>
             {
                 options.RespectDeadline = true;
                 options.Delay = TimeSpan.FromSeconds(2);
-                options.OnHedge = _ => { callbacks++; return default; };
+                options.OnHedge = _ =>
+                {
+                    callbacks++;
+                    return default;
+                };
             }).ExecuteAsync(Operation).AsTask();
         clock.Advance(TimeSpan.FromMilliseconds(900));
         completion.SetResult(42);
@@ -251,7 +265,11 @@ public class DeadlineTests
                 await Task.Yield();
                 return TimeSpan.FromSeconds(10);
             };
-            options.OnRetry = _ => { time.Advance(TimeSpan.FromMilliseconds(400)); return default; };
+            options.OnRetry = _ =>
+            {
+                time.Advance(TimeSpan.FromMilliseconds(400));
+                return default;
+            };
         }).WithTimeProvider(time).ExecuteOutcomeAsync<int>(_ =>
         {
             attempts++;
@@ -301,6 +319,7 @@ public class DeadlineTests
             {
                 return new ValueTask<int>(primary.Task);
             }
+
             primary.SetResult(42);
             return ValueTask.FromException<int>(new IOException());
         });
@@ -344,8 +363,14 @@ public class DeadlineTests
 
     private sealed class AdjustableUtcProvider(FakeTimeProvider clock) : TimeProvider
     {
-        public TimeSpan UtcOffset { get; set; }
-        public int UtcReads { get; private set; }
+        public TimeSpan UtcOffset
+        {
+            get; set;
+        }
+        public int UtcReads
+        {
+            get; private set;
+        }
         public override long TimestampFrequency => clock.TimestampFrequency;
         public override long GetTimestamp() => clock.GetTimestamp();
         public override DateTimeOffset GetUtcNow()
@@ -415,7 +440,9 @@ public class DeadlineTests
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        meter.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
+        meter.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+        {
+        });
         meter.Start();
         using var subscription = enrichment
             ? KevlarDiagnostics.AddMetricEnricher(observer)
@@ -431,7 +458,10 @@ public class DeadlineTests
 
     private sealed class DiagnosticDeadlineObserver : KevlarMetricEnricher, IKevlarTelemetryListener
     {
-        public DateTimeOffset? Deadline { get; private set; }
+        public DateTimeOffset? Deadline
+        {
+            get; private set;
+        }
 
         public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
         {
@@ -452,7 +482,10 @@ public class DeadlineTests
 
     private sealed class DeadlineObserver : Strategy
     {
-        public DateTimeOffset? Deadline { get; private set; }
+        public DateTimeOffset? Deadline
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
         {
@@ -463,7 +496,10 @@ public class DeadlineTests
 
     private sealed class TimerCountingProvider(FakeTimeProvider clock) : TimeProvider
     {
-        public int TimerCount { get; private set; }
+        public int TimerCount
+        {
+            get; private set;
+        }
         public override long TimestampFrequency => clock.TimestampFrequency;
         public override long GetTimestamp() => clock.GetTimestamp();
         public override DateTimeOffset GetUtcNow() => clock.GetUtcNow();
@@ -476,7 +512,10 @@ public class DeadlineTests
 
     private sealed class DisposableResult : IDisposable
     {
-        public bool Disposed { get; private set; }
+        public bool Disposed
+        {
+            get; private set;
+        }
         public void Dispose() => Disposed = true;
     }
 }

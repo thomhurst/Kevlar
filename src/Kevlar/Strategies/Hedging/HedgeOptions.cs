@@ -25,10 +25,16 @@ public sealed class HedgeOptions
     public HedgeOptions Clone() => (HedgeOptions)MemberwiseClone();
 
     /// <summary>An optional shared retry/hedge budget. Already-running contenders are preserved.</summary>
-    public RetryBudget? Budget { get; set; }
+    public RetryBudget? Budget
+    {
+        get; set;
+    }
 
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this — or, on <see cref="HedgeOptions{TResult}"/>, its <c>HandlesResult</c> — makes
@@ -41,10 +47,16 @@ public sealed class HedgeOptions
     /// properties replace that clause for this strategy alone; they do not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionContext is not null;
@@ -53,10 +65,16 @@ public sealed class HedgeOptions
     /// Skips timer-based hedges whose delay exceeds the remaining timeout budget, and skips
     /// all new hedges once the deadline has elapsed. Existing attempts continue. Defaults to false.
     /// </summary>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <summary>Maximum additional attempts after the original. Default 1.</summary>
-    public int MaxHedgedAttempts { get; set; } = 1;
+    public int MaxHedgedAttempts
+    {
+        get; set;
+    } = 1;
 
     /// <summary>
     /// Time to wait before launching the next attempt while the current ones are still running.
@@ -67,7 +85,10 @@ public sealed class HedgeOptions
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/>.
     /// Default 1 second.
     /// </summary>
-    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
+    public TimeSpan Delay
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(1);
 
     /// <summary>
     /// Selects the delay before each additional attempt while earlier attempts remain pending,
@@ -76,20 +97,29 @@ public sealed class HedgeOptions
     /// <see cref="TimeSpan.Zero"/> and values above the runtime timer limit are clamped. Return
     /// <c>new(delay)</c> from a synchronous generator.
     /// </summary>
-    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited before an additional hedged attempt starts. Return
     /// <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<HedgeEvent, ValueTask>? OnHedge { get; set; }
+    public Func<HedgeEvent, ValueTask>? OnHedge
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
     /// result runs the original operation.
     /// </summary>
     public Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?>?
-        ActionGenerator { get; set; }
+        ActionGenerator
+    {
+        get; set;
+    }
 }
 
 /// <summary>Describes a hedged attempt being launched.</summary>
@@ -104,7 +134,10 @@ public readonly struct HedgeEvent
     }
 
     /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after the hedge callback's

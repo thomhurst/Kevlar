@@ -26,6 +26,7 @@ internal readonly struct ExecutionDeadline(long startedAt, TimeSpan duration, lo
         {
             deadlineTicks = parent.UtcTicks;
         }
+
         return new ExecutionDeadline(startedAt, duration, deadlineTicks);
     }
 

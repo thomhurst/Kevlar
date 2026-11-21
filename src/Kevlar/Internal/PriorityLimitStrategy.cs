@@ -9,7 +9,10 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
     protected readonly object Gate = new();
     private Entry? _head;
     private Entry? _tail;
-    protected int Queued { get; private set; }
+    protected int Queued
+    {
+        get; private set;
+    }
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
     protected internal override bool IsDuplicateReferenceUnsafe => true;
@@ -17,7 +20,10 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
     // All admission and queue mutations occur under Gate. Callbacks and user code never do.
     protected abstract bool TryAcquire(TimeProvider timeProvider, out TimeSpan? retryAfter);
     protected abstract void Release();
-    protected abstract bool ReleasesAfterExecution { get; }
+    protected abstract bool ReleasesAfterExecution
+    {
+        get;
+    }
     protected abstract void RegisterMetrics(KevlarContext context);
     protected abstract ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter, string? reason);
 
@@ -47,6 +53,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                         evicted.Evicted = true;
                         evicted.Signal();
                     }
+
                     Enqueue(entry);
                 }
             }
@@ -56,6 +63,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             return ExecuteAcquired(next, context);
         }
+
         return entry is null
             ? RejectAsync<T>(context, retryAfter, reason: null)
             : ExecuteQueuedAsync(next, context, entry);
@@ -88,6 +96,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                         Remove(entry);
                         break;
                     }
+
                     wait = retryAfter ?? Timeout.InfiniteTimeSpan;
                     // Task.Delay rounds sub-millisecond intervals down to zero. Avoid a
                     // synchronous spin while the provider clock has not reached the permit.
@@ -95,12 +104,15 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
                     {
                         wait = TimeSpan.FromMilliseconds(1);
                     }
+
                     changed = entry.Changed.Task;
                 }
+
                 if (evicted)
                 {
                     return await RejectAsync<T>(context, retryAfter: null, reason: "queue_evicted").ConfigureAwait(false);
                 }
+
                 var waiting = WaitForChangeAsync(changed, context.TimeProvider, wait, waitStartedAt, token);
                 if (context.IsSynchronous)
                 {
@@ -119,6 +131,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
             {
                 return await RejectAsync<T>(context, retryAfter: null, reason: "queue_timeout").ConfigureAwait(false);
             }
+
             return Outcome<T>.FromException(context.CancellationToken.IsCancellationRequested
                 ? new OperationCanceledException(cancelled.Message, cancelled, context.CancellationToken)
                 : cancelled);
@@ -132,6 +145,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             timeout?.Dispose();
         }
+
         return await ExecuteAcquired(next, context).ConfigureAwait(false);
     }
 
@@ -148,6 +162,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
             {
                 await Task.WhenAny(changed, delay).ConfigureAwait(false);
             }
+
             token.ThrowIfCancellationRequested();
         }
         finally
@@ -163,6 +178,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             return next.InvokeAsync(context);
         }
+
         ValueTask<Outcome<T>> execution;
         try
         {
@@ -173,10 +189,12 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
             CompleteExecution();
             throw;
         }
+
         if (!execution.IsCompletedSuccessfully)
         {
             return AwaitExecutionAsync(execution);
         }
+
         var outcome = execution.Result;
         CompleteExecution();
         return new ValueTask<Outcome<T>>(outcome);
@@ -218,6 +236,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
             counts.TryGetValue(entry.Priority, out var count);
             counts[entry.Priority] = count + 1;
         }
+
         return new ReadOnlyDictionary<int, int>(counts);
     }
 
@@ -239,6 +258,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             previous = previous.Previous;
         }
+
         entry.Previous = previous;
         entry.Next = previous is null ? _head : previous.Next;
         if (entry.Next is null)
@@ -249,6 +269,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             entry.Next.Previous = entry;
         }
+
         if (previous is null)
         {
             _head?.Signal();
@@ -258,6 +279,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             previous.Next = entry;
         }
+
         Queued++;
     }
 
@@ -272,6 +294,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             entry.Previous.Next = entry.Next;
         }
+
         if (entry.Next is null)
         {
             _tail = entry.Previous;
@@ -280,6 +303,7 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
         {
             entry.Next.Previous = entry.Previous;
         }
+
         entry.Previous = null;
         entry.Next = null;
         entry.IsQueued = false;
@@ -288,12 +312,30 @@ internal abstract class PriorityLimitStrategy(int queueLimit, TimeSpan? queueTim
 
     private sealed class Entry(int priority)
     {
-        public int Priority { get; } = priority;
-        public Entry? Previous { get; set; }
-        public Entry? Next { get; set; }
-        public bool IsQueued { get; set; } = true;
-        public bool Evicted { get; set; }
-        public TaskCompletionSource<bool> Changed { get; private set; } = NewSignal();
+        public int Priority
+        {
+            get;
+        } = priority;
+        public Entry? Previous
+        {
+            get; set;
+        }
+        public Entry? Next
+        {
+            get; set;
+        }
+        public bool IsQueued
+        {
+            get; set;
+        } = true;
+        public bool Evicted
+        {
+            get; set;
+        }
+        public TaskCompletionSource<bool> Changed
+        {
+            get; private set;
+        } = NewSignal();
 
         public void Signal()
         {

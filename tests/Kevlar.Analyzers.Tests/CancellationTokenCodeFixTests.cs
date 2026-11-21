@@ -248,7 +248,11 @@ public class CancellationTokenCodeFixTests
         public override async Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(Project project, CancellationToken cancellationToken)
         {
             var diagnostics = new List<Diagnostic>();
-            foreach (var document in project.Documents) { diagnostics.AddRange(await DiagnosticsAsync(document)); }
+            foreach (var document in project.Documents)
+            {
+                diagnostics.AddRange(await DiagnosticsAsync(document));
+            }
+
             return diagnostics;
         }
     }

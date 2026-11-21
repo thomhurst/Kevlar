@@ -12,11 +12,20 @@ public readonly struct PartitionEvictedEvent<TKey>
     }
 
     /// <summary>Gets the partition key.</summary>
-    public TKey Key { get; }
+    public TKey Key
+    {
+        get;
+    }
 
     /// <summary>Gets the removed shield.</summary>
-    public Shield Shield { get; }
+    public Shield Shield
+    {
+        get;
+    }
 
     /// <summary>Gets why the partition was removed.</summary>
-    public PartitionEvictionReason Reason { get; }
+    public PartitionEvictionReason Reason
+    {
+        get;
+    }
 }

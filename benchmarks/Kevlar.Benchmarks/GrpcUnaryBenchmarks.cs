@@ -50,7 +50,9 @@ public class GrpcUnaryBenchmarks
                 HeadersTask,
                 static () => Status.DefaultSuccess,
                 static () => new Metadata(),
-                static () => { });
+                static () =>
+                {
+                });
 
         public override TResponse BlockingUnaryCall<TRequest, TResponse>(
             Method<TRequest, TResponse> method,

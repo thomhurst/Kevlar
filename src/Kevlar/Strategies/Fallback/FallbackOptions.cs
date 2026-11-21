@@ -12,7 +12,10 @@ namespace Kevlar;
 public sealed class FallbackOptions
 {
     /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Setting this makes this fallback ignore the ambient <c>When…</c> handling clause and handle
@@ -24,10 +27,16 @@ public sealed class FallbackOptions
     /// property replaces that clause for this strategy alone; it does not narrow it.
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
-    public Func<Exception, bool>? HandlesException { get; set; }
+    public Func<Exception, bool>? HandlesException
+    {
+        get; set;
+    }
 
     /// <summary>Locally handles exceptions using execution context and strategy metadata.</summary>
-    public Func<HandlingEvent, bool>? HandlesExceptionContext { get; set; }
+    public Func<HandlingEvent, bool>? HandlesExceptionContext
+    {
+        get; set;
+    }
 
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionContext is not null;
@@ -36,5 +45,8 @@ public sealed class FallbackOptions
     /// Invoked and awaited before the recovery action. Return <see langword="default"/> from a
     /// synchronous callback.
     /// </summary>
-    public Func<FallbackEvent, ValueTask>? OnFallback { get; set; }
+    public Func<FallbackEvent, ValueTask>? OnFallback
+    {
+        get; set;
+    }
 }

@@ -1122,7 +1122,10 @@ public class GrpcStreamingResilienceTests
     {
         private int _moves;
 
-        public StreamReply Current { get; private set; } = null!;
+        public StreamReply Current
+        {
+            get; private set;
+        } = null!;
 
         public async Task<bool> MoveNext(CancellationToken cancellationToken)
         {
@@ -1142,7 +1145,10 @@ public class GrpcStreamingResilienceTests
         Func<Task>? complete = null) :
         IClientStreamWriter<StreamRequest>
     {
-        public WriteOptions? WriteOptions { get; set; }
+        public WriteOptions? WriteOptions
+        {
+            get; set;
+        }
 
         public Task CompleteAsync() => complete?.Invoke() ?? Task.CompletedTask;
 
@@ -1160,6 +1166,9 @@ public class GrpcStreamingResilienceTests
 
     private sealed class StreamReply
     {
-        public int Attempt { get; init; }
+        public int Attempt
+        {
+            get; init;
+        }
     }
 }

@@ -20,20 +20,38 @@ public readonly struct CallbackErrorEvent
     }
 
     /// <summary>Gets the callback or cleanup family that failed.</summary>
-    public CallbackErrorKind Kind { get; }
+    public CallbackErrorKind Kind
+    {
+        get;
+    }
 
     /// <summary>Gets the stable callback or integration identifier.</summary>
-    public string Source { get; }
+    public string Source
+    {
+        get;
+    }
 
     /// <summary>Gets the shield name, or <see langword="null"/> for an unnamed shield.</summary>
-    public string? ShieldName { get; }
+    public string? ShieldName
+    {
+        get;
+    }
 
     /// <summary>Gets the zero-based strategy position in the shield.</summary>
-    public int StrategyIndex { get; }
+    public int StrategyIndex
+    {
+        get;
+    }
 
     /// <summary>Gets the zero-based execution attempt number.</summary>
-    public int AttemptNumber { get; }
+    public int AttemptNumber
+    {
+        get;
+    }
 
     /// <summary>Gets the isolated exception.</summary>
-    public Exception Exception { get; }
+    public Exception Exception
+    {
+        get;
+    }
 }

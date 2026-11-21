@@ -220,10 +220,17 @@ public sealed class DurationBudgetAnalyzer : DiagnosticAnalyzer
 
         switch (constant)
         {
-            case int number: value = number; break;
-            case long number: value = number; break;
-            case double number: value = number; break;
-            default: return false;
+            case int number:
+                value = number;
+                break;
+            case long number:
+                value = number;
+                break;
+            case double number:
+                value = number;
+                break;
+            default:
+                return false;
         }
 
         return !double.IsNaN(value) && !double.IsInfinity(value);
@@ -250,8 +257,14 @@ public sealed class DurationBudgetAnalyzer : DiagnosticAnalyzer
     private sealed class KnownTypes
     {
         private readonly ImmutableArray<INamedTypeSymbol?> _fluentTypes;
-        internal INamedTypeSymbol? Backoff { get; }
-        internal INamedTypeSymbol? TimeSpan { get; }
+        internal INamedTypeSymbol? Backoff
+        {
+            get;
+        }
+        internal INamedTypeSymbol? TimeSpan
+        {
+            get;
+        }
 
         internal KnownTypes(Compilation compilation)
         {

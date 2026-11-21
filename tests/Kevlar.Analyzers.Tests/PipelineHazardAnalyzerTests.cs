@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
+using System.Reflection;
 using Kevlar.Analyzers;
 using Kevlar.Chaos;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
-using System.Reflection;
 
 namespace Kevlar.Analyzers.Tests;
 

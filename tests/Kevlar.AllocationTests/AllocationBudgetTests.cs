@@ -61,7 +61,9 @@ public class AllocationBudgetTests
     {
         options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
     });
-    private readonly Shield _disabledChaos = ChaosShield.Fault(static _ => { });
+    private readonly Shield _disabledChaos = ChaosShield.Fault(static _ =>
+    {
+    });
     private readonly Shield _excludedChaos = ChaosShield.Fault(static options =>
     {
         options.Enabled = true;
@@ -270,7 +272,9 @@ public class AllocationBudgetTests
         AssertZero("empty nested async context", this, static test =>
             test._empty.ExecuteWithContextAsync(
                     test,
-                    static (_, _) => { },
+                    static (_, _) =>
+                    {
+                    },
                     static (state, parentContext) => state._empty.ExecuteWithContextAsync(
                         parentContext,
                         static _ => new ValueTask<int>(42)))
@@ -279,7 +283,9 @@ public class AllocationBudgetTests
         AssertZero("empty nested sync context", this, static test =>
             test._empty.ExecuteWithContext(
                 test,
-                static (_, _) => { },
+                static (_, _) =>
+                {
+                },
                 static (state, parentContext) => state._empty.ExecuteWithContext(
                     parentContext,
                     static _ => 42)));
@@ -393,8 +399,12 @@ public class AllocationBudgetTests
                 }
             },
         };
-        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
-        listener.SetMeasurementEventCallback<double>(static (_, _, _, _) => { });
+        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+        {
+        });
+        listener.SetMeasurementEventCallback<double>(static (_, _, _, _) =>
+        {
+        });
         listener.Start();
 
         AssertZero("circuit state metrics", this, static test =>
@@ -570,7 +580,10 @@ public class AllocationBudgetTests
 
     private sealed class EnabledNoopLogger : ILogger
     {
-        public static EnabledNoopLogger Instance { get; } = new();
+        public static EnabledNoopLogger Instance
+        {
+            get;
+        } = new();
 
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull => null;

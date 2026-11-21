@@ -21,7 +21,10 @@ internal sealed class ExecutionReentrancyGuard
     {
         private int _active = 1;
 
-        public Scope? Parent { get; } = parent;
+        public Scope? Parent
+        {
+            get;
+        } = parent;
 
         public bool Active => Volatile.Read(ref _active) != 0
             || Parent is { Active: true };

@@ -43,9 +43,15 @@ public static class ChaosScope
             Environment = environment;
         }
 
-        public string? Operation { get; }
+        public string? Operation
+        {
+            get;
+        }
 
-        public string? Environment { get; }
+        public string? Environment
+        {
+            get;
+        }
     }
 
     private sealed class ScopeHandle : IDisposable

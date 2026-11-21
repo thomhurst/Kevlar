@@ -12,7 +12,10 @@ public readonly struct FallbackEvent
     }
 
     /// <summary>The handled exception being replaced.</summary>
-    public Exception Exception { get; }
+    public Exception Exception
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It remains valid until the notification callback completes

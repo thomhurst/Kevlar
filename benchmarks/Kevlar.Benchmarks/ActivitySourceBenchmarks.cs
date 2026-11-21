@@ -14,7 +14,10 @@ public class ActivitySourceBenchmarks
     private ActivityListener? _listener;
 
     [Params(false, true)]
-    public bool ListenerEnabled { get; set; }
+    public bool ListenerEnabled
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -23,6 +26,7 @@ public class ActivitySourceBenchmarks
         {
             return;
         }
+
         _listener = new ActivityListener
         {
             ShouldListenTo = static source => source.Name == KevlarDiagnostics.ActivitySourceName,

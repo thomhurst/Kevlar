@@ -180,7 +180,9 @@ public class MetricsTests
         _ = await untyped.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
         _ = await untyped.ExecuteOutcomeAsync(taskResult);
         _ = untyped.Execute(_ => 42);
-        untyped.Execute(_ => { });
+        untyped.Execute(_ =>
+        {
+        });
 
         await typed.ExecuteAsync(_ => new ValueTask<int>(42));
         await typed.ExecuteAsync(taskResult);
@@ -290,7 +292,11 @@ public class MetricsTests
             ? RetryBudget.CreateReplenishing(2, replenishmentPeriod: TimeSpan.FromHours(1))
             : new RetryBudget(maxTokens: 2, tokenRatio: 1);
         var failure = new IOException("budget failure");
-        _ = await Shield.Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; })
+        _ = await Shield.Retry(options =>
+            {
+                options.Budget = budget;
+                options.Backoff = Backoff.None;
+            })
             .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
         await Assert.That(listener.Total("kevlar.retries", name, ("reason", "budget"))).IsEqualTo(1);
         var skipped = events.Single();
@@ -298,7 +304,11 @@ public class MetricsTests
         await Assert.That(skipped.Exception).IsSameReferenceAs(failure);
         await Assert.That(skipped.AttemptNumber).IsEqualTo(replenishing ? 3 : 1);
 
-        _ = await Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+        _ = await Shield.Hedge(options =>
+            {
+                options.Budget = budget;
+                options.Delay = TimeSpan.Zero;
+            })
             .WithName(name).ExecuteOutcomeAsync<int>(_ => ValueTask.FromException<int>(failure));
         await Assert.That(listener.Total("kevlar.hedges", name, ("reason", "budget"))).IsEqualTo(1);
         await Assert.That(events.Count(item => item.EventName == "hedge.budget_exhausted")).IsEqualTo(1);
@@ -656,6 +666,7 @@ public class MetricsTests
             {
                 return;
             }
+
             observed.Add(new TelemetrySnapshot(
                 telemetryEvent.EventName,
                 telemetryEvent.AttemptNumber,
@@ -1429,7 +1440,9 @@ public class MetricsTests
 
         await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static (_, _) => new ValueTask<int>(42),
             (_, _) => observedCounts.Add(listener.DoubleValues(
                 "kevlar.execution.duration",
@@ -1437,7 +1450,9 @@ public class MetricsTests
 
         await shield.ExecuteWithContextAsync(
             0,
-            static (_, _) => { },
+            static (_, _) =>
+            {
+            },
             static async (_, _) =>
             {
                 await Task.Yield();

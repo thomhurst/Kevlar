@@ -91,7 +91,11 @@ public class HttpEndpointProviderTests
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         });
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example");
-        if (requestOption) { request.WithKevlarCancellationToken(cancellation.Token); }
+        if (requestOption)
+        {
+            request.WithKevlarCancellationToken(cancellation.Token);
+        }
+
         var send = invoker.SendAsync(request, requestOption ? CancellationToken.None : cancellation.Token);
         var providerToken = await entered.Task.WaitForTestAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
@@ -158,14 +162,21 @@ public class HttpEndpointProviderTests
             Content = new StringContent("body"),
         };
         request.Headers.Add("x-marker", "marker");
-        if (allowReplay) { request.AllowReplay(); }
+        if (allowReplay)
+        {
+            request.AllowReplay();
+        }
+
         using var response = await invoker.SendAsync(request, CancellationToken.None);
 
         await Assert.That(resolutions).IsEqualTo(1);
         await Assert.That(observations.Count).IsEqualTo(allowReplay ? 2 : 1);
         await Assert.That(observations.All(item => item.Path == "/path?q=1"
             && item.Body == "body" && item.Header == "marker")).IsTrue();
-        if (allowReplay) { await Assert.That(observations[1].Host).IsEqualTo("second.example"); }
+        if (allowReplay)
+        {
+            await Assert.That(observations[1].Host).IsEqualTo("second.example");
+        }
     }
 
     [Test]
@@ -186,8 +197,15 @@ public class HttpEndpointProviderTests
                 host = request.RequestUri!.Host;
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
             }));
-        if (standardHedge) { builder.AddStandardHedgeShield(options => options.Routing = routing); }
-        else { builder.AddShield(Shield<HttpResponseMessage>.Empty, new ShieldHttpHandlerOptions { Routing = routing }); }
+        if (standardHedge)
+        {
+            builder.AddStandardHedgeShield(options => options.Routing = routing);
+        }
+        else
+        {
+            builder.AddShield(Shield<HttpResponseMessage>.Empty, new ShieldHttpHandlerOptions { Routing = routing });
+        }
+
         using var provider = services.BuildServiceProvider();
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("dynamic");
         routing.EndpointProvider = static (_, _) => throw new InvalidOperationException("Mutated delegate was used.");
@@ -269,8 +287,12 @@ public class HttpEndpointProviderTests
         }
         else
         {
-            foreach (var endpoint in endpoints) { routing.Endpoints.Add(endpoint); }
+            foreach (var endpoint in endpoints)
+            {
+                routing.Endpoints.Add(endpoint);
+            }
         }
+
         var hosts = new List<string>();
         using var invoker = CreateInvoker(routing, (request, _) =>
         {
@@ -282,6 +304,7 @@ public class HttpEndpointProviderTests
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example");
             using var response = await invoker.SendAsync(request, CancellationToken.None);
         }
+
         await Assert.That(resolutions).IsEqualTo(dynamic ? 3 : 0);
         return hosts.ToArray();
     }
@@ -291,7 +314,8 @@ public class HttpEndpointProviderTests
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send,
         Shield<HttpResponseMessage>? shield = null) =>
         new(new ShieldDelegatingHandler(shield ?? Shield<HttpResponseMessage>.Empty,
-            new ShieldHttpHandlerOptions { Routing = routing }) { InnerHandler = new DelegateHandler(send) });
+            new ShieldHttpHandlerOptions { Routing = routing })
+        { InnerHandler = new DelegateHandler(send) });
 
     private sealed class DelegateHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send)
         : HttpMessageHandler

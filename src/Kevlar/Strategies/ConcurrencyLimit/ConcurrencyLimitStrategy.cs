@@ -175,6 +175,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
                     {
                         await _semaphore.WaitAsync(queueToken).ConfigureAwait(false);
                     }
+
                     timeout?.ThrowIfCancellationRequested();
                 }
                 while (!TryAcquireQueuedPermit(drainSignal: false));
@@ -188,6 +189,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy, IConcurrencyLimitStat
             {
                 return await RejectAsync<T>(context, "queue_timeout").ConfigureAwait(false);
             }
+
             return Outcome<T>.FromException(NormalizeCancellation(cancelled, context));
         }
         catch (Exception exception)

@@ -441,7 +441,9 @@ public class DynamicRegistryTests
                     }
                 }
             },
-            static _ => { });
+            static _ =>
+            {
+            });
 
         var retired = ReplaceCurrentSnapshot(provider, monitor, "handoff");
         Collect(retired);
@@ -1211,9 +1213,15 @@ public class DynamicRegistryTests
 
     private sealed class ReloadOptions
     {
-        public int Retries { get; init; }
+        public int Retries
+        {
+            get; init;
+        }
 
-        public int Fallback { get; init; }
+        public int Fallback
+        {
+            get; init;
+        }
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -1556,7 +1564,10 @@ public class DynamicRegistryTests
         private bool _handlersInstalled;
         private bool _validationObserved;
 
-        public bool HandlersInstalledBeforeValidation { get; private set; }
+        public bool HandlersInstalledBeforeValidation
+        {
+            get; private set;
+        }
 
         public IReadOnlyList<Strategy> CurrentStrategies => Strategies;
 
@@ -1651,7 +1662,10 @@ public class DynamicRegistryTests
 
     private sealed class NullSubscriptionOptionsMonitor : IOptionsMonitor<ReloadOptions>
     {
-        public ReloadOptions CurrentValue { get; } = new();
+        public ReloadOptions CurrentValue
+        {
+            get;
+        } = new();
 
         public ReloadOptions Get(string? name) => CurrentValue;
 
@@ -1660,7 +1674,10 @@ public class DynamicRegistryTests
 
     private sealed class ThrowingSubscriptionOptionsMonitor : IOptionsMonitor<ReloadOptions>
     {
-        public ReloadOptions CurrentValue { get; } = new();
+        public ReloadOptions CurrentValue
+        {
+            get;
+        } = new();
 
         public ReloadOptions Get(string? name) => CurrentValue;
 
@@ -1674,7 +1691,10 @@ public class DynamicRegistryTests
 
     private sealed class ImmediateCallbackOptionsMonitor : IOptionsMonitor<ReloadOptions>
     {
-        public ReloadOptions CurrentValue { get; } = new();
+        public ReloadOptions CurrentValue
+        {
+            get;
+        } = new();
 
         public ReloadOptions Get(string? name) => CurrentValue;
 

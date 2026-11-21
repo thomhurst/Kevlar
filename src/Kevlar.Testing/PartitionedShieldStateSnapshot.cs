@@ -18,19 +18,34 @@ public sealed class PartitionedShieldStateSnapshot
     }
 
     /// <summary>Gets the number of retained partitions.</summary>
-    public int Count { get; }
+    public int Count
+    {
+        get;
+    }
 
     /// <summary>Gets the number of created partitions.</summary>
-    public long CreatedCount { get; }
+    public long CreatedCount
+    {
+        get;
+    }
 
     /// <summary>Gets the number evicted to enforce capacity.</summary>
-    public long CapacityEvictionCount { get; }
+    public long CapacityEvictionCount
+    {
+        get;
+    }
 
     /// <summary>Gets the number evicted after idle expiration.</summary>
-    public long ExpirationEvictionCount { get; }
+    public long ExpirationEvictionCount
+    {
+        get;
+    }
 
     /// <summary>Gets the number removed explicitly.</summary>
-    public long ClearedEvictionCount { get; }
+    public long ClearedEvictionCount
+    {
+        get;
+    }
 
     /// <summary>Gets the number removed for any reason.</summary>
     public long EvictionCount =>

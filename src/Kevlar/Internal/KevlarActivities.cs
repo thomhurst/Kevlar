@@ -69,35 +69,43 @@ internal static class KevlarActivities
             {
                 tags.Add("exception.type", Bound(exception.GetType().FullName));
             }
+
             if (item.FromState is { } from)
             {
                 tags.Add("kevlar.circuit.from", from.ToString());
             }
+
             if (item.ToState is { } to)
             {
                 tags.Add("kevlar.circuit.to", to.ToString());
             }
+
             if (item.RejectionKind is { } rejection)
             {
                 tags.Add("kevlar.rejection.kind", Bound(rejection));
             }
+
             if (item.RejectionReason is { } rejectionReason)
             {
                 tags.Add("kevlar.rejection.reason", Bound(rejectionReason));
             }
+
             if (item.RetryAfter is { } retryAfter)
             {
                 tags.Add("kevlar.retry_after.seconds", retryAfter.TotalSeconds);
             }
+
             if (item.SuppressionReason is { } reason)
             {
                 tags.Add("kevlar.suppression.reason", Bound(reason));
             }
+
             if (item.EventName == "hedge_attempt")
             {
                 tags.Add("kevlar.hedge.winner", item.IsWinner);
                 tags.Add("kevlar.hedge.cancelled", item.IsCancelled);
             }
+
             activity.AddEvent(new ActivityEvent("kevlar." + Bound(item.EventName), tags: tags));
         }
         catch
@@ -216,6 +224,7 @@ internal static class KevlarActivities
                 return activity;
             }
         }
+
         return null;
     }
 
@@ -232,6 +241,7 @@ internal static class KevlarActivities
                 {
                     activity.SetTag("kevlar.shield.name", Bound(shieldName));
                 }
+
                 if (strategyName is not null)
                 {
                     activity.SetTag("kevlar.strategy.name", Bound(strategyName));
@@ -239,6 +249,7 @@ internal static class KevlarActivities
                     activity.SetTag("kevlar.attempt.number", attemptNumber);
                 }
             }
+
             return new Scope(activity, parent);
         }
         catch
@@ -256,6 +267,7 @@ internal static class KevlarActivities
                     // The listener can also fail while stopping its partially started activity.
                 }
             }
+
             Activity.Current = parent;
             return default;
         }
@@ -268,6 +280,7 @@ internal static class KevlarActivities
         {
             return value;
         }
+
         var length = char.IsHighSurrogate(value[maximumLength - 1]) && char.IsLowSurrogate(value[maximumLength])
             ? maximumLength - 1 : maximumLength;
         return value.Substring(0, length);
@@ -281,6 +294,7 @@ internal static class KevlarActivities
             {
                 return;
             }
+
             try
             {
                 var outcome = success ? "success" : "failure";
@@ -288,11 +302,13 @@ internal static class KevlarActivities
                 {
                     outcome = "cancelled";
                 }
+
                 activity.SetTag(outcomeTag, outcome);
                 if (!success)
                 {
                     activity.SetStatus(ActivityStatusCode.Error);
                 }
+
                 if (exception is not null)
                 {
                     activity.SetTag("exception.type", Bound(exception.GetType().FullName));
@@ -310,6 +326,7 @@ internal static class KevlarActivities
             {
                 return;
             }
+
             try
             {
                 activity.Stop();

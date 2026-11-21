@@ -10,11 +10,23 @@ internal readonly struct ChaosDecision
         Sample = sample;
     }
 
-    public string? Operation { get; }
+    public string? Operation
+    {
+        get;
+    }
 
-    public string? Environment { get; }
+    public string? Environment
+    {
+        get;
+    }
 
-    public double Rate { get; }
+    public double Rate
+    {
+        get;
+    }
 
-    public double Sample { get; }
+    public double Sample
+    {
+        get;
+    }
 }

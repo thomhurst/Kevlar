@@ -16,7 +16,10 @@ public readonly struct KevlarKey<T> : IEquatable<KevlarKey<T>>
     }
 
     /// <summary>The key's name.</summary>
-    public string Name { get; }
+    public string Name
+    {
+        get;
+    }
 
     /// <inheritdoc />
     public bool Equals(KevlarKey<T> other) => StringComparer.Ordinal.Equals(Name, other.Name);

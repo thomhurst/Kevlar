@@ -650,7 +650,10 @@ public class PartitionedShieldAsyncTests
 
     private sealed class DisposableResource : IDisposable
     {
-        public bool IsDisposed { get; private set; }
+        public bool IsDisposed
+        {
+            get; private set;
+        }
 
         public void Dispose() => IsDisposed = true;
     }

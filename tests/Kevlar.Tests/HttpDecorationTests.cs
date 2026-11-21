@@ -17,7 +17,9 @@ public class HttpDecorationTests
     {
         var first = Shield<HttpResponseMessage>.Empty.WithName("first");
         var second = Shield<HttpResponseMessage>.Empty.WithName("second");
+
         Shield<HttpResponseMessage> Select(string key) => key == "first.test" ? first : second;
+
         using var partitions = selection == Selection.AsyncPartition
             ? PartitionedShield<string, HttpResponseMessage>.CreateAsync(async key =>
             {
@@ -43,6 +45,7 @@ public class HttpDecorationTests
                 builder.AddShield(Shield<HttpResponseMessage>.Empty);
                 break;
         }
+
         using var provider = services.BuildServiceProvider();
         using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("api");
         var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -55,6 +58,7 @@ public class HttpDecorationTests
             {
                 request.WithShield(Select(host));
             }
+
             using var response = await client.SendAsync(request);
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         })).ToArray();
@@ -114,6 +118,7 @@ public class HttpDecorationTests
             {
                 using var response = await client.GetAsync("https://dependency.test/");
             }
+
             await partitions.TryRemoveAsync("tenant");
         }
 
@@ -168,11 +173,20 @@ public class HttpDecorationTests
         return (new WeakReference(shield), new WeakReference(cache.Decorate(shield)));
     }
 
-    public enum Selection { Request, Partition, AsyncPartition, Override }
+    public enum Selection
+    {
+        Request,
+        Partition,
+        AsyncPartition,
+        Override
+    }
 
     private sealed class RecordingDecorator : IShieldDecorator
     {
-        public ConcurrentQueue<(object Shield, string? Name)> Calls { get; } = new();
+        public ConcurrentQueue<(object Shield, string? Name)> Calls
+        {
+            get;
+        } = new();
 
         public Shield Decorate(Shield shield, string? name) => throw new NotSupportedException();
 

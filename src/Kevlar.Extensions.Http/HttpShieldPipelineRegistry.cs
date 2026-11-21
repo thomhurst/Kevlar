@@ -6,7 +6,10 @@ internal sealed class HttpShieldPipelineRegistry(IServiceProvider services) : ID
     private readonly Dictionary<(HttpShieldPipelineRegistration Registration, string? ClientName), object> _pipelines = [];
     private bool _disposed;
 
-    public IServiceProvider Services { get; } = services;
+    public IServiceProvider Services
+    {
+        get;
+    } = services;
 
     public T GetOrAdd<T>(
         HttpShieldPipelineRegistration registration,
@@ -20,6 +23,7 @@ internal sealed class HttpShieldPipelineRegistry(IServiceProvider services) : ID
             {
                 throw new ObjectDisposedException(nameof(HttpShieldPipelineRegistry));
             }
+
             if (_pipelines.TryGetValue((registration, clientName), out var existing))
             {
                 return (T)existing;

@@ -318,16 +318,28 @@ public class CustomStrategyContractTests
 
     private sealed class ExecutionState(int value)
     {
-        public int Value { get; } = value;
+        public int Value
+        {
+            get;
+        } = value;
 
-        public bool IsSameInstance { get; set; }
+        public bool IsSameInstance
+        {
+            get; set;
+        }
 
-        public CancellationToken SeenToken { get; set; }
+        public CancellationToken SeenToken
+        {
+            get; set;
+        }
     }
 
     private sealed class ContextObserverStrategy : Strategy
     {
-        public ContextSnapshot? Snapshot { get; private set; }
+        public ContextSnapshot? Snapshot
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -345,7 +357,10 @@ public class CustomStrategyContractTests
 
     private sealed class PropertyObserverStrategy : Strategy
     {
-        public string? SeenProperty { get; private set; }
+        public string? SeenProperty
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -419,7 +434,10 @@ public class CustomStrategyContractTests
 
     private sealed class PassThroughStrategy : Strategy
     {
-        public static PassThroughStrategy Instance { get; } = new();
+        public static PassThroughStrategy Instance
+        {
+            get;
+        } = new();
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

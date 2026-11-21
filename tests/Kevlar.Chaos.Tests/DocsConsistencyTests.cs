@@ -17,8 +17,7 @@ public class DocsConsistencyTests
     {
         using var observer = new InstrumentObserver();
 
-        await ExerciseEveryInstrumentAsync();
-        observer.RecordObservableInstruments();
+        await ExerciseEveryInstrumentAsync(observer);
 
         var documented = ParseInstrumentTable();
         await Assert.That(documented.Keys).IsEquivalentTo(observer.Instruments.Keys);
@@ -46,7 +45,7 @@ public class DocsConsistencyTests
         }
     }
 
-    private static async Task ExerciseEveryInstrumentAsync()
+    private static async Task ExerciseEveryInstrumentAsync(InstrumentObserver observer)
     {
         _ = await Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(options =>
             {
@@ -120,9 +119,9 @@ public class DocsConsistencyTests
         _ = await circuit.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         _ = await circuit.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
 
-        await Shield.ConcurrencyLimit(1)
-            .WithName("docs-concurrency")
-            .ExecuteAsync(_ => ValueTask.CompletedTask);
+        var concurrency = Shield.ConcurrencyLimit(1)
+            .WithName("docs-concurrency");
+        await concurrency.ExecuteAsync(_ => ValueTask.CompletedTask);
 
         var rateLimit = Shield.RateLimit(1, TimeSpan.FromMinutes(1))
             .WithName("docs-rate");
@@ -169,6 +168,13 @@ public class DocsConsistencyTests
             Content = new StreamContent(new MemoryStream([1, 2, 3])),
         };
         using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        // Keep the strategies alive while their weakly registered gauges are sampled.
+        observer.RecordObservableInstruments();
+        GC.KeepAlive(circuit);
+        GC.KeepAlive(concurrency);
+        GC.KeepAlive(rateLimit);
+        GC.KeepAlive(timedQueue);
     }
 
     private static Dictionary<string, InstrumentRow> ParseInstrumentTable()
@@ -370,10 +376,16 @@ public class DocsConsistencyTests
             _listener.Start();
         }
 
-        public ConcurrentDictionary<string, Instrument> Instruments { get; } =
+        public ConcurrentDictionary<string, Instrument> Instruments
+        {
+            get;
+        } =
             new(StringComparer.Ordinal);
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> Tags { get; } =
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> Tags
+        {
+            get;
+        } =
             new(StringComparer.Ordinal);
 
         public void RecordObservableInstruments() => _listener.RecordObservableInstruments();

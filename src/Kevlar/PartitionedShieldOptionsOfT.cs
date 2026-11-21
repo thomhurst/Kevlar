@@ -10,13 +10,19 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     /// Gets or sets the maximum number of retained partitions. The least recently used partition
     /// is evicted before this bound is exceeded. Defaults to 1,000.
     /// </summary>
-    public int MaxPartitions { get; set; } = 1_000;
+    public int MaxPartitions
+    {
+        get; set;
+    } = 1_000;
 
     /// <summary>
     /// Gets or sets the optional idle duration after which a partition may be evicted on the next
     /// provider operation. A null value disables idle expiry.
     /// </summary>
-    public TimeSpan? IdleExpiration { get; set; }
+    public TimeSpan? IdleExpiration
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets the time source used only for partition idle expiry. Defaults to system time.</summary>
     /// <remarks>
@@ -25,14 +31,20 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     /// time windows by calling <see cref="Shield{TResult}.WithTimeProvider(TimeProvider)"/> on each
     /// shield returned by the partition factory.
     /// </remarks>
-    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+    public TimeProvider TimeProvider
+    {
+        get; set;
+    } = TimeProvider.System;
 
     /// <summary>
     /// Gets or sets whether the provider owns and disposes strategies returned by its factory.
     /// Defaults to <see langword="true"/>. Set to <see langword="false"/> when those strategy
     /// instances are also used by shields outside this provider.
     /// </summary>
-    public bool OwnsStrategies { get; set; } = true;
+    public bool OwnsStrategies
+    {
+        get; set;
+    } = true;
 
     /// <summary>
     /// Invoked and awaited after a partition is created and retained. Return
@@ -40,7 +52,10 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     /// callback is rejected to prevent a lifecycle deadlock. Owned strategies remain alive until
     /// the callback and the creating lookup complete, even if the partition is concurrently evicted.
     /// </summary>
-    public Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>? OnCreated { get; set; }
+    public Func<PartitionCreatedEvent<TKey, TResult>, ValueTask>? OnCreated
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Invoked and awaited after a partition is removed from the provider and before an
@@ -49,7 +64,10 @@ public sealed class PartitionedShieldOptions<TKey, TResult>
     /// capacity. Disposing this provider from either lifecycle callback is rejected to prevent a
     /// lifecycle deadlock. Return <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted { get; set; }
+    public Func<PartitionEvictedEvent<TKey, TResult>, ValueTask>? OnEvicted
+    {
+        get; set;
+    }
 
     internal PartitionCacheOptions<TKey, Shield<TResult>> Snapshot()
     {

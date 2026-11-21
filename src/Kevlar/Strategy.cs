@@ -161,14 +161,23 @@ internal sealed class StrategyExecutionTracker
 
 internal interface IFallbackStrategyInspection
 {
-    Type? ResultType { get; }
+    Type? ResultType
+    {
+        get;
+    }
 
-    bool HasNotification { get; }
+    bool HasNotification
+    {
+        get;
+    }
 }
 
 internal interface IShieldLifecycle
 {
-    Strategy[] Strategies { get; }
+    Strategy[] Strategies
+    {
+        get;
+    }
 
     IShieldLifecycle WithExecutionTracking(
         StrategyExecutionTracker tracker,
@@ -442,21 +451,42 @@ internal sealed class StrategyNode
             ?? next?.SynchronousExecutionUnsupportedReason;
     }
 
-    internal Strategy Strategy { get; }
+    internal Strategy Strategy
+    {
+        get;
+    }
 
-    internal StrategyNode? Next { get; }
+    internal StrategyNode? Next
+    {
+        get;
+    }
 
-    internal int Index { get; }
+    internal int Index
+    {
+        get;
+    }
 
-    internal int PreviousIndex { get; }
+    internal int PreviousIndex
+    {
+        get;
+    }
 
-    internal bool RequiresOverlapIsolation { get; }
+    internal bool RequiresOverlapIsolation
+    {
+        get;
+    }
 
-    internal bool RequiresDeadline { get; }
+    internal bool RequiresDeadline
+    {
+        get;
+    }
 
     private readonly WeakReference<StrategyOwnerSet> _shieldOwners;
 
-    internal string? SynchronousExecutionUnsupportedReason { get; }
+    internal string? SynchronousExecutionUnsupportedReason
+    {
+        get;
+    }
 
     internal object GetShieldOwner()
     {

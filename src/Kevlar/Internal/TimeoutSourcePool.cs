@@ -271,6 +271,7 @@ internal static class TimeoutSourcePool
                 t_cached = this;
                 return;
             }
+
             Pool.Return(this);
         }
 

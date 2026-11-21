@@ -18,13 +18,22 @@ public readonly struct ConcurrencyLimitRejectedEvent
     }
 
     /// <summary>The admission limit at rejection: configured capacity for a static limiter or the current adaptive limit.</summary>
-    public int MaxConcurrency { get; }
+    public int MaxConcurrency
+    {
+        get;
+    }
 
     /// <summary>The configured maximum wait queue size.</summary>
-    public int QueueLimit { get; }
+    public int QueueLimit
+    {
+        get;
+    }
 
     /// <summary>The rejection reason, such as <c>queue_timeout</c> or <c>queue_evicted</c>, or null for capacity rejection.</summary>
-    public string? Reason { get; }
+    public string? Reason
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and

@@ -13,7 +13,10 @@ public static class KevlarLoggingServiceCollectionExtensions
         this IServiceCollection services,
         Action<KevlarLoggingOptions>? configure = null)
     {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
 
         var options = new KevlarLoggingOptions();
         configure?.Invoke(options);

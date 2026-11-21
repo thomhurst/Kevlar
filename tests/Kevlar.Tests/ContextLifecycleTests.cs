@@ -262,9 +262,15 @@ public class ContextLifecycleTests
 
     private sealed class ContextObserverStrategy(KevlarKey<string> dirtyProperty) : Strategy
     {
-        public KevlarContext? Context { get; private set; }
+        public KevlarContext? Context
+        {
+            get; private set;
+        }
 
-        public ContextSnapshot? Snapshot { get; private set; }
+        public ContextSnapshot? Snapshot
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -306,11 +312,20 @@ public class ContextLifecycleTests
             _expectedTimeProvider = expectedTimeProvider;
         }
 
-        public ConcurrentBag<KevlarContext> Contexts { get; } = [];
+        public ConcurrentBag<KevlarContext> Contexts
+        {
+            get;
+        } = [];
 
-        public TaskCompletionSource AllEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource AllEntered
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release
+        {
+            get;
+        } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public int DirtyContexts => Volatile.Read(ref _dirtyContexts);
 
@@ -345,9 +360,15 @@ public class ContextLifecycleTests
 
     private sealed class ReentrantStrategy(KevlarKey<string> key) : Strategy
     {
-        public bool InnerUsedDifferentContext { get; private set; }
+        public bool InnerUsedDifferentContext
+        {
+            get; private set;
+        }
 
-        public bool OuterPropertySurvived { get; private set; }
+        public bool OuterPropertySurvived
+        {
+            get; private set;
+        }
 
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
@@ -365,7 +386,10 @@ public class ContextLifecycleTests
 
     private sealed class InnerObserverStrategy(KevlarContext outer, KevlarKey<string> key) : Strategy
     {
-        public bool UsedDifferentContext { get; private set; }
+        public bool UsedDifferentContext
+        {
+            get; private set;
+        }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

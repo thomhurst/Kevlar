@@ -157,9 +157,20 @@ public class OptionsValidationTests
     [Test]
     public async Task CircuitBreaker_With_Neither_Trip_Mode_Set_Trips_After_Five_Consecutive_Failures()
     {
-        await Assert.That(Shield.CircuitBreaker(static _ => { }).ToString())
+        await Assert.That(
+                Shield.CircuitBreaker(static _ =>
+                {
+                }).ToString()
+            )
             .IsEqualTo("CircuitBreaker(5 consecutive, break 15s)");
-        await Assert.That(Shield.For<int>().CircuitBreaker(static _ => { }).ToString())
+        await Assert.That(
+                Shield
+                    .For<int>()
+                    .CircuitBreaker(static _ =>
+                    {
+                    })
+                    .ToString()
+            )
             .IsEqualTo("CircuitBreaker(5 consecutive, break 15s)");
     }
 

@@ -25,6 +25,7 @@ public sealed class RetryBudget
         {
             throw new ArgumentOutOfRangeException(nameof(maxTokens), "Capacity must be positive.");
         }
+
         if (double.IsNaN(tokenRatio) || double.IsInfinity(tokenRatio) || tokenRatio < 0.001)
         {
             throw new ArgumentOutOfRangeException(nameof(tokenRatio), "Success refund must be finite and at least 0.001.");
@@ -44,6 +45,7 @@ public sealed class RetryBudget
         {
             throw new ArgumentOutOfRangeException(nameof(replenishmentPeriod), "Replenishment period must be positive.");
         }
+
         TokenRatio = 0;
         _allowance = new ReplenishingAllowance(maxTokens, replenishmentPeriod, timeProvider);
     }
@@ -63,10 +65,16 @@ public sealed class RetryBudget
         new(maxTokens, replenishmentPeriod, timeProvider ?? TimeProvider.System);
 
     /// <summary>The maximum token balance.</summary>
-    public int MaxTokens { get; }
+    public int MaxTokens
+    {
+        get;
+    }
 
     /// <summary>The token refund for an acceptable successful result, or zero for a replenishing allowance.</summary>
-    public double TokenRatio { get; }
+    public double TokenRatio
+    {
+        get;
+    }
 
     /// <summary>The fixed replenishment period, or null for a feedback throttle.</summary>
     public TimeSpan? ReplenishmentPeriod => _allowance?.Period;
@@ -90,10 +98,12 @@ public sealed class RetryBudget
         {
             return;
         }
+
         if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
         {
             return;
         }
+
         if (!handled && !outcome.IsSuccess)
         {
             return;
@@ -142,6 +152,7 @@ public sealed class RetryBudget
                 {
                     return false;
                 }
+
                 _tokens--;
                 return true;
             }

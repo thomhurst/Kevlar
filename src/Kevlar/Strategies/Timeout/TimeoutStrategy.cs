@@ -160,6 +160,7 @@ internal sealed class TimeoutStrategy : Strategy
             {
                 context.EnterDeadline(timeout, startedAt);
             }
+
             context.CancellationToken = timeoutSource.Token;
             execution = next.InvokeAsync(context);
         }

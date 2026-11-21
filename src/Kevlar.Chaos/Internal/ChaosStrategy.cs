@@ -26,6 +26,7 @@ internal abstract class ChaosStrategy : Strategy
         {
             throw new ArgumentNullException(nameof(options));
         }
+
         ValidateRate(options.InjectionRate, nameof(options.InjectionRate));
 
         _enabled = options.Enabled;

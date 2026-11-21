@@ -12,7 +12,10 @@ public readonly struct FallbackEvent<TResult>
     }
 
     /// <summary>The handled outcome — the exception or result value being replaced.</summary>
-    public Outcome<TResult> Outcome { get; }
+    public Outcome<TResult> Outcome
+    {
+        get;
+    }
 
     /// <summary>
     /// The ambient execution context. It remains valid until the notification callback completes

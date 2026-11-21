@@ -107,7 +107,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        if (request is null) { throw new ArgumentNullException(nameof(request)); }
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
         _ = KevlarHttp.TryGetRequestOptions(request, out var requestOptions);
@@ -229,11 +232,20 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             SuppressionReason = suppressionReason;
         }
 
-        public static ReplayDecision Allowed { get; } = new(true, suppressionReason: null);
+        public static ReplayDecision Allowed
+        {
+            get;
+        } = new(true, suppressionReason: null);
 
-        public bool CanReplay { get; }
+        public bool CanReplay
+        {
+            get;
+        }
 
-        public string? SuppressionReason { get; }
+        public string? SuppressionReason
+        {
+            get;
+        }
 
         public static ReplayDecision Suppressed(string reason) => new(false, reason);
     }
@@ -368,6 +380,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             {
                 properties.Set(KevlarHttpKeys.RequestUri, WithoutQueryOrFragment(requestUri));
             }
+
             if (!_canReplay)
             {
                 properties.SuppressAdditionalAttempts = true;
@@ -595,8 +608,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             {
                 return await AwaitTemplateAsync(template, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException exception) when (
-                _executionCancellationToken.IsCancellationRequested
+            catch (OperationCanceledException exception) when (_executionCancellationToken.IsCancellationRequested
                 && exception.CancellationToken != _executionCancellationToken)
             {
                 throw new OperationCanceledException(
@@ -742,5 +754,4 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             }
         }
     }
-
 }

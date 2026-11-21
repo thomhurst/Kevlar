@@ -22,20 +22,38 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
     }
 
     /// <summary>The maximum additional attempts after the primary.</summary>
-    public int MaxHedgedAttempts { get; }
+    public int MaxHedgedAttempts
+    {
+        get;
+    }
 
     /// <summary>The stagger delay between attempts.</summary>
-    public TimeSpan Delay { get; }
+    public TimeSpan Delay
+    {
+        get;
+    }
 
     /// <summary>Whether a per-attempt delay generator is configured.</summary>
-    public bool HasDelayGenerator { get; }
+    public bool HasDelayGenerator
+    {
+        get;
+    }
 
     /// <summary>Whether a hedge notification is configured.</summary>
-    public bool HasNotification { get; }
+    public bool HasNotification
+    {
+        get;
+    }
 
     /// <summary>Whether an action generator is configured.</summary>
-    public bool HasActionGenerator { get; }
+    public bool HasActionGenerator
+    {
+        get;
+    }
 
     /// <summary>Whether local predicates replace the ambient handling clause.</summary>
-    public bool HasHandlingOverride { get; }
+    public bool HasHandlingOverride
+    {
+        get;
+    }
 }

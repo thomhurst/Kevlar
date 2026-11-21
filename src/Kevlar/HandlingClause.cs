@@ -16,7 +16,10 @@ public readonly struct HandlingClause
     /// The default handling clause: ordinary errors, excluding cancellation, Kevlar fail-fast
     /// rejections, and fatal runtime exceptions.
     /// </summary>
-    public static HandlingClause Default { get; } = new(OutcomeJudge.Default);
+    public static HandlingClause Default
+    {
+        get;
+    } = new(OutcomeJudge.Default);
 
     internal OutcomeJudge Judge => _judge ?? OutcomeJudge.Default;
 

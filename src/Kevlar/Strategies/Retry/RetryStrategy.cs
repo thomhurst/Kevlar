@@ -114,7 +114,10 @@ internal sealed class RetryStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool HasHandlingOverride { get; }
+    internal override bool HasHandlingOverride
+    {
+        get;
+    }
 
     internal int MaxRetries => _maxRetries;
 
@@ -429,6 +432,7 @@ internal sealed class RetryStrategy : Strategy
                 in outcome,
                 delay: delay);
         }
+
         return true;
     }
 
@@ -544,6 +548,7 @@ internal sealed class RetryStrategy : Strategy
                 KevlarTelemetrySeverity.Information, context.StrategyIndex, attempt, in outcome,
                 suppressionReason: "budget");
         }
+
         return true;
     }
 

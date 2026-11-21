@@ -558,7 +558,9 @@ public class CircuitBreakerTransitionOrderingTests
         var core = new CircuitBreakerCore(
             new CircuitBreakerOptions(),
             breakDurationGenerator: null,
-            recordState: static _ => { },
+            recordState: static _ =>
+            {
+            },
             optionsType: typeof(CircuitBreakerOptions));
         var transient = AttachTransientListener(core);
         for (var attempt = 0; attempt < 10 && transient.IsAlive; attempt++)

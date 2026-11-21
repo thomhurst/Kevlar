@@ -54,17 +54,35 @@ internal sealed class AdaptiveConcurrencyLimitStrategy : Strategy, IConcurrencyL
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
-    internal int MinLimit { get; }
+    internal int MinLimit
+    {
+        get;
+    }
 
-    internal int MaxLimit { get; }
+    internal int MaxLimit
+    {
+        get;
+    }
 
-    internal int InitialLimit { get; }
+    internal int InitialLimit
+    {
+        get;
+    }
 
-    internal TimeSpan SamplingWindow { get; }
+    internal TimeSpan SamplingWindow
+    {
+        get;
+    }
 
-    internal double DecreaseFactor { get; }
+    internal double DecreaseFactor
+    {
+        get;
+    }
 
-    internal double LatencyTolerance { get; }
+    internal double LatencyTolerance
+    {
+        get;
+    }
 
     internal bool HasNotification => _onRejected is not null;
 
@@ -283,10 +301,19 @@ internal sealed class AdaptiveConcurrencyLimitStrategy : Strategy, IConcurrencyL
 
     private sealed class TimestampOrigin(long timestamp, double timeline, double scale)
     {
-        public long Timestamp { get; } = timestamp;
+        public long Timestamp
+        {
+            get;
+        } = timestamp;
 
-        public double Timeline { get; } = timeline;
+        public double Timeline
+        {
+            get;
+        } = timeline;
 
-        public double Scale { get; } = scale;
+        public double Scale
+        {
+            get;
+        } = scale;
     }
 }

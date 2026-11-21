@@ -5,7 +5,9 @@ namespace Kevlar.Extensions.DependencyInjection;
 // A private options type joins the Generic Host's existing startup validation phase.
 internal sealed class ShieldStartupOptions
 {
-    public ShieldStartupOptions() { }
+    public ShieldStartupOptions()
+    {
+    }
 }
 
 internal sealed class ShieldStartupValidator : IValidateOptions<ShieldStartupOptions>

@@ -21,16 +21,25 @@ public sealed class ShieldHttpHandlerOptions
     }
 
     /// <summary>The request-content replay policy. The default never buffers caller content.</summary>
-    public HttpContentReplayPolicy ContentReplayPolicy { get; set; }
+    public HttpContentReplayPolicy ContentReplayPolicy
+    {
+        get; set;
+    }
 
     /// <summary>The maximum buffered request-content size. Defaults to 1 MiB.</summary>
-    public long MaxBufferSize { get; set; } = 1024 * 1024;
+    public long MaxBufferSize
+    {
+        get; set;
+    } = 1024 * 1024;
 
     /// <summary>
     /// Explicitly permits another attempt for methods rejected by <see cref="IsReplaySafeMethod"/>.
     /// A request factory also counts as explicit opt-in. Content must still be replayable.
     /// </summary>
-    public bool AllowUnsafeMethodReplay { get; set; }
+    public bool AllowUnsafeMethodReplay
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Optionally determines whether an HTTP method permits additional attempts. A null value
@@ -41,14 +50,23 @@ public sealed class ShieldHttpHandlerOptions
     /// it; per-request <see cref="KevlarHttpRequestExtensions.DisableReplay"/> always takes precedence.
     /// Content must still be replayable when the predicate returns true.
     /// </remarks>
-    public Func<HttpMethod, bool>? IsReplaySafeMethod { get; set; }
+    public Func<HttpMethod, bool>? IsReplaySafeMethod
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Optionally creates a fresh complete request for each zero-based attempt. Returned requests
     /// are owned and disposed by the handler; returning the original request preserves caller ownership.
     /// </summary>
-    public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory { get; set; }
+    public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory
+    {
+        get; set;
+    }
 
     /// <summary>Optional alternate-authority routing.</summary>
-    public HttpEndpointRoutingOptions? Routing { get; set; }
+    public HttpEndpointRoutingOptions? Routing
+    {
+        get; set;
+    }
 }

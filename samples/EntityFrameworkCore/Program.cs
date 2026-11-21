@@ -44,5 +44,8 @@ internal sealed class OrdersContext(DbContextOptions<OrdersContext> options) : D
 
 internal sealed class Order
 {
-    public Guid Id { get; set; }
+    public Guid Id
+    {
+        get; set;
+    }
 }

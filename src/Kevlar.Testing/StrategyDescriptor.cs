@@ -10,13 +10,22 @@ public abstract class StrategyDescriptor
     }
 
     /// <summary>The stable strategy category.</summary>
-    public StrategyKind Kind { get; }
+    public StrategyKind Kind
+    {
+        get;
+    }
 
     /// <summary>A human-readable diagnostic description. Do not parse this value as a contract.</summary>
-    public string Description { get; }
+    public string Description
+    {
+        get;
+    }
 
     /// <summary>The strategy's handling metadata, or <see langword="null"/> when proactive.</summary>
-    public HandlingClauseDescriptor? HandlingClause { get; private set; }
+    public HandlingClauseDescriptor? HandlingClause
+    {
+        get; private set;
+    }
 
     internal void SetHandlingClause(HandlingClauseDescriptor? handlingClause) =>
         HandlingClause = handlingClause;

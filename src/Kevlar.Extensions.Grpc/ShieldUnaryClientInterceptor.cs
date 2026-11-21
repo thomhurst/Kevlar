@@ -1,7 +1,7 @@
-using Grpc.Core;
-using Grpc.Core.Interceptors;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using Grpc.Core;
+using Grpc.Core.Interceptors;
 
 namespace Kevlar.Extensions.Grpc;
 
@@ -29,8 +29,15 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
-        if (request is null) { throw new ArgumentNullException(nameof(request)); }
-        if (continuation is null) { throw new ArgumentNullException(nameof(continuation)); }
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        if (continuation is null)
+        {
+            throw new ArgumentNullException(nameof(continuation));
+        }
 
         return new UnaryCallState<TRequest, TResponse>(
             _shield,
@@ -161,8 +168,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 CompleteAttempt(call, exception: null, failureCall: null);
                 return new AttemptResult(call, response);
             }
-            catch (RpcException exception) when (
-                exception.StatusCode == StatusCode.Cancelled
+            catch (RpcException exception) when (exception.StatusCode == StatusCode.Cancelled
                 && cancellationToken.IsCancellationRequested
                 && !IsExpiredDeadline())
             {
@@ -354,7 +360,9 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 responseHeaders,
                 () => status,
                 () => trailers,
-                static () => { });
+                static () =>
+                {
+                });
         }
 
         private static Status GetStatusOrUnknown(
@@ -550,11 +558,20 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             AsyncUnaryCall<TResponse> attemptCall,
             AsyncUnaryCall<TResponse> call)
         {
-            public AsyncUnaryCall<TResponse> AttemptCall { get; } = attemptCall;
+            public AsyncUnaryCall<TResponse> AttemptCall
+            {
+                get;
+            } = attemptCall;
 
-            public AsyncUnaryCall<TResponse> Call { get; } = call;
+            public AsyncUnaryCall<TResponse> Call
+            {
+                get;
+            } = call;
 
-            public bool Disposed { get; private set; }
+            public bool Disposed
+            {
+                get; private set;
+            }
 
             public void MarkDisposed() => Disposed = true;
         }
@@ -565,25 +582,40 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private sealed class ExpiredDeadlineRpcException(RpcException original)
             : Exception(original.Message, original)
         {
-            public RpcException Original { get; } = original;
+            public RpcException Original
+            {
+                get;
+            } = original;
         }
 
         private readonly struct AttemptRecord(
             AsyncUnaryCall<TResponse> call,
             Exception? exception)
         {
-            public AsyncUnaryCall<TResponse> Call { get; } = call;
+            public AsyncUnaryCall<TResponse> Call
+            {
+                get;
+            } = call;
 
-            public Exception? Exception { get; } = exception;
+            public Exception? Exception
+            {
+                get;
+            } = exception;
         }
 
         private readonly struct AttemptResult(
             AsyncUnaryCall<TResponse> call,
             TResponse response)
         {
-            public AsyncUnaryCall<TResponse> Call { get; } = call;
+            public AsyncUnaryCall<TResponse> Call
+            {
+                get;
+            } = call;
 
-            public TResponse Response { get; } = response;
+            public TResponse Response
+            {
+                get;
+            } = response;
         }
     }
 }

@@ -18,17 +18,32 @@ public sealed class BackoffDescriptor
     }
 
     /// <summary>The stable backoff category.</summary>
-    public BackoffKind Kind { get; }
+    public BackoffKind Kind
+    {
+        get;
+    }
 
     /// <summary>The constant delay, linear step, or exponential initial delay, when applicable.</summary>
-    public TimeSpan? BaseDelay { get; }
+    public TimeSpan? BaseDelay
+    {
+        get;
+    }
 
     /// <summary>The exponential multiplier, when applicable.</summary>
-    public double? Factor { get; }
+    public double? Factor
+    {
+        get;
+    }
 
     /// <summary>The linear or exponential delay cap, when configured.</summary>
-    public TimeSpan? MaxDelay { get; }
+    public TimeSpan? MaxDelay
+    {
+        get;
+    }
 
     /// <summary>The jitter mode for built-in backoffs, when applicable.</summary>
-    public Jitter? Jitter { get; }
+    public Jitter? Jitter
+    {
+        get;
+    }
 }

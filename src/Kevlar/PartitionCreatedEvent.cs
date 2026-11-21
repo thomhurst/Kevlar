@@ -11,8 +11,14 @@ public readonly struct PartitionCreatedEvent<TKey>
     }
 
     /// <summary>Gets the partition key.</summary>
-    public TKey Key { get; }
+    public TKey Key
+    {
+        get;
+    }
 
     /// <summary>Gets the created shield.</summary>
-    public Shield Shield { get; }
+    public Shield Shield
+    {
+        get;
+    }
 }

@@ -11,7 +11,10 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
-    internal LoggingRegistration Registration { get; } = registration;
+    internal LoggingRegistration Registration
+    {
+        get;
+    } = registration;
 
     internal IKevlarTelemetryListener Listener => _listener;
 
@@ -116,11 +119,20 @@ internal sealed class LoggingRegistration(
     LoggingOptionsSnapshot options,
     LoggingRegistration? next = null)
 {
-    public ILogger Logger { get; } = logger;
+    public ILogger Logger
+    {
+        get;
+    } = logger;
 
-    public LoggingOptionsSnapshot Options { get; } = options;
+    public LoggingOptionsSnapshot Options
+    {
+        get;
+    } = options;
 
-    public LoggingRegistration? Next { get; } = next;
+    public LoggingRegistration? Next
+    {
+        get;
+    } = next;
 
     public IDisposable? BeginScopes(KevlarContext context)
     {

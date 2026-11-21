@@ -349,9 +349,7 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
                     _creations.Add(key, creation);
                     creates = true;
                 }
-
             }
-
         }
         finally
         {
@@ -1186,19 +1184,40 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
         private int _creationLease = 1;
         private int _disposalStarted;
 
-        public TKey Key { get; } = key;
+        public TKey Key
+        {
+            get;
+        } = key;
 
-        public TShield Shield { get; } = shield;
+        public TShield Shield
+        {
+            get;
+        } = shield;
 
-        public StrategyExecutionTracker? ExecutionTracker { get; } = executionTracker;
+        public StrategyExecutionTracker? ExecutionTracker
+        {
+            get;
+        } = executionTracker;
 
-        public Strategy[] OwnedStrategies { get; } = ownedStrategies;
+        public Strategy[] OwnedStrategies
+        {
+            get;
+        } = ownedStrategies;
 
-        public long LastAccess { get; set; } = lastAccess;
+        public long LastAccess
+        {
+            get; set;
+        } = lastAccess;
 
-        public Entry? Previous { get; set; }
+        public Entry? Previous
+        {
+            get; set;
+        }
 
-        public Entry? Next { get; set; }
+        public Entry? Next
+        {
+            get; set;
+        }
 
         public bool CreationLeaseActive => Volatile.Read(ref _creationLease) != 0;
 
@@ -1388,5 +1407,4 @@ internal sealed class PartitionCache<TKey, TShield> : IDisposable, IAsyncDisposa
             throw new ObjectDisposedException(typeof(PartitionCache<TKey, TShield>).Name);
         }
     }
-
 }

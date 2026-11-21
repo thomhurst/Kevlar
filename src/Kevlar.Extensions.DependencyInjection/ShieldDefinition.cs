@@ -24,25 +24,46 @@ namespace Kevlar.Extensions.DependencyInjection;
 public sealed class ShieldDefinition
 {
     /// <summary>Total budget for the whole operation (outermost). Omit for none.</summary>
-    public TimeSpan? Timeout { get; set; }
+    public TimeSpan? Timeout
+    {
+        get; set;
+    }
 
     /// <summary>Retry configuration. Omit for none.</summary>
-    public RetryDefinition? Retry { get; set; }
+    public RetryDefinition? Retry
+    {
+        get; set;
+    }
 
     /// <summary>Hedging configuration. Omit for none. Cannot be combined with <see cref="Retry"/>.</summary>
-    public HedgeDefinition? Hedge { get; set; }
+    public HedgeDefinition? Hedge
+    {
+        get; set;
+    }
 
     /// <summary>Circuit breaker configuration. Omit for none.</summary>
-    public CircuitBreakerDefinition? CircuitBreaker { get; set; }
+    public CircuitBreakerDefinition? CircuitBreaker
+    {
+        get; set;
+    }
 
     /// <summary>Rate limit configuration. Omit for none.</summary>
-    public RateLimitDefinition? RateLimit { get; set; }
+    public RateLimitDefinition? RateLimit
+    {
+        get; set;
+    }
 
     /// <summary>Concurrency limit configuration. Omit for none.</summary>
-    public ConcurrencyLimitDefinition? ConcurrencyLimit { get; set; }
+    public ConcurrencyLimitDefinition? ConcurrencyLimit
+    {
+        get; set;
+    }
 
     /// <summary>Budget for each individual attempt (innermost). Omit for none.</summary>
-    public TimeSpan? AttemptTimeout { get; set; }
+    public TimeSpan? AttemptTimeout
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Builds the configured <see cref="Shield"/>, chaining the declared sections outermost first:
@@ -56,7 +77,11 @@ public sealed class ShieldDefinition
     /// <summary>Builds the configured shield, resolving named retry budgets from the service provider.</summary>
     public Shield Build(IServiceProvider serviceProvider)
     {
-        if (serviceProvider is null) { throw new ArgumentNullException(nameof(serviceProvider)); }
+        if (serviceProvider is null)
+        {
+            throw new ArgumentNullException(nameof(serviceProvider));
+        }
+
         return BuildCore(serviceProvider);
     }
 
@@ -159,10 +184,12 @@ public sealed class ShieldDefinition
         {
             return null;
         }
+
         if (serviceProvider is null)
         {
             throw new KevlarConfigurationException("Named retry budgets require ShieldDefinition.Build(IServiceProvider).");
         }
+
         return serviceProvider.GetKeyedService<RetryBudget>(name)
             ?? throw new KevlarConfigurationException($"Retry budget '{name}' is not registered. Use services.AddRetryBudget.");
     }
@@ -172,34 +199,58 @@ public sealed class ShieldDefinition
 public sealed class RetryDefinition
 {
     /// <summary>The name of a shared budget registered with AddRetryBudget. Omit for no budget.</summary>
-    public string? Budget { get; set; }
+    public string? Budget
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="RetryOptions.RespectDeadline"/>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <summary>Maximum retries after the initial attempt. Default 3.</summary>
-    public int MaxRetries { get; set; } = 3;
+    public int MaxRetries
+    {
+        get; set;
+    } = 3;
 
     /// <summary>
     /// The backoff curve. Default <see cref="BackoffKind.Exponential"/>. DI definitions support
     /// None, Constant, Linear, and Exponential; custom callbacks require the fluent API.
     /// </summary>
-    public BackoffKind Backoff { get; set; } = BackoffKind.Exponential;
+    public BackoffKind Backoff
+    {
+        get; set;
+    } = BackoffKind.Exponential;
 
     /// <summary>
     /// The base delay: the constant delay, linear step, or exponential initial delay.
     /// Defaults per kind: 1s constant, 500ms linear, 250ms exponential.
     /// </summary>
-    public TimeSpan? BaseDelay { get; set; }
+    public TimeSpan? BaseDelay
+    {
+        get; set;
+    }
 
     /// <summary>Exponential growth factor. Default 2.</summary>
-    public double Factor { get; set; } = 2.0;
+    public double Factor
+    {
+        get; set;
+    } = 2.0;
 
     /// <summary>The jitter mode applied to built-in backoff delays. Default equal jitter.</summary>
-    public Jitter Jitter { get; set; } = Jitter.Equal;
+    public Jitter Jitter
+    {
+        get; set;
+    } = Jitter.Equal;
 
     /// <summary>An absolute upper bound applied to every delay. Default 30s for exponential.</summary>
-    public TimeSpan? MaxDelay { get; set; }
+    public TimeSpan? MaxDelay
+    {
+        get; set;
+    }
 
     internal Backoff BuildBackoff() => Backoff switch
     {
@@ -221,83 +272,149 @@ public sealed class RetryDefinition
 public sealed class HedgeDefinition
 {
     /// <summary>The name of a shared budget registered with AddRetryBudget. Omit for no budget.</summary>
-    public string? Budget { get; set; }
+    public string? Budget
+    {
+        get; set;
+    }
 
     /// <inheritdoc cref="HedgeOptions.RespectDeadline"/>
-    public bool RespectDeadline { get; set; }
+    public bool RespectDeadline
+    {
+        get; set;
+    }
 
     /// <summary>Maximum additional attempts after the original. Default 1.</summary>
-    public int MaxHedgedAttempts { get; set; } = 1;
+    public int MaxHedgedAttempts
+    {
+        get; set;
+    } = 1;
 
     /// <summary>
     /// Delay before launching the next attempt. Default 1 second. Zero starts attempts without
     /// timer staggering; a negative delay hedges only on failure, as with <see cref="HedgeOptions.Delay"/>.
     /// </summary>
-    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
+    public TimeSpan Delay
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(1);
 }
 
 /// <summary>The circuit breaker section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class CircuitBreakerDefinition
 {
     /// <summary>Number of completed probes in a half-open cohort. Default 1.</summary>
-    public int HalfOpenProbes { get; set; } = 1;
+    public int HalfOpenProbes
+    {
+        get; set;
+    } = 1;
 
     /// <summary>Calls exceeding this duration contribute to the slow-call ratio. Requires ratio mode.</summary>
-    public TimeSpan? SlowCallThreshold { get; set; }
+    public TimeSpan? SlowCallThreshold
+    {
+        get; set;
+    }
 
     /// <summary>Slow-call fraction that opens the circuit. Requires <see cref="SlowCallThreshold"/>.</summary>
-    public double? SlowCallRatio { get; set; }
+    public double? SlowCallRatio
+    {
+        get; set;
+    }
 
     /// <summary>Trip after this many consecutive failures (simple mode).</summary>
-    public int? ConsecutiveFailures { get; set; }
+    public int? ConsecutiveFailures
+    {
+        get; set;
+    }
 
     /// <summary>Trip at this failure ratio within the sampling window (sampling mode).</summary>
-    public double? FailureRatio { get; set; }
+    public double? FailureRatio
+    {
+        get; set;
+    }
 
     /// <summary>Minimum executions in the window before the ratio can trip. Default 10.</summary>
-    public int MinimumThroughput { get; set; } = 10;
+    public int MinimumThroughput
+    {
+        get; set;
+    } = 10;
 
     /// <summary>The rolling ratio window. Default 30 seconds.</summary>
-    public TimeSpan SamplingWindow { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan SamplingWindow
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(30);
 
     /// <summary>How long the circuit stays open. Default 15 seconds.</summary>
-    public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
+    public TimeSpan BreakDuration
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(15);
 }
 
 /// <summary>The rate limit section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class RateLimitDefinition
 {
     /// <summary>Executions allowed per <see cref="Window"/>. Default 100.</summary>
-    public int Permits { get; set; } = 100;
+    public int Permits
+    {
+        get; set;
+    } = 100;
 
     /// <summary>The replenishment window. Default 1 second.</summary>
-    public TimeSpan Window { get; set; } = TimeSpan.FromSeconds(1);
+    public TimeSpan Window
+    {
+        get; set;
+    } = TimeSpan.FromSeconds(1);
 
     /// <summary>Maximum accumulated burst. Defaults to <see cref="Permits"/>.</summary>
-    public int? Burst { get; set; }
+    public int? Burst
+    {
+        get; set;
+    }
 
     /// <summary>Executions allowed to wait for a permit. Default 0.</summary>
-    public int QueueLimit { get; set; }
+    public int QueueLimit
+    {
+        get; set;
+    }
 
     /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
-    public TimeSpan? QueueTimeout { get; set; }
+    public TimeSpan? QueueTimeout
+    {
+        get; set;
+    }
 
     /// <summary>Whether to enable highest-priority-first queueing with FIFO ties and lower-priority eviction.</summary>
-    public bool UsePriorityQueue { get; set; }
+    public bool UsePriorityQueue
+    {
+        get; set;
+    }
 }
 
 /// <summary>The concurrency limit section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class ConcurrencyLimitDefinition
 {
     /// <summary>Maximum concurrent executions. Default 10.</summary>
-    public int MaxConcurrency { get; set; } = 10;
+    public int MaxConcurrency
+    {
+        get; set;
+    } = 10;
 
     /// <summary>Executions allowed to wait for a slot. Default 0.</summary>
-    public int QueueLimit { get; set; }
+    public int QueueLimit
+    {
+        get; set;
+    }
 
     /// <summary>Maximum queue residence time; null leaves the wait unbounded.</summary>
-    public TimeSpan? QueueTimeout { get; set; }
+    public TimeSpan? QueueTimeout
+    {
+        get; set;
+    }
 
     /// <summary>Whether to enable highest-priority-first queueing with FIFO ties and lower-priority eviction.</summary>
-    public bool UsePriorityQueue { get; set; }
+    public bool UsePriorityQueue
+    {
+        get; set;
+    }
 }

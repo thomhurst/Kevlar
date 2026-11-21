@@ -8,7 +8,11 @@ public class HedgeBudgetTests
         var budget = new RetryBudget(maxTokens: 2, tokenRatio: 1);
         var loser = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
-        var shield = Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; });
+        var shield = Shield.Hedge(options =>
+        {
+            options.Budget = budget;
+            options.Delay = TimeSpan.Zero;
+        });
         var result = await shield.ExecuteAsync(_ => Interlocked.Increment(ref attempts) == 1
             ? new ValueTask<int>(loser.Task)
             : new ValueTask<int>(42));
@@ -20,6 +24,7 @@ public class HedgeBudgetTests
         {
             await Task.Delay(1, timeout.Token);
         }
+
         await Assert.That(budget.AllowsAdditionalAttempt).IsFalse();
     }
 
@@ -29,7 +34,11 @@ public class HedgeBudgetTests
     public async Task Retry_Depletion_Suppresses_Hedges_And_Preserves_Initial_Attempt(bool typed)
     {
         var budget = new RetryBudget(maxTokens: 4, tokenRatio: 1);
-        var retry = Shield.Retry(options => { options.Budget = budget; options.Backoff = Backoff.None; });
+        var retry = Shield.Retry(options =>
+        {
+            options.Budget = budget;
+            options.Backoff = Backoff.None;
+        });
         _ = await retry.ExecuteOutcomeAsync<int>(static _ => ValueTask.FromException<int>(new IOException()));
         var attempts = 0;
         Func<CancellationToken, ValueTask<int>> operation = _ =>
@@ -38,9 +47,17 @@ public class HedgeBudgetTests
             return ValueTask.FromException<int>(new IOException());
         };
         var outcome = typed
-            ? await Shield.For<int>().Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+            ? await Shield.For<int>().Hedge(options =>
+                {
+                    options.Budget = budget;
+                    options.Delay = TimeSpan.Zero;
+                })
                 .ExecuteOutcomeAsync(operation)
-            : await Shield.Hedge(options => { options.Budget = budget; options.Delay = TimeSpan.Zero; })
+            : await Shield.Hedge(options =>
+                {
+                    options.Budget = budget;
+                    options.Delay = TimeSpan.Zero;
+                })
                 .ExecuteOutcomeAsync(operation);
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(outcome.Exception).IsTypeOf<IOException>();
@@ -66,6 +83,7 @@ public class HedgeBudgetTests
             {
                 return new ValueTask<int>(release.Task);
             }
+
             secondaryFailed.TrySetResult();
             return ValueTask.FromException<int>(new IOException());
         }).AsTask();
@@ -79,6 +97,7 @@ public class HedgeBudgetTests
         {
             release.TrySetResult(42);
         }
+
         await Assert.That(await execution).IsEqualTo(42);
         await Assert.That(budget.Tokens).IsEqualTo(2);
         await Assert.That(attempts).IsEqualTo(2);

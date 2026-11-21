@@ -23,6 +23,7 @@ public class TimeoutPoolTests
                 {
                     await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
                 }
+
                 await longTimeout.ExecuteAsync(async token =>
                 {
                     await Task.Yield();
@@ -58,6 +59,7 @@ public class TimeoutPoolTests
                     {
                         await Task.Yield();
                     }
+
                     previous.Cancel();
                     token.ThrowIfCancellationRequested();
                     if (cancelCurrent)
@@ -65,6 +67,7 @@ public class TimeoutPoolTests
                         current.Cancel();
                         token.ThrowIfCancellationRequested();
                     }
+
                     return 42;
                 }, current.Token);
 
@@ -112,6 +115,7 @@ public class TimeoutPoolTests
         {
             TimeoutSourcePool.Arm(next, timeout);
         }
+
         previous.Cancel();
         await Assert.That(reused).IsTrue();
         if (shorten)
@@ -125,6 +129,7 @@ public class TimeoutPoolTests
             await Task.Delay(TimeSpan.FromMilliseconds(150));
             await Assert.That(next.IsCancellationRequested).IsFalse();
         }
+
         await Assert.That(staleCallbacks).IsEqualTo(0);
     }
 
@@ -205,6 +210,7 @@ public class TimeoutPoolTests
                 source.Dispose();
             }
         }
+
         using var next = TimeoutSourcePool.RentLinked(CancellationToken.None);
         await Assert.That(next.IsCancellationRequested).IsFalse();
     }
@@ -229,10 +235,12 @@ public class TimeoutPoolTests
                     {
                         throw new InvalidOperationException("The timeout did not fire.");
                     }
+
                     if (observeToken)
                     {
                         token.ThrowIfCancellationRequested();
                     }
+
                     return 1;
                 });
                 if (observeToken ? firedOutcome.Exception is not TimeoutExceededException : !firedOutcome.IsSuccess)
