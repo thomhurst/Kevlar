@@ -8,7 +8,7 @@ sidebar_label: Outage and recovery
 
 An open-loop load generator exercises Kevlar against an in-process asynchronous dependency. Each composition gets fresh strategy state and the same healthy, slowdown, outage, and recovery schedule. These measurements describe the configured simulation, not production capacity or a comparison with another library.
 
-Measured 2026-11-16T16:45:19.8658024+00:00 at commit `e90bd07855e2a1fbc35b7b2e39c8216407454e54`.
+Measured 2026-11-21T19:45:02.1353723+00:00 at commit `f24116595b7004500b30e91ea050da0c39adccbd`.
 
 ## Request outcomes and latency
 
@@ -18,22 +18,22 @@ Latency starts at the scheduled arrival, including scheduler delay and queue tim
 
 | Composition | Phase | Offered | Success / failed | p95 / p99 ms | Success p99 ms | Scheduler p99 ms |
 |---|---|---:|---:|---:|---:|---:|
-| retry | healthy | 3000 | 3000 / 0 | 6.64 / 6.72 | 6.72 | 1.59 |
-| retry | slowdown | 3000 | 3000 / 0 | 301.69 / 302.47 | 302.47 | 1.65 |
-| retry | outage | 3000 | 4 / 2996 | 62.63 / 63.69 | 46.24 | 1.64 |
-| retry | recovery | 3000 | 3000 / 0 | 6.62 / 6.71 | 6.71 | 1.58 |
-| retry-breaker | healthy | 3000 | 3000 / 0 | 6.68 / 6.99 | 6.99 | 1.87 |
-| retry-breaker | slowdown | 3000 | 3000 / 0 | 302.14 / 302.82 | 302.82 | 1.93 |
-| retry-breaker | outage | 3000 | 0 / 3000 | 1.93 / 21.21 | not observed | 1.93 |
-| retry-breaker | recovery | 3000 | 2958 / 42 | 6.68 / 6.99 | 7.00 | 1.87 |
-| limit-retry-breaker | healthy | 3000 | 3000 / 0 | 7.13 / 7.23 | 7.23 | 2.10 |
-| limit-retry-breaker | slowdown | 3000 | 1600 / 1400 | 597.23 / 845.32 | 858.65 | 2.16 |
-| limit-retry-breaker | outage | 3000 | 0 / 3000 | 2.16 / 21.49 | not observed | 2.16 |
-| limit-retry-breaker | recovery | 3000 | 3000 / 0 | 7.12 / 7.20 | 7.20 | 2.07 |
-| limit-hedge-breaker | healthy | 3000 | 3000 / 0 | 6.70 / 7.02 | 7.02 | 1.89 |
-| limit-hedge-breaker | slowdown | 3000 | 3000 / 0 | 52.68 / 53.67 | 53.67 | 1.92 |
-| limit-hedge-breaker | outage | 3000 | 0 / 3000 | 1.93 / 21.22 | not observed | 1.92 |
-| limit-hedge-breaker | recovery | 3000 | 2980 / 20 | 6.67 / 7.02 | 7.02 | 1.89 |
+| retry | healthy | 3000 | 3000 / 0 | 7.04 / 7.14 | 7.14 | 2.00 |
+| retry | slowdown | 3000 | 3000 / 0 | 302.45 / 302.60 | 302.60 | 2.15 |
+| retry | outage | 3000 | 4 / 2996 | 62.63 / 63.38 | 47.28 | 2.15 |
+| retry | recovery | 3000 | 3000 / 0 | 7.04 / 7.15 | 7.15 | 2.05 |
+| retry-breaker | healthy | 3000 | 3000 / 0 | 7.22 / 7.25 | 7.25 | 2.15 |
+| retry-breaker | slowdown | 3000 | 3000 / 0 | 302.50 / 302.78 | 302.78 | 2.14 |
+| retry-breaker | outage | 3000 | 0 / 3000 | 2.15 / 21.41 | not observed | 2.15 |
+| retry-breaker | recovery | 3000 | 2950 / 50 | 6.59 / 7.23 | 7.23 | 2.13 |
+| limit-retry-breaker | healthy | 3000 | 3000 / 0 | 6.90 / 7.20 | 7.20 | 2.09 |
+| limit-retry-breaker | slowdown | 3000 | 1600 / 1400 | 597.40 / 728.81 | 839.48 | 2.14 |
+| limit-retry-breaker | outage | 3000 | 0 / 3000 | 2.13 / 21.41 | not observed | 2.14 |
+| limit-retry-breaker | recovery | 3000 | 2953 / 47 | 6.96 / 7.17 | 7.18 | 2.07 |
+| limit-hedge-breaker | healthy | 3000 | 3000 / 0 | 6.90 / 7.11 | 7.11 | 1.99 |
+| limit-hedge-breaker | slowdown | 3000 | 3000 / 0 | 52.25 / 52.34 | 52.34 | 2.15 |
+| limit-hedge-breaker | outage | 3000 | 0 / 3000 | 2.18 / 21.64 | not observed | 2.15 |
+| limit-hedge-breaker | recovery | 3000 | 2983 / 17 | 6.89 / 7.11 | 7.11 | 2.01 |
 
 </div>
 
@@ -51,16 +51,16 @@ Submitted means accepted by the harness. Admitted means at least one dependency 
 | retry | recovery | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
 | retry-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
 | retry-breaker | slowdown | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
-| retry-breaker | outage | 3000 / 65 | 0 / 0 / 2997 | 74 | 0.02 | 1.14 |
-| retry-breaker | recovery | 3000 / 2958 | 0 / 0 / 42 | 2958 | 0.99 | 1.00 |
+| retry-breaker | outage | 3000 / 67 | 0 / 0 / 2995 | 80 | 0.03 | 1.19 |
+| retry-breaker | recovery | 3000 / 2950 | 0 / 0 / 50 | 2950 | 0.98 | 1.00 |
 | limit-retry-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
-| limit-retry-breaker | slowdown | 3000 / 1612 | 0 / 1384 / 11 | 1625 | 0.54 | 1.01 |
-| limit-retry-breaker | outage | 3000 / 56 | 0 / 4 / 2996 | 56 | 0.02 | 1.00 |
-| limit-retry-breaker | recovery | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
+| limit-retry-breaker | slowdown | 3000 / 1605 | 0 / 1384 / 16 | 1609 | 0.54 | 1.00 |
+| limit-retry-breaker | outage | 3000 / 57 | 0 / 5 / 2995 | 57 | 0.02 | 1.00 |
+| limit-retry-breaker | recovery | 3000 / 2953 | 0 / 0 / 47 | 2953 | 0.98 | 1.00 |
 | limit-hedge-breaker | healthy | 3000 / 3000 | 0 / 0 / 0 | 3000 | 1.00 | 1.00 |
 | limit-hedge-breaker | slowdown | 3000 / 3000 | 0 / 0 / 0 | 6000 | 2.00 | 2.00 |
-| limit-hedge-breaker | outage | 3000 / 94 | 0 / 0 / 2997 | 97 | 0.03 | 1.03 |
-| limit-hedge-breaker | recovery | 3000 / 2980 | 0 / 0 / 20 | 2980 | 0.99 | 1.00 |
+| limit-hedge-breaker | outage | 3000 / 136 | 0 / 0 / 2997 | 139 | 0.05 | 1.02 |
+| limit-hedge-breaker | recovery | 3000 / 2983 | 0 / 0 / 17 | 2983 | 0.99 | 1.00 |
 
 </div>
 
@@ -76,8 +76,8 @@ Cancelled attempts include cancelled hedge losers. Cleanup delay is measured aft
 |---|---:|---:|---:|---:|---:|---:|
 | retry | 250.00 | 0 | 0 | 0.00 / 0.00 | 31 / 31 | 0 |
 | retry-breaker | 750.00 | 0 | 0 | 0.00 / 0.00 | 31 / 31 | 0 |
-| limit-retry-breaker | 250.00 | 0 | 0 | 0.00 / 0.00 | 33 / 16 | 0 |
-| limit-hedge-breaker | 500.00 | 3036 | 3036 | 20.92 / 21.73 | 7 / 12 | 0 |
+| limit-retry-breaker | 750.00 | 0 | 0 | 0.00 / 0.00 | 33 / 16 | 0 |
+| limit-hedge-breaker | 500.00 | 3082 | 3082 | 21.62 / 29.68 | 7 / 14 | 0 |
 
 </div>
 
