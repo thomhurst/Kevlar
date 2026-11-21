@@ -57,7 +57,7 @@ function Assert-Version([string]$Name, [string]$CommitMessage, [string]$Expected
         $env:GITHUB_REF = $null
         $env:GITHUB_HEAD_REF = $null
         $env:GITHUB_BASE_REF = $null
-        $output = (& $GitVersionCommand $scenarioPath /showvariable SemVer 2>&1 | Out-String).Trim()
+        $output = (& $GitVersionCommand $scenarioPath --show-variable SemVer 2>&1 | Out-String).Trim()
         $exitCode = $LASTEXITCODE
     }
     finally

@@ -1,30 +1,31 @@
-mode: ContinuousDelivery
-major-version-bump-message: '\+?semver:\s?(breaking|major)'
-minor-version-bump-message: '\+?semver:\s?(feature|minor)'
-patch-version-bump-message: '\+?semver:\s?(fix|patch)'
-no-bump-message: '\+?semver:\s?(none|skip)'
-branches:
-  main:
-    mode: ContinuousDeployment
-    label: ''
-    increment: Patch
-  develop:
-    mode: ContinuousDelivery
-    label: alpha
-    increment: Minor
-  feature:
-    regex: ^features?[/-](?<BranchName>.+)
-    label: alpha.{BranchName}
-    increment: Inherit
-  release:
-    regex: ^releases?[/-]
-    label: rc
-    increment: None
-  hotfix:
-    regex: ^hotfix(es)?[/-]
-    label: beta
-    increment: Patch
-  pull-request:
-    regex: ^(pull|pull-requests|pr)[/-](?<Number>\d+)
-    label: pr.{Number}
-    increment: Inherit
+calculation:
+  branches:
+    main:
+      increment: Patch
+      label: ''
+      mode: ContinuousDeployment
+    develop:
+      increment: Minor
+      label: alpha
+      mode: ContinuousDelivery
+    feature:
+      increment: Inherit
+      label: "alpha.{BranchName}"
+      regex: "^features?[/-](?<BranchName>.+)"
+    release:
+      increment: None
+      label: rc
+      regex: "^releases?[/-]"
+    hotfix:
+      increment: Patch
+      label: beta
+      regex: "^hotfix(es)?[/-]"
+    pull-request:
+      increment: Inherit
+      label: "pr.{Number}"
+      regex: "^(pull|pull-requests|pr)[/-](?<Number>\\d+)"
+  major-version-bump-message: "\\+?semver:\\s?(breaking|major)"
+  minor-version-bump-message: "\\+?semver:\\s?(feature|minor)"
+  mode: ContinuousDelivery
+  no-bump-message: "\\+?semver:\\s?(none|skip)"
+  patch-version-bump-message: "\\+?semver:\\s?(fix|patch)"
