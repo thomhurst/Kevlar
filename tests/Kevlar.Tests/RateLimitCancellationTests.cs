@@ -240,9 +240,11 @@ public class RateLimitCancellationTests
             fakeTime.Advance(TimeSpan.FromSeconds(active.Length));
             fakeTime.Advance(TimeSpan.FromTicks(active.Length));
 
+            // Each queued caller resumes on a thread-pool continuation after the one ahead of it.
             var results = await WaitWithMessage(
                 Task.WhenAll(active),
-                $"Cancellation index {cancelledIndex} did not reclaim its permit debt.");
+                $"Cancellation index {cancelledIndex} did not reclaim its permit debt.",
+                QueueStepTimeout);
             var expectedOrder = Enumerable.Range(0, 3).Where(index => index != cancelledIndex).Append(3).ToArray();
 
             await Assert.That(results.SequenceEqual(expectedOrder)).IsTrue();

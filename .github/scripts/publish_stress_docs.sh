@@ -16,4 +16,9 @@ fi
 # GITHUB_TOKEN pushes do not trigger docs.yml, so dispatch even for an unchanged page.
 run_url=$(gh workflow run docs.yml --ref main)
 run_id="${run_url##*/}"
+# The runs API can return 404 for a few seconds after dispatch (#731).
+for _ in {1..10}; do
+  gh run view "$run_id" > /dev/null 2>&1 && break
+  sleep 3
+done
 gh run watch "$run_id" --exit-status

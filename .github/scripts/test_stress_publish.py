@@ -45,14 +45,21 @@ class StressPublicationTests(unittest.TestCase):
         gh.write_text(
             '#!/usr/bin/env bash\n'
             'printf "%s\\n" "$*" >> "$GH_CALLS"\n'
-            'if [[ "$1 $2" == "workflow run" ]]; then\n'
-            '  echo "https://github.com/example/repo/actions/runs/123"\n'
-            'else\n'
-            '  exit "${GH_WATCH_STATUS:-0}"\n'
-            'fi\n',
+            'case "$1 $2" in\n'
+            '  "workflow run") echo "https://github.com/example/repo/actions/runs/123" ;;\n'
+            '  "run view")\n'
+            '    views=$(grep -c "^run view" "$GH_CALLS")\n'
+            '    (( views > ${GH_VIEW_MISSES:-0} )) || exit 1\n'
+            '    ;;\n'
+            '  *) exit "${GH_WATCH_STATUS:-0}" ;;\n'
+            'esac\n',
             encoding="utf-8",
         )
         gh.chmod(0o755)
+        # Skip the publisher's real waits between run lookups.
+        sleep = bin_dir / "sleep"
+        sleep.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        sleep.chmod(0o755)
         self.environment.update({
             "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
             "GH_CALLS": str(self.calls),
@@ -70,10 +77,10 @@ class StressPublicationTests(unittest.TestCase):
             text=True, capture_output=True,
         )
 
-    def assert_deployed(self):
+    def assert_deployed(self, views=1):
         self.assertEqual(
             self.calls.read_text(encoding="utf-8").splitlines(),
-            ["workflow run docs.yml --ref main", "run watch 123 --exit-status"],
+            ["workflow run docs.yml --ref main", *["run view 123"] * views, "run watch 123 --exit-status"],
         )
 
     def test_changed_page_is_pushed_then_deployed(self):
@@ -95,6 +102,12 @@ class StressPublicationTests(unittest.TestCase):
         result = self.publish()
         self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
         self.assert_deployed()
+
+    def test_deployment_waits_until_the_dispatched_run_is_visible(self):
+        self.environment["GH_VIEW_MISSES"] = "2"
+        result = self.publish()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assert_deployed(views=3)
 
 
 if __name__ == "__main__":
