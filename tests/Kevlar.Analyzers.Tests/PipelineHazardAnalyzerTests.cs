@@ -7135,7 +7135,7 @@ public class PipelineHazardAnalyzerTests
             "PipelineHazardAnalyzerTestSubject",
             declarations.Select(declaration =>
                 CSharpSyntaxTree.ParseText(CreateSource(declaration))),
-            GetMetadataReferences(),
+            TestMetadataReferences.WithExtensions,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
         var errors = compilation.GetDiagnostics()
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
@@ -7171,11 +7171,9 @@ public class PipelineHazardAnalyzerTests
         MetadataReference? additionalReference = null,
         ImmutableArray<string> enabledRuleIds = default)
     {
-        var references = GetMetadataReferences();
-        if (additionalReference is not null)
-        {
-            references = references.Append(additionalReference);
-        }
+        var references = additionalReference is null
+            ? TestMetadataReferences.WithExtensions
+            : TestMetadataReferences.WithExtensions.Add(additionalReference);
 
         var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         if (!enabledRuleIds.IsDefaultOrEmpty)
@@ -7207,15 +7205,6 @@ public class PipelineHazardAnalyzerTests
 
         return MetadataReference.CreateFromImage(stream.ToArray());
     }
-
-    private static IEnumerable<MetadataReference> GetMetadataReferences() =>
-        ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-            .Split(Path.PathSeparator)
-            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
-            .Append(MetadataReference.CreateFromFile(typeof(Kevlar.Chaos.ChaosShield).Assembly.Location))
-            .Append(MetadataReference.CreateFromFile(
-                typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
 
     private static Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(CSharpCompilation compilation) =>
         compilation

@@ -157,16 +157,10 @@ public class IgnoredCancellationTokenTests
 
     private static CSharpCompilation CreateCompilation(string source)
     {
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-            .Split(Path.PathSeparator)
-            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
-            .ToList();
-
         return CSharpCompilation.Create(
             "AnalyzerTestSubject",
             [CSharpSyntaxTree.ParseText(source)],
-            references,
+            TestMetadataReferences.Core,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 
