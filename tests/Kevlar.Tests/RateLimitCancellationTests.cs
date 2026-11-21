@@ -190,7 +190,7 @@ public class RateLimitCancellationTests
         await Assert.That(await final.WaitForTestAsync(TimeSpan.FromSeconds(5))).IsEqualTo(51);
     }
 
-    private static Shield CreateShield(FakeTimeProvider fakeTime, int queueLimit) => Shield
+    private static Shield CreateShield(TimeProvider fakeTime, int queueLimit) => Shield
         .RateLimit(options =>
         {
             options.Permits = 1;
@@ -217,7 +217,7 @@ public class RateLimitCancellationTests
 
     private static async Task AssertCancellationCompactsQueue(int cancelledIndex)
     {
-        var fakeTime = new FakeTimeProvider();
+        var fakeTime = new ControlledTimeProvider();
         var shield = CreateShield(fakeTime, queueLimit: 3);
         var cancellations = Enumerable.Range(0, 3).Select(_ => new CancellationTokenSource()).ToArray();
 
@@ -237,17 +237,29 @@ public class RateLimitCancellationTests
 
             var replacement = shield.ExecuteAsync(_ => new ValueTask<int>(3)).AsTask();
             var active = queued.Where((_, index) => index != cancelledIndex).Append(replacement).ToArray();
-            fakeTime.Advance(TimeSpan.FromSeconds(active.Length));
-            fakeTime.Advance(TimeSpan.FromTicks(active.Length));
+            var expectedResults = Enumerable.Range(0, 3).Where(index => index != cancelledIndex).Append(3).ToArray();
 
-            // Each queued caller resumes on a thread-pool continuation after the one ahead of it.
-            var results = await WaitWithMessage(
-                Task.WhenAll(active),
-                $"Cancellation index {cancelledIndex} did not reclaim its permit debt.",
-                QueueStepTimeout);
-            var expectedOrder = Enumerable.Range(0, 3).Where(index => index != cancelledIndex).Append(3).ToArray();
-
-            await Assert.That(results.SequenceEqual(expectedOrder)).IsTrue();
+            // Only the queue head waits on a timer. A promoted head registers its delay on a thread-pool
+            // continuation, so wait for that timer before moving the clock; advancing first would let the
+            // head measure its delay from the old time and schedule it past the advanced clock.
+            // Cancelling the head disposes its timer and promotes the next caller, which creates one more.
+            var initialTimers = cancelledIndex == 0 ? 2 : 1;
+            for (var step = 0; step < active.Length; step++)
+            {
+                await fakeTime.WaitForTimersAsync(initialTimers + step, active[step], QueueStepTimeout);
+                fakeTime.Advance(TimeSpan.FromSeconds(1));
+                fakeTime.Advance(TimeSpan.FromTicks(1));
+                var fired = fakeTime.FireDueTimers();
+                var result = await WaitWithMessage(
+                    active[step],
+                    $"Cancellation index {cancelledIndex} did not reclaim its permit debt: step {step} stalled with "
+                    + $"{fakeTime.TimerCount} timers created and {fired} fired.",
+                    QueueStepTimeout);
+                await Assert.That(fired).IsEqualTo(1);
+                await Assert.That(result).IsEqualTo(expectedResults[step]);
+                // Callers behind the head are still waiting for their due time, so they complete in queue order.
+                await Assert.That(active.Count(call => call.IsCompleted)).IsEqualTo(step + 1);
+            }
         }
         finally
         {
