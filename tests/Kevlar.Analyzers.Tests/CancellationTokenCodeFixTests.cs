@@ -194,13 +194,10 @@ public class CancellationTokenCodeFixTests
 
     private static Document CreateDocument(AdhocWorkspace workspace, string source)
     {
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-            .Select(path => MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location));
         var project = workspace.AddProject("CodeFixTests", LanguageNames.CSharp)
             .WithParseOptions(new CSharpParseOptions(LanguageVersion.CSharp12))
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .WithMetadataReferences(references);
+            .WithMetadataReferences(TestMetadataReferences.Core);
         return project.AddDocument("Test.cs", SourceText.From(source));
     }
 

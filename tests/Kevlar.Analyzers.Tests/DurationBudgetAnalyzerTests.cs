@@ -124,12 +124,8 @@ public class DurationBudgetAnalyzerTests
                 }
             }
             """;
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-            .Split(Path.PathSeparator)
-            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location));
         var compilation = CSharpCompilation.Create("DurationBudgetTest",
-            [CSharpSyntaxTree.ParseText(source)], references,
+            [CSharpSyntaxTree.ParseText(source)], TestMetadataReferences.Core,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
         var errors = compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
         if (errors.Length != 0)
