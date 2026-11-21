@@ -1,6 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["group:monorepos"],
+  "customManagers": [
+    {
+      "description": "Update the Test*Version VersionOverride properties in Directory.Packages.props with the packages they mirror",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)Directory\\.Packages\\.props$/"],
+      "matchStrings": [
+        "<Test\\w+Version(?: Condition=\"[^\"]*\")?>(?<currentValue>[^<]+)</Test\\w+Version>[ \\t]*<!-- renovate: depName=(?<depName>[^ ]+) -->"
+      ],
+      "datasourceTemplate": "nuget",
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "description": "Update interdependent gRPC packages together to avoid NuGet downgrades",
@@ -10,7 +22,7 @@
     },
     {
       "description": "Keep netstandard dependency floors on the 8.x line while allowing compatible updates",
-      "matchManagers": ["nuget"],
+      "matchManagers": ["nuget", "custom.regex"],
       "matchFileNames": ["Directory.Packages.props"],
       "matchPackageNames": [
         "Microsoft.Bcl.AsyncInterfaces",
@@ -25,10 +37,11 @@
     },
     {
       "description": "Keep net10.0 dependency versions on the 10.x line while allowing compatible updates",
-      "matchManagers": ["nuget"],
+      "matchManagers": ["nuget", "custom.regex"],
       "matchFileNames": ["Directory.Packages.props"],
       "matchPackageNames": [
         "Microsoft.AspNetCore.TestHost",
+        "Microsoft.Bcl.TimeProvider",
         "Microsoft.EntityFrameworkCore.*",
         "Microsoft.Extensions.Configuration",
         "Microsoft.Extensions.Configuration.Json",
@@ -52,7 +65,7 @@
     },
     {
       "description": "Keep net11.0 dependency versions on the 11.x line while allowing compatible updates",
-      "matchManagers": ["nuget"],
+      "matchManagers": ["nuget", "custom.regex"],
       "matchFileNames": ["Directory.Packages.props"],
       "matchPackageNames": [
         "Microsoft.EntityFrameworkCore.*",
