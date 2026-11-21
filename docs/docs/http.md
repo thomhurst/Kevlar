@@ -26,7 +26,7 @@ Core projects import implicitly. Import `Kevlar.Extensions.Http` only when using
 runtime types such as `HttpShield`.
 
 1. **30s total timeout** around everything
-2. **3 jittered retries** (exponential from 250ms, capped 10s) — honouring `Retry-After` headers and disposing superseded responses
+2. **3 jittered retries** (exponential from 250ms, capped 10s) — honouring `Retry-After` headers (a longer server wait returns the response instead of retrying early) and disposing superseded responses
 3. **Circuit breaker** — sampling mode: opens at a 50% failure ratio over a 30s window (minimum 10 calls), breaks for 15s
 4. **10s attempt timeout** per individual try
 
@@ -244,8 +244,11 @@ The standard shield composes this with a custom `Retry.DelayGenerator` and uses 
 awaiting the custom generator when it yields. Set `UseRetryAfterHeader` to `false` when the custom
 generator must have exclusive control.
 
-The standard shield caps every retry delay at 10 seconds, so one excessive server suggestion cannot
-impose an unbounded wait. Custom shields can cap server-suggested delays directly:
+The standard shield caps every retry delay at 10 seconds (`Retry.MaxDelay`), but it never retries
+before the server asked. When a `Retry-After` wait exceeds `Retry.MaxDelay` or reaches the remaining
+total timeout, the standard shield stops retrying and returns that live response, with its status,
+body, and `Retry-After` header intact, so the caller can back off. Hints within both limits are
+honoured. Custom shields built with `HttpShield.RetryAfter` cap server-suggested delays instead:
 
 ```csharp
 using Kevlar.Extensions.Http;

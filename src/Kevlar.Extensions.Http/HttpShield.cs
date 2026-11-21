@@ -96,36 +96,51 @@ public static class HttpShield
         RetryEvent<HttpResponseMessage> retry,
         TimeSpan maxDelay)
     {
-        if (retry.Outcome.Result is not { } response)
-        {
-            return null;
-        }
-
-        var retryAfter = response.Headers.RetryAfter;
-
-        if (retryAfter is null)
-        {
-            return null;
-        }
-
-        TimeSpan? suggested = null;
-
-        if (retryAfter.Delta is { } delta)
-        {
-            suggested = delta;
-        }
-        else if (retryAfter.Date is { } date)
-        {
-            suggested = date - retry.Context.TimeProvider.GetUtcNow();
-        }
-
-        if (suggested is not { } value || value <= retry.Delay)
+        if (ReadRetryAfter(retry) is not { } value || value <= retry.Delay)
         {
             return null;
         }
 
         var capped = value > maxDelay ? maxDelay : value;
         return capped > retry.Delay ? capped : null;
+    }
+
+    // The standard shield does not shorten a server's requested wait: when it exceeds the retry
+    // cap or the remaining deadline, the live response is returned instead of retrying early.
+    private static TimeSpan? StandardRetryAfter(
+        RetryEvent<HttpResponseMessage> retry,
+        TimeSpan maxDelay)
+    {
+        if (ReadRetryAfter(retry) is not { } value || value <= TimeSpan.Zero)
+        {
+            return null;
+        }
+
+        if (value > maxDelay
+            || retry.Context.RemainingDeadline is { } remaining && value >= remaining)
+        {
+            retry.SuppressAdditionalAttempts();
+            return null;
+        }
+
+        return value > retry.Delay ? value : null;
+    }
+
+    private static TimeSpan? ReadRetryAfter(RetryEvent<HttpResponseMessage> retry)
+    {
+        if (retry.Outcome.Result?.Headers.RetryAfter is not { } retryAfter)
+        {
+            return null;
+        }
+
+        if (retryAfter.Delta is { } delta)
+        {
+            return delta;
+        }
+
+        return retryAfter.Date is { } date
+            ? date - retry.Context.TimeProvider.GetUtcNow()
+            : null;
     }
 
     /// <summary>
@@ -229,10 +244,12 @@ public static class HttpShield
         target.MaxRetries = source.MaxRetries;
         target.RespectDeadline = source.RespectDeadline;
         target.Backoff = source.Backoff;
-        target.MaxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
+        var maxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
+        target.MaxDelay = maxDelay;
         target.DelayGenerator = ComposeRetryDelayGenerator(
             source.DelayGenerator,
-            useRetryAfterHeader);
+            useRetryAfterHeader,
+            maxDelay);
         target.HandlesException = source.HandlesException;
         target.HandlesExceptionContext = source.HandlesExceptionContext;
         target.HandlesResult = source.HandlesResult;
@@ -242,7 +259,8 @@ public static class HttpShield
 
     private static Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? ComposeRetryDelayGenerator(
         Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? custom,
-        bool useRetryAfterHeader)
+        bool useRetryAfterHeader,
+        TimeSpan maxDelay)
     {
         if (!useRetryAfterHeader)
         {
@@ -251,7 +269,7 @@ public static class HttpShield
 
         if (custom is null)
         {
-            return RetryAfter;
+            return retry => new ValueTask<TimeSpan?>(StandardRetryAfter(retry, maxDelay));
         }
 
         return retry =>
@@ -260,17 +278,18 @@ public static class HttpShield
             return suggested.IsCompletedSuccessfully
                 ? new ValueTask<TimeSpan?>(Longer(
                     suggested.Result,
-                    RetryAfterCore(retry, DefaultRetryAfterMaxDelay)))
-                : LongerAsync(suggested, retry);
+                    StandardRetryAfter(retry, maxDelay)))
+                : LongerAsync(suggested, retry, maxDelay);
         };
     }
 
     private static async ValueTask<TimeSpan?> LongerAsync(
         ValueTask<TimeSpan?> custom,
-        RetryEvent<HttpResponseMessage> retry) =>
+        RetryEvent<HttpResponseMessage> retry,
+        TimeSpan maxDelay) =>
         Longer(
             await custom.ConfigureAwait(false),
-            RetryAfterCore(retry, DefaultRetryAfterMaxDelay));
+            StandardRetryAfter(retry, maxDelay));
 
     private static TimeSpan? Longer(TimeSpan? first, TimeSpan? second)
     {

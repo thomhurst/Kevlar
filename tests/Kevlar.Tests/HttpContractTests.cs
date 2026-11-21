@@ -445,40 +445,98 @@ public class HttpContractTests
     }
 
     [Test]
-    public async Task Standard_Caps_RetryAfter_To_Ten_Seconds()
+    [Arguments(HttpStatusCode.TooManyRequests, false)]
+    [Arguments(HttpStatusCode.ServiceUnavailable, false)]
+    [Arguments(HttpStatusCode.TooManyRequests, true)]
+    [Arguments(HttpStatusCode.ServiceUnavailable, true)]
+    public async Task Standard_Returns_Response_When_RetryAfter_Exceeds_MaxDelay(
+        HttpStatusCode status,
+        bool respectDeadline)
     {
         var timeProvider = new FakeTimeProvider();
-        var calls = 0;
-        TimeSpan? observed = null;
         var options = new StandardHttpShieldOptions();
+        options.AttemptTimeout.Timeout = Timeout.InfiniteTimeSpan;
+        options.Retry.RespectDeadline = respectDeadline;
+
+        var (result, calls, retries) = await ExecuteWithRetryAfter(
+            options,
+            timeProvider,
+            status,
+            new RetryConditionHeaderValue(timeProvider.GetUtcNow().AddSeconds(46)));
+
+        using (result)
+        {
+            await Assert.That(result.StatusCode).IsEqualTo(status);
+            await Assert.That(result.Headers.RetryAfter?.Date)
+                .IsEqualTo(timeProvider.GetUtcNow().AddSeconds(46));
+            await Assert.That(await result.Content.ReadAsStringAsync()).IsEqualTo("try later");
+            await Assert.That(calls).IsEqualTo(1);
+            await Assert.That(retries).IsEqualTo(0);
+        }
+    }
+
+    [Test]
+    public async Task Standard_Returns_Response_When_RetryAfter_Reaches_Total_Timeout()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var options = new StandardHttpShieldOptions();
+        options.Retry.MaxDelay = TimeSpan.FromMinutes(2);
+
+        var (result, calls, retries) = await ExecuteWithRetryAfter(
+            options,
+            timeProvider,
+            HttpStatusCode.TooManyRequests,
+            new RetryConditionHeaderValue(TimeSpan.FromSeconds(46)));
+
+        using (result)
+        {
+            await Assert.That(result.StatusCode).IsEqualTo(HttpStatusCode.TooManyRequests);
+            await Assert.That(result.Headers.RetryAfter?.Delta).IsEqualTo(TimeSpan.FromSeconds(46));
+            await Assert.That(await result.Content.ReadAsStringAsync()).IsEqualTo("try later");
+            await Assert.That(calls).IsEqualTo(1);
+            await Assert.That(retries).IsEqualTo(0);
+        }
+    }
+
+    [Test]
+    public async Task Standard_Honours_RetryAfter_Within_MaxDelay_And_Deadline()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.TotalTimeout.Timeout = TimeSpan.FromMinutes(2);
+        options.AttemptTimeout.Timeout = Timeout.InfiniteTimeSpan;
+        options.Retry.MaxDelay = TimeSpan.FromMinutes(1);
         options.Retry.Backoff = Backoff.None;
-        options.Retry.OnRetry = retry =>
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromSeconds(46));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(46));
+    }
+
+    [Test]
+    public async Task Standard_Returns_Response_When_Composed_RetryAfter_Exceeds_MaxDelay()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var options = new StandardHttpShieldOptions();
+        options.Retry.DelayGenerator = static async _ =>
         {
-            observed = retry.Delay;
-            return default;
+            await Task.Yield();
+            return TimeSpan.FromSeconds(1);
         };
-        var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
 
-        var execution = shield.ExecuteAsync(_ =>
+        var (result, calls, retries) = await ExecuteWithRetryAfter(
+            options,
+            timeProvider,
+            HttpStatusCode.ServiceUnavailable,
+            new RetryConditionHeaderValue(TimeSpan.FromSeconds(46)));
+
+        using (result)
         {
-            calls++;
-            var response = new HttpResponseMessage(
-                calls == 1 ? HttpStatusCode.TooManyRequests : HttpStatusCode.OK);
-            if (calls == 1)
-            {
-                response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(120));
-            }
-
-            return new ValueTask<HttpResponseMessage>(response);
-        }).AsTask();
-
-        await WaitUntilAsync(() => observed.HasValue);
-        await Assert.That(observed).IsEqualTo(TimeSpan.FromSeconds(10));
-        timeProvider.Advance(observed!.Value);
-
-        using var result = await execution;
-        await Assert.That(result.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(calls).IsEqualTo(2);
+            await Assert.That(result.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+            await Assert.That(calls).IsEqualTo(1);
+            await Assert.That(retries).IsEqualTo(0);
+        }
     }
 
     [Test]
@@ -551,9 +609,11 @@ public class HttpContractTests
             },
         };
 
+        options.Retry.Backoff = Backoff.Constant(TimeSpan.FromMinutes(1));
+
         var delay = await ObserveStandardRetryDelay(
             options,
-            retryAfter: TimeSpan.FromMinutes(1));
+            retryAfter: TimeSpan.Zero);
 
         await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(10));
     }
@@ -1624,6 +1684,33 @@ public class HttpContractTests
         timeProvider.Advance(observed!.Value);
         using var response = await task;
         return observed.Value;
+    }
+
+    private static async Task<(HttpResponseMessage Result, int Calls, int Retries)> ExecuteWithRetryAfter(
+        StandardHttpShieldOptions options,
+        FakeTimeProvider timeProvider,
+        HttpStatusCode status,
+        RetryConditionHeaderValue retryAfter)
+    {
+        var calls = 0;
+        var retries = 0;
+        options.Retry.OnRetry = _ =>
+        {
+            retries++;
+            return default;
+        };
+        var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            calls++;
+            var response = new HttpResponseMessage(status)
+            {
+                Content = new StringContent("try later"),
+            };
+            response.Headers.RetryAfter = retryAfter;
+            return new ValueTask<HttpResponseMessage>(response);
+        }).AsTask().WaitForTestAsync(TimeSpan.FromSeconds(5));
+        return (result, calls, retries);
     }
 
     private static async Task<TimeSpan> ObserveStandardRetryDelay(

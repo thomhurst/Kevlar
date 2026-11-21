@@ -110,7 +110,9 @@ Translate `ShouldHandle` deliberately: Kevlar's `HandlesException`/`HandlesResul
 ambient clause for that strategy. Retry jitter distributions are not identical. Microsoft's
 HTTP `Retry-After` generator supplies a delay in place of the backoff. Without a custom generator,
 Kevlar uses the header only to lengthen its backoff. With a custom generator, it combines the
-generator and header suggestions using the longer value, then caps the final delay. See [HTTP integration](http.md)
+generator and header suggestions using the longer value, then caps the final delay. When the
+header asks for longer than `Retry.MaxDelay` or the remaining total timeout, the standard shield
+returns the response instead of retrying early. See [HTTP integration](http.md)
 for the full handling and delay contracts.
 
 ## Standard hedging defaults
