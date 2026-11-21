@@ -253,7 +253,8 @@ var shield = Shield.For<HttpResponseMessage>().When<HttpRequestException>()
 ```
 
 `HandlesException` is available on retry, circuit-breaker, hedging, and fallback options. Their
-typed options also expose `HandlesResult`. If either property is set, that strategy ignores the
+typed options also expose `HandlesResult`. If any local predicate is set, including the
+context-aware `HandlesExceptionContext` and `HandlesResultContext`, that strategy ignores the
 ambient clause completely: local override > ambient clause > default. Predicates are not merged.
 
 Only what you list is handled. A result-only override does not handle exceptions, and an
