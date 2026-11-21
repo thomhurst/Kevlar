@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="TUnit" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="$(TestExtensionsTimeProviderVersion)" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
 
   <ItemGroup>
