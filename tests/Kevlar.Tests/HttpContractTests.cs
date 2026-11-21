@@ -826,6 +826,38 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_CircuitBreaker_Result_Override_With_Transient_Exception_Context_Opens_On_Transport_Failures()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.Retry.MaxRetries = 0;
+        options.CircuitBreaker.ConsecutiveFailures = 2;
+        options.CircuitBreaker.FailureRatio = null;
+        options.CircuitBreaker.HandlesExceptionContext = static failure =>
+            HttpShield.IsTransientException(
+                failure.Outcome.Exception, failure.Context.CancellationToken);
+        options.CircuitBreaker.HandlesResult = static response =>
+            response.StatusCode == HttpStatusCode.ServiceUnavailable;
+        var shield = HttpShield.Standard(options);
+        var calls = 0;
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            await Assert.That(async () => await shield.ExecuteAsync<HttpResponseMessage>(_ =>
+            {
+                calls++;
+                throw new HttpRequestException("Connection failed.");
+            })).Throws<HttpRequestException>();
+        }
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
+        {
+            calls++;
+            return new ValueTask<HttpResponseMessage>(new HttpResponseMessage(HttpStatusCode.OK));
+        })).Throws<CircuitOpenException>();
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Configured_Standard_Replays_Buffered_Unsafe_Requests()
     {
         var calls = 0;

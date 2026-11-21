@@ -47,6 +47,9 @@ services.AddHttpClient("api")
         options.TotalTimeout.Timeout = TimeSpan.FromSeconds(20);
         options.Retry.MaxRetries = 2;
         options.CircuitBreaker.FailureRatio = 0.25;
+        options.CircuitBreaker.HandlesExceptionContext = failure =>
+            HttpShield.IsTransientException(
+                failure.Outcome.Exception, failure.Context.CancellationToken);
         options.CircuitBreaker.HandlesResult = response =>
             response.StatusCode == HttpStatusCode.ServiceUnavailable;
         options.ConcurrencyLimit = new ConcurrencyLimitOptions
@@ -68,8 +71,14 @@ cannot exceed a finite total timeout. Invalid strategy values fail while the reg
 handler replay/routing values fail when
 `HttpClientFactory` builds its handler pipeline, before a request is sent.
 
-The breaker is a `CircuitBreakerOptions<HttpResponseMessage>`, so `HandlesResult` can replace the
-standard transient-result clause for that stage without changing retry handling.
+The breaker is a `CircuitBreakerOptions<HttpResponseMessage>`, so its local predicates can replace
+the standard transient handling for that stage without changing retry handling. Setting any one of
+`HandlesException`, `HandlesExceptionContext`, `HandlesResult` or `HandlesResultContext` replaces the
+whole clause for the breaker, exceptions and results alike. A result-only predicate therefore stops
+the breaker counting `HttpRequestException`s and timeouts, and the circuit stays closed during a
+transport outage. The example keeps that exception classification with
+`HttpShield.IsTransientException` while narrowing the counted responses to 503. See
+[per-strategy overrides](handling-failures.md#per-strategy-overrides) for the full rules.
 
 For dependency-aware setup, use the service-provider overload:
 
