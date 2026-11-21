@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <TestBclTimeProviderVersion>10.0.15</TestBclTimeProviderVersion>
-    <TestExtensionsHttpVersion>10.0.15</TestExtensionsHttpVersion>
-    <TestExtensionsHttpVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestExtensionsHttpVersion>
-    <TestRateLimitingVersion>10.0.15</TestRateLimitingVersion>
-    <TestRateLimitingVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestRateLimitingVersion>
+    <TestBclTimeProviderVersion>10.0.15</TestBclTimeProviderVersion> <!-- renovate: depName=Microsoft.Bcl.TimeProvider -->
+    <TestExtensionsHttpVersion>10.0.15</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
+    <TestExtensionsHttpVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
+    <TestRateLimitingVersion>10.0.15</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
+    <TestRateLimitingVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
     <!-- EF providers require the matching target framework major. -->
-    <TestEntityFrameworkCoreVersion>10.0.15</TestEntityFrameworkCoreVersion>
-    <TestNpgsqlEntityFrameworkCoreVersion>10.0.3</TestNpgsqlEntityFrameworkCoreVersion>
-    <TestEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestEntityFrameworkCoreVersion>
-    <TestNpgsqlEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestNpgsqlEntityFrameworkCoreVersion>
+    <TestEntityFrameworkCoreVersion>10.0.15</TestEntityFrameworkCoreVersion> <!-- renovate: depName=Microsoft.EntityFrameworkCore.SqlServer -->
+    <TestNpgsqlEntityFrameworkCoreVersion>10.0.4</TestNpgsqlEntityFrameworkCoreVersion> <!-- renovate: depName=Npgsql.EntityFrameworkCore.PostgreSQL -->
+    <TestEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestEntityFrameworkCoreVersion> <!-- renovate: depName=Microsoft.EntityFrameworkCore.SqlServer -->
+    <TestNpgsqlEntityFrameworkCoreVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestNpgsqlEntityFrameworkCoreVersion> <!-- renovate: depName=Npgsql.EntityFrameworkCore.PostgreSQL -->
   </PropertyGroup>
 
   <ItemGroup>
