@@ -466,7 +466,7 @@ public class AllocationBudgetTests
             {
             }
         });
-        AssertBudget("hedge launches second attempt", 3_072, this, static test =>
+        AssertBudget("hedge launches second attempt", 2_048, this, static test =>
         {
             test._parallelHedge.ExecuteAsync(
                 test._parallelHedgeState,
@@ -474,7 +474,7 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
-        AssertBudget("delay generator launches second attempt", 3_072, this, static test =>
+        AssertBudget("delay generator launches second attempt", 2_048, this, static test =>
         {
             test._delayGeneratedHedge.ExecuteAsync(
                 test._delayGeneratedHedgeState,
@@ -557,7 +557,11 @@ public class AllocationBudgetTests
         {
             try
             {
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                // Throwing here would measure the runtime's exception stack-trace buffer, not the
+                // hedge. On net11.0 Runtime Async its size depends on whether the JIT inlines
+                // TaskAwaiter.ThrowForNonSuccess, so it flips by ~550 B/op between processes.
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)
+                    .ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
                 return 0;
             }
             finally
