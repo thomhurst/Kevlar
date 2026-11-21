@@ -49,7 +49,9 @@ public sealed class StandardHttpShieldOptions
     /// Whether retry delays honour the response's <c>Retry-After</c> header. Defaults to
     /// <see langword="true"/> and composes with
     /// <see cref="RetryOptions{HttpResponseMessage}.DelayGenerator"/>
-    /// by using the longer delay.
+    /// by using the longer delay. When the server asks to wait longer than
+    /// <see cref="RetryOptions{HttpResponseMessage}.MaxDelay"/> or the remaining total timeout,
+    /// the shield stops retrying and returns that response instead of retrying early.
     /// </summary>
     public bool UseRetryAfterHeader
     {
