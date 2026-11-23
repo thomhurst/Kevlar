@@ -12,6 +12,8 @@
 # FileVersion parts. A prerelease is dot-separated, non-empty identifiers; numeric identifiers
 # have no leading zeros. Accepted: v1.2.3, 1.2.3, v1.2.3-beta.1, v1.2.3-beta01, v1.2.3-0.
 set -euo pipefail
+# Command substitutions inherit errexit (bash >= 4.4; older shells rely on the explicit checks).
+shopt -s inherit_errexit 2> /dev/null || true
 export LC_ALL=C  # ASCII ordering for alphanumeric prerelease identifiers
 
 number='(0|[1-9][0-9]*)'
@@ -67,9 +69,9 @@ compare_identifier() {
 
 # Prints -1, 0 or 1 comparing two release tags by SemVer 2.0 precedence.
 compare() {
-  parse "$1"
+  parse "$1" || return 1
   local a_major="$major" a_minor="$minor" a_patch="$patch" a_pre="$prerelease"
-  parse "$2"
+  parse "$2" || return 1
   local b_major="$major" b_minor="$minor" b_patch="$patch" b_pre="$prerelease"
 
   local i
@@ -91,7 +93,7 @@ compare() {
   [ "${#b_ids[@]}" -lt "$count" ] && count=${#b_ids[@]}
   for ((i = 0; i < count; i++)); do
     local result
-    result=$(compare_identifier "${a_ids[$i]}" "${b_ids[$i]}")
+    result=$(compare_identifier "${a_ids[$i]}" "${b_ids[$i]}") || return 1
     if [ "$result" != 0 ]; then echo "$result"; return; fi
   done
 

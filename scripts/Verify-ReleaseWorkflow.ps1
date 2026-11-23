@@ -142,6 +142,32 @@ foreach ($pair in @(@('1.2.3', '1.2.3'), @('v1.2.3', '1.2.3'), @('1.0.0-rc.1', '
     }
 }
 
+# The draft step itself, against stubbed gh and git: kept and reset tags, and no write when notes
+# generation fails, when the run is for an older main commit, or when main cannot be read.
+$bashSupportsInheritErrexit = $false
+& bash -c 'shopt -s inherit_errexit' *> $null
+if ($LASTEXITCODE -eq 0)
+{
+    $bashSupportsInheritErrexit = $true
+}
+
+if ($bashSupportsInheritErrexit)
+{
+    & bash (Join-Path $repositoryRoot '.github/scripts/test_release_draft.sh')
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw 'Draft release step scenarios failed.'
+    }
+}
+elseif ($env:GITHUB_ACTIONS -eq 'true')
+{
+    throw 'Draft release step scenarios need bash 4.4 or later.'
+}
+else
+{
+    Write-Warning 'Skipping draft release step scenarios: they need bash 4.4 or later.'
+}
+
 $packageVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-Packages.ps1') -Raw
 foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-PublicApi.ps1'))
 {

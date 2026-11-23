@@ -32,6 +32,7 @@ runs:
         GV_SEMVER: ${{ steps.gitversion.outputs.semVer }}
       run: |
         set -euo pipefail
+        shopt -s inherit_errexit
         if [ "$GITHUB_EVENT_NAME" = "release" ]; then
           # Fails unless the tag is a version (grammar in release-version.sh).
           semver=$(bash "$GITHUB_ACTION_PATH/release-version.sh" "$RELEASE_TAG")

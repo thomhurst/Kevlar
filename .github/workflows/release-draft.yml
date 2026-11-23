@@ -59,7 +59,15 @@ jobs:
           VERSION: ${{ steps.version.outputs.semVer }}
         run: |
           set -euo pipefail
+          shopt -s inherit_errexit
           repo="repos/$GITHUB_REPOSITORY"
+
+          # A re-run of an older push keeps that push's commit; it must not move the draft back.
+          main_tip=$(git ls-remote --exit-code origin refs/heads/main | cut -f1)
+          if [ "$GITHUB_SHA" != "$main_tip" ]; then
+            echo "$GITHUB_SHA is no longer the tip of main ($main_tip); leaving the draft alone." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           versions=.github/actions/resolve-version/release-version.sh
 
           # Succeeds when version $1 is released under either accepted tag form (v1.2.3 or 1.2.3).

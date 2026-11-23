@@ -531,6 +531,7 @@ jobs:
           DRAFT_MARKER: '<!-- kevlar-release-draft -->'
         run: |
           set -euo pipefail
+          shopt -s inherit_errexit
           body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
           body=$(printf '%s\n' "$body" | tr -d '\r' | { grep -vxF -- "$DRAFT_MARKER" || true; } |
             sed -E "s#^(\*\*Full Changelog\*\*: https://github\.com/[^ ]+/compare/[^ ]+)\.\.\.[^ ]+\$#\1...$RELEASE_TAG#")
