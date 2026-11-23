@@ -21,7 +21,7 @@ function Invoke-Git([string]$RepositoryPath, [string[]]$Arguments)
     }
 }
 
-function Assert-Version([string]$Name, [string]$CommitMessage, [string]$ExpectedVersion)
+function Assert-Version([string]$Name, [string[]]$CommitMessages, [string]$ExpectedVersion)
 {
     $scenarioPath = Join-Path $resolvedTemporaryRoot $Name
     [IO.Directory]::CreateDirectory($scenarioPath) | Out-Null
@@ -36,14 +36,17 @@ function Assert-Version([string]$Name, [string]$CommitMessage, [string]$Expected
     Invoke-Git $scenarioPath @('config', 'user.email', 'version-test@kevlar.invalid')
     Invoke-Git $scenarioPath @('add', '.')
     Invoke-Git $scenarioPath @('commit', '-m', 'chore: tagged baseline')
-    Invoke-Git $scenarioPath @('tag', 'v0.10.0')
+    Invoke-Git $scenarioPath @('-c', 'tag.gpgSign=false', 'tag', 'v0.10.0')
 
-    [IO.File]::AppendAllText(
-        (Join-Path $scenarioPath 'content.txt'),
-        [Environment]::NewLine + $Name,
-        [Text.UTF8Encoding]::new($false))
-    Invoke-Git $scenarioPath @('add', 'content.txt')
-    Invoke-Git $scenarioPath @('commit', '-m', $CommitMessage)
+    foreach ($commitMessage in $CommitMessages)
+    {
+        [IO.File]::AppendAllText(
+            (Join-Path $scenarioPath 'content.txt'),
+            [Environment]::NewLine + $commitMessage,
+            [Text.UTF8Encoding]::new($false))
+        Invoke-Git $scenarioPath @('add', 'content.txt')
+        Invoke-Git $scenarioPath @('commit', '-m', $commitMessage)
+    }
 
     $githubActions = $env:GITHUB_ACTIONS
     $githubRef = $env:GITHUB_REF
@@ -81,9 +84,14 @@ function Assert-Version([string]$Name, [string]$CommitMessage, [string]$Expected
 
 try
 {
-    Assert-Version 'patch' 'chore: ordinary change' '0.10.1'
-    Assert-Version 'minor' 'feat: minor change +semver:minor' '0.11.0'
-    Assert-Version 'major' 'feat!: breaking change +semver:major' '1.0.0'
+    # Main always suggests one patch above the latest release tag, however many commits follow it
+    # and whatever they say. The owner chooses a minor or major version by editing the draft
+    # release's tag before publishing it (.github/workflows/release-draft.yml).
+    Assert-Version 'patch' @('chore: ordinary change') '0.10.1'
+    Assert-Version 'many-commits' @('fix: first change', 'feat: second change', 'chore: third change') '0.10.1'
+    Assert-Version 'minor-message' @('feat: minor change +semver:minor') '0.10.1'
+    Assert-Version 'major-message' @('feat!: breaking change +semver:major') '0.10.1'
+    Assert-Version 'merge-message' @("Merge branch 'release/2.0.0'") '0.10.1'
 }
 finally
 {
@@ -93,4 +101,4 @@ finally
     }
 }
 
-Write-Host 'GitVersion patch, minor, and major scenarios passed.'
+Write-Host 'GitVersion suggests the next patch release in every scenario.'

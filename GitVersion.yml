@@ -24,8 +24,12 @@ calculation:
       increment: Inherit
       label: "pr.{Number}"
       regex: "^(pull|pull-requests|pr)[/-](?<Number>\\d+)"
-  major-version-bump-message: "\\+?semver:\\s?(breaking|major)"
-  minor-version-bump-message: "\\+?semver:\\s?(feature|minor)"
+  # Commit messages never choose the version. Main suggests the next patch after the latest
+  # release tag for the draft release (.github/workflows/release-draft.yml); the owner picks a
+  # minor or major version by editing the draft's tag before publishing it. Only tags move the
+  # version: merge messages and branch names are ignored as well.
+  commit-message-incrementing: Disabled
   mode: ContinuousDelivery
-  no-bump-message: "\\+?semver:\\s?(none|skip)"
-  patch-version-bump-message: "\\+?semver:\\s?(fix|patch)"
+  strategies:
+    - Fallback
+    - TaggedCommit

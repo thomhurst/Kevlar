@@ -24,23 +24,54 @@ function Assert-Contains([string]$Name, [string]$Text)
     }
 }
 
-function Assert-StepGuarded([string]$StepName)
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+
+function Assert-FileContains([string]$Name, [string]$Path, [string[]]$Texts)
 {
-    $pattern = "(?m)^      - name: $([regex]::Escape($StepName))\r?\n        if: inputs\.release_dry_run != true\r?$"
-    if (-not [regex]::IsMatch($publish, $pattern))
+    $content = Get-Content -LiteralPath (Join-Path $repositoryRoot $Path) -Raw
+    foreach ($text in $Texts)
     {
-        throw "$StepName must be disabled during a release dry run."
+        if (-not $content.Contains($text, [StringComparison]::Ordinal))
+        {
+            throw "$Name ($Path) is missing '$text'."
+        }
     }
 }
 
-Assert-Contains 'Publish branch guard' "github.ref == 'refs/heads/main'"
+# Releases are published from the draft that release-draft.yml keeps for main; GitHub creates the
+# tag and the release, so the publish job only pushes and attaches the packages.
+if (-not [regex]::IsMatch($workflow, '(?m)^  release:\r?\n    types: \[published\]\r?$'))
+{
+    throw 'CI must run on published releases.'
+}
+
+Assert-Contains 'Publish release guard' "if: github.event_name == 'release'"
 Assert-Contains 'Publish approval environment' 'environment: nuget'
-Assert-Contains 'Generated release-note preview' '-DryRun'
-Assert-Contains 'Dry-run release-note guard' 'if: inputs.release_dry_run == true'
-Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
+Assert-Contains 'Release version and main ancestry' 'uses: ./.github/actions/resolve-version'
 Assert-Contains 'Retry-safe NuGet publication' './scripts/Push-NuGetRelease.ps1'
-Assert-Contains 'Retry-safe GitHub release' './scripts/Publish-GitHubRelease.ps1'
+Assert-Contains 'Retry-safe release assets' 'gh release upload "$RELEASE_TAG" packages/*.nupkg packages/*.snupkg --clobber'
 Assert-Contains 'Derived publish package set' '$expectedPackageIds = @(./scripts/Get-PackablePackageIds.ps1)'
+Assert-Contains 'Release-versioned packages' 'Packages must carry release version'
+
+foreach ($retired in @('Push-ReleaseTag.ps1', 'Publish-GitHubRelease.ps1', 'release_dry_run', 'publish_nuget'))
+{
+    if ($workflow.Contains($retired, [StringComparison]::Ordinal))
+    {
+        throw "CI must not use '$retired': publishing the draft release creates the tag and the release."
+    }
+}
+
+Assert-FileContains 'Release version resolution' '.github/actions/resolve-version/action.yml' @(
+    "if: github.event_name != 'release'",
+    'git merge-base --is-ancestor "$GITHUB_SHA" origin/main',
+    '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$')
+Assert-FileContains 'Draft release' '.github/workflows/release-draft.yml' @(
+    "DRAFT_MARKER: '<!-- kevlar-release-draft -->'",
+    'releases/generate-notes',
+    'previous_tag_name="$previous"',
+    'target_commitish="$GITHUB_SHA"',
+    '-F draft=true',
+    'select(.draft and ((.body // "") | contains(env.DRAFT_MARKER)))')
 
 $packageVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-Packages.ps1') -Raw
 foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-PublicApi.ps1'))
@@ -83,11 +114,6 @@ if (($dependencyPackageIds -join ',') -ne ($packablePackageIds -join ','))
         "projects=[$($packablePackageIds -join ', ')], table=[$($dependencyPackageIds -join ', ')].")
 }
 
-Assert-StepGuarded 'Create and push release tag'
-Assert-StepGuarded 'NuGet login'
-Assert-StepGuarded 'Push to NuGet'
-Assert-StepGuarded 'Create GitHub release'
-
 if ($publish.Contains('--skip-duplicate', [StringComparison]::Ordinal))
 {
     throw 'Publish must verify an existing package payload instead of masking duplicates.'
@@ -107,22 +133,14 @@ if ($nugetPublishScript.Contains('--skip-duplicate', [StringComparison]::Ordinal
     throw 'NuGet publication must reject conflicting duplicates after comparing payloads.'
 }
 
-$tagIndex = $publish.IndexOf('- name: Create and push release tag', [StringComparison]::Ordinal)
+$verifyIndex = $publish.IndexOf('- name: Verify publish artifacts', [StringComparison]::Ordinal)
+$loginIndex = $publish.IndexOf('- name: NuGet login', [StringComparison]::Ordinal)
 $packageIndex = $publish.IndexOf('- name: Push to NuGet', [StringComparison]::Ordinal)
-$releaseIndex = $publish.IndexOf('- name: Create GitHub release', [StringComparison]::Ordinal)
-if ($tagIndex -lt 0 -or $packageIndex -lt 0 -or $releaseIndex -lt 0 -or
-    $packageIndex -ge $tagIndex -or $tagIndex -ge $releaseIndex)
+$assetIndex = $publish.IndexOf('- name: Attach packages to release', [StringComparison]::Ordinal)
+if ($verifyIndex -lt 0 -or $loginIndex -lt 0 -or $packageIndex -lt 0 -or $assetIndex -lt 0 -or
+    $verifyIndex -ge $loginIndex -or $loginIndex -ge $packageIndex -or $packageIndex -ge $assetIndex)
 {
-    throw 'Release ordering must be NuGet push, tag, then GitHub release.'
-}
-
-$githubReleaseScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Publish-GitHubRelease.ps1') -Raw
-foreach ($requiredText in @('gh release create', '--verify-tag', '--generate-notes', '--notes-start-tag', 'gh release upload', '--clobber'))
-{
-    if (-not $githubReleaseScript.Contains($requiredText, [StringComparison]::Ordinal))
-    {
-        throw "GitHub release publication is missing '$requiredText'."
-    }
+    throw 'Release ordering must be artifact verification, NuGet login, NuGet push, then release assets.'
 }
 
 $releaseConfiguration = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '.github/release.yml') -Raw
@@ -134,7 +152,7 @@ foreach ($requiredCategory in @('Breaking changes', 'Features', 'Fixes', 'Docume
     }
 }
 
-$temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) "kevlar-release-notes-$([Guid]::NewGuid().ToString('N'))"
+$temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) "kevlar-release-workflow-$([Guid]::NewGuid().ToString('N'))"
 $resolvedTemporaryRoot = [IO.Path]::GetFullPath($temporaryRoot)
 [IO.Directory]::CreateDirectory($resolvedTemporaryRoot) | Out-Null
 
@@ -237,42 +255,6 @@ try
     {
         throw 'NuGet payload verification accepted conflicting package contents.'
     }
-
-    $remotePath = Join-Path $resolvedTemporaryRoot 'remote.git'
-    $workPath = Join-Path $resolvedTemporaryRoot 'work'
-    & git init --bare $remotePath | Out-Null
-    & git init $workPath | Out-Null
-    & git -C $workPath config user.email 'verification@example.invalid'
-    & git -C $workPath config user.name 'Release Verification'
-    [IO.File]::WriteAllText((Join-Path $workPath 'file.txt'), 'first', [Text.UTF8Encoding]::new($false))
-    & git -C $workPath add file.txt
-    & git -C $workPath commit -m 'first' | Out-Null
-    & git -C $workPath remote add origin $remotePath
-    $firstCommit = (& git -C $workPath rev-parse HEAD).Trim()
-
-    $pushTagScript = Join-Path $PSScriptRoot 'Push-ReleaseTag.ps1'
-    & $pushTagScript -Version '1.2.3' -Commit $firstCommit -WorkingDirectory $workPath
-    & $pushTagScript -Version '1.2.3' -Commit $firstCommit -WorkingDirectory $workPath
-
-    [IO.File]::WriteAllText((Join-Path $workPath 'file.txt'), 'second', [Text.UTF8Encoding]::new($false))
-    & git -C $workPath add file.txt
-    & git -C $workPath commit -m 'second' | Out-Null
-    $secondCommit = (& git -C $workPath rev-parse HEAD).Trim()
-
-    $mismatchRejected = $false
-    try
-    {
-        & $pushTagScript -Version '1.2.3' -Commit $secondCommit -WorkingDirectory $workPath
-    }
-    catch
-    {
-        $mismatchRejected = $true
-    }
-
-    if (-not $mismatchRejected)
-    {
-        throw 'Release tag verification accepted an existing tag on a different commit.'
-    }
 }
 finally
 {
@@ -285,4 +267,4 @@ finally
     }
 }
 
-Write-Host 'Release workflow guard, ordering, artifacts, dry run, and generated notes passed.'
+Write-Host 'Release workflow trigger, guards, ordering, artifacts, and draft release passed.'

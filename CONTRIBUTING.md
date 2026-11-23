@@ -150,3 +150,20 @@ A pull request should:
 
 Maintainers may ask for a smaller scope or additional compatibility coverage. Contributions are
 licensed under the repository's [MIT License](LICENSE).
+
+## Releasing
+
+Maintainers release by publishing a draft GitHub release. `release-draft.yml` keeps one draft for
+`main`, rewritten on every push: its tag is one patch above the latest release (GitVersion), it
+targets the newest commit, and its notes are generated from the pull requests merged since the
+latest release, grouped by `.github/release.yml`. Commit messages do not choose the version, so
+`+semver:` has no effect.
+
+To release, edit the draft, change its tag to the version you want (for example `v1.6.0` or
+`v2.0.0`; a prerelease such as `v2.0.0-beta.1` also works), adjust the notes, and publish it.
+Publishing creates the tag on the draft's commit and runs `ci.yml` on it. That run fails unless the
+tag is a version and the commit is on `main`. It runs every CI gate with the tag's version, then
+pushes the packages to NuGet from the `nuget` environment and attaches them to the release. To
+retry a failed publish, re-run the workflow run: packages already on NuGet with the same payload are
+skipped. A push to `main` rewrites the draft, so edits made to it are lost if `main` moves before it
+is published.
