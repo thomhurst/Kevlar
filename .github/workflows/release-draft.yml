@@ -91,9 +91,20 @@ jobs:
             exit 0
           fi
 
-          draft_ids=$(gh api --paginate "$repo/releases?per_page=100" \
-            --jq '.[] | select(.draft and ((.body // "") | contains(env.DRAFT_MARKER))) | .id')
-          draft_id=${draft_ids%%$'\n'*}
+          # Owned drafts as "created_at id", newest first. There should be one; if the marker was
+          # copied into another draft, warn and update the newest.
+          drafts=$(gh api --paginate "$repo/releases?per_page=100" \
+            --jq '.[] | select(.draft and ((.body // "") | contains(env.DRAFT_MARKER))) | "\(.created_at) \(.id)"')
+          drafts=$(printf '%s\n' "$drafts" | sed '/^$/d' | sort -r)
+          draft_id=""
+          if [ -n "$drafts" ]; then
+            draft_id=$(printf '%s\n' "$drafts" | head -n 1 | cut -d' ' -f2)
+            if [ "$(printf '%s\n' "$drafts" | wc -l)" -gt 1 ]; then
+              all_ids=$(printf '%s\n' "$drafts" | cut -d' ' -f2 | paste -sd, -)
+              echo "::warning::Several draft releases carry the release-draft marker (ids $all_ids); updating the newest, $draft_id. Delete the others or remove the marker from them."
+              echo "Several marked drafts ($all_ids); updated the newest, $draft_id." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
 
           # Keep a version the owner set on the draft when it is a valid release tag, higher than
           # the suggestion, and not released yet; otherwise use the suggestion.

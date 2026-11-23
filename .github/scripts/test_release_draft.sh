@@ -35,10 +35,12 @@ cat > "$work/bin/gh" <<'EOF'
 #!/usr/bin/env bash
 echo "gh $*" >> "$SIM/calls"
 case "$*" in
-  *"releases?per_page=100"*) if [ -n "${DRAFT_TAG-}" ]; then echo 42; fi ;;
-  *"releases/42 --jq .tag_name"*) echo "$DRAFT_TAG" ;;
-  *"releases/42 --jq .draft"*) echo true ;;
   *"releases/latest"*) echo v1.5.1 ;;
+  *"releases?per_page=100"*)
+    if [ -n "${DRAFTS-}" ]; then printf '%b\n' "$DRAFTS"
+    elif [ -n "${DRAFT_TAG-}" ]; then echo "2026-11-01T00:00:00Z 42"; fi ;;
+  *"releases/"*" --jq .tag_name"*) echo "$DRAFT_TAG" ;;
+  *"releases/"*" --jq .draft"*) echo true ;;
   *generate-notes*)
     if [ -n "${NOTES_FAIL-}" ]; then echo "gh: Server Error (HTTP 502)" >&2; exit 1; fi
     echo notes ;;
@@ -60,7 +62,7 @@ scenario() {
   local exit_code=0
   (cd "$work/repo" && env SIM="$work" MAIN_TIP=abc DRAFT_TAG= "$@" PATH="$work/bin:$PATH" \
     GITHUB_REPOSITORY=o/r GITHUB_SHA=abc VERSION=1.5.2 DRAFT_MARKER='<!-- m -->' \
-    GITHUB_STEP_SUMMARY="$work/summary" bash "$work/draft.sh" > /dev/null 2>&1) || exit_code=$?
+    GITHUB_STEP_SUMMARY="$work/summary" bash "$work/draft.sh" > "$work/output" 2>&1) || exit_code=$?
 
   local write=none
   if grep -q -- '-X POST repos/o/r/releases ' "$work/calls"; then
@@ -88,6 +90,18 @@ scenario 'resets an invalid tag' 0 update-suggested DRAFT_TAG=release-1
 scenario 'keeps a higher tag' 0 update-kept DRAFT_TAG=v1.6.0
 scenario 'keeps a higher prerelease tag' 0 update-kept DRAFT_TAG=v2.0.0-beta.1
 scenario 'resets a higher tag that is already released' 0 update-suggested DRAFT_TAG=1.6.0 EXTRA_TAG=1.6.0
+scenario 'several marked drafts update the newest' 0 update-suggested DRAFT_TAG=v1.5.2 \
+  DRAFTS='2026-11-01T00:00:00Z 41\n2026-11-20T00:00:00Z 43\n2026-11-10T00:00:00Z 42'
+if ! grep -q -- '-X PATCH repos/o/r/releases/43 ' "$work/calls" ||
+  ! grep -q '::warning::Several draft releases carry the release-draft marker (ids 43,42,41); updating the newest, 43.' "$work/output"; then
+  echo "FAIL: several marked drafts must warn with every id and update the newest (43)" >&2
+  failures=$((failures + 1))
+fi
+scenario 'one marked draft does not warn' 0 update-suggested DRAFT_TAG=v1.5.2
+if grep -q '::warning::' "$work/output"; then
+  echo "FAIL: one marked draft must not warn" >&2
+  failures=$((failures + 1))
+fi
 scenario 'notes failure writes nothing on create' 1 none NOTES_FAIL=1
 scenario 'notes failure writes nothing on update' 1 none NOTES_FAIL=1 DRAFT_TAG=v1.5.2
 scenario 're-run of an older main commit writes nothing' 0 none MAIN_TIP=def DRAFT_TAG=v1.5.2
