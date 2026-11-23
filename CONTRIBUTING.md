@@ -154,19 +154,24 @@ licensed under the repository's [MIT License](LICENSE).
 ## Releasing
 
 Maintainers release by publishing a draft GitHub release. `release-draft.yml` keeps one draft for
-`main`, rewritten on every push: its tag is one patch above the latest release (GitVersion), it
-targets the newest commit, and its notes are generated from the pull requests merged since the
-latest release, grouped by `.github/release.yml`. Commit messages do not choose the version, so
-`+semver:` has no effect.
+`main`, refreshed on every push: by default its tag is one patch above the latest release
+(GitVersion), it targets the newest commit, and its notes are generated from the pull requests
+merged since the latest release, grouped by `.github/release.yml`. Commit messages do not choose
+the version, so `+semver:` has no effect.
 
-To release, edit the draft, change its tag to the version you want (for example `v1.6.0` or
-`v2.0.0`; a prerelease such as `v2.0.0-beta.1` also works), adjust the notes, and publish it.
+Change the draft's tag to override the version (for example `v1.6.0` or `v2.0.0`; a prerelease
+such as `v2.0.0-beta.1` also works); later pushes keep a higher version you set. Set it back to the
+suggestion (or lower) to return to the default. To release, adjust the notes and publish the draft.
 Publishing creates the tag on the draft's commit and runs `ci.yml` on it. That run fails unless the
 tag is a version and the commit is on `main`. It runs every CI gate with the tag's version, then
 pushes the packages to NuGet from the `nuget` environment and attaches them to the release. To
 retry a failed publish, re-run the workflow run: packages already on NuGet with the same payload are
-skipped. A push to `main` rewrites the draft, so edits made to it are lost if `main` moves before it
-is published.
+skipped. A push to `main` regenerates the draft's notes, so other edits to them are lost if `main`
+moves before it is published.
+
+Release notes are grouped by pull request label: label a pull request `breaking` to list it under
+Breaking Changes, or `ignore-for-release` to leave it out. Dependency pull requests (Renovate adds
+`dependencies`) are grouped under Dependencies automatically, whatever update-size label they carry.
 
 The draft's notes end with a hidden `<!-- kevlar-release-draft -->` comment that marks it as the
 automation's draft. Keep it when editing the notes: without it, the next push to `main` creates a

@@ -1,27 +1,64 @@
+# Categories for GitHub-generated release notes (the draft release kept by release-draft.yml).
+# GitHub puts each PR in the first category it matches, in file order. The `dependencies`
+# exclusions keep every non-breaking dependency PR together under Dependencies, which stays last,
+# even when Renovate also labels it MAJOR, MINOR or PATCH for the size of the dependency update.
+#
+# Label a PR `breaking` for Breaking Changes, or `ignore-for-release` to leave it out.
 changelog:
   exclude:
     labels:
-      - renovate-bot
-    authors:
-      - renovate[bot]
+      - ignore-for-release
   categories:
-    - title: Breaking changes
+    - title: Breaking Changes
       labels:
-        - MAJOR
+        - breaking
+        - breaking-change
     - title: Features
       labels:
         - enhancement
+        - feature
         - MINOR
+      exclude:
+        labels:
+          - dependencies
     - title: Fixes
       labels:
         - bug
+        - fix
         - PATCH
+      exclude:
+        labels:
+          - dependencies
+    - title: Performance
+      labels:
+        - performance
+      exclude:
+        labels:
+          - dependencies
     - title: Documentation
       labels:
         - documentation
+        - docs
+      exclude:
+        labels:
+          - dependencies
+    - title: Other Changes
+      labels:
+        - '*'
+      exclude:
+        labels:
+          - dependencies
+          - breaking
+          - breaking-change
+          - enhancement
+          - feature
+          - MINOR
+          - bug
+          - fix
+          - PATCH
+          - performance
+          - documentation
+          - docs
     - title: Dependencies
       labels:
         - dependencies
-    - title: Other changes
-      labels:
-        - '*'

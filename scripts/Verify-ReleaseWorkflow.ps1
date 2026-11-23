@@ -73,6 +73,8 @@ Assert-FileContains 'Draft release' '.github/workflows/release-draft.yml' @(
     '-F draft=true',
     "if: github.ref == 'refs/heads/main'",
     'git ls-remote --exit-code --tags origin "refs/tags/$existing"',
+    'bash "$versions" --greater "$current_tag" "$tag"',
+    '-f target_commitish="$GITHUB_SHA" -f body="$body" --jq .html_url)',
     'select(.draft and ((.body // "") | contains(env.DRAFT_MARKER)))')
 
 # Release tag grammar: optional v, SemVer 2.0 without build metadata, parts at most 65534.
@@ -102,6 +104,41 @@ foreach ($tag in @('v1.02.3', 'v01.2.3', 'v1.2.3-beta..1', 'v1.2.3-beta.01', 'v1
     if ($LASTEXITCODE -eq 0)
     {
         throw "Release tag '$tag' should be rejected."
+    }
+}
+
+# SemVer 2.0 precedence, used to keep a higher version the owner set on the draft release.
+foreach ($pair in @(
+    @('1.11.0', '1.10.1'),
+    @('1.10.0', '1.9.0'),
+    @('v2.0.0-rc.10', 'v2.0.0-rc.9'),
+    @('2.0.0', '2.0.0-rc.1'),
+    @('1.0.0-alpha.1', '1.0.0-alpha'),
+    @('1.0.0-beta', '1.0.0-alpha.1'),
+    @('1.0.0-alpha', '1.0.0-1'),
+    @('1.0.0-alpha.beta', '1.0.0-alpha.1'),
+    @('1.0.0-beta.11', '1.0.0-beta.2'),
+    @('1.0.0-a', '1.0.0-B')))
+{
+    & bash $releaseVersionScript --greater $pair[0] $pair[1] *> $null
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "'$($pair[0])' should rank above '$($pair[1])'."
+    }
+
+    & bash $releaseVersionScript --greater $pair[1] $pair[0] *> $null
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw "'$($pair[1])' should not rank above '$($pair[0])'."
+    }
+}
+
+foreach ($pair in @(@('1.2.3', '1.2.3'), @('v1.2.3', '1.2.3'), @('1.0.0-rc.1', 'v1.0.0-rc.1'), @('bogus', '1.0.0'), @('v1.02.0', '1.0.0')))
+{
+    & bash $releaseVersionScript --greater $pair[0] $pair[1] *> $null
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw "'$($pair[0])' should not rank above '$($pair[1])'."
     }
 }
 
@@ -176,12 +213,27 @@ if ($verifyIndex -lt 0 -or $loginIndex -lt 0 -or $packageIndex -lt 0 -or $assetI
 }
 
 $releaseConfiguration = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) '.github/release.yml') -Raw
-foreach ($requiredCategory in @('Breaking changes', 'Features', 'Fixes', 'Documentation', 'Dependencies'))
+# GitHub uses the first matching category, so the order is part of the contract: Breaking Changes
+# first, Dependencies last, and every category in between excludes `dependencies`.
+$expectedCategories = @('Breaking Changes', 'Features', 'Fixes', 'Performance', 'Documentation', 'Other Changes', 'Dependencies')
+$categories = @([regex]::Matches($releaseConfiguration, '(?m)^    - title: (?<title>.+?)\r?$') | ForEach-Object { $_.Groups['title'].Value })
+if (($categories -join ',') -ne ($expectedCategories -join ','))
 {
-    if (-not $releaseConfiguration.Contains("title: $requiredCategory", [StringComparison]::Ordinal))
+    throw "Generated release-note categories must be [$($expectedCategories -join ', ')]; got [$($categories -join ', ')]."
+}
+
+$categoryBlocks = [regex]::Split($releaseConfiguration, '(?m)^    - title: ')
+foreach ($block in $categoryBlocks[2..($categoryBlocks.Count - 2)])
+{
+    if ($block -notmatch '(?ms)^      exclude:\r?\n        labels:\r?\n(?:          - .+\r?\n)*?          - dependencies\r?$')
     {
-        throw "Generated release-note configuration is missing '$requiredCategory'."
+        throw "Release-note category '$(($block -split '\r?\n')[0])' must exclude the dependencies label."
     }
+}
+
+if ($releaseConfiguration -notmatch '(?ms)^  exclude:\r?\n    labels:\r?\n(?:      - .+\r?\n)*?      - ignore-for-release\r?$')
+{
+    throw 'Generated release notes must exclude the ignore-for-release label.'
 }
 
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) "kevlar-release-workflow-$([Guid]::NewGuid().ToString('N'))"
