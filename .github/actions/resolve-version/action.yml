@@ -33,18 +33,14 @@ runs:
       run: |
         set -euo pipefail
         if [ "$GITHUB_EVENT_NAME" = "release" ]; then
-          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Release tag '$RELEASE_TAG' is not a version. Use a tag such as v1.2.3 or v1.2.3-beta.1."
-            exit 1
-          fi
+          # Fails unless the tag is a version (grammar in release-version.sh).
+          semver=$(bash "$GITHUB_ACTION_PATH/release-version.sh" "$RELEASE_TAG")
 
           # A release can only ship what main has.
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo "::error::Release $RELEASE_TAG points at $GITHUB_SHA, which is not on main."
             exit 1
           fi
-
-          semver="${RELEASE_TAG#v}"
         else
           if [ -z "$GV_SEMVER" ]; then
             echo "::error::GitVersion produced no semVer."

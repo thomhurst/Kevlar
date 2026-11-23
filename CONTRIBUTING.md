@@ -167,3 +167,7 @@ pushes the packages to NuGet from the `nuget` environment and attaches them to t
 retry a failed publish, re-run the workflow run: packages already on NuGet with the same payload are
 skipped. A push to `main` rewrites the draft, so edits made to it are lost if `main` moves before it
 is published.
+
+The draft's notes end with a hidden `<!-- kevlar-release-draft -->` comment that marks it as the
+automation's draft. Keep it when editing the notes: without it, the next push to `main` creates a
+second draft. Publishing removes it from the release.

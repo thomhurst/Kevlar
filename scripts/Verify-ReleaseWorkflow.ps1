@@ -64,14 +64,46 @@ foreach ($retired in @('Push-ReleaseTag.ps1', 'Publish-GitHubRelease.ps1', 'rele
 Assert-FileContains 'Release version resolution' '.github/actions/resolve-version/action.yml' @(
     "if: github.event_name != 'release'",
     'git merge-base --is-ancestor "$GITHUB_SHA" origin/main',
-    '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$')
+    'bash "$GITHUB_ACTION_PATH/release-version.sh" "$RELEASE_TAG"')
 Assert-FileContains 'Draft release' '.github/workflows/release-draft.yml' @(
     "DRAFT_MARKER: '<!-- kevlar-release-draft -->'",
     'releases/generate-notes',
-    'previous_tag_name="$previous"',
+    'previous_tag_name="$latest"',
     'target_commitish="$GITHUB_SHA"',
     '-F draft=true',
+    "if: github.ref == 'refs/heads/main'",
+    'git ls-remote --exit-code --tags origin "refs/tags/$existing"',
     'select(.draft and ((.body // "") | contains(env.DRAFT_MARKER)))')
+
+# Release tag grammar: optional v, SemVer 2.0 without build metadata, parts at most 65534.
+$releaseVersionScript = Join-Path $repositoryRoot '.github/actions/resolve-version/release-version.sh'
+$acceptedTags = [ordered]@{
+    'v1.2.3' = '1.2.3'
+    '1.2.3' = '1.2.3'
+    'v0.0.0' = '0.0.0'
+    'v1.2.3-beta.1' = '1.2.3-beta.1'
+    'v1.2.3-beta01' = '1.2.3-beta01'
+    'v1.2.3-0' = '1.2.3-0'
+    'v65534.65534.65534' = '65534.65534.65534'
+}
+foreach ($entry in $acceptedTags.GetEnumerator())
+{
+    $resolved = (& bash $releaseVersionScript $entry.Key 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $resolved -ne $entry.Value)
+    {
+        throw "Release tag '$($entry.Key)' should resolve to '$($entry.Value)'; got exit $LASTEXITCODE '$resolved'."
+    }
+}
+
+foreach ($tag in @('v1.02.3', 'v01.2.3', 'v1.2.3-beta..1', 'v1.2.3-beta.01', 'v1.2.3-01', 'v1.2.3-', 'v1.2',
+    'v65535.0.0', 'v1.2.65535', 'release-1', 'v1.2.3+build.1', ''))
+{
+    & bash $releaseVersionScript $tag *> $null
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw "Release tag '$tag' should be rejected."
+    }
+}
 
 $packageVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-Packages.ps1') -Raw
 foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-PublicApi.ps1'))
@@ -172,7 +204,41 @@ try
         [Text.UTF8Encoding]::new($false))
 
     $baselineScript = Join-Path $PSScriptRoot 'Verify-ReleaseApiBaselines.ps1'
-    & $baselineScript -Version '1.0.0-preview.1' -RepositoryRoot $apiFixtureRoot
+
+    # A release run inherits GITHUB_REF=refs/tags/<tag>, which makes every version a tag build.
+    # Pin the ref for each fixture so the branch cases still skip the freeze on a release run.
+    $originalGitHubRef = $env:GITHUB_REF
+    try
+    {
+        $env:GITHUB_REF = 'refs/heads/verification'
+        & $baselineScript -Version '1.0.0-preview.1' -RepositoryRoot $apiFixtureRoot
+
+        # A prerelease published from a tag, with or without the v prefix, must be frozen too.
+        foreach ($tagRef in @('refs/tags/v1.0.0-preview.1', 'refs/tags/1.0.0-preview.1'))
+        {
+            $env:GITHUB_REF = $tagRef
+            $tagBuildRejected = $false
+            try
+            {
+                & $baselineScript -Version '1.0.0-preview.1' -RepositoryRoot $apiFixtureRoot
+            }
+            catch
+            {
+                $tagBuildRejected = $true
+            }
+
+            if (-not $tagBuildRejected)
+            {
+                throw "Tag build $tagRef accepted an unshipped public API."
+            }
+        }
+
+        $env:GITHUB_REF = 'refs/heads/verification'
+    }
+    finally
+    {
+        $env:GITHUB_REF = $originalGitHubRef
+    }
 
     $unfrozenRejected = $false
     try

@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $isStableVersion = $Version -match '^\d+\.\d+\.\d+$'
-$isTagBuild = $env:GITHUB_REF -match '^refs/tags/v'
+$isTagBuild = $env:GITHUB_REF -match '^refs/tags/v?[0-9]'
 if (-not $isStableVersion -and -not $isTagBuild)
 {
     Write-Host "API baseline freeze skipped for prerelease version '$Version'."

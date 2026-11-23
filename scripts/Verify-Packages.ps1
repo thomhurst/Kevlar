@@ -290,7 +290,7 @@ Assert-Equal 'SymbolPackageFormat' $buildProperties.SymbolPackageFormat 'snupkg'
 Assert-Equal 'SignAssembly' $buildProperties.SignAssembly 'false'
 
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
-if ($Version -match '^\d+\.\d+\.\d+$' -or $env:GITHUB_REF -match '^refs/tags/v')
+if ($Version -match '^\d+\.\d+\.\d+$' -or $env:GITHUB_REF -match '^refs/tags/v?[0-9]')
 {
     & (Join-Path $PSScriptRoot 'Verify-PublicApi.ps1') `
         -PackagesPath $packageDirectory `
@@ -676,7 +676,24 @@ try
                     @($sourceLink.documents.PSObject.Properties.Value) `
                     @("https://raw.githubusercontent.com/thomhurst/Kevlar/$expectedRepositoryCommit/*")
 
-                Invoke-DotNet @('sourcelink', 'test', $pdbPath)
+                # sourcelink test downloads every source file from raw.githubusercontent.com, which
+                # sometimes answers 503 under load; retry so a transient outage does not fail CI.
+                for ($attempt = 1; ; $attempt++)
+                {
+                    & dotnet sourcelink test $pdbPath
+                    if ($LASTEXITCODE -eq 0)
+                    {
+                        break
+                    }
+
+                    if ($attempt -ge 3)
+                    {
+                        throw "dotnet sourcelink test $pdbPath failed with exit code $LASTEXITCODE after $attempt attempts."
+                    }
+
+                    Write-Host "dotnet sourcelink test failed with exit code $LASTEXITCODE; retrying in $(5 * $attempt) seconds."
+                    Start-Sleep -Seconds (5 * $attempt)
+                }
             }
         }
         finally

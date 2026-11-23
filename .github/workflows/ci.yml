@@ -517,8 +517,10 @@ jobs:
         uses: ./.github/actions/resolve-version
 
       # The draft was named, and its compare link written, for the version GitVersion suggested.
-      # Follow the tag if it was edited before publishing, and drop the draft marker. Cosmetic, so
-      # it never blocks a release.
+      # Follow the tag if it was edited before publishing, and drop the draft marker. Only the
+      # generated "**Full Changelog**" line and the marker line change; other text is kept. It
+      # runs before anything that can fail after the version is resolved, and is cosmetic, so it
+      # never blocks a release.
       - name: Name release after its tag
         continue-on-error: true
         env:
@@ -530,7 +532,8 @@ jobs:
         run: |
           set -euo pipefail
           body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
-          body=$(printf '%s\n' "$body" | grep -vF -- "$DRAFT_MARKER" | sed -E "s#(/compare/[^ )]+)\.\.\.[^ )]+#\1...$RELEASE_TAG#")
+          body=$(printf '%s\n' "$body" | tr -d '\r' | { grep -vxF -- "$DRAFT_MARKER" || true; } |
+            sed -E "s#^(\*\*Full Changelog\*\*: https://github\.com/[^ ]+/compare/[^ ]+)\.\.\.[^ ]+\$#\1...$RELEASE_TAG#")
           gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -f name="$RELEASE_VERSION" -f body="$body" > /dev/null
 
       - name: Download packages
