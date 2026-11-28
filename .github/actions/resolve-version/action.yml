@@ -1,0 +1,55 @@
+name: Resolve version
+description: >-
+  Resolves the version to stamp on builds and packages. A published release takes it from the
+  release's tag, so editing the tag of the draft release (release-draft.yml) is how a version is
+  chosen; the run fails unless the tag is a version and its commit is on main. Every other run
+  computes the version with GitVersion. Needs a checkout with full history (fetch-depth: 0).
+
+outputs:
+  semVer:
+    description: The package version, such as 1.2.3 or 1.2.3-beta.1
+    value: ${{ steps.version.outputs.semVer }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install GitVersion
+      if: github.event_name != 'release'
+      uses: gittools/actions/gitversion/setup@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
+      with:
+        versionSpec: '7.0.x'
+
+    - name: Determine Version
+      if: github.event_name != 'release'
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
+
+    - name: Resolve version
+      id: version
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
+        GV_SEMVER: ${{ steps.gitversion.outputs.semVer }}
+      run: |
+        set -euo pipefail
+        shopt -s inherit_errexit
+        if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+          # Fails unless the tag is a version (grammar in release-version.sh).
+          semver=$(bash "$GITHUB_ACTION_PATH/release-version.sh" "$RELEASE_TAG")
+
+          # A release can only ship what main has.
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Release $RELEASE_TAG points at $GITHUB_SHA, which is not on main."
+            exit 1
+          fi
+        else
+          if [ -z "$GV_SEMVER" ]; then
+            echo "::error::GitVersion produced no semVer."
+            exit 1
+          fi
+
+          semver="$GV_SEMVER"
+        fi
+
+        echo "Version: $semver"
+        echo "semVer=$semver" >> "$GITHUB_OUTPUT"

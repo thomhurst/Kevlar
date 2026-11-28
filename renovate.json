@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["group:monorepos"],
+  "addLabels": ["dependencies"],
   "customManagers": [
     {
       "description": "Update the Test*Version VersionOverride properties in Directory.Packages.props with the packages they mirror",

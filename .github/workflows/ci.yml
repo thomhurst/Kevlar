@@ -7,20 +7,13 @@ on:
     branches: [main]
     # ready_for_review starts CI for a reviewed draft; converted_to_draft cancels an in-progress run.
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  # Publishing the draft release that release-draft.yml keeps for main runs every gate below on
+  # the release's tag, then the publish job pushes the packages, stamped with the tag's version.
+  release:
+    types: [published]
   workflow_dispatch:
-    inputs:
-      publish_nuget:
-        description: 'Upload package to NuGet'
-        type: boolean
-        required: false
-        default: false
-      release_dry_run:
-        description: 'Validate the release without creating a tag, publishing packages, or creating a release'
-        type: boolean
-        required: false
-        default: true
 
-# Supersede in-progress PR runs; push and dispatch runs never cancel each other.
+# Supersede in-progress PR runs; push, release, and dispatch runs never cancel each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -235,14 +228,16 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/Assert-TestSuiteRegistration.ps1
 
-      - name: Install GitVersion
+      # GitVersion, or the tag of a published release (which must be a version on main).
+      - name: Resolve version
+        id: version
+        uses: ./.github/actions/resolve-version
+
+      - name: Install GitVersion for versioning checks
+        if: matrix.os == 'ubuntu-latest' && github.event_name == 'release'
         uses: gittools/actions/gitversion/setup@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
         with:
           versionSpec: '7.0.x'
-
-      - name: Determine Version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
 
       - name: Verify release workflow and versioning
         if: matrix.os == 'ubuntu-latest'
@@ -252,7 +247,10 @@ jobs:
           ./scripts/Verify-Versioning.ps1
 
       - name: Build
-        run: dotnet build Kevlar.slnx -c Release -p:Version=${{ steps.gitversion.outputs.semVer }}
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
+        run: dotnet build Kevlar.slnx -c Release "-p:Version=$env:PACKAGE_VERSION"
 
       - name: Unit tests
         shell: pwsh
@@ -324,7 +322,9 @@ jobs:
 
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet pack Kevlar.slnx -c Release --no-build -p:Version=${{ steps.gitversion.outputs.semVer }}
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
+        run: dotnet pack Kevlar.slnx -c Release --no-build "-p:Version=$PACKAGE_VERSION"
 
       - name: Restore local tools
         if: matrix.os == 'ubuntu-latest'
@@ -338,14 +338,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
         env:
-          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
         run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
       - name: Verify analyzer compatibility with .NET 7 SDK
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
         env:
-          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
         run: ./scripts/Verify-AnalyzerCompatibility.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
       - name: Validate Renovate configuration
@@ -355,14 +355,14 @@ jobs:
       - name: Build samples from packed packages
         if: matrix.os == 'ubuntu-latest'
         env:
-          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: dotnet build samples/Samples.slnx -c Release -warnaserror -p:UsePackedPackages=true -p:KevlarSamplePackageVersion=${{ steps.gitversion.outputs.semVer }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
+        run: dotnet build samples/Samples.slnx -c Release -warnaserror -p:UsePackedPackages=true "-p:KevlarSamplePackageVersion=$PACKAGE_VERSION"
 
       - name: Run packed sample smoke tests
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
         env:
-          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
         run: ./scripts/Run-SampleSmokes.ps1 -UsePackedPackages -Version $env:PACKAGE_VERSION
 
       - name: Verify documentation analyzer trust
@@ -373,7 +373,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
         env:
-          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.semVer }}
         run: ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION -NoImplicitUsings
 
       - name: Upload packages
@@ -482,22 +482,27 @@ jobs:
             exit 1
           fi
 
-  # Only reachable from a manual run with the "Upload package to NuGet"
-  # checkbox ticked, and only after tests, coverage, and allocation gates are green.
+  # Only reachable by publishing a GitHub release (the draft that release-draft.yml keeps for
+  # main), and only after tests, coverage, and allocation gates are green on the tagged commit.
+  # GitHub has already created the tag and the release; this job pushes the packages to NuGet and
+  # attaches them to the release. Re-running a failed run is safe: packages already on NuGet with
+  # the same payload are skipped, and release assets are replaced.
+  # NuGet trusted publishing matches this workflow file and the `nuget` environment: keep both.
   publish:
     name: Publish NuGet
     needs: [allocation-gates, docs, build-and-test, coverage]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_nuget == true
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: nuget
     permissions:
       id-token: write  # Request a NuGet trusted publishing token
-      contents: write  # Create the release tag so GitVersion advances past this version
+      contents: write  # Attach the packages to the release and name it after its tag
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0  # Required for GitVersion
+          fetch-depth: 0  # The release commit must be checked against main
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
@@ -506,14 +511,31 @@ jobs:
             10.0.x
             11.0.x
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
-        with:
-          versionSpec: '7.0.x'
+      # Fails unless the release tag is a version whose commit is on main.
+      - name: Resolve version
+        id: version
+        uses: ./.github/actions/resolve-version
 
-      - name: Determine Version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@389fe43e6b0189b98c40c43553070ac029304635 # v5.0.0
+      # The draft was named, and its compare link written, for the version GitVersion suggested.
+      # Follow the tag if it was edited before publishing, and drop the draft marker. Only the
+      # generated "**Full Changelog**" line and the marker line change; other text is kept. It
+      # runs before anything that can fail after the version is resolved, and is cosmetic, so it
+      # never blocks a release.
+      - name: Name release after its tag
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ github.event.release.id }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_VERSION: ${{ steps.version.outputs.semVer }}
+          DRAFT_MARKER: '<!-- kevlar-release-draft -->'
+        run: |
+          set -euo pipefail
+          shopt -s inherit_errexit
+          body=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq '.body // ""')
+          body=$(printf '%s\n' "$body" | tr -d '\r' | { grep -vxF -- "$DRAFT_MARKER" || true; } |
+            sed -E "s#^(\*\*Full Changelog\*\*: https://github\.com/[^ ]+/compare/[^ ]+)\.\.\.[^ ]+\$#\1...$RELEASE_TAG#")
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -f name="$RELEASE_VERSION" -f body="$body" > /dev/null
 
       - name: Download packages
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -523,6 +545,8 @@ jobs:
 
       - name: Verify publish artifacts
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.semVer }}
         run: |
           $expectedPackageIds = @(./scripts/Get-PackablePackageIds.ps1)
           $packageIds = @(Get-ChildItem packages -Filter *.nupkg | ForEach-Object { $_.BaseName -replace '\.[0-9].*$', '' } | Sort-Object)
@@ -530,38 +554,25 @@ jobs:
           if (($packageIds -join ',') -ne ($expectedPackageIds -join ',') -or ($symbolPackageIds -join ',') -ne ($expectedPackageIds -join ',')) {
             throw "Expected nupkg/snupkg artifacts for [$($expectedPackageIds -join ', ')]; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
           }
-
-      - name: Preview generated release notes
-        if: inputs.release_dry_run == true
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -AssetsPath packages -TargetCommitish $env:GITHUB_SHA -DryRun
+          $wrongVersion = @(Get-ChildItem packages -File | Where-Object { -not $_.Name.EndsWith(".$env:RELEASE_VERSION$($_.Extension)", [StringComparison]::OrdinalIgnoreCase) })
+          if ($wrongVersion.Count -gt 0) {
+            throw "Packages must carry release version $env:RELEASE_VERSION; got [$($wrongVersion.Name -join ', ')]."
+          }
 
       - name: NuGet login
-        if: inputs.release_dry_run != true
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push to NuGet
-        if: inputs.release_dry_run != true
-        shell: pwsh
-        run: |
-          ./scripts/Push-NuGetRelease.ps1 -PackagesPath packages -ApiKey '${{ steps.login.outputs.NUGET_API_KEY }}'
-
-      - name: Create and push release tag
-        if: inputs.release_dry_run != true
         shell: pwsh
         env:
-          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: |
-          ./scripts/Push-ReleaseTag.ps1 -Version $env:RELEASE_VERSION -Commit $env:GITHUB_SHA
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: ./scripts/Push-NuGetRelease.ps1 -PackagesPath packages -ApiKey $env:NUGET_API_KEY
 
-      - name: Create GitHub release
-        if: inputs.release_dry_run != true
+      - name: Attach packages to release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -AssetsPath packages -TargetCommitish $env:GITHUB_SHA
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" packages/*.nupkg packages/*.snupkg --clobber --repo "$GITHUB_REPOSITORY"
