@@ -15,8 +15,7 @@ internal static class TimeoutSourcePool
 
     private static readonly ObjectPool<Source, Policy> Pool = new(
         default,
-        ObjectPool<Source, Policy>.DefaultMaximumRetained,
-        threadLocalFastPath: false);
+        ObjectPool<Source, Policy>.DefaultMaximumRetained);
 #endif
 
     public static CancellationTokenSource RentLinked(CancellationToken upstreamToken)
