@@ -5,6 +5,8 @@
     <TestBclTimeProviderVersion>10.0.15</TestBclTimeProviderVersion> <!-- renovate: depName=Microsoft.Bcl.TimeProvider -->
     <TestExtensionsHttpVersion>10.0.15</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
     <TestExtensionsHttpVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
+    <!-- Tests restore the newest Reservoir the core's range allows, so CI catches breaks that consumers hit. -->
+    <TestReservoirVersion>1.10.0</TestReservoirVersion> <!-- renovate: depName=Reservoir -->
     <TestRateLimitingVersion>10.0.15</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
     <TestRateLimitingVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
     <!-- EF providers require the matching target framework major. -->

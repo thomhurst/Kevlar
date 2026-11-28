@@ -13,10 +13,11 @@ internal static class TimeoutSourcePool
     [ThreadStatic]
     private static Source? t_cached;
 
+    // The two-argument constructor already skips the pool's thread-local tier, and it exists in every
+    // Reservoir version the dependency range allows; 1.10.0 removed the threadLocalFastPath overload.
     private static readonly ObjectPool<Source, Policy> Pool = new(
         default,
-        ObjectPool<Source, Policy>.DefaultMaximumRetained,
-        threadLocalFastPath: false);
+        ObjectPool<Source, Policy>.DefaultMaximumRetained);
 #endif
 
     public static CancellationTokenSource RentLinked(CancellationToken upstreamToken)
