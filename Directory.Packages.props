@@ -5,8 +5,6 @@
     <TestBclTimeProviderVersion>10.0.15</TestBclTimeProviderVersion> <!-- renovate: depName=Microsoft.Bcl.TimeProvider -->
     <TestExtensionsHttpVersion>10.0.15</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
     <TestExtensionsHttpVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestExtensionsHttpVersion> <!-- renovate: depName=Microsoft.Extensions.Http -->
-    <!-- Tests restore the newest Reservoir the core's range allows, so CI catches breaks that consumers hit. -->
-    <TestReservoirVersion>1.10.0</TestReservoirVersion> <!-- renovate: depName=Reservoir -->
     <TestRateLimitingVersion>10.0.15</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
     <TestRateLimitingVersion Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TestRateLimitingVersion> <!-- renovate: depName=System.Threading.RateLimiting -->
     <!-- EF providers require the matching target framework major. -->
@@ -22,7 +20,7 @@
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" />
-    <PackageVersion Include="Reservoir" Version="[1.9.1,2.0.0)" />
+    <PackageVersion Include="Reservoir" Version="[1.10.0,2.0.0)" />
     <PackageVersion Include="Polyfill" Version="12.0.0" />
 
     <!-- Satellites -->
